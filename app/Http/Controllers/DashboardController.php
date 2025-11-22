@@ -21,15 +21,14 @@ class DashboardController extends Controller
         $allGurus = Guru::orderBy('name')->get();
         $allMapels = MataPelajaran::orderBy('name')->get();
         $allRuangs = Ruang::orderBy('name')->get();
-        $allSiswas = Siswa::orderBy('name')->get();
-
+        $allSiswas = Siswa::with('tandas')->orderBy('name')->get();
         $jadwalsData = Jadwal::with([
-                            'siswa',
-                            'mataPelajaran',
-                            'guru',
-                            'ruang'
-                        ])
-                        ->get();
+            'siswa.tandas',
+            'mataPelajaran',
+            'guru',
+            'ruang'
+        ])
+        ->get();
 
         $finalJadwals = [];
         foreach ($jadwalsData as $jadwal) {

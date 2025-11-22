@@ -9,6 +9,7 @@ use App\Models\Sesi;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Arr;
+use Barryvdh\DomPDF\Facade\Pdf; // PENTING: Tambahkan ini untuk fitur PDF
 
 class JadwalController extends Controller
 {
@@ -186,5 +187,50 @@ class JadwalController extends Controller
                 'message' => 'Gagal menyimpan jadwal: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function exportPdf()
+    {
+        // 1. Ambil Data Master Hari & Sesi
+        $haris = Hari::orderBy('id')->get();
+        $sesis = Sesi::orderBy('id')->get();
+
+        // 2. Ambil Data Jadwal Lengkap (termasuk Tanda Siswa)
+        $jadwalsData = Jadwal::with([
+            'siswa.tandas', // Penting: Muat relasi tandas
+            'mataPelajaran',
+            'guru',
+            'ruang'
+        ])->get();
+
+        // 3. Grouping Data (Logic Matriks untuk tampilan Grid)
+        $finalJadwals = [];
+        foreach ($jadwalsData as $jadwal) {
+            // Kunci unik untuk menggabungkan siswa dalam satu kotak (Mapel + Guru + Ruang)
+            $classKey = $jadwal->mata_pelajaran_id . '_' . $jadwal->guru_id . '_' . $jadwal->ruang_id;
+
+            if (!isset($finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey])) {
+                $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey] = [
+                    'mapel' => $jadwal->mataPelajaran,
+                    'guru'  => $jadwal->guru,
+                    'ruang' => $jadwal->ruang,
+                    'siswa_list' => collect()
+                ];
+            }
+            $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey]['siswa_list']->push($jadwal->siswa);
+        }
+
+        // 4. Generate PDF menggunakan View 'pdf.jadwal'
+        $pdf = Pdf::loadView('pdf.jadwal', [
+            'haris' => $haris,
+            'sesis' => $sesis,
+            'jadwals' => $finalJadwals
+        ]);
+
+        // Set Kertas A4 Horizontal
+        $pdf->setPaper('a4', 'landscape');
+
+        // Download file
+        return $pdf->download('jadwal-pelajaran.pdf');
     }
 }
