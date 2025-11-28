@@ -25,7 +25,7 @@ class ImportSiswa extends Command
     public function handle()
     {
         // Nama file sesuai yang kamu upload
-        $fileName = '.xlsx';
+        $fileName = '1.xlsx';
 
         // Pastikan file ada di folder storage/app
         if (!Storage::exists($fileName)) {

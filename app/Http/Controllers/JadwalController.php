@@ -9,7 +9,8 @@ use App\Models\Sesi;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Arr;
-use Barryvdh\DomPDF\Facade\Pdf; // PENTING: Tambahkan ini untuk fitur PDF
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\Tanda;
 
 class JadwalController extends Controller
 {
@@ -79,24 +80,33 @@ class JadwalController extends Controller
 
     public function updateKelas(Request $request)
     {
+        // 1. Validasi Input
         $validated = $request->validate([
+            // Validasi data jadwal lama (untuk referensi hapus)
             'old_mapel_id' => 'required|integer',
             'old_guru_id' => 'required|integer',
             'old_ruang_id' => 'required|integer',
             'old_hari_id' => 'required|integer',
             'old_sesi_id' => 'required|integer',
 
+            // Validasi data jadwal baru (untuk insert ulang)
             'mapel_id' => 'required|integer',
             'guru_id' => 'required|integer',
             'ruang_id' => 'required|integer',
             'siswa_ids' => 'present|array',
             'siswa_ids.*' => 'integer',
+
+            // === [BARU] Validasi Array ID Tanda yang akan dihapus ===
+            'deleted_tanda_ids' => 'nullable|array',
+            'deleted_tanda_ids.*' => 'integer',
         ]);
 
         DB::beginTransaction();
         try {
+            // 2. Hapus Jadwal Lama (Logic yang sudah ada)
             Jadwal::where('hari_id', $validated['old_hari_id'])->where('sesi_id', $validated['old_sesi_id'])->where('mata_pelajaran_id', $validated['old_mapel_id'])->where('guru_id', $validated['old_guru_id'])->where('ruang_id', $validated['old_ruang_id'])->delete();
 
+            // 3. Siapkan Data Jadwal Baru
             $newSiswaIds = array_map('intval', $validated['siswa_ids']);
             $insertData = [];
             $now = now();
@@ -116,13 +126,20 @@ class JadwalController extends Controller
                 }
             }
 
+            // 4. Insert Jadwal Baru
             if (!empty($insertData)) {
                 Jadwal::insert($insertData);
             }
 
+            // 5. === [BARU] Eksekusi Hapus Tanda ===
+            // Jika ada ID tanda yang dikirim untuk dihapus, hapus dari database
+            if (!empty($request->deleted_tanda_ids)) {
+                Tanda::whereIn('id', $request->deleted_tanda_ids)->delete();
+            }
+
             DB::commit();
 
-            return response()->json(['status' => 'success', 'message' => 'Jadwal berhasil diperbarui.']);
+            return response()->json(['status' => 'success', 'message' => 'Jadwal dan Catatan berhasil diperbarui.']);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['status' => 'error', 'message' => 'Gagal menyimpan: ' . $e->getMessage()], 500);
