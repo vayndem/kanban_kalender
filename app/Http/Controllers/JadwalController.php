@@ -144,13 +144,7 @@ class JadwalController extends Controller
             ]);
 
             // 2. Ekstrak data utama jadwal yang sama untuk semua siswa
-            $jadwalDataUtama = Arr::only($validated, [
-                'hari_id',
-                'sesi_id',
-                'mata_pelajaran_id',
-                'guru_id',
-                'ruang_id'
-            ]);
+            $jadwalDataUtama = Arr::only($validated, ['hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id']);
 
             $siswa_ids = $validated['siswa_ids'];
 
@@ -159,7 +153,7 @@ class JadwalController extends Controller
             foreach ($siswa_ids as $siswa_id) {
                 // Buat data lengkap untuk satu entri Jadwal
                 $entriJadwal = array_merge($jadwalDataUtama, [
-                    'siswa_id' => $siswa_id
+                    'siswa_id' => $siswa_id,
                 ]);
 
                 // Simpan ke database
@@ -169,68 +163,93 @@ class JadwalController extends Controller
             // 4. Respon Sukses
             return response()->json([
                 'status' => 'success',
-                'message' => count($newJadwals) . ' jadwal baru berhasil dibuat.'
+                'message' => count($newJadwals) . ' jadwal baru berhasil dibuat.',
             ]);
-
         } catch (ValidationException $e) {
             // Tangani error validasi (e.g., ID tidak valid, siswa_ids kosong)
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validasi gagal.',
-                'errors' => $e->errors()
-            ], 422);
-        }
-        catch (\Exception $e) {
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'Validasi gagal.',
+                    'errors' => $e->errors(),
+                ],
+                422,
+            );
+        } catch (\Exception $e) {
             // Tangani error umum
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal menyimpan jadwal: ' . $e->getMessage()
-            ], 500);
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'Gagal menyimpan jadwal: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 
-    public function exportPdf()
+    public function exportPdf(Request $request)
     {
-        // 1. Ambil Data Master Hari & Sesi
-        $haris = Hari::orderBy('id')->get();
+        // 1. Ambil Data Master (Untuk Header PDF)
+        // Jika user filter hari tertentu, kita hanya perlu header hari itu saja (opsional, tapi biar rapi)
+        if ($request->filled('hari_id')) {
+            $haris = Hari::where('id', $request->hari_id)->get();
+        } else {
+            $haris = Hari::orderBy('id')->get();
+        }
+
         $sesis = Sesi::orderBy('id')->get();
 
-        // 2. Ambil Data Jadwal Lengkap (termasuk Tanda Siswa)
-        $jadwalsData = Jadwal::with([
-            'siswa.tandas', // Penting: Muat relasi tandas
-            'mataPelajaran',
-            'guru',
-            'ruang'
-        ])->get();
+        // 2. Query Dasar Jadwal
+        $query = Jadwal::with(['siswa.tandas', 'mataPelajaran', 'guru', 'ruang']);
 
-        // 3. Grouping Data (Logic Matriks untuk tampilan Grid)
+        // --- LOGIKA FILTER (Sesuai Request) ---
+
+        // Jika Siswa Dipilih (Tampilkan jadwal siswa tersebut di semua hari/hari terpilih)
+        if ($request->filled('siswa_id')) {
+            $query->where('siswa_id', $request->siswa_id);
+        }
+
+        // Jika Hari Dipilih (Tampilkan semua siswa/siswa terpilih di hari itu)
+        if ($request->filled('hari_id')) {
+            $query->where('hari_id', $request->hari_id);
+        }
+
+        $jadwalsData = $query->get();
+
+        // 3. Grouping Data (Sama seperti sebelumnya)
         $finalJadwals = [];
         foreach ($jadwalsData as $jadwal) {
-            // Kunci unik untuk menggabungkan siswa dalam satu kotak (Mapel + Guru + Ruang)
             $classKey = $jadwal->mata_pelajaran_id . '_' . $jadwal->guru_id . '_' . $jadwal->ruang_id;
 
             if (!isset($finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey])) {
                 $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey] = [
                     'mapel' => $jadwal->mataPelajaran,
-                    'guru'  => $jadwal->guru,
+                    'guru' => $jadwal->guru,
                     'ruang' => $jadwal->ruang,
-                    'siswa_list' => collect()
+                    'siswa_list' => collect(),
                 ];
             }
             $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey]['siswa_list']->push($jadwal->siswa);
         }
 
-        // 4. Generate PDF menggunakan View 'pdf.jadwal'
-        $pdf = Pdf::loadView('pdf.jadwal', [
+        // 4. Generate PDF
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.jadwal', [
             'haris' => $haris,
             'sesis' => $sesis,
-            'jadwals' => $finalJadwals
+            'jadwals' => $finalJadwals,
         ]);
 
-        // Set Kertas A4 Horizontal
         $pdf->setPaper('a4', 'landscape');
 
-        // Download file
-        return $pdf->download('jadwal-pelajaran.pdf');
+        // Beri nama file yang informatif
+        $filename = 'jadwal-pelajaran';
+        if ($request->filled('hari_id')) {
+            $filename .= '-hari-' . $request->hari_id;
+        }
+        if ($request->filled('siswa_id')) {
+            $filename .= '-siswa-' . $request->siswa_id;
+        }
+
+        return $pdf->download($filename . '.pdf');
     }
 }
