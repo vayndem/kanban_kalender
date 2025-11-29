@@ -2,7 +2,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Matapelajaran; // Pastikan Anda mengimpor model yang sesuai
+use App\Models\MataPelajaran; // Pastikan Anda mengimpor model yang sesuai
 
 class MapelController extends Controller
 {
@@ -15,7 +15,7 @@ class MapelController extends Controller
             ]);
 
             // Simpan data baru
-            $mapel = Matapelajaran::create($validated);
+            $mapel = MataPelajaran::create($validated);
 
             // Beri respons sukses
             return response()->json([
