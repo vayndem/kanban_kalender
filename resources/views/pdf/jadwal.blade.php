@@ -2,9 +2,8 @@
 <html>
 
 <head>
-    <title>Jadwal Pelajaran</title>
+    <title>Jadwal Pelajaran & Catatan</title>
     <style>
-        /* Setting Kertas A4 Landscape */
         @page {
             size: a4 landscape;
             margin: 10mm;
@@ -12,107 +11,202 @@
 
         body {
             font-family: sans-serif;
-            font-size: 10pt;
+            font-size: 9pt;
+            /* Font diperkecil agar muat */
+            color: #333;
+        }
+
+        /* --- HALAMAN 1: JADWAL COMPACT --- */
+        .header-container {
+            text-align: center;
+            margin-bottom: 10px;
         }
 
         h2 {
-            text-align: center;
-            margin-bottom: 20px;
+            margin: 0;
             text-transform: uppercase;
+            font-size: 14pt;
+        }
+
+        .search-info {
+            font-size: 9pt;
+            color: #666;
+            font-style: italic;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            /* Agar lebar kolom stabil & rata */
+            /* Penting agar kolom rata */
         }
 
         th,
         td {
-            border: 1px solid #444;
-            /* Border tabel lebih tegas */
-            padding: 5px;
+            border: 1px solid #666;
+            padding: 3px;
+            /* Padding diperkecil */
             vertical-align: top;
             word-wrap: break-word;
         }
 
         th {
-            background-color: #f0f0f0;
+            background-color: #eee;
             text-align: center;
             font-weight: bold;
-            height: 30px;
+            font-size: 9pt;
+            height: 25px;
         }
 
-        /* Kolom Sesi (Kiri) */
         .sesi-col {
-            width: 70px;
+            width: 60px;
+            /* Dipersempit */
             text-align: center;
-            background-color: #f9f9f9;
+            background-color: #f8f8f8;
             font-weight: bold;
+            font-size: 8pt;
         }
 
-        /* Style Kartu Kelas dalam Cell */
+        /* Card Jadwal Compact */
         .card {
-            border: 1px solid #ccc;
-            padding: 4px;
-            margin-bottom: 5px;
-            border-radius: 3px;
+            border: 1px solid #ddd;
+            padding: 2px 4px;
+            margin-bottom: 3px;
+            border-radius: 2px;
             background-color: #fff;
             page-break-inside: avoid;
-            /* Mencegah kartu terpotong halaman */
         }
 
         .mapel {
             font-weight: bold;
-            font-size: 9pt;
+            font-size: 8pt;
+            /* Font isi diperkecil */
             color: #000;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
 
-        .guru {
-            font-size: 8pt;
-            color: #333;
-            display: block;
-        }
-
+        .guru,
         .ruang {
-            font-size: 8pt;
-            color: #555;
+            font-size: 7pt;
+            color: #444;
             display: block;
-            margin-bottom: 2px;
+            line-height: 1.1;
         }
 
         .siswa-list {
             margin-top: 2px;
             font-size: 7pt;
-            padding-left: 12px;
-            color: #444;
+            padding-left: 10px;
+            margin-bottom: 0;
+            line-height: 1.1;
         }
 
-        .siswa-item {
-            margin-bottom: 1px;
-        }
-
-        /* Warna teks kuning gelap/oranye untuk siswa bertanda (agar terbaca di kertas putih) */
-        .tanda-text {
+        .tanda-indicator {
             color: #d97706;
-            /* Kode warna Oranye/Kuning Gelap */
+            /* Warna oranye */
             font-weight: bold;
             text-decoration: underline;
-            /* Garis bawah agar lebih jelas di cetakan hitam putih */
+        }
+
+        /* --- PEMISAH HALAMAN --- */
+        .page-break {
+            page-break-before: always;
+        }
+
+        /* --- HALAMAN 2: CATATAN SISWA --- */
+        .notes-container {
+            width: 100%;
+        }
+
+        .student-note-card {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #fff;
+            border-radius: 5px;
+            page-break-inside: avoid;
+        }
+
+        .student-header {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .student-avatar {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background-color: #dbeafe;
+            /* Blue 100 */
+            color: #1e40af;
+            /* Blue 800 */
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 12pt;
+        }
+
+        .student-info h3 {
+            margin: 0;
+            font-size: 11pt;
+            color: #111;
+        }
+
+        .student-info span {
+            font-size: 9pt;
+            color: #666;
+        }
+
+        .note-item {
+            background-color: #fffbeb;
+            /* Yellow 50 (mirip gambar) */
+            border-left: 4px solid #f59e0b;
+            /* Yellow 500 */
+            padding: 8px;
+            margin-bottom: 5px;
+            font-size: 9pt;
+        }
+
+        .note-content {
+            font-weight: bold;
+            color: #333;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .note-date {
+            font-size: 8pt;
+            color: #777;
+        }
+
+        .no-notes {
+            text-align: center;
+            color: #888;
+            font-style: italic;
+            margin-top: 50px;
         }
     </style>
 </head>
 
 <body>
 
-    <h2>Jadwal Pelajaran</h2>
+    {{-- HALAMAN 1: MATRIX JADWAL --}}
+    <div class="header-container">
+        <h2>Jadwal Pelajaran</h2>
+        @if ($searchQuery)
+            <div class="search-info">Filter: "{{ $searchQuery }}"</div>
+        @endif
+    </div>
 
     <table>
         <thead>
             <tr>
-                <th style="width: 70px;">Sesi</th>
+                <th style="width: 60px;">Waktu</th>
                 @foreach ($haris as $hari)
                     <th>{{ $hari->name }}</th>
                 @endforeach
@@ -123,9 +217,8 @@
                 <tr>
                     <td class="sesi-col">
                         {{ $sesi->name }}<br>
-                        <span style="font-size: 8pt; font-weight: normal;">
-                            {{ \Carbon\Carbon::parse($sesi->start_time)->format('H:i') }}<br>
-                            s/d<br>
+                        <span style="font-weight: normal; font-size: 7pt;">
+                            {{ \Carbon\Carbon::parse($sesi->start_time)->format('H:i') }} -
                             {{ \Carbon\Carbon::parse($sesi->end_time)->format('H:i') }}
                         </span>
                     </td>
@@ -134,21 +227,16 @@
                         <td>
                             @if (isset($jadwals[$hari->id][$sesi->id]))
                                 @foreach ($jadwals[$hari->id][$sesi->id] as $groupedClass)
-                                    {{-- Border kiri berwarna sesuai mapel --}}
                                     <div class="card"
-                                        style="border-left: 4px solid {{ $groupedClass['mapel']->border_color ?? '#000' }};">
-
+                                        style="border-left: 3px solid {{ $groupedClass['mapel']->border_color ?? '#000' }};">
                                         <div class="mapel">{{ $groupedClass['mapel']->name }}</div>
                                         <span class="guru">{{ $groupedClass['guru']->name }}</span>
                                         <span class="ruang">R: {{ $groupedClass['ruang']->name }}</span>
 
                                         <ol class="siswa-list">
                                             @foreach ($groupedClass['siswa_list'] as $siswa)
-                                                @php
-                                                    // Cek apakah siswa punya tanda
-                                                    $hasTanda = $siswa->tandas && $siswa->tandas->count() > 0;
-                                                @endphp
-                                                <li class="siswa-item {{ $hasTanda ? 'tanda-text' : '' }}">
+                                                <li
+                                                    class="{{ $siswa->tandas && $siswa->tandas->count() > 0 ? 'tanda-indicator' : '' }}">
                                                     {{ $siswa->name }}
                                                 </li>
                                             @endforeach
@@ -162,6 +250,49 @@
             @endforeach
         </tbody>
     </table>
+
+    {{-- HALAMAN 2: DETAIL CATATAN --}}
+    <div class="page-break"></div>
+
+    <div class="header-container">
+        <h2>Detail Catatan Siswa</h2>
+        <div class="search-info">Daftar siswa yang memiliki tanda/catatan khusus</div>
+    </div>
+
+    <div class="notes-container">
+        @forelse($studentsWithNotes as $siswa)
+            <div class="student-note-card">
+                <table style="width: 100%; border: none; margin-bottom: 5px;">
+                    <tr style="border: none;">
+                        <td style="width: 40px; border: none; padding: 0;">
+                            <div class="student-avatar">
+                                {{ substr($siswa->name, 0, 1) }}
+                            </div>
+                        </td>
+                        <td style="border: none; padding: 0;">
+                            <div class="student-info">
+                                <h3>{{ $siswa->name }}</h3>
+                                <span>{{ $siswa->kelas ?? 'Siswa Terdaftar' }}</span>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                @foreach ($siswa->tandas as $tanda)
+                    <div class="note-item">
+                        <span class="note-content">{{ $tanda->keterangan }}</span>
+                        <span class="note-date">
+                            {{ \Carbon\Carbon::parse($tanda->created_at)->format('d/m/Y') }}
+                        </span>
+                    </div>
+                @endforeach
+            </div>
+        @empty
+            <div class="no-notes">
+                <p>Tidak ada catatan siswa ditemukan pada data jadwal ini.</p>
+            </div>
+        @endforelse
+    </div>
 
 </body>
 

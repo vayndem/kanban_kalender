@@ -55,10 +55,18 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => base_path('storage/isrgrootx1.pem'),
-                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
-            ]),
+            'options' => (function () {
+                if (env('APP_ENV') === 'local') {
+                    return [];
+                }
+                $options = [
+                    PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
+                ];
+                if (file_exists(base_path('storage/isrgrootx1.pem'))) {
+                    $options[PDO::MYSQL_ATTR_SSL_CA] = base_path('storage/isrgrootx1.pem');
+                }
+                return $options;
+            })(),
         ],
 
         'mariadb' => [

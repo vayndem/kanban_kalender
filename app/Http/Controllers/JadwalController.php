@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Jadwal;
-use App\Models\Hari;
-use App\Models\Sesi;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Arr;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\Hari;
+use App\Models\Jadwal;
+use App\Models\Sesi;
 use App\Models\Tanda;
 
 class JadwalController extends Controller
@@ -206,38 +207,60 @@ class JadwalController extends Controller
 
     public function exportPdf(Request $request)
     {
-        // 1. Ambil Data Master (Untuk Header PDF)
-        // Jika user filter hari tertentu, kita hanya perlu header hari itu saja (opsional, tapi biar rapi)
-        if ($request->filled('hari_id')) {
-            $haris = Hari::where('id', $request->hari_id)->get();
-        } else {
-            $haris = Hari::orderBy('id')->get();
-        }
-
-        $sesis = Sesi::orderBy('id')->get();
-
-        // 2. Query Dasar Jadwal
+        // 1. Query Data Jadwal (Sesuai Filter Search)
         $query = Jadwal::with(['siswa.tandas', 'mataPelajaran', 'guru', 'ruang']);
 
-        // --- LOGIKA FILTER (Sesuai Request) ---
-
-        // Jika Siswa Dipilih (Tampilkan jadwal siswa tersebut di semua hari/hari terpilih)
-        if ($request->filled('siswa_id')) {
-            $query->where('siswa_id', $request->siswa_id);
-        }
-
-        // Jika Hari Dipilih (Tampilkan semua siswa/siswa terpilih di hari itu)
-        if ($request->filled('hari_id')) {
-            $query->where('hari_id', $request->hari_id);
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('hari', function ($h) use ($search) {
+                    $h->where('name', 'like', "%{$search}%");
+                })
+                    ->orWhereHas('sesi', function ($s) use ($search) {
+                        $s->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('mataPelajaran', function ($m) use ($search) {
+                        $m->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('guru', function ($g) use ($search) {
+                        $g->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('ruang', function ($r) use ($search) {
+                        $r->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('siswa', function ($st) use ($search) {
+                        $st->where('name', 'like', "%{$search}%")->orWhere('panggilan', 'like', "%{$search}%");
+                    });
+            });
         }
 
         $jadwalsData = $query->get();
 
-        // 3. Grouping Data (Sama seperti sebelumnya)
-        $finalJadwals = [];
-        foreach ($jadwalsData as $jadwal) {
-            $classKey = $jadwal->mata_pelajaran_id . '_' . $jadwal->guru_id . '_' . $jadwal->ruang_id;
+        // 2. LOGIKA COMPACT: Filter Hari & Sesi
+        // Ambil ID hari dan sesi yang HANYA muncul di hasil query jadwal
+        $activeHariIds = $jadwalsData->pluck('hari_id')->unique()->sort()->values();
+        $activeSesiIds = $jadwalsData->pluck('sesi_id')->unique()->sort()->values();
 
+        // Ambil data Master berdasarkan ID yang aktif saja
+        $haris = Hari::whereIn('id', $activeHariIds)->orderBy('id')->get();
+        $sesis = Sesi::whereIn('id', $activeSesiIds)->orderBy('id')->get();
+
+        // Fallback: Jika kosong (tidak ada jadwal), ambil semua biar tabel tidak error
+        if ($haris->isEmpty()) {
+            $haris = Hari::orderBy('id')->get();
+        }
+        if ($sesis->isEmpty()) {
+            $sesis = Sesi::orderBy('id')->get();
+        }
+
+        // 3. Grouping Matrix Jadwal
+        $finalJadwals = [];
+        // 4. Koleksi Siswa Bertanda (Untuk Halaman 2)
+        $studentsWithNotes = collect();
+
+        foreach ($jadwalsData as $jadwal) {
+            // Grouping untuk Matrix
+            $classKey = $jadwal->mata_pelajaran_id . '_' . $jadwal->guru_id . '_' . $jadwal->ruang_id;
             if (!isset($finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey])) {
                 $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey] = [
                     'mapel' => $jadwal->mataPelajaran,
@@ -247,24 +270,29 @@ class JadwalController extends Controller
                 ];
             }
             $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey]['siswa_list']->push($jadwal->siswa);
+
+            // Cek Tanda Siswa (Deduplikasi menggunakan ID siswa sebagai key)
+            if ($jadwal->siswa->tandas->isNotEmpty()) {
+                if (!$studentsWithNotes->has($jadwal->siswa->id)) {
+                    $studentsWithNotes->put($jadwal->siswa->id, $jadwal->siswa);
+                }
+            }
         }
 
-        // 4. Generate PDF
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.jadwal', [
+        // 5. Generate PDF
+        $pdf = Pdf::loadView('pdf.jadwal', [
             'haris' => $haris,
             'sesis' => $sesis,
             'jadwals' => $finalJadwals,
+            'studentsWithNotes' => $studentsWithNotes, // Kirim data halaman 2
+            'searchQuery' => $request->search ?? null,
         ]);
 
         $pdf->setPaper('a4', 'landscape');
 
-        // Beri nama file yang informatif
         $filename = 'jadwal-pelajaran';
-        if ($request->filled('hari_id')) {
-            $filename .= '-hari-' . $request->hari_id;
-        }
-        if ($request->filled('siswa_id')) {
-            $filename .= '-siswa-' . $request->siswa_id;
+        if ($request->filled('search')) {
+            $filename .= '-search-' . Str::slug($request->search);
         }
 
         return $pdf->download($filename . '.pdf');

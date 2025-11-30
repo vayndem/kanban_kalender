@@ -7,11 +7,9 @@
 
     <div class="py-12">
         <div class="max-w-full mx-auto sm:px-6 lg:px-8">
-
             <div class="container mx-auto" x-data="{
                 activeTab: 'jadwal',
-                searchPelajaran: '',
-                searchSiswa: '',
+                universalSearch: '',
                 showModal: false,
                 showAddJadwalModal: false,
                 editingJadwal: {},
@@ -27,7 +25,6 @@
                 showAddMenu: false,
                 currentForm: '',
                 selectedStudentDetail: null,
-
                 formData: {},
                 activeFormTab: 'input',
                 formSearch: '',
@@ -117,7 +114,6 @@
                     if (!confirm('Hapus tanda ini?')) return;
 
                     this.deletedTandaIds.push(tandaId);
-
                     this.selectedStudentDetail.tandas = this.selectedStudentDetail.tandas.filter(t => t.id !== tandaId);
 
                     const studentIndex = this.allSiswas.findIndex(s => s.id === studentId);
@@ -214,53 +210,48 @@
                 },
 
                 openExportOptions() {
-                    let siswaOptions = '<option value=\'\'>-- Semua Siswa --</option>';
-                    this.allSiswas.forEach(s => {
-                        // Menggunakan nama lengkap karena panggilan bisa kosong
-                        siswaOptions += `<option value='${s.id}'>${s.name}</option>`;
-                    });
+                    const searchTerm = this.universalSearch.trim();
+                    let htmlContent = '';
 
-                    let hariOptions = '<option value=\'\'>-- Semua Hari --</option>';
-                    this.allHaris.forEach(h => {
-                        hariOptions += `<option value='${h.id}'>${h.name}</option>`;
-                    });
+                    if (searchTerm) {
+                        htmlContent = `
+                                        <div class='text-left'>
+                                            <p class='text-gray-600 mb-2'>Anda sedang melakukan pencarian:</p>
+                                            <div class='bg-blue-50 p-3 rounded border border-blue-200 text-blue-800 text-lg font-bold text-center'>
+                                                '${searchTerm}'
+                                            </div>
+                                            <p class='text-xs text-gray-500 mt-3'>
+                                                <i class='fas fa-info-circle'></i> PDF akan berisi data yang cocok dengan kata kunci di atas (Siswa, Guru, Mapel, Hari, atau Sesi).
+                                            </p>
+                                        </div>
+                                    `;
+                    } else {
+                        htmlContent = `
+                                        <div class='text-left'>
+                                            <div class='bg-yellow-50 p-3 rounded border border-yellow-200 text-yellow-800'>
+                                                <i class='fas fa-exclamation-triangle mr-1'></i> Tidak ada filter pencarian aktif.
+                                            </div>
+                                            <p class='font-bold text-gray-800 mt-4 text-center'>
+                                                Akan mencetak SEMUA JADWAL (Full Data).
+                                            </p>
+                                        </div>
+                                    `;
+                    }
 
                     Swal.fire({
                         title: 'Filter Export PDF',
-                        html: `
-                                                    <div class='text-left space-y-4'>
-                                                        <div>
-                                                            <label class='block text-sm font-medium text-gray-700 mb-1'>Pilih Siswa</label>
-                                                            <select id='swal-siswa' class='w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border bg-white text-gray-900'>
-                                                                ${siswaOptions}
-                                                            </select>
-                                                            <p class='text-xs text-gray-500 mt-1'>Biarkan kosong untuk mencetak semua siswa.</p>
-                                                        </div>
-                                                        <div>
-                                                            <label class='block text-sm font-medium text-gray-700 mb-1'>Pilih Hari</label>
-                                                            <select id='swal-hari' class='w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border bg-white text-gray-900'>
-                                                                ${hariOptions}
-                                                            </select>
-                                                             <p class='text-xs text-gray-500 mt-1'>Biarkan kosong untuk mencetak satu minggu penuh.</p>
-                                                        </div>
-                                                    </div>
-                                                `,
+                        html: htmlContent,
                         showCancelButton: true,
                         confirmButtonText: '<i class=\'fas fa-file-pdf\'></i> Download PDF',
                         cancelButtonText: 'Batal',
                         confirmButtonColor: '#d33',
-                        preConfirm: () => {
-                            return {
-                                siswa_id: document.getElementById('swal-siswa').value,
-                                hari_id: document.getElementById('swal-hari').value
-                            }
-                        }
+                        reverseButtons: true
                     }).then((result) => {
                         if (result.isConfirmed) {
                             const params = new URLSearchParams();
-                            if (result.value.siswa_id) params.append('siswa_id', result.value.siswa_id);
-                            if (result.value.hari_id) params.append('hari_id', result.value.hari_id);
-
+                            if (searchTerm) {
+                                params.append('search', searchTerm);
+                            }
                             window.open('{{ route('admin.jadwal.export') }}?' + params.toString(), '_blank');
                         }
                     });
@@ -298,7 +289,6 @@
                         <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
 
                             <div class="flex space-x-3">
-
                                 <button @click.prevent="openExportOptions()" type="button"
                                     class="inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:ring-offset-gray-800 transition-colors">
                                     <i class="fas fa-file-pdf mr-2"></i> Export PDF
@@ -366,24 +356,22 @@
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow max-w-2xl">
-                                <div>
-                                    <label for="searchPelajaran"
-                                        class="block text-sm font-medium text-gray-700 dark:text-white mb-1">
-                                        <i class="fas fa-book-open mr-1"></i> Cari Pelajaran
-                                    </label>
-                                    <input type="text" id="searchPelajaran" x-model.debounce.300ms="searchPelajaran"
-                                        placeholder="Ketik nama pelajaran..."
-                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                                </div>
-                                <div>
-                                    <label for="searchSiswa"
-                                        class="block text-sm font-medium text-gray-700 dark:text-white mb-1">
-                                        <i class="fas fa-user-graduate mr-1"></i> Cari Siswa
-                                    </label>
-                                    <input type="text" id="searchSiswa" x-model.debounce.300ms="searchSiswa"
-                                        placeholder="Ketik nama siswa..."
-                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                            <div class="flex-grow max-w-2xl">
+                                <label for="universalSearch"
+                                    class="block text-sm font-medium text-gray-700 dark:text-white mb-1">
+                                    <i class="fas fa-search mr-1"></i> Pencarian Universal
+                                </label>
+                                <div class="relative rounded-md shadow-sm">
+                                    <input type="text" id="universalSearch" x-model.debounce.300ms="universalSearch"
+                                        placeholder="Cari Hari (Senin), Sesi, Mapel, Guru, atau Nama Siswa..."
+                                        class="w-full pl-10 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-search text-gray-400"></i>
+                                    </div>
+                                    <button x-show="universalSearch.length > 0" @click="universalSearch = ''"
+                                        class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer">
+                                        <i class="fas fa-times-circle"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -430,6 +418,19 @@
                                                             $siswaList = $groupedClass['siswa_list'];
                                                             $siswaNames = $siswaList->pluck('name')->implode(', ');
                                                             $siswaIDsString = $siswaList->pluck('id')->implode(',');
+                                                            $searchableText = strtolower(
+                                                                $hari->name .
+                                                                    ' ' .
+                                                                    $sesi->name .
+                                                                    ' ' .
+                                                                    $groupedClass['mapel']->name .
+                                                                    ' ' .
+                                                                    $groupedClass['guru']->name .
+                                                                    ' ' .
+                                                                    $groupedClass['ruang']->name .
+                                                                    ' ' .
+                                                                    $siswaNames,
+                                                            );
                                                         @endphp
 
                                                         <div class="kanban-card group relative bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm p-2.5 mb-2 rounded-lg shadow border-l-4 text-sm cursor-move transition-all duration-200 ease-out hover:shadow-xl hover:-translate-y-1"
@@ -441,12 +442,9 @@
                                                             data-sesi-id="{{ $sesi->id }}"
                                                             data-siswa-ids="[{{ $siswaIDsString }}]"
                                                             :class="{
-                                                                'opacity-30': (searchPelajaran !== '' && !
-                                                                        '{{ strtolower($groupedClass['mapel']->name) }}'
-                                                                        .includes(searchPelajaran.toLowerCase())) ||
-                                                                    (searchSiswa !== '' && !
-                                                                        '{{ strtolower($siswaNames) }}'.includes(
-                                                                            searchSiswa.toLowerCase()))
+                                                                'opacity-30': universalSearch !== '' && !
+                                                                    '{{ $searchableText }}'.includes(universalSearch
+                                                                        .toLowerCase())
                                                             }"
                                                             @click.stop>
 
@@ -982,5 +980,4 @@
             window.saveNewData = saveNewData;
         </script>
     @endpush
-
 </x-app-layout>
