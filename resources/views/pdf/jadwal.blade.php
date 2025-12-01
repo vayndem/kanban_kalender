@@ -11,8 +11,7 @@
 
         body {
             font-family: sans-serif;
-            font-size: 9pt;
-            /* Font diperkecil agar muat */
+            font-size: 9pt; /* Font diperkecil agar muat */
             color: #333;
         }
 
@@ -37,15 +36,12 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed;
-            /* Penting agar kolom rata */
+            table-layout: fixed; /* Penting agar kolom rata */
         }
 
-        th,
-        td {
+        th, td {
             border: 1px solid #666;
-            padding: 3px;
-            /* Padding diperkecil */
+            padding: 3px; /* Padding diperkecil */
             vertical-align: top;
             word-wrap: break-word;
         }
@@ -55,12 +51,12 @@
             text-align: center;
             font-weight: bold;
             font-size: 9pt;
-            height: 25px;
+            height: 35px; /* Tinggi ditambah sedikit untuk tanggal */
+            vertical-align: middle;
         }
 
         .sesi-col {
-            width: 60px;
-            /* Dipersempit */
+            width: 60px; /* Dipersempit */
             text-align: center;
             background-color: #f8f8f8;
             font-weight: bold;
@@ -79,14 +75,12 @@
 
         .mapel {
             font-weight: bold;
-            font-size: 8pt;
-            /* Font isi diperkecil */
+            font-size: 8pt; /* Font isi diperkecil */
             color: #000;
             margin-bottom: 1px;
         }
 
-        .guru,
-        .ruang {
+        .guru, .ruang {
             font-size: 7pt;
             color: #444;
             display: block;
@@ -102,8 +96,7 @@
         }
 
         .tanda-indicator {
-            color: #d97706;
-            /* Warna oranye */
+            color: #d97706; /* Warna oranye */
             font-weight: bold;
             text-decoration: underline;
         }
@@ -139,10 +132,8 @@
             display: inline-block;
             width: 30px;
             height: 30px;
-            background-color: #dbeafe;
-            /* Blue 100 */
-            color: #1e40af;
-            /* Blue 800 */
+            background-color: #dbeafe; /* Blue 100 */
+            color: #1e40af; /* Blue 800 */
             border-radius: 50%;
             text-align: center;
             line-height: 30px;
@@ -163,10 +154,8 @@
         }
 
         .note-item {
-            background-color: #fffbeb;
-            /* Yellow 50 (mirip gambar) */
-            border-left: 4px solid #f59e0b;
-            /* Yellow 500 */
+            background-color: #fffbeb; /* Yellow 50 (mirip gambar) */
+            border-left: 4px solid #f59e0b; /* Yellow 500 */
             padding: 8px;
             margin-bottom: 5px;
             font-size: 9pt;
@@ -198,17 +187,43 @@
     {{-- HALAMAN 1: MATRIX JADWAL --}}
     <div class="header-container">
         <h2>Jadwal Pelajaran</h2>
-        @if ($searchQuery)
+        @if($searchQuery)
             <div class="search-info">Filter: "{{ $searchQuery }}"</div>
         @endif
     </div>
 
     <table>
         <thead>
+            {{-- LOGIKA TANGGAL: Mulai --}}
+            @php
+                $startOfWeek = \Carbon\Carbon::now()->startOfWeek();
+                $dayOffsets = [
+                    'Senin'  => 0,
+                    'Selasa' => 1,
+                    'Rabu'   => 2,
+                    'Kamis'  => 3,
+                    'Jumat'  => 4,
+                    'Sabtu'  => 5,
+                ];
+            @endphp
+            {{-- LOGIKA TANGGAL: Selesai --}}
+
             <tr>
                 <th style="width: 60px;">Waktu</th>
                 @foreach ($haris as $hari)
-                    <th>{{ $hari->name }}</th>
+                    <th>
+                        {{ $hari->name }}
+
+                        {{-- Hitung Tanggal --}}
+                        @php
+                            $offset = $dayOffsets[$hari->name] ?? 0;
+                            $date = $startOfWeek->copy()->addDays($offset);
+                        @endphp
+
+                        <div style="font-size: 7pt; font-weight: normal; margin-top: 2px; color: #555;">
+                            {{ $date->translatedFormat('d F Y') }}
+                        </div>
+                    </th>
                 @endforeach
             </tr>
         </thead>
@@ -227,16 +242,14 @@
                         <td>
                             @if (isset($jadwals[$hari->id][$sesi->id]))
                                 @foreach ($jadwals[$hari->id][$sesi->id] as $groupedClass)
-                                    <div class="card"
-                                        style="border-left: 3px solid {{ $groupedClass['mapel']->border_color ?? '#000' }};">
+                                    <div class="card" style="border-left: 3px solid {{ $groupedClass['mapel']->border_color ?? '#000' }};">
                                         <div class="mapel">{{ $groupedClass['mapel']->name }}</div>
                                         <span class="guru">{{ $groupedClass['guru']->name }}</span>
                                         <span class="ruang">R: {{ $groupedClass['ruang']->name }}</span>
 
                                         <ol class="siswa-list">
                                             @foreach ($groupedClass['siswa_list'] as $siswa)
-                                                <li
-                                                    class="{{ $siswa->tandas && $siswa->tandas->count() > 0 ? 'tanda-indicator' : '' }}">
+                                                <li class="{{ ($siswa->tandas && $siswa->tandas->count() > 0) ? 'tanda-indicator' : '' }}">
                                                     {{ $siswa->name }}
                                                 </li>
                                             @endforeach
@@ -278,7 +291,7 @@
                     </tr>
                 </table>
 
-                @foreach ($siswa->tandas as $tanda)
+                @foreach($siswa->tandas as $tanda)
                     <div class="note-item">
                         <span class="note-content">{{ $tanda->keterangan }}</span>
                         <span class="note-date">
@@ -295,5 +308,4 @@
     </div>
 
 </body>
-
 </html>

@@ -27,7 +27,7 @@
 
                 <div class="flex items-center">
                     <a href="{{ url('/') }}" class="text-xl font-bold text-blue-600 dark:text-blue-400">
-                        E-link Schedule
+                        E-ling Schedule
                     </a>
                 </div>
 

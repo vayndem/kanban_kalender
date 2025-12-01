@@ -11,32 +11,91 @@ class GuruController extends Controller
     public function store(Request $request)
     {
         try {
-            // Validasi: Nama guru wajib dan harus unik di tabel 'gurus'
             $validated = $request->validate([
                 'name' => 'required|string|max:255|unique:gurus,name',
             ]);
 
-            // Simpan data baru
             $guru = Guru::create($validated);
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Guru berhasil ditambahkan.',
-                'data' => $guru
+                'data' => $guru,
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'Validasi gagal.',
+                    'errors' => $e->errors(),
+                ],
+                422,
+            );
+        } catch (\Exception $e) {
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'Gagal menyimpan: ' . $e->getMessage(),
+                ],
+                500,
+            );
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        try {
+            $guru = Guru::findOrFail($id);
+
+            $validated = $request->validate([
+                'name' => 'required|string|max:255|unique:gurus,name,' . $id,
             ]);
 
-        } catch (ValidationException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validasi gagal.',
-                'errors' => $e->errors()
-            ], 422);
+            $guru->update($validated);
 
-        } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal menyimpan: ' . $e->getMessage()
-            ], 500);
+                'status' => 'success',
+                'message' => 'Guru berhasil diperbarui.',
+                'data' => $guru,
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'Validasi gagal.',
+                    'errors' => $e->errors(),
+                ],
+                422,
+            );
+        } catch (\Exception $e) {
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'Gagal memperbarui: ' . $e->getMessage(),
+                ],
+                500,
+            );
+        }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $guru = Guru::findOrFail($id);
+            $guru->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Guru berhasil dihapus.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(
+                [
+                    'status' => 'error',
+                    'message' => 'Gagal menghapus: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 }

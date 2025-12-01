@@ -180,8 +180,9 @@
 
         <div x-show="activeFormTab === 'list'" class="space-y-4">
             <div class="relative">
-                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i
-                        class="fas fa-search"></i></span>
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                    <i class="fas fa-search"></i>
+                </span>
                 <input type="text" x-model="formSearch" placeholder="Cari data..."
                     class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white sm:text-sm">
             </div>
@@ -192,21 +193,46 @@
                     <span>Data</span>
                     <span>Total: <span x-text="getFilteredList().length"></span></span>
                 </div>
+
                 <ul
                     class="divide-y divide-gray-100 dark:divide-gray-700 max-h-60 overflow-y-auto bg-white dark:bg-gray-800">
                     <template x-for="item in getFilteredList()" :key="item.id">
                         <li
-                            class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex justify-between items-center">
-                            <span class="text-sm text-gray-700 dark:text-gray-200 font-medium"
-                                x-text="item.name"></span>
-                            <template x-if="currentForm === 'sesi'">
-                                <span class="text-xs text-gray-400"
-                                    x-text="item.start_time + ' - ' + item.end_time"></span>
-                            </template>
+                            class="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 flex justify-between items-center group">
+                            <div class="flex flex-col">
+                                <span class="text-sm text-gray-700 dark:text-gray-200 font-medium"
+                                    x-text="item.name"></span>
+
+                                <template x-if="currentForm === 'sesi'">
+                                    <span class="text-xs text-gray-400"
+                                        x-text="item.start_time + ' - ' + item.end_time"></span>
+                                </template>
+
+                                <template x-if="currentForm === 'tanda'">
+                                    <span class="text-xs text-gray-400"
+                                        x-text="new Date(item.original_date).toLocaleDateString()"></span>
+                                </template>
+                            </div>
+
+                            <div
+                                class="flex items-center space-x-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+                                <button type="button" @click="editDataItem(item)"
+                                    class="text-blue-500 hover:text-blue-700 p-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                                    title="Edit Data">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </button>
+
+                                <button type="button" @click="deleteDataItem(item.id)"
+                                    class="text-red-500 hover:text-red-700 p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                                    title="Hapus Data">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
                         </li>
                     </template>
+
                     <li x-show="getFilteredList().length === 0" class="px-4 py-6 text-center text-sm text-gray-400">
-                        Tidak ada data.
+                        Tidak ada data ditemukan.
                     </li>
                 </ul>
             </div>
