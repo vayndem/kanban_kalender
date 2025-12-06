@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\JadwalController; // Asumsi: AdminJadwalController di namespace Anda bernama JadwalController
+use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MapelController;
 use App\Http\Controllers\GuruController;
@@ -30,6 +30,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/admin/jadwal/update-kelas', [JadwalController::class, 'updateKelas'])->name('admin.jadwal.updateKelas');
     Route::post('/admin/jadwal/store', [JadwalController::class, 'store'])->name('admin.jadwal.store');
     Route::get('/admin/jadwal/export', [JadwalController::class, 'exportPdf'])->name('admin.jadwal.export');
+    Route::get('/admin/jadwal/generate-text', [JadwalController::class, 'generateTextJadwal'])->name('admin.jadwal.generateText');
 
     // --- MANAJEMEN DATA MASTER (CRUD Lengkap) ---
 

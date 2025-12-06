@@ -297,4 +297,73 @@ class JadwalController extends Controller
 
         return $pdf->download($filename . '.pdf');
     }
+
+    public function generateTextJadwal(Request $request)
+    {
+        $query = Jadwal::with(['siswa', 'mataPelajaran', 'guru', 'sesi', 'hari']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('hari', function ($h) use ($search) {
+                    $h->where('name', 'like', "%{$search}%");
+                })
+                    ->orWhereHas('sesi', function ($s) use ($search) {
+                        $s->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('mataPelajaran', function ($m) use ($search) {
+                        $m->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('guru', function ($g) use ($search) {
+                        $g->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('ruang', function ($r) use ($search) {
+                        $r->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('siswa', function ($st) use ($search) {
+                        $st->where('name', 'like', "%{$search}%")->orWhere('panggilan', 'like', "%{$search}%");
+                    });
+            });
+        }
+        $jadwals = $query->get()->sortBy([['hari_id', 'asc'], ['sesi.start_time', 'asc']]);
+        $header = $request->filled('search') ? ucwords($request->search) : 'Jadwal Lengkap';
+        $textOutput = '*' . $header . "*\n\n";
+
+        $groupedByHari = $jadwals->groupBy('hari.name');
+
+        foreach ($groupedByHari as $hariName => $jadwalsPerHari) {
+            $textOutput .= '🗓️ *' . strtoupper($hariName) . "*\n";
+
+            $groupedBySesi = $jadwalsPerHari->groupBy('sesi.id');
+
+            foreach ($groupedBySesi as $sesiId => $items) {
+                $sesiInfo = $items->first()->sesi;
+                $jamMulai = \Carbon\Carbon::parse($sesiInfo->start_time)->format('H.i');
+                $jamSelesai = \Carbon\Carbon::parse($sesiInfo->end_time)->format('H.i');
+
+                $textOutput .= "\n" . $jamMulai . ' - ' . $jamSelesai . "\n";
+                $groupedByClass = $items->groupBy(function ($item) {
+                    return $item->guru->name . ' - ' . $item->mataPelajaran->name;
+                });
+
+                foreach ($groupedByClass as $key => $classItems) {
+                    $guruName = $classItems->first()->guru->name;
+                    $guruName = str_replace('.', '', $guruName);
+                    $studentNames = $classItems
+                        ->map(function ($j) {
+                            return $j->siswa->panggilan ?? explode(' ', trim($j->siswa->name))[0];
+                        })
+                        ->implode(' ');
+
+                    $textOutput .= $guruName . ' : ' . strtolower($studentNames) . "\n";
+                }
+            }
+            $textOutput .= "\n------------------\n";
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'text' => $textOutput,
+        ]);
+    }
 }
