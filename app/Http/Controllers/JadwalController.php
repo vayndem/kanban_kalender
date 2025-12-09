@@ -207,7 +207,6 @@ class JadwalController extends Controller
 
     public function exportPdf(Request $request)
     {
-        // 1. Query Data Jadwal (Sesuai Filter Search)
         $query = Jadwal::with(['siswa.tandas', 'mataPelajaran', 'guru', 'ruang']);
 
         if ($request->filled('search')) {
@@ -236,16 +235,12 @@ class JadwalController extends Controller
 
         $jadwalsData = $query->get();
 
-        // 2. LOGIKA COMPACT: Filter Hari & Sesi
-        // Ambil ID hari dan sesi yang HANYA muncul di hasil query jadwal
         $activeHariIds = $jadwalsData->pluck('hari_id')->unique()->sort()->values();
         $activeSesiIds = $jadwalsData->pluck('sesi_id')->unique()->sort()->values();
 
-        // Ambil data Master berdasarkan ID yang aktif saja
         $haris = Hari::whereIn('id', $activeHariIds)->orderBy('id')->get();
         $sesis = Sesi::whereIn('id', $activeSesiIds)->orderBy('id')->get();
 
-        // Fallback: Jika kosong (tidak ada jadwal), ambil semua biar tabel tidak error
         if ($haris->isEmpty()) {
             $haris = Hari::orderBy('id')->get();
         }
@@ -253,13 +248,13 @@ class JadwalController extends Controller
             $sesis = Sesi::orderBy('id')->get();
         }
 
-        // 3. Grouping Matrix Jadwal
         $finalJadwals = [];
-        // 4. Koleksi Siswa Bertanda (Untuk Halaman 2)
         $studentsWithNotes = collect();
 
         foreach ($jadwalsData as $jadwal) {
-            // Grouping untuk Matrix
+            $formattedStudentName = $jadwal->siswa->name . ' - ' . $jadwal->siswa->kelas;
+            $jadwal->siswa->formatted_name_class = $formattedStudentName;
+
             $classKey = $jadwal->mata_pelajaran_id . '_' . $jadwal->guru_id . '_' . $jadwal->ruang_id;
             if (!isset($finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey])) {
                 $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey] = [
@@ -271,7 +266,6 @@ class JadwalController extends Controller
             }
             $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey]['siswa_list']->push($jadwal->siswa);
 
-            // Cek Tanda Siswa (Deduplikasi menggunakan ID siswa sebagai key)
             if ($jadwal->siswa->tandas->isNotEmpty()) {
                 if (!$studentsWithNotes->has($jadwal->siswa->id)) {
                     $studentsWithNotes->put($jadwal->siswa->id, $jadwal->siswa);
@@ -279,12 +273,11 @@ class JadwalController extends Controller
             }
         }
 
-        // 5. Generate PDF
         $pdf = Pdf::loadView('pdf.jadwal', [
             'haris' => $haris,
             'sesis' => $sesis,
             'jadwals' => $finalJadwals,
-            'studentsWithNotes' => $studentsWithNotes, // Kirim data halaman 2
+            'studentsWithNotes' => $studentsWithNotes,
             'searchQuery' => $request->search ?? null,
         ]);
 
@@ -300,7 +293,7 @@ class JadwalController extends Controller
 
     public function generateTextJadwal(Request $request)
     {
-        $query = Jadwal::with(['siswa', 'mataPelajaran', 'guru', 'sesi', 'hari']);
+        $query = Jadwal::with(['siswa', 'mataPelajaran', 'guru', 'sesi', 'hari', 'ruang']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -326,7 +319,7 @@ class JadwalController extends Controller
             });
         }
         $jadwals = $query->get()->sortBy([['hari_id', 'asc'], ['sesi.start_time', 'asc']]);
-        $header = $request->filled('search') ? ucwords($request->search) : 'Jadwal Lengkap';
+        $header = $request->filled('search') ? 'Filter: ' . ucwords($request->search) : 'Jadwal Lengkap';
         $textOutput = '*' . $header . "*\n\n";
 
         $groupedByHari = $jadwals->groupBy('hari.name');
@@ -341,24 +334,30 @@ class JadwalController extends Controller
                 $jamMulai = \Carbon\Carbon::parse($sesiInfo->start_time)->format('H.i');
                 $jamSelesai = \Carbon\Carbon::parse($sesiInfo->end_time)->format('H.i');
 
-                $textOutput .= "\n" . $jamMulai . ' - ' . $jamSelesai . "\n";
+                $textOutput .= "\n" . '🕰️ ' . $jamMulai . ' - ' . $jamSelesai . "\n";
                 $groupedByClass = $items->groupBy(function ($item) {
-                    return $item->guru->name . ' - ' . $item->mataPelajaran->name;
+                    return $item->guru->name . ' - ' . $item->mataPelajaran->name . ' - ' . $item->ruang->name;
                 });
 
                 foreach ($groupedByClass as $key => $classItems) {
                     $guruName = $classItems->first()->guru->name;
-                    $guruName = str_replace('.', '', $guruName);
-                    $studentNames = $classItems
-                        ->map(function ($j) {
-                            return $j->siswa->panggilan ?? explode(' ', trim($j->siswa->name))[0];
-                        })
-                        ->implode(' ');
+                    $ruangName = $classItems->first()->ruang->name;
+                    $mataPelajaranName = $classItems->first()->mataPelajaran->name;
 
-                    $textOutput .= $guruName . ' : ' . strtolower($studentNames) . "\n";
+                    $studentDetails = $classItems
+                        ->map(function ($j) {
+                            $displayName = $j->siswa->panggilan ?? explode(' ', trim($j->siswa->name))[0];
+                            return $displayName . ' - ' . $j->siswa->kelas;
+                        })
+                        ->implode(', ');
+
+                    $textOutput .= "\n";
+                    $textOutput .= '📚 *' . $mataPelajaranName . "*\n";
+                    $textOutput .= '👩‍🏫 Guru: ' . $guruName . "\n";
+                    $textOutput .= '🏠 Ruang: ' . $ruangName . "\n";
+                    $textOutput .= '🧑‍🎓 Siswa: ' . $studentDetails . "\n";
                 }
             }
-            $textOutput .= "\n------------------\n";
         }
 
         return response()->json([

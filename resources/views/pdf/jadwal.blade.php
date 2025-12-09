@@ -250,7 +250,7 @@
                                         <ol class="siswa-list">
                                             @foreach ($groupedClass['siswa_list'] as $siswa)
                                                 <li class="{{ ($siswa->tandas && $siswa->tandas->count() > 0) ? 'tanda-indicator' : '' }}">
-                                                    {{ $siswa->name }}
+                                                    {{ $siswa->formatted_name_class }}
                                                 </li>
                                             @endforeach
                                         </ol>

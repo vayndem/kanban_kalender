@@ -225,9 +225,11 @@
                                                             data-hari-id="{{ $hari->id }}"
                                                             data-sesi-id="{{ $sesi->id }}"
                                                             data-siswa-ids="[{{ $siswaIDsString }}]"
-                                                            :class="{ 'opacity-30': universalSearch !== '' && !
+                                                            :class="{
+                                                                'hidden': universalSearch !== '' && !
                                                                     '{{ $searchableText }}'.includes(universalSearch
-                                                                        .toLowerCase()) }"
+                                                                        .toLowerCase())
+                                                            }"
                                                             @click.stop>
 
                                                             <button
@@ -271,7 +273,7 @@
                                                                     @foreach ($groupedClass['siswa_list'] as $siswa)
                                                                         <li
                                                                             class="{{ $siswa->tandas->isNotEmpty() ? 'text-yellow-600 dark:text-yellow-400 font-bold' : '' }}">
-                                                                            {{ $siswa->panggilan ?? $siswa->name }} -
+                                                                            {{ $siswa->name }} -
                                                                             {{ $siswa->kelas }}
                                                                         </li>
                                                                     @endforeach
@@ -370,11 +372,14 @@
                                                     <template x-for="siswa in selectedSiswas()" :key="siswa.id">
                                                         <li class="flex justify-between items-center text-sm p-3 rounded cursor-pointer transition-all duration-200 border border-transparent"
                                                             @click="viewStudentDetail(siswa)"
-                                                            :class="{ 'bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-500': selectedStudentDetail &&
+                                                            :class="{
+                                                                'bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-500': selectedStudentDetail &&
                                                                     selectedStudentDetail.id === siswa
-                                                                    .id, 'hover:bg-gray-100 dark:hover:bg-gray-700': !
+                                                                    .id,
+                                                                'hover:bg-gray-100 dark:hover:bg-gray-700': !
                                                                     selectedStudentDetail || selectedStudentDetail
-                                                                    .id !== siswa.id }">
+                                                                    .id !== siswa.id
+                                                            }">
                                                             <div class="flex items-center">
                                                                 <span x-text="siswa.name"
                                                                     :class="hasTanda(siswa) ?
@@ -1035,15 +1040,15 @@
                                     .then(data => {
                                         if (data.status === 'success') {
                                             navigator.clipboard.writeText(data.text).then(
-                                        () => {
-                                                Swal.fire({
-                                                    icon: 'success',
-                                                    title: 'Berhasil Disalin!',
-                                                    text: 'Jadwal format WhatsApp sudah disalin ke clipboard.',
-                                                    timer: 2000,
-                                                    showConfirmButton: false
-                                                });
-                                            }).catch(err => {
+                                                () => {
+                                                    Swal.fire({
+                                                        icon: 'success',
+                                                        title: 'Berhasil Disalin!',
+                                                        text: 'Jadwal format WhatsApp sudah disalin ke clipboard.',
+                                                        timer: 2000,
+                                                        showConfirmButton: false
+                                                    });
+                                                }).catch(err => {
                                                 console.error('Clipboard Error:', err);
                                                 Swal.fire('Warning',
                                                     'Gagal menyalin otomatis. Izin browser mungkin ditolak.',
@@ -1051,7 +1056,7 @@
                                             });
                                         } else {
                                             Swal.fire('Error', 'Gagal memproses data.',
-                                            'error');
+                                                'error');
                                         }
                                     })
                                     .catch(err => {
