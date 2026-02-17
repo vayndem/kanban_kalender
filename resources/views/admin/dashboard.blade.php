@@ -14,7 +14,6 @@
                 allSiswas: {{ $allSiswas->toJson() }},
                 allHaris: {{ $haris->toJson() }},
                 allSesis: {{ $sesis->sortBy('start_time')->values()->toJson() }},
-                {{-- FITUR BARU: SORT SESI UNTUK DATA JS --}}
                 csrfToken: '{{ csrf_token() }}',
                 routes: {
                     mapel: { destroy: '{{ route('admin.mapel.destroy', ':id') }}', store: '{{ route('admin.mapel.store') }}', update: '{{ route('admin.mapel.update', ':id') }}' },
@@ -123,17 +122,20 @@
 
                             <div class="flex-grow max-w-2xl">
                                 <label for="universalSearch"
-                                    class="block text-sm font-medium text-gray-700 dark:text-white mb-1"><i
-                                        class="fas fa-search mr-1"></i> Pencarian Universal</label>
+                                    class="block text-sm font-medium text-gray-700 dark:text-white mb-1">
+                                    <i class="fas fa-search mr-1"></i> Pencarian Universal
+                                </label>
                                 <div class="relative rounded-md shadow-sm">
                                     <input type="text" id="universalSearch" x-model.debounce.300ms="universalSearch"
                                         placeholder="Cari Hari, Sesi, Mapel, Guru, atau Nama Siswa..."
                                         class="w-full pl-10 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i
-                                            class="fas fa-search text-gray-400"></i></div>
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-search text-gray-400"></i>
+                                    </div>
                                     <button x-show="universalSearch.length > 0" @click="universalSearch = ''"
-                                        class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"><i
-                                            class="fas fa-times-circle"></i></button>
+                                        class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer">
+                                        <i class="fas fa-times-circle"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -145,7 +147,8 @@
                                 <tr>
                                     <th
                                         class="border border-gray-300 dark:border-gray-600 p-3 text-center uppercase text-xs tracking-wider font-semibold text-gray-600 dark:text-white w-24 lg:w-32">
-                                        Sesi</th>
+                                        Sesi
+                                    </th>
 
                                     @php
                                         $startOfWeek = \Carbon\Carbon::now()->startOfWeek();
@@ -167,14 +170,14 @@
                                                 $offset = $dayOffsets[$hari->name] ?? $index;
                                                 $date = $startOfWeek->copy()->addDays($offset);
                                             @endphp
-                                            <span
-                                                class="block mt-1 text-[10px] font-normal ">{{ $date->translatedFormat('d F Y') }}</span>
+                                            <span class="block mt-1 text-[10px] font-normal ">
+                                                {{ $date->translatedFormat('d F Y') }}
+                                            </span>
                                         </th>
                                     @endforeach
                                 </tr>
                             </thead>
                             <tbody class="bg-white dark:bg-gray-800">
-                                {{-- FITUR BARU: DI SINI SESI DIURUTKAN BERDASARKAN START_TIME --}}
                                 @foreach ($sesis->sortBy('start_time') as $sesi)
                                     <tr class="even:bg-gray-50/50 dark:even:bg-gray-800/60">
                                         <td
@@ -213,15 +216,11 @@
                                                                     ' ' .
                                                                     $siswaNames,
                                                             );
-
-                                                            // FITUR BARU: JIKA SISWA < 4, PAKAI BG LEBIH TERANG (bg-white/100)
-                                                            $cardBgClass =
-                                                                $siswaCount < 4
-                                                                    ? 'bg-white/100 dark:bg-gray-600/100'
-                                                                    : 'bg-white/90 dark:bg-gray-700/90';
+                                                            $cardBgColor =
+                                                                $siswaCount < 4 ? 'bg-white/100' : 'bg-white/90';
                                                         @endphp
 
-                                                        <div class="kanban-card group relative {{ $cardBgClass }} backdrop-blur-sm p-2.5 mb-2 rounded-lg shadow border-l-4 text-sm cursor-move transition-all duration-200 ease-out hover:shadow-xl hover:-translate-y-1"
+                                                        <div class="kanban-card group relative {{ $cardBgColor }} dark:bg-gray-700/90 backdrop-blur-sm p-2.5 mb-2 rounded-lg shadow border-l-4 text-sm cursor-move transition-all duration-200 ease-out hover:shadow-xl hover:-translate-y-1"
                                                             style="border-left-color: {{ $groupedClass['mapel']->border_color }};"
                                                             data-mapel-id="{{ $groupedClass['mapel']->id }}"
                                                             data-guru-id="{{ $groupedClass['guru']->id }}"
@@ -251,30 +250,34 @@
                                                                     old_sesi_id: parseInt(card.dataset.sesiId)
                                                                 };
                                                                 selectedStudentDetail = null;
-                                                                $nextTick(() => { showModal = true; });"
+                                                                $nextTick(() => { showModal = true; });
+                                                            "
                                                                 class="absolute top-1 right-1 p-1.5 rounded-full bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-white hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-500 dark:hover:text-white transition-all duration-200 opacity-0 group-hover:opacity-100">
                                                                 <i class="fas fa-pencil-alt fa-xs"></i>
                                                             </button>
 
                                                             <strong
-                                                                class="block font-bold text-gray-900 dark:text-white truncate">{{ $groupedClass['mapel']->name }}</strong>
+                                                                class="block font-bold text-gray-900 dark:text-white truncate">
+                                                                {{ $groupedClass['mapel']->name }}
+                                                            </strong>
+                                                            <span class="block text-gray-600 dark:text-gray-200 mt-1">
+                                                                {{ $groupedClass['guru']->name }}
+                                                            </span>
                                                             <span
-                                                                class="block text-gray-600 dark:text-gray-200 mt-1">{{ $groupedClass['guru']->name }}</span>
-                                                            <span
-                                                                class="block text-gray-500 dark:text-gray-300 text-xs mt-1">Ruang:
-                                                                {{ $groupedClass['ruang']->name }}</span>
+                                                                class="block text-gray-500 dark:text-gray-300 text-xs mt-1">
+                                                                Ruang: {{ $groupedClass['ruang']->name }}
+                                                            </span>
                                                             <div
                                                                 class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
                                                                 <span
-                                                                    class="block text-gray-500 dark:text-gray-300 text-xs font-semibold">Siswa
-                                                                    ({{ $siswaCount }})
-                                                                    :</span>
+                                                                    class="block text-gray-500 dark:text-gray-300 text-xs font-semibold">Siswa:</span>
                                                                 <ol
                                                                     class="list-decimal list-inside text-gray-500 dark:text-gray-200 text-xs pl-1">
-                                                                    @foreach ($siswaList as $siswa)
+                                                                    @foreach ($groupedClass['siswa_list'] as $siswa)
                                                                         <li
                                                                             class="{{ $siswa->tandas->isNotEmpty() ? 'text-yellow-600 dark:text-yellow-400 font-bold' : '' }}">
-                                                                            {{ $siswa->name }} - {{ $siswa->kelas }}
+                                                                            {{ $siswa->name }} -
+                                                                            {{ $siswa->kelas }}
                                                                         </li>
                                                                     @endforeach
                                                                 </ol>
@@ -291,190 +294,354 @@
                     </div>
                 </div>
 
-                <div x-show="activeTab === 'berita'" style="display: none;">
+                <div x-show="activeTab === 'berita'" x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform -translate-y-4"
+                    x-transition:enter-end="opacity-100 transform translate-y-0" style="display: none;">
                     @include('admin.card')
                 </div>
 
-                {{-- MODAL EDIT JADWAL - TETAP ADA SEMUANYA --}}
-                <div x-show="showModal"
+                <div x-show="showModal" x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                    x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
                     style="display: none;">
+
                     <div @click="showModal = false" class="absolute inset-0"></div>
+
                     <div @click.stop
-                        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-5xl overflow-hidden relative">
+                        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-5xl overflow-hidden relative"
+                        x-show="showModal" x-transition:enter="ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave="ease-in duration-200"
+                        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+
                         <div
                             class="flex justify-between items-center p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Jadwal & Catatan Siswa
                             </h3>
                             <button @click="showModal = false"
-                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><i
-                                    class="fas fa-times"></i></button>
+                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
+
                         <form id="editJadwalForm">
                             <div class="flex flex-col md:flex-row h-[70vh]">
                                 <div class="w-full md:w-2/3 p-6 overflow-y-auto border-r dark:border-gray-700">
                                     <div class="space-y-4">
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700 dark:text-white">Mata
+                                            <label for="editMapel"
+                                                class="block text-sm font-medium text-gray-700 dark:text-white">Mata
                                                 Pelajaran</label>
-                                            <select x-model="editingJadwal.mapel_id"
-                                                class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:text-white">
+                                            <select id="editMapel" x-model="editingJadwal.mapel_id"
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
                                                 <template x-for="mapel in allMapels" :key="mapel.id">
                                                     <option :value="mapel.id" x-text="mapel.name"></option>
                                                 </template>
                                             </select>
                                         </div>
+
                                         <div>
-                                            <label
+                                            <label for="editGuru"
                                                 class="block text-sm font-medium text-gray-700 dark:text-white">Guru</label>
-                                            <select x-model="editingJadwal.guru_id"
-                                                class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:text-white">
+                                            <select id="editGuru" x-model="editingJadwal.guru_id"
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
                                                 <template x-for="guru in allGurus" :key="guru.id">
                                                     <option :value="guru.id" x-text="guru.name"></option>
                                                 </template>
                                             </select>
                                         </div>
+
                                         <div>
-                                            <label
+                                            <label for="editRuang"
                                                 class="block text-sm font-medium text-gray-700 dark:text-white">Ruang</label>
-                                            <select x-model="editingJadwal.ruang_id"
-                                                class="mt-1 block w-full rounded-md border-gray-300 dark:bg-gray-700 dark:text-white">
+                                            <select id="editRuang" x-model="editingJadwal.ruang_id"
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
                                                 <template x-for="ruang in allRuangs" :key="ruang.id">
                                                     <option :value="ruang.id" x-text="ruang.name"></option>
                                                 </template>
                                             </select>
                                         </div>
+
                                         <div>
                                             <label
                                                 class="block text-sm font-medium text-gray-700 dark:text-white mb-2">Siswa
-                                                Terpilih</label>
+                                                Terpilih (Klik Nama untuk Lihat Catatan)</label>
                                             <div class="p-1 min-h-[100px]">
                                                 <ul class="space-y-2">
                                                     <template x-for="siswa in selectedSiswas()" :key="siswa.id">
                                                         <li class="flex justify-between items-center text-sm p-3 rounded cursor-pointer transition-all duration-200 border border-transparent"
                                                             @click="viewStudentDetail(siswa)"
-                                                            :class="selectedStudentDetail && selectedStudentDetail.id === siswa
-                                                                .id ?
-                                                                'bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-500' :
-                                                                'hover:bg-gray-100 dark:hover:bg-gray-700'">
-                                                            <span x-text="siswa.name"
-                                                                :class="hasTanda(siswa) ?
-                                                                    'text-yellow-600 dark:text-yellow-400 font-bold' :
-                                                                    'font-medium text-gray-800 dark:text-white'"></span>
+                                                            :class="{
+                                                                'bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-500': selectedStudentDetail &&
+                                                                    selectedStudentDetail.id === siswa
+                                                                    .id,
+                                                                'hover:bg-gray-100 dark:hover:bg-gray-700': !
+                                                                    selectedStudentDetail || selectedStudentDetail
+                                                                    .id !== siswa.id
+                                                            }">
+                                                            <div class="flex items-center">
+                                                                <span x-text="siswa.name"
+                                                                    :class="hasTanda(siswa) ?
+                                                                        'text-yellow-600 dark:text-yellow-400 font-bold' :
+                                                                        'font-medium text-gray-800 dark:text-white'"></span>
+                                                            </div>
                                                             <button @click.stop.prevent="removeSiswa(siswa.id)"
-                                                                class="text-red-500 text-xs">Hapus</button>
+                                                                type="button"
+                                                                class="font-medium text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs ml-3 transition-colors hover:underline">Hapus</button>
                                                         </li>
                                                     </template>
+                                                    <li x-show="editingJadwal.siswa_ids && editingJadwal.siswa_ids.length === 0"
+                                                        class="text-sm text-gray-400 text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+                                                        <i class="fas fa-users mb-2 text-2xl"></i><br> Belum ada siswa
+                                                        terpilih
+                                                    </li>
                                                 </ul>
                                             </div>
-                                            <div class="relative mt-4">
+
+                                            <label
+                                                class="block text-sm font-medium text-gray-700 dark:text-white mt-6">Cari
+                                                & Tambah Siswa</label>
+                                            <div class="relative mt-1">
+                                                <div
+                                                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                    <i class="fas fa-search text-gray-400"></i>
+                                                </div>
                                                 <input type="text" x-model.debounce.300ms="searchModalSiswa"
-                                                    placeholder="Cari & Tambah Siswa..."
-                                                    class="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:text-white">
-                                                <div x-show="filteredAvailableSiswas().length > 0"
-                                                    class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border rounded shadow-lg max-h-48 overflow-y-auto">
+                                                    @keydown.escape.prevent="searchModalSiswa = ''"
+                                                    placeholder="Ketik nama siswa untuk menambah..."
+                                                    class="pl-10 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                                <div x-show="filteredAvailableSiswas().length > 0" x-transition
+                                                    @click.away="searchModalSiswa = ''"
+                                                    class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
                                                     <template x-for="siswa in filteredAvailableSiswas()"
                                                         :key="siswa.id">
-                                                        <button @click.prevent="addSiswa(siswa.id)"
-                                                            class="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white"
-                                                            x-text="siswa.name"></button>
+                                                        <button @click.prevent="addSiswa(siswa.id)" type="button"
+                                                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600">
+                                                            <span x-text="siswa.name"></span>
+                                                        </button>
                                                     </template>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="w-full md:w-1/3 bg-gray-50 dark:bg-gray-900 p-6 flex flex-col">
-                                    <h4 class="font-semibold dark:text-white mb-4"><i
-                                            class="fas fa-info-circle mr-1 text-blue-500"></i> Detail Siswa</h4>
-                                    <template x-if="selectedStudentDetail">
-                                        <div class="overflow-y-auto">
-                                            <p class="font-bold text-lg dark:text-white"
-                                                x-text="selectedStudentDetail.name"></p>
-                                            <div class="mt-4 space-y-3">
-                                                <template x-for="tanda in selectedStudentDetail.tandas"
-                                                    :key="tanda.id">
+
+                                <div
+                                    class="w-full md:w-1/3 bg-gray-50 dark:bg-gray-900 border-l dark:border-gray-700 flex flex-col">
+                                    <div class="p-4 border-b dark:border-gray-700 bg-white dark:bg-gray-800">
+                                        <h4 class="font-semibold text-gray-800 dark:text-white"><i
+                                                class="fas fa-info-circle mr-1 text-blue-500"></i> Detail Siswa</h4>
+                                    </div>
+                                    <div class="p-6 overflow-y-auto flex-grow">
+                                        <template x-if="selectedStudentDetail">
+                                            <div class="animate-fadeIn">
+                                                <div class="mb-4 text-center">
                                                     <div
-                                                        class="relative bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-3 rounded shadow-sm">
-                                                        <p class="text-sm dark:text-white" x-text="tanda.keterangan">
-                                                        </p>
-                                                        <button type="button"
-                                                            @click.stop="markTandaForDeletion(tanda.id, selectedStudentDetail.id)"
-                                                            class="absolute top-1 right-1 text-red-500"><i
-                                                                class="fas fa-times"></i></button>
+                                                        class="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-3">
+                                                        <span
+                                                            class="text-2xl font-bold text-blue-600 dark:text-blue-300"
+                                                            x-text="selectedStudentDetail.name.charAt(0)"></span>
                                                     </div>
-                                                </template>
+                                                    <h3 class="text-lg font-bold text-gray-900 dark:text-white"
+                                                        x-text="selectedStudentDetail.name"></h3>
+                                                    <span class="text-xs text-gray-500 dark:text-gray-300">Siswa
+                                                        Terdaftar</span>
+                                                </div>
+                                                <div class="mt-6">
+                                                    <h5
+                                                        class="text-xs font-bold uppercase text-gray-500 dark:text-gray-300 tracking-wider mb-3">
+                                                        Catatan / Tanda</h5>
+                                                    <template x-if="hasTanda(selectedStudentDetail)">
+                                                        <ul class="space-y-3">
+                                                            <template x-for="tanda in selectedStudentDetail.tandas"
+                                                                :key="tanda.id">
+                                                                <li
+                                                                    class="relative bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-3 rounded shadow-sm text-sm text-gray-800 dark:text-white mb-2">
+                                                                    <div class="pr-8">
+                                                                        <p x-text="tanda.keterangan"
+                                                                            class="break-words"></p>
+                                                                        <span class="text-xs text-gray-400 mt-1 block"
+                                                                            x-text="new Date(tanda.created_at).toLocaleDateString()"></span>
+                                                                    </div>
+                                                                    <button type="button"
+                                                                        @click.stop="markTandaForDeletion(tanda.id, selectedStudentDetail.id)"
+                                                                        class="absolute top-2 right-2 text-red-500 hover:text-red-700 hover:bg-red-100 p-1.5 rounded-full transition-colors z-10"
+                                                                        title="Hapus Tanda"><i
+                                                                            class="fas fa-times fa-lg"></i></button>
+                                                                </li>
+                                                            </template>
+                                                        </ul>
+                                                    </template>
+                                                    <template x-if="!hasTanda(selectedStudentDetail)">
+                                                        <div
+                                                            class="text-center py-6 bg-white dark:bg-gray-800 rounded border border-gray-100 dark:border-gray-700">
+                                                            <i
+                                                                class="fas fa-check-circle text-green-400 text-3xl mb-2"></i>
+                                                            <p class="text-sm text-gray-500 dark:text-gray-400">Tidak
+                                                                ada catatan khusus untuk siswa ini.</p>
+                                                        </div>
+                                                    </template>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </template>
+                                        </template>
+                                        <template x-if="!selectedStudentDetail">
+                                            <div
+                                                class="h-full flex flex-col items-center justify-center text-center text-gray-400 p-4">
+                                                <i class="fas fa-mouse-pointer text-4xl mb-4 opacity-50"></i>
+                                                <p class="text-sm">Klik nama siswa di daftar sebelah kiri untuk melihat
+                                                    detail catatan dan informasi lainnya.</p>
+                                            </div>
+                                        </template>
+                                    </div>
                                 </div>
                             </div>
+
                             <div
                                 class="px-6 py-4 bg-white dark:bg-gray-800 border-t dark:border-gray-700 flex justify-end space-x-3">
                                 <button type="button" @click="showModal = false"
-                                    class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded dark:bg-gray-600 dark:text-white">Batal</button>
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:hover:bg-gray-500">Batal</button>
                                 <button type="button" id="saveJadwalButton" @click.prevent="saveJadwal"
-                                    class="px-4 py-2 text-sm text-white bg-blue-600 rounded">Simpan Perubahan</button>
+                                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Simpan
+                                    Perubahan</button>
                             </div>
                         </form>
                     </div>
                 </div>
 
-                {{-- MODAL TAMBAH JADWAL BARU - TETAP ADA --}}
-                <div x-show="showAddJadwalModal"
+                <div x-show="showAddJadwalModal" x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                    x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
                     style="display: none;">
+
                     <div @click="showAddJadwalModal = false" class="absolute inset-0"></div>
+
                     <div @click.stop
-                        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg overflow-hidden relative">
+                        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg overflow-hidden relative"
+                        x-show="showAddJadwalModal" x-transition:enter="ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave="ease-in duration-200"
+                        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+
                         <div class="flex justify-between items-center p-4 border-b dark:border-gray-700">
-                            <h3 class="text-lg font-semibold dark:text-white">Tambah Jadwal Baru</h3><button
-                                @click="showAddJadwalModal = false" class="text-gray-400"><i
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Tambah Jadwal Baru</h3>
+                            <button @click="showAddJadwalModal = false"
+                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><i
                                     class="fas fa-times"></i></button>
                         </div>
+
                         <form @submit.prevent="saveNewJadwal">
-                            <div class="p-6 space-y-4">
-                                <div class="bg-blue-50 p-3 rounded text-sm text-blue-800">
-                                    Slot: <span x-text="allHaris.find(h => h.id === newJadwal.hari_id)?.name"></span>,
-                                    <span x-text="allSesis.find(s => s.id === newJadwal.sesi_id)?.name"></span>
+                            <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                                <div
+                                    class="bg-blue-50 dark:bg-blue-900/50 p-3 rounded-md border border-blue-200 dark:border-blue-800">
+                                    <p class="text-sm font-semibold text-blue-800 dark:text-blue-200">
+                                        Slot Terpilih:
+                                        <span
+                                            x-text="allHaris.find(h => h.id === newJadwal.hari_id)?.name || '...'"></span>,
+                                        <span
+                                            x-text="allSesis.find(s => s.id === newJadwal.sesi_id)?.name || '...'"></span>
+                                    </p>
                                 </div>
-                                <div><label class="block text-sm font-medium dark:text-white">Mata
-                                        Pelajaran</label><select x-model.number="newJadwal.mata_pelajaran_id"
-                                        class="w-full mt-1 border-gray-300 rounded-md dark:bg-gray-700 dark:text-white"><template
-                                            x-for="mapel in allMapels" :key="mapel.id">
+
+                                <div>
+                                    <label for="newMapel"
+                                        class="block text-sm font-medium text-gray-700 dark:text-white">Mata
+                                        Pelajaran</label>
+                                    <select id="newMapel" x-model.number="newJadwal.mata_pelajaran_id"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
+                                        <template x-for="mapel in allMapels" :key="mapel.id">
                                             <option :value="mapel.id" x-text="mapel.name"></option>
-                                        </template></select></div>
-                                <div><label class="block text-sm font-medium dark:text-white">Guru</label><select
-                                        x-model.number="newJadwal.guru_id"
-                                        class="w-full mt-1 border-gray-300 rounded-md dark:bg-gray-700 dark:text-white"><template
-                                            x-for="guru in allGurus" :key="guru.id">
+                                        </template>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="newGuru"
+                                        class="block text-sm font-medium text-gray-700 dark:text-white">Guru</label>
+                                    <select id="newGuru" x-model.number="newJadwal.guru_id"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
+                                        <template x-for="guru in allGurus" :key="guru.id">
                                             <option :value="guru.id" x-text="guru.name"></option>
-                                        </template></select></div>
-                                <div><label class="block text-sm font-medium dark:text-white">Ruang</label><select
-                                        x-model.number="newJadwal.ruang_id"
-                                        class="w-full mt-1 border-gray-300 rounded-md dark:bg-gray-700 dark:text-white"><template
-                                            x-for="ruang in allRuangs" :key="ruang.id">
+                                        </template>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="newRuang"
+                                        class="block text-sm font-medium text-gray-700 dark:text-white">Ruang</label>
+                                    <select id="newRuang" x-model.number="newJadwal.ruang_id"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
+                                        <template x-for="ruang in allRuangs" :key="ruang.id">
                                             <option :value="ruang.id" x-text="ruang.name"></option>
-                                        </template></select></div>
-                                <div><label class="block text-sm font-medium dark:text-white">Tambah Siswa</label>
-                                    <div class="min-h-[60px] border p-2 rounded mb-2 dark:bg-gray-900"><template
-                                            x-for="siswa in selectedSiswas()" :key="siswa.id">
-                                            <div
-                                                class="flex justify-between items-center text-xs p-1 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white">
-                                                <span x-text="siswa.name"></span><button
-                                                    @click.prevent="removeSiswa(siswa.id)"
-                                                    class="text-red-500">X</button>
-                                            </div>
-                                        </template></div><input type="text"
-                                        x-model.debounce.300ms="searchModalSiswa" placeholder="Cari..."
-                                        class="w-full border-gray-300 rounded-md dark:bg-gray-700 dark:text-white">
+                                        </template>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-white">Siswa
+                                        Terpilih</label>
+                                    <div
+                                        class="mt-2 p-3 border dark:border-gray-600 rounded-md min-h-[80px] bg-gray-50 dark:bg-gray-900/50 max-h-40 overflow-y-auto">
+                                        <ul class="space-y-2">
+                                            <template x-for="siswa in selectedSiswas()" :key="siswa.id">
+                                                <li
+                                                    class="flex justify-between items-center text-sm py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                    <div class="flex items-center cursor-pointer"
+                                                        :class="hasTanda(siswa) ?
+                                                            'text-yellow-600 dark:text-yellow-400 font-bold' :
+                                                            'text-gray-800 dark:text-white'">
+                                                        <span x-text="siswa.name"></span>
+                                                        <template x-if="hasTanda(siswa)">
+                                                            <i
+                                                                class="fas fa-exclamation-circle ml-2 text-yellow-500 animate-pulse"></i>
+                                                        </template>
+                                                    </div>
+                                                    <button @click.prevent="removeSiswa(siswa.id)" type="button"
+                                                        class="font-medium text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs ml-3">Hapus</button>
+                                                </li>
+                                            </template>
+                                            <li x-show="selectedSiswas().length === 0"
+                                                class="text-sm text-gray-400 text-center py-2">Belum ada siswa terpilih
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-white mt-3">Cari &
+                                        Tambah Siswa</label>
+                                    <div class="relative">
+                                        <input type="text" x-model.debounce.300ms="searchModalSiswa"
+                                            @keydown.escape.prevent="searchModalSiswa = ''"
+                                            placeholder="Ketik nama siswa untuk menambah..."
+                                            class="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                        <div x-show="filteredAvailableSiswas().length > 0" x-transition
+                                            @click.away="searchModalSiswa = ''"
+                                            class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                            <template x-for="siswa in filteredAvailableSiswas()"
+                                                :key="siswa.id">
+                                                <button @click.prevent="addSiswa(siswa.id)" type="button"
+                                                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600">
+                                                    <span x-text="siswa.name"></span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 flex justify-end space-x-3"><button
-                                    type="button" @click="showAddJadwalModal = false"
-                                    class="px-4 py-2 text-sm text-gray-700">Batal</button><button type="submit"
-                                    id="saveNewJadwalButton"
-                                    class="px-4 py-2 text-sm text-white bg-green-600 rounded">Simpan</button></div>
+
+                            <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 flex justify-end space-x-3">
+                                <button type="button" @click="showAddJadwalModal = false"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:hover:bg-gray-500">Batal</button>
+                                <button type="submit" id="saveNewJadwalButton"
+                                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Simpan
+                                    Jadwal Baru</button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -500,6 +667,7 @@
                         ruang_id: null,
                         siswa_ids: []
                     },
+
                     allMapels: data.allMapels,
                     allGurus: data.allGurus,
                     allRuangs: data.allRuangs,
@@ -508,6 +676,7 @@
                     allSesis: data.allSesis,
                     routes: data.routes,
                     csrfToken: data.csrfToken,
+
                     searchModalSiswa: '',
                     showAddMenu: false,
                     currentForm: '',
@@ -516,76 +685,270 @@
                     activeFormTab: 'input',
                     formSearch: '',
 
-                    // SEMUA LOGIKA ASLI KAMU (Detail, Sortable, Export, dll)
+                    getFilteredList() {
+                        const search = this.formSearch.toLowerCase();
+                        let source = [];
+
+                        switch (this.currentForm) {
+                            case 'mapel':
+                                source = this.allMapels;
+                                break;
+                            case 'guru':
+                                source = this.allGurus;
+                                break;
+                            case 'ruang':
+                                source = this.allRuangs;
+                                break;
+                            case 'sesi':
+                                source = this.allSesis;
+                                break;
+                            case 'siswa':
+                                source = this.allSiswas.map(s => ({
+                                    ...s,
+                                    name: (s.panggilan || s.name) + ' - ' + (s.kelas || '-')
+                                }));
+                                break;
+                            case 'tanda':
+                                let flatTandas = [];
+                                this.allSiswas.forEach(siswa => {
+                                    if (siswa.tandas && siswa.tandas.length > 0) {
+                                        siswa.tandas.forEach(tanda => {
+                                            flatTandas.push({
+                                                id: tanda.id,
+                                                name: (siswa.panggilan || siswa
+                                                        .name) + ' - ' + (siswa
+                                                        .kelas || '-') + ' : ' +
+                                                    tanda.keterangan,
+                                                original_date: tanda.created_at,
+                                                siswa_id: siswa.id,
+                                                keterangan: tanda.keterangan
+                                            });
+                                        });
+                                    }
+                                });
+                                source = flatTandas;
+                                break;
+                        }
+
+                        if (search === '') return source;
+                        return source.filter(item => item.name.toLowerCase().includes(search));
+                    },
+
+                    editDataItem(item) {
+                        this.activeFormTab = 'input';
+                        this.formData = JSON.parse(JSON.stringify(item));
+                        if (this.currentForm === 'tanda') {
+                            this.formData.keterangan = item.keterangan || item.name.split(' : ')[1];
+                        }
+                    },
+
+                    deleteDataItem(id) {
+                        Swal.fire({
+                            title: 'Hapus Data?',
+                            text: 'Data yang dihapus tidak dapat dikembalikan!',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#3085d6',
+                            confirmButtonText: 'Ya, Hapus!',
+                            cancelButtonText: 'Batal'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                let endpoint = this.routes[this.currentForm].destroy.replace(':id',
+                                    id);
+
+                                fetch(endpoint, {
+                                        method: 'DELETE',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRF-TOKEN': this.csrfToken
+                                        }
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.status === 'success') {
+                                            Swal.fire('Terhapus!', 'Data berhasil dihapus.',
+                                                    'success')
+                                                .then(() => window.location.reload());
+                                        } else {
+                                            Swal.fire('Gagal!', data.message ||
+                                                'Terjadi kesalahan.', 'error');
+                                        }
+                                    })
+                                    .catch(error => {
+                                        Swal.fire('Error!', 'Gagal menghubungi server.',
+                                            'error');
+                                    });
+                            }
+                        });
+                    },
+
+                    saveNewData() {
+                        const data = this.formData;
+                        const saveButton = document.getElementById('saveNewDataButton');
+                        saveButton.disabled = true;
+                        saveButton.innerHTML = 'Menyimpan...';
+
+                        const isEdit = data.id ? true : false;
+                        let endpoint = '';
+                        let method = 'POST';
+
+                        if (isEdit) {
+                            endpoint = this.routes[this.currentForm].update.replace(':id', data.id);
+                            method = 'PUT';
+                            data._method = 'PUT';
+                        } else {
+                            endpoint = this.routes[this.currentForm].store;
+                        }
+
+                        fetch(endpoint, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': this.csrfToken
+                                },
+                                body: JSON.stringify(data)
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    alert('Berhasil menyimpan data! Halaman akan dimuat ulang.');
+                                    window.location.reload();
+                                } else {
+                                    alert('Gagal menyimpan: ' + (data.message ||
+                                        'Terjadi kesalahan server.'));
+                                }
+                            })
+                            .catch(error => {
+                                alert('Gagal menyimpan. Cek konsol atau koneksi.');
+                            })
+                            .finally(() => {
+                                saveButton.disabled = false;
+                                saveButton.innerHTML = 'Simpan Data';
+                            });
+                    },
+
                     selectedSiswas() {
                         const target = this.showModal ? this.editingJadwal : this.newJadwal;
                         if (!target.siswa_ids) return [];
-                        return this.allSiswas.filter(s => target.siswa_ids.includes(s.id)).sort((a, b) => a
-                            .name.localeCompare(b.name));
+                        return this.allSiswas
+                            .filter(s => target.siswa_ids.includes(s.id))
+                            .sort((a, b) => a.name.localeCompare(b.name));
                     },
+
                     filteredAvailableSiswas() {
                         const search = this.searchModalSiswa.toLowerCase().trim();
                         const selectedIds = this.showModal ? this.editingJadwal.siswa_ids : this.newJadwal
                             .siswa_ids;
                         if (search === '') return [];
-                        return this.allSiswas.filter(s => !selectedIds.includes(s.id) && s.name
-                            .toLowerCase().includes(search)).slice(0, 10);
+
+                        return this.allSiswas
+                            .filter(s => {
+                                const isSelected = selectedIds && selectedIds.includes(s.id);
+                                const matchesSearch = s.name.toLowerCase().includes(search) || (s
+                                    .panggilan && s.panggilan.toLowerCase().includes(search));
+                                return !isSelected && matchesSearch;
+                            })
+                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .slice(0, 10);
                     },
+
                     addSiswa(id) {
                         const target = this.showModal ? this.editingJadwal : this.newJadwal;
-                        if (!target.siswa_ids.includes(id)) target.siswa_ids.push(id);
+                        if (!target.siswa_ids.includes(id)) {
+                            target.siswa_ids.push(id);
+                        }
                         this.searchModalSiswa = '';
                     },
+
                     removeSiswa(id) {
                         const target = this.showModal ? this.editingJadwal : this.newJadwal;
-                        target.siswa_ids = target.siswa_ids.filter(sId => sId !== id);
-                        if (this.selectedStudentDetail && this.selectedStudentDetail.id === id) this
-                            .selectedStudentDetail = null;
+                        target.siswa_ids = target.siswa_ids.filter(siswaId => siswaId !== id);
+
+                        if (this.selectedStudentDetail && this.selectedStudentDetail.id === id) {
+                            this.selectedStudentDetail = null;
+                        }
                     },
+
                     hasTanda(siswa) {
                         return siswa.tandas && siswa.tandas.length > 0;
                     },
+
                     viewStudentDetail(siswa) {
                         this.selectedStudentDetail = siswa;
                     },
+
                     markTandaForDeletion(tandaId, studentId) {
                         if (!confirm('Hapus tanda ini?')) return;
+
                         this.deletedTandaIds.push(tandaId);
                         this.selectedStudentDetail.tandas = this.selectedStudentDetail.tandas.filter(t => t
                             .id !== tandaId);
+
+                        const studentIndex = this.allSiswas.findIndex(s => s.id === studentId);
+                        if (studentIndex !== -1) {
+                            this.allSiswas[studentIndex].tandas = this.allSiswas[studentIndex].tandas
+                                .filter(t => t.id !== tandaId);
+                        }
                     },
+
                     saveJadwal() {
-                        const btn = document.getElementById('saveJadwalButton');
-                        btn.disabled = true;
-                        btn.innerHTML = 'Menyimpan...';
+                        const saveButton = document.getElementById('saveJadwalButton');
+                        saveButton.disabled = true;
+                        saveButton.innerHTML = 'Menyimpan...';
+
+                        const payload = {
+                            ...this.editingJadwal,
+                            deleted_tanda_ids: this.deletedTandaIds
+                        };
+
                         fetch(this.routes.jadwal.updateKelas, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
                                     'X-CSRF-TOKEN': this.csrfToken
                                 },
-                                body: JSON.stringify({
-                                    ...this.editingJadwal,
-                                    deleted_tanda_ids: this.deletedTandaIds
-                                })
+                                body: JSON.stringify(payload)
                             })
-                            .then(r => r.json()).then(d => d.status === 'success' ? window.location
-                                .reload() : alert(d.message)).finally(() => btn.disabled = false);
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    this.showModal = false;
+                                    this.deletedTandaIds = [];
+                                    alert('Perubahan berhasil disimpan! Halaman akan dimuat ulang.');
+                                    window.location.reload();
+                                } else {
+                                    alert('Gagal menyimpan: ' + data.message);
+                                }
+                            })
+                            .catch(error => {
+                                alert('Gagal menyimpan. Cek konsol.');
+                            })
+                            .finally(() => {
+                                saveButton.disabled = false;
+                                saveButton.innerHTML = 'Simpan Perubahan';
+                            });
                     },
-                    openAddJadwalModal(hId, sId) {
+
+                    openAddJadwalModal(hariId, sesiId) {
                         this.newJadwal = {
-                            hari_id: hId,
-                            sesi_id: sId,
-                            mata_pelajaran_id: this.allMapels[0]?.id,
-                            guru_id: this.allGurus[0]?.id,
-                            ruang_id: this.allRuangs[0]?.id,
+                            hari_id: hariId,
+                            sesi_id: sesiId,
+                            mata_pelajaran_id: this.allMapels.length > 0 ? this.allMapels[0].id : null,
+                            guru_id: this.allGurus.length > 0 ? this.allGurus[0].id : null,
+                            ruang_id: this.allRuangs.length > 0 ? this.allRuangs[0].id : null,
                             siswa_ids: []
                         };
+                        this.searchModalSiswa = '';
                         this.showAddJadwalModal = true;
+                        this.selectedStudentDetail = null;
                     },
+
                     saveNewJadwal() {
-                        const btn = document.getElementById('saveNewJadwalButton');
-                        btn.disabled = true;
+                        const saveButton = document.getElementById('saveNewJadwalButton');
+                        saveButton.disabled = true;
+                        saveButton.innerHTML = 'Menyimpan...';
+
                         fetch(this.routes.jadwal.store, {
                                 method: 'POST',
                                 headers: {
@@ -594,33 +957,119 @@
                                 },
                                 body: JSON.stringify(this.newJadwal)
                             })
-                            .then(r => r.json()).then(d => d.status === 'success' ? window.location
-                                .reload() : alert(d.message)).finally(() => btn.disabled = false);
-                    },
-                    openExportOptions() {
-                        const term = this.universalSearch.trim();
-                        Swal.fire({
-                                title: 'Export Opsi',
-                                showCancelButton: true,
-                                showDenyButton: true,
-                                confirmButtonText: 'Download PDF',
-                                denyButtonText: 'Copy WA'
-                            })
-                            .then((result) => {
-                                const params = term ? '?search=' + term : '';
-                                if (result.isConfirmed) window.open(this.routes.jadwal.export+params,
-                                    '_blank');
-                                else if (result.isDenied) {
-                                    fetch(this.routes.jadwal.generateText + params).then(r => r.json())
-                                        .then(d => {
-                                            if (d.status === 'success') {
-                                                navigator.clipboard.writeText(d.text).then(() =>
-                                                    Swal.fire('Berhasil Disalin!', '',
-                                                        'success'));
-                                            }
-                                        });
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    this.showAddJadwalModal = false;
+                                    alert(data.message + ' Halaman akan dimuat ulang.');
+                                    window.location.reload();
+                                } else {
+                                    const errorMsg = data.errors ? Object.values(data.errors).flat()
+                                        .join('\n') : (data.message || 'Gagal menyimpan.');
+                                    alert('Gagal menyimpan:\n' + errorMsg);
                                 }
+                            })
+                            .catch(error => {
+                                alert('Gagal menyimpan. Cek konsol atau koneksi.');
+                            })
+                            .finally(() => {
+                                saveButton.disabled = false;
+                                saveButton.innerHTML = 'Simpan Jadwal Baru';
                             });
+                    },
+
+                    openExportOptions() {
+                        const searchTerm = this.universalSearch.trim();
+                        let htmlContent = '';
+
+                        if (searchTerm) {
+                            htmlContent = `
+                            <div class='text-left'>
+                                <p class='text-gray-600 mb-2'>Anda sedang melakukan pencarian:</p>
+                                <div class='bg-blue-50 p-3 rounded border border-blue-200 text-blue-800 text-lg font-bold text-center'>
+                                    '${searchTerm}'
+                                </div>
+                                <p class='text-xs text-gray-500 mt-3'>
+                                    <i class='fas fa-info-circle'></i> PDF/Text akan difilter berdasarkan kata kunci ini.
+                                </p>
+                            </div>
+                        `;
+                        } else {
+                            htmlContent = `
+                            <div class='text-left'>
+                                <div class='bg-yellow-50 p-3 rounded border border-yellow-200 text-yellow-800'>
+                                    <i class='fas fa-exclamation-triangle mr-1'></i> Tidak ada filter pencarian aktif.
+                                </div>
+                                <p class='font-bold text-gray-800 mt-4 text-center'>
+                                    Akan memproses SEMUA JADWAL (Full Data).
+                                </p>
+                            </div>
+                        `;
+                        }
+
+                        Swal.fire({
+                            title: 'Export Opsi',
+                            html: htmlContent,
+                            showCancelButton: true,
+                            showDenyButton: true,
+                            confirmButtonText: '<i class="fas fa-file-pdf"></i> Download PDF',
+                            denyButtonText: '<i class="fas fa-copy"></i> Copy Text WA',
+                            cancelButtonText: 'Batal',
+                            confirmButtonColor: '#d33',
+                            denyButtonColor: '#3b82f6',
+                            reverseButtons: true,
+                            focusConfirm: false
+                        }).then((result) => {
+                            const params = new URLSearchParams();
+                            if (searchTerm) {
+                                params.append('search', searchTerm);
+                            }
+
+                            if (result.isConfirmed) {
+                                window.open(this.routes.jadwal.export+'?' + params.toString(),
+                                    '_blank');
+                            } else if (result.isDenied) {
+                                Swal.fire({
+                                    title: 'Sedang memproses...',
+                                    text: 'Mengambil data jadwal untuk disalin.',
+                                    allowOutsideClick: false,
+                                    didOpen: () => {
+                                        Swal.showLoading();
+                                    }
+                                });
+
+                                fetch(this.routes.jadwal.generateText + '?' + params.toString())
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.status === 'success') {
+                                            navigator.clipboard.writeText(data.text).then(
+                                                () => {
+                                                    Swal.fire({
+                                                        icon: 'success',
+                                                        title: 'Berhasil Disalin!',
+                                                        text: 'Jadwal format WhatsApp sudah disalin ke clipboard.',
+                                                        timer: 2000,
+                                                        showConfirmButton: false
+                                                    });
+                                                }).catch(err => {
+                                                console.error('Clipboard Error:', err);
+                                                Swal.fire('Warning',
+                                                    'Gagal menyalin otomatis. Izin browser mungkin ditolak.',
+                                                    'warning');
+                                            });
+                                        } else {
+                                            Swal.fire('Error', 'Gagal memproses data.',
+                                                'error');
+                                        }
+                                    })
+                                    .catch(err => {
+                                        Swal.fire('Error',
+                                            'Terjadi kesalahan jaringan atau Route tidak ditemukan.',
+                                            'error');
+                                        console.error(err);
+                                    });
+                            }
+                        });
                     }
                 }));
             });
@@ -633,30 +1082,41 @@
                         ghostClass: 'opacity-50',
                         onEnd: function(evt) {
                             const card = evt.item;
+                            const fromSlot = evt.from;
+                            const toSlot = evt.to;
+
+                            const updateData = {
+                                mapel_id: card.dataset.mapelId,
+                                guru_id: card.dataset.guruId,
+                                ruang_id: card.dataset.ruangId,
+                                old_hari_id: fromSlot.dataset.hariId,
+                                old_sesi_id: fromSlot.dataset.sesiId,
+                                new_hari_id: toSlot.dataset.hariId,
+                                new_sesi_id: toSlot.dataset.sesiId,
+                            };
+
                             fetch('{{ route('admin.jadwal.updatePosisi') }}', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                },
-                                body: JSON.stringify({
-                                    mapel_id: card.dataset.mapelId,
-                                    guru_id: card.dataset.guruId,
-                                    ruang_id: card.dataset.ruangId,
-                                    old_hari_id: evt.from.dataset.hariId,
-                                    old_sesi_id: evt.from.dataset.sesiId,
-                                    new_hari_id: evt.to.dataset.hariId,
-                                    new_sesi_id: evt.to.dataset.sesiId,
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                    },
+                                    body: JSON.stringify(updateData)
                                 })
-                            }).then(r => r.json()).then(d => {
-                                if (d.status === 'success') {
-                                    card.dataset.hariId = evt.to.dataset.hariId;
-                                    card.dataset.sesiId = evt.to.dataset.sesiId;
-                                } else {
-                                    evt.from.appendChild(card);
-                                    alert(d.message);
-                                }
-                            });
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.status === 'success') {
+                                        card.dataset.hariId = toSlot.dataset.hariId;
+                                        card.dataset.sesiId = toSlot.dataset.sesiId;
+                                    } else {
+                                        fromSlot.appendChild(card);
+                                        alert('Update Gagal: ' + data.message);
+                                    }
+                                })
+                                .catch(error => {
+                                    fromSlot.appendChild(card);
+                                    alert('Update Gagal. Periksa koneksi Anda.');
+                                });
                         }
                     });
                 });
