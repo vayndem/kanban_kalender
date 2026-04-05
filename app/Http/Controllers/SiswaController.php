@@ -15,6 +15,8 @@ class SiswaController extends Controller
                 'name' => 'required|string|max:255|unique:siswas,name',
                 'panggilan' => 'nullable|string|max:100',
                 'kelas' => 'nullable|string|max:50',
+                'no_hp' => 'nullable|string|max:20',
+                'paket_pembayaran' => 'nullable|integer|exists:pakets,id',
             ]);
 
             $siswa = Siswa::create($validated);
@@ -25,22 +27,16 @@ class SiswaController extends Controller
                 'data' => $siswa,
             ]);
         } catch (ValidationException $e) {
-            return response()->json(
-                [
-                    'status' => 'error',
-                    'message' => 'Validasi gagal.',
-                    'errors' => $e->errors(),
-                ],
-                422,
-            );
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validasi gagal.',
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
-            return response()->json(
-                [
-                    'status' => 'error',
-                    'message' => 'Gagal menyimpan: ' . $e->getMessage(),
-                ],
-                500,
-            );
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal menyimpan: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -53,6 +49,8 @@ class SiswaController extends Controller
                 'name' => 'required|string|max:255|unique:siswas,name,' . $id,
                 'panggilan' => 'nullable|string|max:100',
                 'kelas' => 'nullable|string|max:50',
+                'no_hp' => 'nullable|string|max:20',
+                'paket_pembayaran' => 'nullable|integer|exists:pakets,id',
             ]);
 
             $siswa->update($validated);
@@ -63,22 +61,16 @@ class SiswaController extends Controller
                 'data' => $siswa,
             ]);
         } catch (ValidationException $e) {
-            return response()->json(
-                [
-                    'status' => 'error',
-                    'message' => 'Validasi gagal.',
-                    'errors' => $e->errors(),
-                ],
-                422,
-            );
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validasi gagal.',
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
-            return response()->json(
-                [
-                    'status' => 'error',
-                    'message' => 'Gagal memperbarui: ' . $e->getMessage(),
-                ],
-                500,
-            );
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal memperbarui: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -93,13 +85,10 @@ class SiswaController extends Controller
                 'message' => 'Siswa berhasil dihapus.',
             ]);
         } catch (\Exception $e) {
-            return response()->json(
-                [
-                    'status' => 'error',
-                    'message' => 'Gagal menghapus: ' . $e->getMessage(),
-                ],
-                500,
-            );
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal menghapus: ' . $e->getMessage(),
+            ], 500);
         }
     }
 }

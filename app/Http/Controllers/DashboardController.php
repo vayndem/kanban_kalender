@@ -10,6 +10,8 @@ use App\Models\Guru;
 use App\Models\MataPelajaran;
 use App\Models\Ruang;
 use App\Models\Siswa;
+use App\Models\Pembayaran;
+use App\Models\Paket;
 
 class DashboardController extends Controller
 {
@@ -17,23 +19,17 @@ class DashboardController extends Controller
     {
         $haris = Hari::orderBy('id')->get();
         $sesis = Sesi::orderBy('id')->get();
-
         $allGurus = Guru::orderBy('name')->get();
         $allMapels = MataPelajaran::orderBy('name')->get();
         $allRuangs = Ruang::orderBy('name')->get();
         $allSiswas = Siswa::with('tandas')->orderBy('name')->get();
-        $jadwalsData = Jadwal::with([
-            'siswa.tandas',
-            'mataPelajaran',
-            'guru',
-            'ruang'
-        ])
-        ->get();
+        $pakets = Paket::orderBy('nama_paket')->get();
+
+        $jadwalsData = Jadwal::with(['siswa.tandas', 'mataPelajaran', 'guru', 'ruang'])->get();
 
         $finalJadwals = [];
         foreach ($jadwalsData as $jadwal) {
             $classKey = $jadwal->mata_pelajaran_id . '_' . $jadwal->guru_id . '_' . $jadwal->ruang_id;
-
             if (!isset($finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey])) {
                 $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey] = [
                     'mapel' => $jadwal->mataPelajaran,
@@ -42,9 +38,27 @@ class DashboardController extends Controller
                     'siswa_list' => collect()
                 ];
             }
-
             $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey]['siswa_list']->push($jadwal->siswa);
         }
+
+        $rawPembayaran = Pembayaran::with('siswa')
+            ->where('status', 0)
+            ->get();
+
+        $pembayaranSummaries = $rawPembayaran->groupBy('id_siswa')->map(function ($items) {
+            return [
+                'id_siswa' => $items->first()->id_siswa,
+                'siswa' => $items->first()->siswa,
+                'total_harga' => $items->sum('harga'),
+                'rincian_data' => $items->map(function ($i) {
+                    return [
+                        'keterangan' => $i->keterangan,
+                        'harga' => $i->harga
+                    ];
+                }),
+                'gabungan_keterangan' => $items->pluck('keterangan')->implode(', ')
+            ];
+        })->values();
 
         return view('admin.dashboard', [
             'haris' => $haris,
@@ -54,6 +68,8 @@ class DashboardController extends Controller
             'allMapels' => $allMapels,
             'allRuangs' => $allRuangs,
             'allSiswas' => $allSiswas,
+            'pembayaranSummaries' => $pembayaranSummaries,
+            'pakets' => $pakets,
         ]);
     }
 }

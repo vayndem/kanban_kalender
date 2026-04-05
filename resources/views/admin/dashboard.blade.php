@@ -34,7 +34,7 @@
                 <div class="mb-5">
                     <div class="border-b border-gray-200 dark:border-gray-700">
                         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                            <button @click="activeTab = 'jadwal'"
+                            <button @click="activeTab = 'jadwal'; currentForm = ''"
                                 :class="{
                                     'border-blue-500 text-blue-600 dark:text-blue-400': activeTab === 'jadwal',
                                     'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600': activeTab !== 'jadwal'
@@ -43,13 +43,22 @@
                                 Jadwal Pelajaran
                             </button>
 
-                            <button @click="activeTab = 'berita'"
+                            <button @click="activeTab = 'data_siswa'; currentForm = 'siswa'; formSearch = ''"
                                 :class="{
-                                    'border-blue-500 text-blue-600 dark:text-blue-400': activeTab === 'berita',
-                                    'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600': activeTab !== 'berita'
+                                    'border-blue-500 text-blue-600 dark:text-blue-400': activeTab === 'data_siswa',
+                                    'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400': activeTab !== 'data_siswa'
                                 }"
                                 class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                                Berita
+                                Data Siswa
+                            </button>
+
+                            <button @click="activeTab = 'pembayaran'; currentForm = 'pembayaran'; formSearch = ''"
+                                :class="{
+                                    'border-blue-500 text-blue-600 dark:text-blue-400': activeTab === 'pembayaran',
+                                    'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400': activeTab !== 'pembayaran'
+                                }"
+                                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                Pembayaran
                             </button>
                         </nav>
                     </div>
@@ -95,10 +104,10 @@
                                             <a href="#" @click.prevent="currentForm = 'sesi'; showAddMenu = false"
                                                 class="block px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
                                                 role="menuitem"><i class="fas fa-clock w-5 mr-2"></i> Sesi Waktu</a>
-                                            <a href="#"
+                                            {{-- <a href="#"
                                                 @click.prevent="currentForm = 'siswa'; showAddMenu = false"
                                                 class="block px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
-                                                role="menuitem"><i class="fas fa-user-graduate w-5 mr-2"></i> Siswa</a>
+                                                role="menuitem"><i class="fas fa-user-graduate w-5 mr-2"></i> Siswa</a> --}}
                                             <a href="#"
                                                 @click.prevent="currentForm = 'tanda'; showAddMenu = false"
                                                 class="block px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
@@ -107,13 +116,23 @@
                                         </div>
                                     </div>
 
+                                    <div x-show="activeTab === 'jadwal'">
+                                    </div>
+
+                                    <div x-show="activeTab === 'data_siswa'">
+                                        @include('admin.card')
+                                    </div>
+
+                                    <div x-show="activeTab === 'pembayaran'">
+                                        @include('admin.pembayaran')
+                                    </div>
+
                                     <div x-show="currentForm" x-transition
                                         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
                                         style="display: none;">
                                         <div @click="currentForm = ''" class="absolute inset-0"></div>
                                         <div @click.stop
-                                            class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md overflow-hidden relative"
-                                            x-show="currentForm" x-transition>
+                                            class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md overflow-hidden relative">
                                             @include('admin.form', ['type' => 'currentForm'])
                                         </div>
                                     </div>
@@ -294,10 +313,16 @@
                     </div>
                 </div>
 
-                <div x-show="activeTab === 'berita'" x-transition:enter="transition ease-out duration-300"
+                <div x-show="activeTab === 'data_siswa'" x-transition:enter="transition ease-out duration-300"
                     x-transition:enter-start="opacity-0 transform -translate-y-4"
                     x-transition:enter-end="opacity-100 transform translate-y-0" style="display: none;">
                     @include('admin.card')
+                </div>
+
+                <div x-show="activeTab === 'pembayaran'" x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform -translate-y-4"
+                    x-transition:enter-end="opacity-100 transform translate-y-0" style="display: none;">
+                    @include('admin.pembayaran')
                 </div>
 
                 <div x-show="showModal" x-transition:enter="ease-out duration-300"
@@ -372,7 +397,8 @@
                                                 Terpilih (Klik Nama untuk Lihat Catatan)</label>
                                             <div class="p-1 min-h-[100px]">
                                                 <ul class="space-y-2">
-                                                    <template x-for="siswa in selectedSiswas()" :key="siswa.id">
+                                                    <template x-for="siswa in selectedSiswas()"
+                                                        :key="siswa.id">
                                                         <li class="flex justify-between items-center text-sm p-3 rounded cursor-pointer transition-all duration-200 border border-transparent"
                                                             @click="viewStudentDetail(siswa)"
                                                             :class="{

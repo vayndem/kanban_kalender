@@ -13,6 +13,8 @@ class Siswa extends Model
         'name',
         'panggilan',
         'kelas',
+        'no_hp',
+        'paket_pembayaran'
     ];
 
     public function jadwals()
@@ -23,5 +25,10 @@ class Siswa extends Model
     public function tandas()
     {
         return $this->hasMany(Tanda::class, 'siswa_id', 'id');
+    }
+
+    public function paket()
+    {
+        return $this->belongsTo(Paket::class, 'paket_pembayaran');
     }
 }

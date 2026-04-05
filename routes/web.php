@@ -10,6 +10,8 @@ use App\Http\Controllers\RuangController;
 use App\Http\Controllers\SesiController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\TandaController;
+use App\Http\Controllers\PembayaranController;
+use App\Http\Controllers\PaketController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -63,6 +65,19 @@ Route::middleware('auth')->group(function () {
     Route::post('/admin/tanda', [TandaController::class, 'store'])->name('admin.tanda.store');
     Route::put('/admin/tanda/{id}', [TandaController::class, 'update'])->name('admin.tanda.update');
     Route::delete('/admin/tanda/{id}', [TandaController::class, 'destroy'])->name('admin.tanda.destroy');
+
+    // 7. Pembayaran
+    Route::post('/admin/pembayaran', [PembayaranController::class, 'store'])->name('admin.pembayaran.store');
+    Route::put('/admin/pembayaran/{id}', [PembayaranController::class, 'update'])->name('admin.pembayaran.update');
+    Route::delete('/admin/pembayaran/{id}', [PembayaranController::class, 'destroy'])->name('admin.pembayaran.destroy');
+    Route::post('/admin/pembayaran/lunas-semua', [PembayaranController::class, 'lunasSemua'])->name('admin.pembayaran.lunasSemua');
+    Route::post('/admin/pembayaran/penagihan-massal', [PembayaranController::class, 'penagihanMassal'])->name('admin.pembayaran.penagihanMassal');
+    Route::post('/admin/pembayaran/lunas-siswa/{id_siswa}', [PembayaranController::class, 'lunasPerSiswa'])->name('admin.pembayaran.lunasSiswa');
+
+    // 8. Paket
+    Route::post('/admin/paket', [PaketController::class, 'store'])->name('admin.paket.store');
+    Route::put('/admin/paket/{id}', [PaketController::class, 'update'])->name('admin.paket.update');
+    Route::delete('/admin/paket/{id}', [PaketController::class, 'destroy'])->name('admin.paket.destroy');
 });
 
 Route::get('/jadwal-kalender', [JadwalController::class, 'tampilKalender'])->name('jadwal.kalender');

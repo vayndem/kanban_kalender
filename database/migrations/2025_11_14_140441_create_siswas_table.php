@@ -13,6 +13,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('panggilan')->nullable();
             $table->string('kelas')->nullable();
+            $table->string('no_hp')->nullable();
+            $table->integer('paket_pembayaran')->nullable();
             $table->timestamps();
         });
     }
