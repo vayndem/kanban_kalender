@@ -42,23 +42,25 @@ class DashboardController extends Controller
         }
 
         $rawPembayaran = Pembayaran::with('siswa')
-            ->where('status', 0)
+            ->orderBy('created_at', 'desc')
             ->get();
 
-        $pembayaranSummaries = $rawPembayaran->groupBy('id_siswa')->map(function ($items) {
-            return [
-                'id_siswa' => $items->first()->id_siswa,
-                'siswa' => $items->first()->siswa,
-                'total_harga' => $items->sum('harga'),
-                'rincian_data' => $items->map(function ($i) {
-                    return [
-                        'keterangan' => $i->keterangan,
-                        'harga' => $i->harga
-                    ];
-                }),
-                'gabungan_keterangan' => $items->pluck('keterangan')->implode(', ')
-            ];
-        })->values();
+        // Ambil data mentah per transaksi agar bisa difilter per bulan di JS
+        $pembayaranSummaries = Pembayaran::with('siswa')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'id_siswa' => $item->id_siswa,
+                    'siswa' => $item->siswa,
+                    'harga' => (int) $item->harga,
+                    'keterangan' => $item->keterangan,
+                    'status' => (int) $item->status,
+                    'bulan' => \Carbon\Carbon::parse($item->created_at)->format('m'),
+                    'tanggal_format' => \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y')
+                ];
+            });
 
         return view('admin.dashboard', [
             'haris' => $haris,
