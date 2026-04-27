@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Siswa;
 use Illuminate\Validation\ValidationException;
+use App\Models\Arsip;
 
 class SiswaController extends Controller
 {
@@ -78,16 +79,25 @@ class SiswaController extends Controller
     {
         try {
             $siswa = Siswa::findOrFail($id);
+
+            Arsip::create([
+                'name'             => $siswa->name,
+                'panggilan'        => $siswa->panggilan,
+                'kelas'            => $siswa->kelas,
+                'no_hp'            => $siswa->no_hp,
+                'paket_pembayaran' => $siswa->paket_pembayaran,
+            ]);
+
             $siswa->delete();
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Siswa berhasil dihapus.',
+                'message' => 'Data berhasil dipindahkan ke arsip dan dihapus dari sistem utama.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal menghapus: ' . $e->getMessage(),
+                'message' => 'Gagal mengarsipkan data: ' . $e->getMessage(),
             ], 500);
         }
     }

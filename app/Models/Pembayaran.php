@@ -11,7 +11,9 @@ class Pembayaran extends Model
         'id_siswa',
         'harga',
         'keterangan',
-        'status'
+        'status',
+        'tanggal_pembayaran',
+        'pembayaran_via'
     ];
 
     public function siswa(): BelongsTo

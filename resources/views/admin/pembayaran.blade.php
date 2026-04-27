@@ -11,21 +11,23 @@
                     x-text="filteredSummaries.length"></span> Siswa</p>
         </div>
         <div class="flex flex-wrap gap-2">
-            <button @click="prosesPenagihanMassal()"
-                class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-sm">
-                <i class="fas fa-file-invoice-dollar"></i> Penagihan Massal
+            <button @click="prosesPenagihanMassal()" :disabled="isLoading"
+                class="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-sm">
+                <i class="fas" :class="isLoading ? 'fa-spinner fa-spin' : 'fa-file-invoice-dollar'"></i>
+                <span x-text="isLoading ? 'Memproses...' : 'Penagihan Massal'"></span>
             </button>
-            <button @click="openPaketModal()"
-                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-sm">
+            <button @click="openPaketModal()" :disabled="isLoading"
+                class="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-sm">
                 <i class="fas fa-box"></i> Kelola Paket
             </button>
-            <button @click="openAddPembayaran()"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-sm">
+            <button @click="openAddPembayaran()" :disabled="isLoading"
+                class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-sm">
                 <i class="fas fa-plus"></i> Tambah Tagihan
             </button>
-            <button @click="lunaskanSemua()"
-                class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-sm">
-                <i class="fas fa-check-double"></i> Selesaikan Seluruh Status
+            <button @click="lunaskanSemua()" :disabled="isLoading"
+                class="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-sm">
+                <i class="fas" :class="isLoading ? 'fa-spinner fa-spin' : 'fa-check-double'"></i>
+                <span x-text="isLoading ? 'Loading...' : 'Selesaikan Seluruh Status'"></span>
             </button>
         </div>
     </div>
@@ -58,24 +60,33 @@
         </div>
         <div>
             <label class="block text-[10px] font-bold text-gray-500 uppercase mb-2">Status</label>
-            <div class="flex items-center gap-4">
-                <label class="inline-flex items-center text-sm dark:text-white">
+            <div class="flex items-center gap-3">
+                <label class="inline-flex items-center text-xs dark:text-white cursor-pointer">
                     <input type="radio" x-model="filterStatus" value="all" class="text-emerald-500">
                     <span class="ml-1">Semua</span>
                 </label>
-                <label class="inline-flex items-center text-sm text-red-500 font-bold">
+                <label class="inline-flex items-center text-xs text-red-500 font-bold cursor-pointer">
                     <input type="radio" x-model="filterStatus" value="0" class="text-red-500">
                     <span class="ml-1">Belum</span>
                 </label>
-                <label class="inline-flex items-center text-sm text-emerald-500 font-bold">
-                    <input type="radio" x-model="filterStatus" value="1" class="text-emerald-500">
+                <label class="inline-flex items-center text-xs text-orange-500 font-bold cursor-pointer">
+                    <input type="radio" x-model="filterStatus" value="1" class="text-orange-500">
+                    <span class="ml-1">Tertagih</span>
+                </label>
+                <label class="inline-flex items-center text-xs text-emerald-500 font-bold cursor-pointer">
+                    <input type="radio" x-model="filterStatus" value="2" class="text-emerald-500">
                     <span class="ml-1">Lunas</span>
                 </label>
             </div>
         </div>
     </div>
 
-    <div class="overflow-x-auto border border-gray-100 dark:border-gray-700 rounded-xl">
+    <div class="overflow-x-auto border border-gray-100 dark:border-gray-700 rounded-xl relative">
+        <div x-show="isLoading"
+            class="absolute inset-0 bg-white/50 dark:bg-gray-800/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
+            <i class="fas fa-circle-notch fa-spin fa-2x text-emerald-500"></i>
+        </div>
+
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-900/50 text-left">
                 <tr>
@@ -100,21 +111,43 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="px-2 py-1 rounded-md font-mono font-bold text-sm"
-                                :class="item.status == 0 ? 'bg-red-50 dark:bg-red-900/20 text-red-600' :
-                                    'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600'">
+                                :class="{
+                                    'bg-red-50 dark:bg-red-900/20 text-red-600': item.status == 0,
+                                    'bg-orange-50 dark:bg-orange-900/20 text-orange-600': item.status == 1,
+                                    'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600': item.status == 2
+                                }">
                                 Rp <span x-text="new Intl.NumberFormat('id-ID').format(item.total_harga)"></span>
                             </span>
                         </td>
                         <td class="px-6 py-4 max-w-xs">
                             <p class="text-xs text-gray-600 dark:text-gray-400 truncate"
                                 x-text="item.gabungan_keterangan || '-'"></p>
-                            <span class="text-[9px] text-gray-400 block mt-0.5" x-text="item.tanggal_format"></span>
+                            <template x-if="item.status != 2">
+                                <span class="text-[9px] text-gray-400 block mt-0.5" x-text="item.tanggal_format"></span>
+                            </template>
+                            <template x-if="item.status == 2">
+                                <div class="mt-1">
+                                    <span
+                                        class="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-1.5 py-0.5 rounded font-bold">
+                                        Lunas: <span x-text="item.tanggal_pembayaran"></span>
+                                    </span>
+                                    <span class="text-[10px] text-gray-400 block mt-0.5 font-medium">
+                                        Via: <span x-text="item.pembayaran_via == 1 ? 'Transfer' : 'Cash'"></span>
+                                    </span>
+                                </div>
+                            </template>
                         </td>
                         <td class="px-6 py-4 text-center space-x-2">
                             <template x-if="item.status == 0">
-                                <button @click="chatWhatsApp(item)"
-                                    class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded text-[10px] font-bold transition-all inline-flex items-center gap-1">
+                                <button @click="chatWhatsApp(item)" :disabled="isLoading"
+                                    class="bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white px-3 py-1.5 rounded text-[10px] font-bold transition-all inline-flex items-center gap-1">
                                     <i class="fab fa-whatsapp"></i> Chat WA
+                                </button>
+                            </template>
+                            <template x-if="item.status == 1">
+                                <button @click="prosesBayarSiswa(item)" :disabled="isLoading"
+                                    class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-1.5 rounded text-[10px] font-bold transition-all inline-flex items-center gap-1">
+                                    <i class="fas fa-hand-holding-usd"></i> Bayar
                                 </button>
                             </template>
                             <button
@@ -126,7 +159,7 @@
                 <template x-if="filteredSummaries.length === 0">
                     <tr>
                         <td colspan="4" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic">
-                            Data tidak ditemukan atau sudah lunas!
+                            Data tidak ditemukan!
                         </td>
                     </tr>
                 </template>
@@ -153,8 +186,9 @@
                         <input type="text" x-model="siswaSearchModal" @focus="openSearch = true"
                             @click.away="openSearch = false" placeholder="Cari nama..."
                             class="block w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-blue-500 text-sm">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i
-                                class="fas fa-search text-gray-400 text-xs"></i></div>
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400 text-xs"></i>
+                        </div>
                     </div>
                     <div x-show="openSearch && filteredSiswasForModal.length > 0"
                         class="absolute z-[120] w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-xl max-h-48 overflow-y-auto"
@@ -192,11 +226,13 @@
                         class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-blue-500 text-sm"></textarea>
                 </div>
                 <div class="pt-4 flex justify-end gap-2">
-                    <button type="button" @click="showAddModal = false"
+                    <button type="button" @click="showAddModal = false" :disabled="isLoading"
                         class="px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:text-white">Batal</button>
-                    <button type="submit"
-                        class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold transition-colors">Simpan
-                        Tagihan</button>
+                    <button type="submit" :disabled="isLoading"
+                        class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-bold transition-all flex items-center gap-2">
+                        <i x-show="isLoading" class="fas fa-spinner fa-spin"></i>
+                        <span x-text="isLoading ? 'Menyimpan...' : 'Simpan Tagihan'"></span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -224,19 +260,21 @@
                             <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Nama
                                 Paket</label>
                             <input type="text" x-model="paketForm.nama_paket" required
-                                class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm transition-all"
+                                class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm"
                                 placeholder="Contoh: SPP Bulanan">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Harga
                                 (Rp)</label>
                             <input type="number" x-model.number="paketForm.harga" required
-                                class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm transition-all">
+                                class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm">
                         </div>
                         <div class="flex gap-2 pt-2">
-                            <button type="submit"
-                                class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-lg text-sm font-bold shadow-lg transform active:scale-95"
-                                x-text="paketForm.id ? 'Update' : 'Simpan'"></button>
+                            <button type="submit" :disabled="isLoading"
+                                class="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-bold shadow-lg transform active:scale-95 flex items-center justify-center gap-2">
+                                <i x-show="isLoading" class="fas fa-spinner fa-spin"></i>
+                                <span x-text="paketForm.id ? 'Update' : 'Simpan'"></span>
+                            </button>
                             <button type="button" x-show="paketForm.id" @click="resetPaketForm"
                                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium dark:text-white">Batal</button>
                         </div>
@@ -256,12 +294,12 @@
                                         x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(p.harga)"></div>
                                 </div>
                                 <div class="flex gap-1">
-                                    <button @click="editPaket(p)"
+                                    <button @click="editPaket(p)" :disabled="isLoading"
                                         class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><i
                                             class="fas fa-edit"></i></button>
-                                    <button @click="deletePaket(p.id)"
-                                        class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i
-                                            class="fas fa-trash"></i></button>
+                                    <button @click="deletePaket(p.id)" :disabled="isLoading"
+                                        class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i class="fas"
+                                            :class="isLoading ? 'fa-spinner fa-spin' : 'fa-trash'"></i></button>
                                 </div>
                             </div>
                         </template>
@@ -272,6 +310,7 @@
     </div>
 </div>
 
+
 @push('scripts')
     <script>
         document.addEventListener('alpine:init', () => {
@@ -279,15 +318,13 @@
                 summaries: initialSummaries || [],
                 siswas: initialSiswas || [],
                 pakets: initialPakets || [],
-
-                // Inisialisasi Filter (Wajib ada agar tidak ReferenceError)
                 filterSearch: '',
                 filterBulan: 'all',
                 filterStatus: '0',
-
                 showAddModal: false,
                 showPaketModal: false,
                 siswaSearchModal: '',
+                isLoading: false,
                 form: {
                     id_siswa: '',
                     harga: '',
@@ -300,24 +337,26 @@
                     harga: ''
                 },
 
+                refreshToTab() {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('tab', 'pembayaran');
+                    window.location.href = url.toString();
+                },
+
                 get filteredSummaries() {
-                    // 1. Filter data berdasarkan input user
                     let rawFiltered = this.summaries.filter(item => {
                         const matchesSearch = this.filterSearch === '' ||
                             (item.siswa && item.siswa.name.toLowerCase().includes(this
                                 .filterSearch.toLowerCase())) ||
                             (item.keterangan && item.keterangan.toLowerCase().includes(this
                                 .filterSearch.toLowerCase()));
-
                         const matchesBulan = this.filterBulan === 'all' || item.bulan ===
                             this.filterBulan;
                         const matchesStatus = this.filterStatus === 'all' || item.status
                             .toString() === this.filterStatus;
-
                         return matchesSearch && matchesBulan && matchesStatus;
                     });
 
-                    // 2. Grouping: Jika id_siswa sama, jadikan satu baris
                     let grouped = {};
                     rawFiltered.forEach(item => {
                         if (!grouped[item.id_siswa]) {
@@ -327,8 +366,9 @@
                                 total_harga: 0,
                                 gabungan_keterangan: [],
                                 rincian_data: [],
-                                status: item
-                                    .status, // Status grup mengikuti item pertama
+                                status: item.status,
+                                tanggal_pembayaran: item.tanggal_pembayaran,
+                                pembayaran_via: item.pembayaran_via,
                                 tanggal_format: item.tanggal_format
                             };
                         }
@@ -347,12 +387,12 @@
                     }));
                 },
 
-                // --- Fungsi pendukung lainnya (JANGAN DIUBAH) ---
                 get filteredSiswasForModal() {
                     if (!this.siswaSearchModal) return [];
                     return this.siswas.filter(s => s.name.toLowerCase().includes(this
                         .siswaSearchModal.toLowerCase()));
                 },
+
                 openAddPembayaran() {
                     this.form = {
                         id_siswa: '',
@@ -363,6 +403,7 @@
                     this.siswaSearchModal = '';
                     this.showAddModal = true;
                 },
+
                 applyPaket(paketId) {
                     if (!paketId) return;
                     const p = this.pakets.find(x => x.id == paketId);
@@ -371,9 +412,11 @@
                         this.form.keterangan = 'Pembayaran Paket ' + p.nama_paket;
                     }
                 },
+
                 async simpanTagihan() {
                     if (!this.form.id_siswa) return Swal.fire('Peringatan', 'Pilih siswa!',
                         'warning');
+                    this.isLoading = true;
                     try {
                         const response = await fetch(`{{ route('admin.pembayaran.store') }}`, {
                             method: 'POST',
@@ -384,11 +427,14 @@
                             },
                             body: JSON.stringify(this.form)
                         });
-                        if ((await response.json()).status === 'success') window.location.reload();
+                        if ((await response.json()).status === 'success') this.refreshToTab();
                     } catch (e) {
                         Swal.fire('Error', 'Gagal menyimpan.', 'error');
+                    } finally {
+                        this.isLoading = false;
                     }
                 },
+
                 async prosesPenagihanMassal() {
                     const result = await Swal.fire({
                         title: 'Proses Penagihan?',
@@ -402,7 +448,9 @@
                         color: document.documentElement.classList.contains('dark') ?
                             '#fff' : '#000'
                     });
+
                     if (result.isConfirmed) {
+                        this.isLoading = true;
                         try {
                             const response = await fetch(
                                 `{{ route('admin.pembayaran.penagihanMassal') }}`, {
@@ -412,28 +460,35 @@
                                         'Accept': 'application/json'
                                     }
                                 });
-                            if ((await response.json()).status === 'success') window.location
-                                .reload();
+                            if ((await response.json()).status === 'success') this.refreshToTab();
                         } catch (e) {
                             Swal.fire('Error', 'Gagal memproses.', 'error');
+                        } finally {
+                            this.isLoading = false;
                         }
                     }
                 },
+
                 async chatWhatsApp(item) {
                     const total = new Intl.NumberFormat('id-ID').format(item.total_harga);
                     const nama = item.siswa.name;
                     const noHp = item.siswa.no_hp;
                     if (!noHp) return Swal.fire('Error', 'No HP tidak ditemukan', 'error');
+
                     let rincianTeks = "";
                     item.rincian_data.forEach(d => {
                         rincianTeks +=
                             `*${d.keterangan || 'Tagihan'}* = Rp ${new Intl.NumberFormat('id-ID').format(d.harga)}\n`;
                     });
+
                     const text =
                         `*Assalamu'alaikum Warahmatullahi Wabarakatuh*\n\nBapak/Ibu yang kami muliakan,\n\nKami dari pihak administrasi *E-Ling* mendoakan semoga Bapak/Ibu sekeluarga senantiasa dalam keadaan sehat dan dalam lindungan Allah SWT.\n\nMelalui pesan ini, kami bermaksud menyampaikan informasi mengenai kewajiban administrasi ananda *${nama}* dengan rincian sebagai berikut:\n\n${rincianTeks}\n*Total Tagihan: Rp ${total}*\n\nMohon Bapak/Ibu dapat segera menindaklanjuti informasi ini. Atas perhatian dan kerja samanya, kami ucapkan terima kasih.\n\n*Jazakumullah Khairan Katsiran.*\n\n*Wassalamu'alaikum Warahmatullahi Wabarakatuh*`;
+
                     window.open(
                         `https://wa.me/${noHp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`,
                         '_blank');
+
+                    this.isLoading = true;
                     try {
                         await fetch(`{{ url('admin/pembayaran/lunas-siswa') }}/${item.id_siswa}`, {
                             method: 'POST',
@@ -441,30 +496,116 @@
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
                             }
                         });
-                        window.location.reload();
+                        this.refreshToTab();
                     } catch (e) {
                         console.error(e);
+                    } finally {
+                        this.isLoading = false;
                     }
                 },
+
+                async prosesBayarSiswa(item) {
+                    const {
+                        value: formValues
+                    } = await Swal.fire({
+                        title: '<span class="text-xl font-bold">Konfirmasi Pembayaran</span>',
+                        html: `
+                            <div class="text-left space-y-4 px-2 pt-4">
+                                <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl flex items-start gap-3 border border-emerald-100 dark:border-emerald-800/30 mb-4">
+                                    <i class="fas fa-info-circle text-emerald-600 mt-1"></i>
+                                    <p class="text-[11px] text-emerald-800 dark:text-emerald-300 leading-relaxed">
+                                        Anda akan memproses pelunasan untuk <strong>${item.siswa.name}</strong>. Pastikan nominal dan metode sudah sesuai.
+                                    </p>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Tanggal Pembayaran</label>
+                                    <input id="swal-input1" type="date" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 transition-all dark:text-white" value="${new Date().toISOString().split('T')[0]}">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Metode Pembayaran</label>
+                                    <select id="swal-input2" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 transition-all dark:text-white appearance-none">
+                                        <option value="0">💵 Tunai / Cash</option>
+                                        <option value="1">🏦 Transfer Bank</option>
+                                    </select>
+                                </div>
+                            </div>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: 'Proses Bayar',
+                        confirmButtonColor: '#059669',
+                        background: document.documentElement.classList.contains('dark') ?
+                            '#111827' : '#fff',
+                        color: document.documentElement.classList.contains('dark') ?
+                            '#fff' : '#000',
+                        preConfirm: () => ({
+                            tanggal_pembayaran: document.getElementById(
+                                'swal-input1').value,
+                            pembayaran_via: document.getElementById('swal-input2')
+                                .value
+                        })
+                    });
+
+                    if (formValues) {
+                        this.isLoading = true;
+                        try {
+                            const response = await fetch(
+                                `{{ url('admin/pembayaran/bayar-siswa') }}/${item.id_siswa}`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                        'Accept': 'application/json'
+                                    },
+                                    body: JSON.stringify(formValues)
+                                });
+                            if ((await response.json()).status === 'success') this.refreshToTab();
+                        } catch (e) {
+                            Swal.fire('Error', 'Gagal memproses pembayaran.', 'error');
+                        } finally {
+                            this.isLoading = false;
+                        }
+                    }
+                },
+
                 async lunaskanSemua() {
-                    if (!confirm('Selesaikan semua tunggakan?')) return;
-                    try {
-                        const response = await fetch(`{{ route('admin.pembayaran.lunasSemua') }}`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json'
-                            }
-                        });
-                        if ((await response.json()).status === 'success') window.location.reload();
-                    } catch (e) {
-                        alert('Gagal');
+                    const result = await Swal.fire({
+                        title: 'Selesaikan Semua?',
+                        text: "Semua tagihan (Belum & Tertagih) akan dianggap lunas.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#059669',
+                        confirmButtonText: 'Ya, Lunaskan!',
+                        background: document.documentElement.classList.contains('dark') ?
+                            '#1f2937' : '#fff',
+                        color: document.documentElement.classList.contains('dark') ?
+                            '#fff' : '#000'
+                    });
+
+                    if (result.isConfirmed) {
+                        this.isLoading = true;
+                        try {
+                            const response = await fetch(
+                                `{{ route('admin.pembayaran.lunasSemua') }}`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                        'Accept': 'application/json'
+                                    }
+                                });
+                            if ((await response.json()).status === 'success') this.refreshToTab();
+                        } catch (e) {
+                            Swal.fire('Error', 'Gagal memproses.', 'error');
+                        } finally {
+                            this.isLoading = false;
+                        }
                     }
                 },
+
                 openPaketModal() {
                     this.resetPaketForm();
                     this.showPaketModal = true;
                 },
+
                 resetPaketForm() {
                     this.paketForm = {
                         id: null,
@@ -472,7 +613,9 @@
                         harga: ''
                     };
                 },
+
                 async savePaket() {
+                    this.isLoading = true;
                     const url = this.paketForm.id ?
                         `{{ url('admin/paket') }}/${this.paketForm.id}` :
                         `{{ route('admin.paket.store') }}`;
@@ -487,11 +630,14 @@
                             },
                             body: JSON.stringify(this.paketForm)
                         });
-                        if ((await response.json()).status === 'success') window.location.reload();
+                        if ((await response.json()).status === 'success') this.refreshToTab();
                     } catch (e) {
-                        alert('Gagal');
+                        Swal.fire('Error', 'Gagal menyimpan paket.', 'error');
+                    } finally {
+                        this.isLoading = false;
                     }
                 },
+
                 editPaket(p) {
                     this.paketForm = {
                         id: p.id,
@@ -499,8 +645,10 @@
                         harga: p.harga
                     };
                 },
+
                 async deletePaket(id) {
                     if (!confirm('Hapus paket ini?')) return;
+                    this.isLoading = true;
                     try {
                         const response = await fetch(`{{ url('admin/paket') }}/${id}`, {
                             method: 'DELETE',
@@ -509,9 +657,11 @@
                                 'Accept': 'application/json'
                             }
                         });
-                        if ((await response.json()).status === 'success') window.location.reload();
+                        if ((await response.json()).status === 'success') this.refreshToTab();
                     } catch (e) {
-                        alert('Gagal');
+                        Swal.fire('Error', 'Gagal menghapus.', 'error');
+                    } finally {
+                        this.isLoading = false;
                     }
                 }
             }));

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Pembayaran;
 use App\Models\Siswa;
 use Illuminate\Validation\ValidationException;
+use Carbon\Carbon;
 
 class PembayaranController extends Controller
 {
@@ -16,7 +17,7 @@ class PembayaranController extends Controller
                 'id_siswa' => 'required|exists:siswas,id',
                 'harga' => 'required|integer',
                 'keterangan' => 'nullable|string|max:255',
-                'status'     => 'required|boolean',
+                'status' => 'required|integer|in:0,1,2',
             ]);
 
             $pembayaran = Pembayaran::create($validated);
@@ -64,8 +65,13 @@ class PembayaranController extends Controller
     public function lunasSemua()
     {
         try {
-            Pembayaran::where('status', 0)->update(['status' => 1]);
-            return response()->json(['status' => 'success', 'message' => 'Semua tagihan telah diselesaikan.']);
+            Pembayaran::whereIn('status', [0, 1])->update([
+                'status' => 2,
+                'tanggal_pembayaran' => Carbon::now(),
+                'pembayaran_via' => 0
+            ]);
+
+            return response()->json(['status' => 'success', 'message' => 'Semua tagihan (Belum & Tertagih) telah diselesaikan.']);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
@@ -79,6 +85,23 @@ class PembayaranController extends Controller
                 ->update(['status' => 1]);
 
             return response()->json(['status' => 'success', 'message' => 'Tagihan siswa berhasil diselesaikan.']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function bayarPerSiswa(Request $request, $id_siswa)
+    {
+        try {
+            Pembayaran::where('id_siswa', $id_siswa)
+                ->where('status', 1)
+                ->update([
+                    'status' => 2,
+                    'tanggal_pembayaran' => $request->tanggal_pembayaran,
+                    'pembayaran_via' => $request->pembayaran_via
+                ]);
+
+            return response()->json(['status' => 'success', 'message' => 'Pembayaran siswa berhasil diproses.']);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }

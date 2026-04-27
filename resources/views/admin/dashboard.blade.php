@@ -12,6 +12,8 @@
                 allGurus: {{ $allGurus->toJson() }},
                 allRuangs: {{ $allRuangs->toJson() }},
                 allSiswas: {{ $allSiswas->toJson() }},
+                allArsips: {{ $allArsips->toJson() }},
+                allJadwals: {{ $jadwalsData->toJson() }},
                 allHaris: {{ $haris->toJson() }},
                 allSesis: {{ $sesis->sortBy('start_time')->values()->toJson() }},
                 csrfToken: '{{ csrf_token() }}',
@@ -679,7 +681,7 @@
         <script>
             document.addEventListener('alpine:init', () => {
                 Alpine.data('jadwalHandler', (data) => ({
-                    activeTab: 'jadwal',
+                    activeTab: new URLSearchParams(window.location.search).get('tab') || 'jadwal',
                     universalSearch: '',
                     showModal: false,
                     showAddJadwalModal: false,
@@ -710,6 +712,21 @@
                     formData: {},
                     activeFormTab: 'input',
                     formSearch: '',
+
+                    refreshPage() {
+                        const url = new URL(window.location.href);
+                        url.searchParams.set('tab', this.activeTab);
+                        window.location.href = url.toString();
+                    },
+
+                    sudahPunyaJadwal(siswaId) {
+                        if (!this.allJadwals || this.allJadwals.length === 0) {
+                            return false;
+                        }
+                        return this.allJadwals.some(j => {
+                            return Number(j.siswa_id) === Number(siswaId);
+                        });
+                    },
 
                     getFilteredList() {
                         const search = this.formSearch.toLowerCase();
@@ -795,7 +812,7 @@
                                         if (data.status === 'success') {
                                             Swal.fire('Terhapus!', 'Data berhasil dihapus.',
                                                     'success')
-                                                .then(() => window.location.reload());
+                                                .then(() => this.refreshPage());
                                         } else {
                                             Swal.fire('Gagal!', data.message ||
                                                 'Terjadi kesalahan.', 'error');

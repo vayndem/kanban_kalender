@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('id_siswa')->constrained('siswas')->onDelete('cascade');
             $table->integer('harga');
             $table->string('keterangan')->nullable();
+            $table->date('tanggal_pembayaran')->nullable();
+            $table->integer('pembayaran_via')->nullable();
             $table->boolean('status')->default(0);
             $table->timestamps();
         });

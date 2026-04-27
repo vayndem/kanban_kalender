@@ -12,6 +12,7 @@ use App\Models\Ruang;
 use App\Models\Siswa;
 use App\Models\Pembayaran;
 use App\Models\Paket;
+use App\Models\Arsip;
 
 class DashboardController extends Controller
 {
@@ -23,12 +24,12 @@ class DashboardController extends Controller
         $allMapels = MataPelajaran::orderBy('name')->get();
         $allRuangs = Ruang::orderBy('name')->get();
         $allSiswas = Siswa::with('tandas')->orderBy('name')->get();
+        $allArsips = Arsip::orderBy('name')->get();
         $pakets = Paket::orderBy('nama_paket')->get();
-
-        $jadwalsData = Jadwal::with(['siswa.tandas', 'mataPelajaran', 'guru', 'ruang'])->get();
-
+        $jadwalsData = Jadwal::all();
         $finalJadwals = [];
-        foreach ($jadwalsData as $jadwal) {
+        $jadwalsWithRelations = Jadwal::with(['siswa.tandas', 'mataPelajaran', 'guru', 'ruang'])->get();
+        foreach ($jadwalsWithRelations as $jadwal) {
             $classKey = $jadwal->mata_pelajaran_id . '_' . $jadwal->guru_id . '_' . $jadwal->ruang_id;
             if (!isset($finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey])) {
                 $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey] = [
@@ -41,11 +42,6 @@ class DashboardController extends Controller
             $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey]['siswa_list']->push($jadwal->siswa);
         }
 
-        $rawPembayaran = Pembayaran::with('siswa')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Ambil data mentah per transaksi agar bisa difilter per bulan di JS
         $pembayaranSummaries = Pembayaran::with('siswa')
             ->orderBy('created_at', 'desc')
             ->get()
@@ -55,10 +51,9 @@ class DashboardController extends Controller
                     'id_siswa' => $item->id_siswa,
                     'siswa' => $item->siswa,
                     'harga' => (int) $item->harga,
-                    'keterangan' => $item->keterangan,
                     'status' => (int) $item->status,
                     'bulan' => \Carbon\Carbon::parse($item->created_at)->format('m'),
-                    'tanggal_format' => \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y')
+                    'tanggal_format' => \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y'),
                 ];
             });
 
@@ -70,8 +65,10 @@ class DashboardController extends Controller
             'allMapels' => $allMapels,
             'allRuangs' => $allRuangs,
             'allSiswas' => $allSiswas,
+            'allArsips' => $allArsips,
             'pembayaranSummaries' => $pembayaranSummaries,
             'pakets' => $pakets,
+            'jadwalsData' => $jadwalsData,
         ]);
     }
 }

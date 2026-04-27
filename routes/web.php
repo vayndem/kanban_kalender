@@ -12,6 +12,7 @@ use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\TandaController;
 use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\PaketController;
+use App\Http\Controllers\ArsipController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -73,11 +74,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/admin/pembayaran/lunas-semua', [PembayaranController::class, 'lunasSemua'])->name('admin.pembayaran.lunasSemua');
     Route::post('/admin/pembayaran/penagihan-massal', [PembayaranController::class, 'penagihanMassal'])->name('admin.pembayaran.penagihanMassal');
     Route::post('/admin/pembayaran/lunas-siswa/{id_siswa}', [PembayaranController::class, 'lunasPerSiswa'])->name('admin.pembayaran.lunasSiswa');
+    Route::post('/admin/pembayaran/bayar-siswa/{id_siswa}', [PembayaranController::class, 'bayarPerSiswa'])->name('admin.pembayaran.bayarSiswa');
 
     // 8. Paket
     Route::post('/admin/paket', [PaketController::class, 'store'])->name('admin.paket.store');
     Route::put('/admin/paket/{id}', [PaketController::class, 'update'])->name('admin.paket.update');
     Route::delete('/admin/paket/{id}', [PaketController::class, 'destroy'])->name('admin.paket.destroy');
+
+    // 9. Arsip Siswa
+    Route::get('/admin/arsip', [ArsipController::class, 'index'])->name('admin.arsip.index');
+    Route::put('/admin/arsip/{arsip}', [ArsipController::class, 'update'])->name('admin.arsip.restore');
+    Route::delete('/admin/arsip/{arsip}', [ArsipController::class, 'destroy'])->name('admin.arsip.destroy');
 });
 
 Route::get('/jadwal-kalender', [JadwalController::class, 'tampilKalender'])->name('jadwal.kalender');
