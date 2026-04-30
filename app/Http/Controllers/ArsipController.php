@@ -8,30 +8,24 @@ use Illuminate\Http\Request;
 
 class ArsipController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $arsips = Arsip::all();
-        return response()->json($arsips);
+
+        if ($request->wantsJson()) {
+            return response()->json($arsips);
+        }
+
+        return view('admin.arsip.index', compact('arsips'));
     }
 
-    public function create()
+    public function show(Request $request, Arsip $arsip)
     {
-        //
-    }
+        if ($request->wantsJson()) {
+            return response()->json($arsip);
+        }
 
-    public function store(Request $request)
-    {
-        //
-    }
-
-    public function show(Arsip $arsip)
-    {
-        return response()->json($arsip);
-    }
-
-    public function edit(Arsip $arsip)
-    {
-        //
+        return view('admin.arsip.show', compact('arsip'));
     }
 
     public function update(Request $request, Arsip $arsip)
@@ -47,32 +41,48 @@ class ArsipController extends Controller
 
             $arsip->delete();
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Data berhasil dikembalikan ke tabel siswa.',
-            ]);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Data berhasil dikembalikan ke tabel siswa.',
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Siswa berhasil dikembalikan dari arsip.');
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal mengembalikan data: ' . $e->getMessage(),
-            ], 500);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Gagal mengembalikan data: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Gagal mengembalikan data: ' . $e->getMessage());
         }
     }
 
-    public function destroy(Arsip $arsip)
+    public function destroy(Request $request, Arsip $arsip)
     {
         try {
             $arsip->delete();
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Data berhasil dihapus permanen dari arsip.',
-            ]);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Data berhasil dihapus permanen dari arsip.',
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Data arsip berhasil dihapus permanen.');
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal menghapus data: ' . $e->getMessage(),
-            ], 500);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Gagal menghapus data: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Gagal menghapus data.');
         }
     }
 }

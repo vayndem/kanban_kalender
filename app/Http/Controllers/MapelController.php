@@ -4,99 +4,102 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\MataPelajaran;
-use Illuminate\Validation\ValidationException;
 
 class MapelController extends Controller
 {
     public function store(Request $request)
     {
-        try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255|unique:mata_pelajarans,name',
-            ]);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:mata_pelajarans,name',
+            'border_color' => 'nullable|string|max:20',
+        ], [
+            'name.required' => 'Nama mata pelajaran wajib diisi.',
+            'name.unique' => 'Mata pelajaran ini sudah ada dalam daftar.',
+        ]);
 
+        try {
             $mapel = MataPelajaran::create($validated);
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Mata Pelajaran berhasil ditambahkan.',
-                'data' => $mapel,
-            ]);
-        } catch (ValidationException $e) {
-            return response()->json(
-                [
-                    'status' => 'error',
-                    'message' => 'Validasi gagal.',
-                    'errors' => $e->errors(),
-                ],
-                422,
-            );
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Mata Pelajaran berhasil ditambahkan.',
+                    'data' => $mapel,
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Mata Pelajaran berhasil ditambahkan.');
         } catch (\Exception $e) {
-            return response()->json(
-                [
+            if ($request->wantsJson()) {
+                return response()->json([
                     'status' => 'error',
                     'message' => 'Gagal menyimpan: ' . $e->getMessage(),
-                ],
-                500,
-            );
+                ], 500);
+            }
+
+            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
         }
     }
 
     public function update(Request $request, $id)
     {
+        $mapel = MataPelajaran::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:mata_pelajarans,name,' . $id,
+            'border_color' => 'nullable|string|max:20',
+        ], [
+            'name.required' => 'Nama mata pelajaran wajib diisi.',
+            'name.unique' => 'Nama mata pelajaran sudah digunakan oleh data lain.',
+        ]);
+
         try {
-            $mapel = MataPelajaran::findOrFail($id);
-
-            $validated = $request->validate([
-                'name' => 'required|string|max:255|unique:mata_pelajarans,name,' . $id,
-                'border_color' => 'nullable|string|max:20',
-            ]);
-
             $mapel->update($validated);
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Mata Pelajaran berhasil diperbarui.',
-                'data' => $mapel,
-            ]);
-        } catch (ValidationException $e) {
-            return response()->json(
-                [
-                    'status' => 'error',
-                    'message' => 'Validasi gagal.',
-                    'errors' => $e->errors(),
-                ],
-                422,
-            );
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Mata Pelajaran berhasil diperbarui.',
+                    'data' => $mapel,
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Mata Pelajaran berhasil diperbarui.');
         } catch (\Exception $e) {
-            return response()->json(
-                [
+            if ($request->wantsJson()) {
+                return response()->json([
                     'status' => 'error',
                     'message' => 'Gagal memperbarui: ' . $e->getMessage(),
-                ],
-                500,
-            );
+                ], 500);
+            }
+
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui: ' . $e->getMessage());
         }
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         try {
             $mapel = MataPelajaran::findOrFail($id);
             $mapel->delete();
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Mata Pelajaran berhasil dihapus.',
-            ]);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Mata Pelajaran berhasil dihapus.',
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Mata Pelajaran berhasil dihapus.');
         } catch (\Exception $e) {
-            return response()->json(
-                [
+            if ($request->wantsJson()) {
+                return response()->json([
                     'status' => 'error',
                     'message' => 'Gagal menghapus: ' . $e->getMessage(),
-                ],
-                500,
-            );
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Gagal menghapus: ' . $e->getMessage());
         }
     }
 }

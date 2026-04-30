@@ -4,102 +4,112 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Sesi;
-use Illuminate\Validation\ValidationException;
 
 class SesiController extends Controller
 {
     public function store(Request $request)
     {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:sesis,name',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+        ], [
+            'name.required' => 'Nama sesi wajib diisi.',
+            'name.unique' => 'Nama sesi sudah digunakan.',
+            'start_time.required' => 'Jam mulai wajib diisi.',
+            'start_time.date_format' => 'Format jam mulai salah (gunakan HH:MM).',
+            'end_time.required' => 'Jam selesai wajib diisi.',
+            'end_time.date_format' => 'Format jam selesai salah (gunakan HH:MM).',
+            'end_time.after' => 'Jam selesai harus lebih besar dari jam mulai.',
+        ]);
+
         try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255|unique:sesis,name',
-                'start_time' => 'required|date_format:H:i',
-                'end_time' => 'required|date_format:H:i|after:start_time',
-            ]);
+            Sesi::create($validated);
 
-            $sesi = Sesi::create($validated);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Sesi waktu berhasil ditambahkan.'
+                ]);
+            }
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Sesi waktu berhasil ditambahkan.',
-                'data' => $sesi,
-            ]);
-        } catch (ValidationException $e) {
-            return response()->json(
-                [
-                    'status' => 'error',
-                    'message' => 'Validasi gagal.',
-                    'errors' => $e->errors(),
-                ],
-                422,
-            );
+            return redirect()->back()->with('success', 'Sesi waktu berhasil ditambahkan.');
         } catch (\Exception $e) {
-            return response()->json(
-                [
+            if ($request->wantsJson()) {
+                return response()->json([
                     'status' => 'error',
-                    'message' => 'Gagal menyimpan: ' . $e->getMessage(),
-                ],
-                500,
-            );
+                    'message' => 'Gagal menyimpan: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
         }
     }
 
     public function update(Request $request, $id)
     {
+        $sesi = Sesi::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:sesis,name,' . $id,
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i|after:start_time',
+        ], [
+            'name.required' => 'Nama sesi wajib diisi.',
+            'name.unique' => 'Nama sesi sudah digunakan.',
+            'start_time.required' => 'Jam mulai wajib diisi.',
+            'start_time.date_format' => 'Format jam mulai salah (gunakan HH:MM).',
+            'end_time.required' => 'Jam selesai wajib diisi.',
+            'end_time.date_format' => 'Format jam selesai salah (gunakan HH:MM).',
+            'end_time.after' => 'Jam selesai harus lebih besar dari jam mulai.',
+        ]);
+
         try {
-            $sesi = Sesi::findOrFail($id);
-
-            $validated = $request->validate([
-                'name' => 'required|string|max:255|unique:sesis,name,' . $id,
-                'start_time' => 'required|date_format:H:i',
-                'end_time' => 'required|date_format:H:i|after:start_time',
-            ]);
-
             $sesi->update($validated);
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Sesi waktu berhasil diperbarui.',
-                'data' => $sesi,
-            ]);
-        } catch (ValidationException $e) {
-            return response()->json(
-                [
-                    'status' => 'error',
-                    'message' => 'Validasi gagal.',
-                    'errors' => $e->errors(),
-                ],
-                422,
-            );
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Sesi waktu berhasil diperbarui.'
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Sesi waktu berhasil diperbarui.');
         } catch (\Exception $e) {
-            return response()->json(
-                [
+            if ($request->wantsJson()) {
+                return response()->json([
                     'status' => 'error',
-                    'message' => 'Gagal memperbarui: ' . $e->getMessage(),
-                ],
-                500,
-            );
+                    'message' => 'Gagal memperbarui: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui: ' . $e->getMessage());
         }
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         try {
             $sesi = Sesi::findOrFail($id);
             $sesi->delete();
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Sesi waktu berhasil dihapus.',
-            ]);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Sesi waktu berhasil dihapus.'
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Sesi waktu berhasil dihapus.');
         } catch (\Exception $e) {
-            return response()->json(
-                [
+            if ($request->wantsJson()) {
+                return response()->json([
                     'status' => 'error',
-                    'message' => 'Gagal menghapus: ' . $e->getMessage(),
-                ],
-                500,
-            );
+                    'message' => 'Gagal menghapus: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Gagal menghapus: ' . $e->getMessage());
         }
     }
 }

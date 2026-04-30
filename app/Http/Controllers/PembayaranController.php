@@ -5,64 +5,88 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Pembayaran;
 use App\Models\Siswa;
-use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 
 class PembayaranController extends Controller
 {
     public function store(Request $request)
     {
-        try {
-            $validated = $request->validate([
-                'id_siswa' => 'required|exists:siswas,id',
-                'harga' => 'required|integer',
-                'keterangan' => 'nullable|string|max:255',
-                'status' => 'required|integer|in:0,1,2',
-            ]);
+        $validated = $request->validate([
+            'id_siswa' => 'required|exists:siswas,id',
+            'harga' => 'required|integer',
+            'keterangan' => 'nullable|string|max:255',
+            'status' => 'required|integer|in:0,1,2',
+        ], [
+            'id_siswa.exists' => 'Siswa tidak ditemukan.',
+            'status.in' => 'Status pembayaran tidak valid.',
+        ]);
 
+        try {
             $pembayaran = Pembayaran::create($validated);
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Data pembayaran berhasil dicatat.',
-                'data' => $pembayaran,
-            ]);
-        } catch (ValidationException $e) {
-            return response()->json(['status' => 'error', 'message' => 'Validasi gagal.', 'errors' => $e->errors()], 422);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Data pembayaran berhasil dicatat.',
+                    'data' => $pembayaran,
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Data pembayaran berhasil dicatat.');
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => 'Gagal menyimpan: ' . $e->getMessage()], 500);
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'error', 'message' => 'Gagal menyimpan: ' . $e->getMessage()], 500);
+            }
+            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
         }
     }
 
     public function update(Request $request, $id)
     {
-        try {
-            $pembayaran = Pembayaran::findOrFail($id);
-            $validated = $request->validate([
-                'id_siswa' => 'required|exists:siswas,id',
-                'harga' => 'required|integer',
-                'keterangan' => 'nullable|string|max:255',
-            ]);
+        $pembayaran = Pembayaran::findOrFail($id);
 
+        $validated = $request->validate([
+            'id_siswa' => 'required|exists:siswas,id',
+            'harga' => 'required|integer',
+            'keterangan' => 'nullable|string|max:255',
+            'status' => 'nullable|integer|in:0,1,2',
+        ]);
+
+        try {
             $pembayaran->update($validated);
 
-            return response()->json(['status' => 'success', 'message' => 'Data pembayaran diperbarui.']);
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'success', 'message' => 'Data pembayaran diperbarui.']);
+            }
+
+            return redirect()->back()->with('success', 'Data pembayaran diperbarui.');
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui: ' . $e->getMessage());
         }
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         try {
             Pembayaran::findOrFail($id)->delete();
-            return response()->json(['status' => 'success', 'message' => 'Data pembayaran dihapus.']);
+
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'success', 'message' => 'Data pembayaran dihapus.']);
+            }
+
+            return redirect()->back()->with('success', 'Data pembayaran dihapus.');
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => 'Gagal menghapus.'], 500);
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'error', 'message' => 'Gagal menghapus.'], 500);
+            }
+            return redirect()->back()->with('error', 'Gagal menghapus.');
         }
     }
 
-    public function lunasSemua()
+    public function lunasSemua(Request $request)
     {
         try {
             Pembayaran::whereIn('status', [0, 1])->update([
@@ -71,22 +95,36 @@ class PembayaranController extends Controller
                 'pembayaran_via' => 0
             ]);
 
-            return response()->json(['status' => 'success', 'message' => 'Semua tagihan (Belum & Tertagih) telah diselesaikan.']);
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'success', 'message' => 'Semua tagihan telah diselesaikan.']);
+            }
+
+            return redirect()->back()->with('success', 'Semua tagihan telah diselesaikan.');
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
-    public function lunasPerSiswa($id_siswa)
+    public function lunasPerSiswa(Request $request, $id_siswa)
     {
         try {
             Pembayaran::where('id_siswa', $id_siswa)
                 ->where('status', 0)
                 ->update(['status' => 1]);
 
-            return response()->json(['status' => 'success', 'message' => 'Tagihan siswa berhasil diselesaikan.']);
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'success', 'message' => 'Tagihan siswa berhasil ditagihkan.']);
+            }
+
+            return redirect()->back()->with('success', 'Tagihan siswa berhasil ditagihkan.');
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
@@ -97,17 +135,24 @@ class PembayaranController extends Controller
                 ->where('status', 1)
                 ->update([
                     'status' => 2,
-                    'tanggal_pembayaran' => $request->tanggal_pembayaran,
-                    'pembayaran_via' => $request->pembayaran_via
+                    'tanggal_pembayaran' => $request->tanggal_pembayaran ?? Carbon::now(),
+                    'pembayaran_via' => $request->pembayaran_via ?? 0
                 ]);
 
-            return response()->json(['status' => 'success', 'message' => 'Pembayaran siswa berhasil diproses.']);
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'success', 'message' => 'Pembayaran siswa berhasil diproses.']);
+            }
+
+            return redirect()->back()->with('success', 'Pembayaran siswa berhasil diproses.');
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
-    public function penagihanMassal()
+    public function penagihanMassal(Request $request)
     {
         try {
             $siswas = Siswa::whereNotNull('paket_pembayaran')->with('paket')->get();
@@ -118,19 +163,26 @@ class PembayaranController extends Controller
                     Pembayaran::create([
                         'id_siswa' => $siswa->id,
                         'harga' => $siswa->paket->harga,
-                        'keterangan' => 'Pembayaran Paket ' . $siswa->paket->nama_paket,
+                        'keterangan' => 'Tagihan Paket ' . $siswa->paket->nama_paket . ' - ' . Carbon::now()->translatedFormat('F Y'),
                         'status' => 0
                     ]);
                     $count++;
                 }
             }
 
-            return response()->json([
-                'status' => 'success',
-                'message' => $count . ' Tagihan massal berhasil dibuat.'
-            ]);
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => $count . ' Tagihan massal berhasil dibuat.'
+                ]);
+            }
+
+            return redirect()->back()->with('success', $count . ' Tagihan massal berhasil dibuat.');
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            }
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 }

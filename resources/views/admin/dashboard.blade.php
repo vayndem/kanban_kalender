@@ -830,40 +830,66 @@
                         const data = this.formData;
                         const saveButton = document.getElementById('saveNewDataButton');
                         saveButton.disabled = true;
-                        saveButton.innerHTML = 'Menyimpan...';
+                        saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Menyimpan...';
 
                         const isEdit = data.id ? true : false;
-                        let endpoint = '';
-                        let method = 'POST';
+                        let endpoint = isEdit ?
+                            this.routes[this.currentForm].update.replace(':id', data.id) :
+                            this.routes[this.currentForm].store;
 
-                        if (isEdit) {
-                            endpoint = this.routes[this.currentForm].update.replace(':id', data.id);
-                            method = 'PUT';
-                            data._method = 'PUT';
-                        } else {
-                            endpoint = this.routes[this.currentForm].store;
-                        }
+                        let method = isEdit ? 'PUT' : 'POST';
 
                         fetch(endpoint, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
                                     'X-CSRF-TOKEN': this.csrfToken
                                 },
-                                body: JSON.stringify(data)
+                                body: JSON.stringify({
+                                    ...data,
+                                    _method: method
+                                })
                             })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    alert('Berhasil menyimpan data! Halaman akan dimuat ulang.');
-                                    window.location.reload();
+                            .then(async response => {
+                                const result = await response.json();
+
+                                if (response.ok) {
+                                    return result;
                                 } else {
-                                    alert('Gagal menyimpan: ' + (data.message ||
-                                        'Terjadi kesalahan server.'));
+                                    throw result;
                                 }
                             })
+                            .then(data => {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: data.message || 'Data berhasil disimpan.',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    this.refreshPage();
+                                });
+                            })
                             .catch(error => {
-                                alert('Gagal menyimpan. Cek konsol atau koneksi.');
+                                console.error('Error detail:', error);
+
+                                let errorList = '';
+                                if (error.errors) {
+
+                                    errorList = '<ul class="text-left mt-2 list-disc list-inside">';
+                                    Object.values(error.errors).flat().forEach(msg => {
+                                        errorList += `<li class="text-sm">${msg}</li>`;
+                                    });
+                                    errorList += '</ul>';
+                                }
+
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal Menyimpan',
+                                    html: error.message + (errorList || ''),
+                                    confirmButtonColor: '#3b82f6'
+                                });
                             })
                             .finally(() => {
                                 saveButton.disabled = false;
