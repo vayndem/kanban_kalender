@@ -37,28 +37,22 @@
                     <div class="border-b border-gray-200 dark:border-gray-700">
                         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
                             <button @click="activeTab = 'jadwal'; currentForm = ''"
-                                :class="{
-                                    'border-blue-500 text-blue-600 dark:text-blue-400': activeTab === 'jadwal',
-                                    'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600': activeTab !== 'jadwal'
-                                }"
+                                :class="activeTab === 'jadwal' ? 'border-blue-500 text-blue-600 dark:text-blue-400' :
+                                    'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
                                 class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                                 Jadwal Pelajaran
                             </button>
 
                             <button @click="activeTab = 'data_siswa'; currentForm = 'siswa'; formSearch = ''"
-                                :class="{
-                                    'border-blue-500 text-blue-600 dark:text-blue-400': activeTab === 'data_siswa',
-                                    'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400': activeTab !== 'data_siswa'
-                                }"
+                                :class="activeTab === 'data_siswa' ? 'border-blue-500 text-blue-600 dark:text-blue-400' :
+                                    'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
                                 class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                                 Data Siswa
                             </button>
 
                             <button @click="activeTab = 'pembayaran'; currentForm = 'pembayaran'; formSearch = ''"
-                                :class="{
-                                    'border-blue-500 text-blue-600 dark:text-blue-400': activeTab === 'pembayaran',
-                                    'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400': activeTab !== 'pembayaran'
-                                }"
+                                :class="activeTab === 'pembayaran' ? 'border-blue-500 text-blue-600 dark:text-blue-400' :
+                                    'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
                                 class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                                 Pembayaran
                             </button>
@@ -695,7 +689,6 @@
                         ruang_id: null,
                         siswa_ids: []
                     },
-
                     allMapels: data.allMapels,
                     allGurus: data.allGurus,
                     allRuangs: data.allRuangs,
@@ -704,7 +697,6 @@
                     allSesis: data.allSesis,
                     routes: data.routes,
                     csrfToken: data.csrfToken,
-
                     searchModalSiswa: '',
                     showAddMenu: false,
                     currentForm: '',
@@ -720,18 +712,13 @@
                     },
 
                     sudahPunyaJadwal(siswaId) {
-                        if (!this.allJadwals || this.allJadwals.length === 0) {
-                            return false;
-                        }
-                        return this.allJadwals.some(j => {
-                            return Number(j.siswa_id) === Number(siswaId);
-                        });
+                        if (!this.allJadwals || this.allJadwals.length === 0) return false;
+                        return this.allJadwals.some(j => Number(j.siswa_id) === Number(siswaId));
                     },
 
                     getFilteredList() {
                         const search = this.formSearch.toLowerCase();
                         let source = [];
-
                         switch (this.currentForm) {
                             case 'mapel':
                                 source = this.allMapels;
@@ -752,29 +739,25 @@
                                 }));
                                 break;
                             case 'tanda':
-                                let flatTandas = [];
                                 this.allSiswas.forEach(siswa => {
-                                    if (siswa.tandas && siswa.tandas.length > 0) {
+                                    if (siswa.tandas) {
                                         siswa.tandas.forEach(tanda => {
-                                            flatTandas.push({
+                                            source.push({
                                                 id: tanda.id,
                                                 name: (siswa.panggilan || siswa
                                                         .name) + ' - ' + (siswa
                                                         .kelas || '-') + ' : ' +
                                                     tanda.keterangan,
-                                                original_date: tanda.created_at,
                                                 siswa_id: siswa.id,
                                                 keterangan: tanda.keterangan
                                             });
                                         });
                                     }
                                 });
-                                source = flatTandas;
                                 break;
                         }
-
-                        if (search === '') return source;
-                        return source.filter(item => item.name.toLowerCase().includes(search));
+                        return search === '' ? source : source.filter(item => item.name.toLowerCase()
+                            .includes(search));
                     },
 
                     editDataItem(item) {
@@ -786,6 +769,12 @@
                     },
 
                     deleteDataItem(id) {
+                        if (!this.currentForm) {
+                            Swal.fire('Error',
+                                'Tipe data tidak terdeteksi. Silakan pilih tab terlebih dahulu.',
+                                'error');
+                            return;
+                        }
                         Swal.fire({
                             title: 'Hapus Data?',
                             text: 'Data yang dihapus tidak dapat dikembalikan!',
@@ -797,48 +786,43 @@
                             cancelButtonText: 'Batal'
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                let endpoint = this.routes[this.currentForm].destroy.replace(':id',
-                                    id);
-
+                                let routeTemplate = this.routes[this.currentForm].destroy;
+                                let endpoint = routeTemplate.replace(':id', id);
                                 fetch(endpoint, {
                                         method: 'DELETE',
                                         headers: {
                                             'Content-Type': 'application/json',
+                                            'Accept': 'application/json',
                                             'X-CSRF-TOKEN': this.csrfToken
                                         }
                                     })
-                                    .then(response => response.json())
+                                    .then(async response => {
+                                        const resData = await response.json();
+                                        if (!response.ok) throw resData;
+                                        return resData;
+                                    })
                                     .then(data => {
                                         if (data.status === 'success') {
-                                            Swal.fire('Terhapus!', 'Data berhasil dihapus.',
-                                                    'success')
+                                            Swal.fire('Terhapus!', data.message, 'success')
                                                 .then(() => this.refreshPage());
-                                        } else {
-                                            Swal.fire('Gagal!', data.message ||
-                                                'Terjadi kesalahan.', 'error');
                                         }
                                     })
                                     .catch(error => {
-                                        Swal.fire('Error!', 'Gagal menghubungi server.',
-                                            'error');
+                                        Swal.fire('Gagal!', error.message ||
+                                            'Gagal menghubungi server.', 'error');
                                     });
                             }
                         });
                     },
 
                     saveNewData() {
-                        const data = this.formData;
                         const saveButton = document.getElementById('saveNewDataButton');
                         saveButton.disabled = true;
                         saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Menyimpan...';
-
-                        const isEdit = data.id ? true : false;
-                        let endpoint = isEdit ?
-                            this.routes[this.currentForm].update.replace(':id', data.id) :
-                            this.routes[this.currentForm].store;
-
+                        const isEdit = this.formData.id ? true : false;
+                        let endpoint = isEdit ? this.routes[this.currentForm].update.replace(':id', this
+                            .formData.id) : this.routes[this.currentForm].store;
                         let method = isEdit ? 'PUT' : 'POST';
-
                         fetch(endpoint, {
                                 method: 'POST',
                                 headers: {
@@ -847,47 +831,37 @@
                                     'X-CSRF-TOKEN': this.csrfToken
                                 },
                                 body: JSON.stringify({
-                                    ...data,
+                                    ...this.formData,
                                     _method: method
                                 })
                             })
                             .then(async response => {
                                 const result = await response.json();
-
-                                if (response.ok) {
-                                    return result;
-                                } else {
-                                    throw result;
-                                }
+                                if (!response.ok) throw result;
+                                return result;
                             })
                             .then(data => {
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'Berhasil!',
-                                    text: data.message || 'Data berhasil disimpan.',
+                                    text: data.message,
                                     timer: 1500,
                                     showConfirmButton: false
-                                }).then(() => {
-                                    this.refreshPage();
-                                });
+                                }).then(() => this.refreshPage());
                             })
                             .catch(error => {
-                                console.error('Error detail:', error);
-
                                 let errorList = '';
                                 if (error.errors) {
-
                                     errorList = '<ul class="text-left mt-2 list-disc list-inside">';
                                     Object.values(error.errors).flat().forEach(msg => {
                                         errorList += `<li class="text-sm">${msg}</li>`;
                                     });
                                     errorList += '</ul>';
                                 }
-
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Gagal Menyimpan',
-                                    html: error.message + (errorList || ''),
+                                    html: (error.message || 'Terjadi kesalahan') + errorList,
                                     confirmButtonColor: '#3b82f6'
                                 });
                             })
@@ -900,9 +874,8 @@
                     selectedSiswas() {
                         const target = this.showModal ? this.editingJadwal : this.newJadwal;
                         if (!target.siswa_ids) return [];
-                        return this.allSiswas
-                            .filter(s => target.siswa_ids.includes(s.id))
-                            .sort((a, b) => a.name.localeCompare(b.name));
+                        return this.allSiswas.filter(s => target.siswa_ids.includes(s.id)).sort((a, b) => a
+                            .name.localeCompare(b.name));
                     },
 
                     filteredAvailableSiswas() {
@@ -910,33 +883,25 @@
                         const selectedIds = this.showModal ? this.editingJadwal.siswa_ids : this.newJadwal
                             .siswa_ids;
                         if (search === '') return [];
-
-                        return this.allSiswas
-                            .filter(s => {
-                                const isSelected = selectedIds && selectedIds.includes(s.id);
-                                const matchesSearch = s.name.toLowerCase().includes(search) || (s
-                                    .panggilan && s.panggilan.toLowerCase().includes(search));
-                                return !isSelected && matchesSearch;
-                            })
-                            .sort((a, b) => a.name.localeCompare(b.name))
-                            .slice(0, 10);
+                        return this.allSiswas.filter(s => {
+                            const isSelected = selectedIds && selectedIds.includes(s.id);
+                            const matchesSearch = s.name.toLowerCase().includes(search) || (s
+                                .panggilan && s.panggilan.toLowerCase().includes(search));
+                            return !isSelected && matchesSearch;
+                        }).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 10);
                     },
 
                     addSiswa(id) {
                         const target = this.showModal ? this.editingJadwal : this.newJadwal;
-                        if (!target.siswa_ids.includes(id)) {
-                            target.siswa_ids.push(id);
-                        }
+                        if (!target.siswa_ids.includes(id)) target.siswa_ids.push(id);
                         this.searchModalSiswa = '';
                     },
 
                     removeSiswa(id) {
                         const target = this.showModal ? this.editingJadwal : this.newJadwal;
-                        target.siswa_ids = target.siswa_ids.filter(siswaId => siswaId !== id);
-
-                        if (this.selectedStudentDetail && this.selectedStudentDetail.id === id) {
-                            this.selectedStudentDetail = null;
-                        }
+                        target.siswa_ids = target.siswa_ids.filter(sid => sid !== id);
+                        if (this.selectedStudentDetail && this.selectedStudentDetail.id === id) this
+                            .selectedStudentDetail = null;
                     },
 
                     hasTanda(siswa) {
@@ -949,11 +914,9 @@
 
                     markTandaForDeletion(tandaId, studentId) {
                         if (!confirm('Hapus tanda ini?')) return;
-
                         this.deletedTandaIds.push(tandaId);
                         this.selectedStudentDetail.tandas = this.selectedStudentDetail.tandas.filter(t => t
                             .id !== tandaId);
-
                         const studentIndex = this.allSiswas.findIndex(s => s.id === studentId);
                         if (studentIndex !== -1) {
                             this.allSiswas[studentIndex].tandas = this.allSiswas[studentIndex].tandas
@@ -965,16 +928,15 @@
                         const saveButton = document.getElementById('saveJadwalButton');
                         saveButton.disabled = true;
                         saveButton.innerHTML = 'Menyimpan...';
-
                         const payload = {
                             ...this.editingJadwal,
                             deleted_tanda_ids: this.deletedTandaIds
                         };
-
                         fetch(this.routes.jadwal.updateKelas, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
                                     'X-CSRF-TOKEN': this.csrfToken
                                 },
                                 body: JSON.stringify(payload)
@@ -984,15 +946,12 @@
                                 if (data.status === 'success') {
                                     this.showModal = false;
                                     this.deletedTandaIds = [];
-                                    alert('Perubahan berhasil disimpan! Halaman akan dimuat ulang.');
                                     window.location.reload();
                                 } else {
                                     alert('Gagal menyimpan: ' + data.message);
                                 }
                             })
-                            .catch(error => {
-                                alert('Gagal menyimpan. Cek konsol.');
-                            })
+                            .catch(() => alert('Gagal menyimpan. Cek konsol.'))
                             .finally(() => {
                                 saveButton.disabled = false;
                                 saveButton.innerHTML = 'Simpan Perubahan';
@@ -1014,128 +973,66 @@
                     },
 
                     saveNewJadwal() {
-                        const saveButton = document.getElementById('saveNewJadwalButton');
-                        saveButton.disabled = true;
-                        saveButton.innerHTML = 'Menyimpan...';
-
+                        const btn = document.getElementById('saveNewJadwalButton');
+                        btn.disabled = true;
+                        btn.innerHTML = 'Menyimpan...';
                         fetch(this.routes.jadwal.store, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
                                     'X-CSRF-TOKEN': this.csrfToken
                                 },
                                 body: JSON.stringify(this.newJadwal)
                             })
-                            .then(response => response.json())
+                            .then(r => r.json())
                             .then(data => {
-                                if (data.status === 'success') {
-                                    this.showAddJadwalModal = false;
-                                    alert(data.message + ' Halaman akan dimuat ulang.');
-                                    window.location.reload();
-                                } else {
-                                    const errorMsg = data.errors ? Object.values(data.errors).flat()
-                                        .join('\n') : (data.message || 'Gagal menyimpan.');
-                                    alert('Gagal menyimpan:\n' + errorMsg);
-                                }
+                                if (data.status === 'success') window.location.reload();
+                                else alert(data.message);
                             })
-                            .catch(error => {
-                                alert('Gagal menyimpan. Cek konsol atau koneksi.');
-                            })
+                            .catch(() => alert('Gagal menyimpan.'))
                             .finally(() => {
-                                saveButton.disabled = false;
-                                saveButton.innerHTML = 'Simpan Jadwal Baru';
+                                btn.disabled = false;
+                                btn.innerHTML = 'Simpan Jadwal Baru';
                             });
                     },
 
                     openExportOptions() {
                         const searchTerm = this.universalSearch.trim();
-                        let htmlContent = '';
-
-                        if (searchTerm) {
-                            htmlContent = `
-                            <div class='text-left'>
-                                <p class='text-gray-600 mb-2'>Anda sedang melakukan pencarian:</p>
-                                <div class='bg-blue-50 p-3 rounded border border-blue-200 text-blue-800 text-lg font-bold text-center'>
-                                    '${searchTerm}'
-                                </div>
-                                <p class='text-xs text-gray-500 mt-3'>
-                                    <i class='fas fa-info-circle'></i> PDF/Text akan difilter berdasarkan kata kunci ini.
-                                </p>
-                            </div>
-                        `;
-                        } else {
-                            htmlContent = `
-                            <div class='text-left'>
-                                <div class='bg-yellow-50 p-3 rounded border border-yellow-200 text-yellow-800'>
-                                    <i class='fas fa-exclamation-triangle mr-1'></i> Tidak ada filter pencarian aktif.
-                                </div>
-                                <p class='font-bold text-gray-800 mt-4 text-center'>
-                                    Akan memproses SEMUA JADWAL (Full Data).
-                                </p>
-                            </div>
-                        `;
-                        }
-
+                        let htmlContent = searchTerm ?
+                            `<div class='text-left'><p class='text-gray-600 mb-2'>Pencarian aktif:</p><div class='bg-blue-50 p-3 rounded border border-blue-200 text-blue-800 text-lg font-bold text-center'>'${searchTerm}'</div></div>` :
+                            `<div class='text-left'><div class='bg-yellow-50 p-3 rounded border border-yellow-200 text-yellow-800'>Semua data akan diproses.</div></div>`;
                         Swal.fire({
                             title: 'Export Opsi',
                             html: htmlContent,
                             showCancelButton: true,
                             showDenyButton: true,
-                            confirmButtonText: '<i class="fas fa-file-pdf"></i> Download PDF',
-                            denyButtonText: '<i class="fas fa-copy"></i> Copy Text WA',
-                            cancelButtonText: 'Batal',
+                            confirmButtonText: '<i class="fas fa-file-pdf"></i> PDF',
+                            denyButtonText: '<i class="fas fa-copy"></i> Copy WA',
                             confirmButtonColor: '#d33',
-                            denyButtonColor: '#3b82f6',
-                            reverseButtons: true,
-                            focusConfirm: false
+                            denyButtonColor: '#3b82f6'
                         }).then((result) => {
                             const params = new URLSearchParams();
-                            if (searchTerm) {
-                                params.append('search', searchTerm);
-                            }
-
+                            if (searchTerm) params.append('search', searchTerm);
                             if (result.isConfirmed) {
                                 window.open(this.routes.jadwal.export+'?' + params.toString(),
                                     '_blank');
                             } else if (result.isDenied) {
-                                Swal.fire({
-                                    title: 'Sedang memproses...',
-                                    text: 'Mengambil data jadwal untuk disalin.',
-                                    allowOutsideClick: false,
-                                    didOpen: () => {
-                                        Swal.showLoading();
-                                    }
-                                });
-
+                                Swal.showLoading();
                                 fetch(this.routes.jadwal.generateText + '?' + params.toString())
-                                    .then(response => response.json())
+                                    .then(r => r.json())
                                     .then(data => {
                                         if (data.status === 'success') {
                                             navigator.clipboard.writeText(data.text).then(
                                                 () => {
                                                     Swal.fire({
                                                         icon: 'success',
-                                                        title: 'Berhasil Disalin!',
-                                                        text: 'Jadwal format WhatsApp sudah disalin ke clipboard.',
-                                                        timer: 2000,
+                                                        title: 'Disalin!',
+                                                        timer: 1500,
                                                         showConfirmButton: false
                                                     });
-                                                }).catch(err => {
-                                                console.error('Clipboard Error:', err);
-                                                Swal.fire('Warning',
-                                                    'Gagal menyalin otomatis. Izin browser mungkin ditolak.',
-                                                    'warning');
-                                            });
-                                        } else {
-                                            Swal.fire('Error', 'Gagal memproses data.',
-                                                'error');
+                                                });
                                         }
-                                    })
-                                    .catch(err => {
-                                        Swal.fire('Error',
-                                            'Terjadi kesalahan jaringan atau Route tidak ditemukan.',
-                                            'error');
-                                        console.error(err);
                                     });
                             }
                         });
@@ -1150,46 +1047,38 @@
                         animation: 150,
                         ghostClass: 'opacity-50',
                         onEnd: function(evt) {
-                            if (!toSlot.dataset.sesiId || !toSlot.dataset.hariId) {
-                                console.error("Slot tujuan tidak memiliki metadata yang lengkap.");
-                                return;
-                            }
-                            const card = evt.item;
-                            const fromSlot = evt.from;
                             const toSlot = evt.to;
-
-                            const updateData = {
-                                mapel_id: card.dataset.mapelId,
-                                guru_id: card.dataset.guruId,
-                                ruang_id: card.dataset.ruangId,
-                                old_hari_id: fromSlot.dataset.hariId,
-                                old_sesi_id: fromSlot.dataset.sesiId,
-                                new_hari_id: toSlot.dataset.hariId,
-                                new_sesi_id: toSlot.dataset.sesiId,
-                            };
-
+                            const fromSlot = evt.from;
+                            const card = evt.item;
+                            if (!toSlot || !toSlot.dataset.sesiId || !toSlot.dataset.hariId) return;
                             fetch('{{ route('admin.jadwal.updatePosisi') }}', {
                                     method: 'POST',
                                     headers: {
                                         'Content-Type': 'application/json',
+                                        'Accept': 'application/json',
                                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                                     },
-                                    body: JSON.stringify(updateData)
+                                    body: JSON.stringify({
+                                        mapel_id: card.dataset.mapelId,
+                                        guru_id: card.dataset.guruId,
+                                        ruang_id: card.dataset.ruangId,
+                                        old_hari_id: fromSlot.dataset.hariId,
+                                        old_sesi_id: fromSlot.dataset.sesiId,
+                                        new_hari_id: toSlot.dataset.hariId,
+                                        new_sesi_id: toSlot.dataset.sesiId,
+                                    })
                                 })
-                                .then(response => response.json())
+                                .then(r => r.json())
                                 .then(data => {
                                     if (data.status === 'success') {
                                         card.dataset.hariId = toSlot.dataset.hariId;
                                         card.dataset.sesiId = toSlot.dataset.sesiId;
                                     } else {
                                         fromSlot.appendChild(card);
-                                        alert('Update Gagal: ' + data.message);
+                                        alert(data.message);
                                     }
                                 })
-                                .catch(error => {
-                                    fromSlot.appendChild(card);
-                                    alert('Update Gagal. Periksa koneksi Anda.');
-                                });
+                                .catch(() => fromSlot.appendChild(card));
                         }
                     });
                 });
