@@ -35,20 +35,17 @@ class SiswaController extends Controller
 
             return redirect()->back()->with('success', 'Siswa berhasil ditambahkan.');
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Gagal menyimpan: ' . $e->getMessage()
-                ], 500);
-            }
-
-            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
+            return $this->handleException($request, 'Gagal menyimpan', $e);
         }
     }
 
     public function update(Request $request, $id)
     {
-        $siswa = Siswa::findOrFail($id);
+        $siswa = Siswa::find($id);
+
+        if (!$siswa) {
+            return $this->handleNotFound($request, "Siswa (ID: $id)");
+        }
 
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:siswas,name,' . $id,
@@ -75,22 +72,20 @@ class SiswaController extends Controller
 
             return redirect()->back()->with('success', 'Siswa berhasil diperbarui.');
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Gagal memperbarui: ' . $e->getMessage()
-                ], 500);
-            }
-
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui: ' . $e->getMessage());
+            return $this->handleException($request, 'Gagal memperbarui', $e);
         }
     }
 
     public function destroy(Request $request, $id)
     {
         try {
-            $siswa = Siswa::findOrFail($id);
+            $siswa = Siswa::find($id);
 
+            if (!$siswa) {
+                return $this->handleNotFound($request, "Siswa (ID: $id)");
+            }
+
+            // Proses Arsip
             Arsip::create([
                 'name'             => $siswa->name,
                 'panggilan'        => $siswa->panggilan,
@@ -110,14 +105,26 @@ class SiswaController extends Controller
 
             return redirect()->back()->with('success', 'Data berhasil diarsipkan dan dihapus.');
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Gagal mengarsipkan data: ' . $e->getMessage()
-                ], 500);
-            }
-
-            return redirect()->back()->with('error', 'Gagal mengarsipkan data: ' . $e->getMessage());
+            return $this->handleException($request, 'Gagal mengarsipkan data', $e);
         }
+    }
+
+    private function handleNotFound($request, $item)
+    {
+        $msg = "Maaf, data $item tidak ditemukan. Silakan segarkan halaman.";
+        return $request->wantsJson()
+            ? response()->json(['status' => 'error', 'message' => $msg], 404)
+            : redirect()->back()->with('error', $msg);
+    }
+
+    private function handleException($request, $prefix, $e)
+    {
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $prefix . ': ' . $e->getMessage()
+            ], 500);
+        }
+        return redirect()->back()->withInput()->with('error', $prefix . ': ' . $e->getMessage());
     }
 }

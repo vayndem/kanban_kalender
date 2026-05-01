@@ -48,7 +48,14 @@ class SesiController extends Controller
 
     public function update(Request $request, $id)
     {
-        $sesi = Sesi::findOrFail($id);
+        $sesi = Sesi::find($id);
+
+        if (!$sesi) {
+            $msg = "Data sesi tidak ditemukan (ID: $id). Kemungkinan sudah dihapus atau data di browser Anda kadaluwarsa. Silakan refresh halaman.";
+            return $request->wantsJson()
+                ? response()->json(['status' => 'error', 'message' => $msg], 404)
+                : redirect()->back()->with('error', $msg);
+        }
 
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:sesis,name,' . $id,
@@ -90,7 +97,15 @@ class SesiController extends Controller
     public function destroy(Request $request, $id)
     {
         try {
-            $sesi = Sesi::findOrFail($id);
+            $sesi = Sesi::find($id);
+
+            if (!$sesi) {
+                $msg = "Data sesi tidak ditemukan. Mungkin sudah dihapus.";
+                return $request->wantsJson()
+                    ? response()->json(['status' => 'error', 'message' => $msg], 404)
+                    : redirect()->back()->with('error', $msg);
+            }
+
             $sesi->delete();
 
             if ($request->wantsJson()) {

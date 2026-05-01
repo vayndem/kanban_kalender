@@ -29,20 +29,17 @@ class PaketController extends Controller
 
             return redirect()->back()->with('success', 'Paket berhasil ditambahkan.');
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Gagal menyimpan: ' . $e->getMessage()
-                ], 500);
-            }
-
-            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
+            return $this->handleException($request, 'Gagal menyimpan', $e);
         }
     }
 
     public function update(Request $request, $id)
     {
-        $paket = Paket::findOrFail($id);
+        $paket = Paket::find($id);
+
+        if (!$paket) {
+            return $this->handleNotFound($request, "Paket (ID: $id)");
+        }
 
         $validated = $request->validate([
             'nama_paket' => 'required|string|max:255',
@@ -63,21 +60,19 @@ class PaketController extends Controller
 
             return redirect()->back()->with('success', 'Paket berhasil diperbarui.');
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Gagal memperbarui: ' . $e->getMessage()
-                ], 500);
-            }
-
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui: ' . $e->getMessage());
+            return $this->handleException($request, 'Gagal memperbarui', $e);
         }
     }
 
     public function destroy(Request $request, $id)
     {
         try {
-            $paket = Paket::findOrFail($id);
+            $paket = Paket::find($id);
+
+            if (!$paket) {
+                return $this->handleNotFound($request, "Paket");
+            }
+
             $paket->delete();
 
             if ($request->wantsJson()) {
@@ -89,14 +84,25 @@ class PaketController extends Controller
 
             return redirect()->back()->with('success', 'Paket berhasil dihapus.');
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Gagal menghapus: ' . $e->getMessage()
-                ], 500);
-            }
-
-            return redirect()->back()->with('error', 'Gagal menghapus: ' . $e->getMessage());
+            return $this->handleException($request, 'Gagal menghapus', $e);
         }
+    }
+
+    private function handleNotFound($request, $item)
+    {
+        $msg = "Maaf, data $item tidak ditemukan. Silakan segarkan halaman browser Anda.";
+        if ($request->wantsJson()) {
+            return response()->json(['status' => 'error', 'message' => $msg], 404);
+        }
+        return redirect()->back()->with('error', $msg);
+    }
+
+    private function handleException($request, $prefix, $e)
+    {
+        $msg = $prefix . ': ' . $e->getMessage();
+        if ($request->wantsJson()) {
+            return response()->json(['status' => 'error', 'message' => $msg], 500);
+        }
+        return redirect()->back()->withInput()->with('error', $msg);
     }
 }

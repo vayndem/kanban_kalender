@@ -19,18 +19,22 @@ class DashboardController extends Controller
     public function index()
     {
         $haris = Hari::orderBy('id')->get();
-        $sesis = Sesi::orderBy('id')->get();
+        $sesis = Sesi::orderBy('start_time')->get();
         $allGurus = Guru::orderBy('name')->get();
         $allMapels = MataPelajaran::orderBy('name')->get();
         $allRuangs = Ruang::orderBy('name')->get();
         $allSiswas = Siswa::with('tandas')->orderBy('name')->get();
         $allArsips = Arsip::orderBy('name')->get();
         $pakets = Paket::orderBy('nama_paket')->get();
-        $jadwalsData = Jadwal::all();
-        $finalJadwals = [];
+
         $jadwalsWithRelations = Jadwal::with(['siswa.tandas', 'mataPelajaran', 'guru', 'ruang'])->get();
+
+        $jadwalsData = $jadwalsWithRelations;
+
+        $finalJadwals = [];
         foreach ($jadwalsWithRelations as $jadwal) {
-            $classKey = $jadwal->mata_pelajaran_id . '_' . $jadwal->guru_id . '_' . $jadwal->ruang_id;
+            $classKey = "{$jadwal->mata_pelajaran_id}_{$jadwal->guru_id}_{$jadwal->ruang_id}";
+
             if (!isset($finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey])) {
                 $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey] = [
                     'mapel' => $jadwal->mataPelajaran,
@@ -42,7 +46,7 @@ class DashboardController extends Controller
             $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey]['siswa_list']->push($jadwal->siswa);
         }
 
-        $pembayaranSummaries = Pembayaran::with('siswa')
+        $pembayaranSummaries = Pembayaran::with(['siswa.tandas'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($item) {
@@ -52,8 +56,8 @@ class DashboardController extends Controller
                     'siswa' => $item->siswa,
                     'harga' => (int) $item->harga,
                     'status' => (int) $item->status,
-                    'bulan' => \Carbon\Carbon::parse($item->created_at)->format('m'),
-                    'tanggal_format' => \Carbon\Carbon::parse($item->created_at)->translatedFormat('d F Y'),
+                    'bulan' => $item->created_at->format('m'),
+                    'tanggal_format' => $item->created_at->translatedFormat('d F Y'),
                 ];
             });
 

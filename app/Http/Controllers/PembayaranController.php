@@ -34,16 +34,18 @@ class PembayaranController extends Controller
 
             return redirect()->back()->with('success', 'Data pembayaran berhasil dicatat.');
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['status' => 'error', 'message' => 'Gagal menyimpan: ' . $e->getMessage()], 500);
-            }
-            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
+            return $this->handleException($request, 'Gagal menyimpan', $e);
         }
     }
 
     public function update(Request $request, $id)
     {
-        $pembayaran = Pembayaran::findOrFail($id);
+        // Gunakan find() agar tidak melempar error 500 jika ID salah
+        $pembayaran = Pembayaran::find($id);
+
+        if (!$pembayaran) {
+            return $this->handleNotFound($request, "Pembayaran (ID: $id)");
+        }
 
         $validated = $request->validate([
             'id_siswa' => 'required|exists:siswas,id',
@@ -61,17 +63,20 @@ class PembayaranController extends Controller
 
             return redirect()->back()->with('success', 'Data pembayaran diperbarui.');
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-            }
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui: ' . $e->getMessage());
+            return $this->handleException($request, 'Gagal memperbarui', $e);
         }
     }
 
     public function destroy(Request $request, $id)
     {
         try {
-            Pembayaran::findOrFail($id)->delete();
+            $pembayaran = Pembayaran::find($id);
+
+            if (!$pembayaran) {
+                return $this->handleNotFound($request, "Pembayaran");
+            }
+
+            $pembayaran->delete();
 
             if ($request->wantsJson()) {
                 return response()->json(['status' => 'success', 'message' => 'Data pembayaran dihapus.']);
@@ -79,10 +84,7 @@ class PembayaranController extends Controller
 
             return redirect()->back()->with('success', 'Data pembayaran dihapus.');
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['status' => 'error', 'message' => 'Gagal menghapus.'], 500);
-            }
-            return redirect()->back()->with('error', 'Gagal menghapus.');
+            return $this->handleException($request, 'Gagal menghapus', $e);
         }
     }
 
@@ -101,16 +103,17 @@ class PembayaranController extends Controller
 
             return redirect()->back()->with('success', 'Semua tagihan telah diselesaikan.');
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-            }
-            return redirect()->back()->with('error', $e->getMessage());
+            return $this->handleException($request, 'Gagal memproses pelunasan massal', $e);
         }
     }
 
     public function lunasPerSiswa(Request $request, $id_siswa)
     {
         try {
+            if (!Siswa::where('id', $id_siswa)->exists()) {
+                return $this->handleNotFound($request, "Siswa");
+            }
+
             Pembayaran::where('id_siswa', $id_siswa)
                 ->where('status', 0)
                 ->update(['status' => 1]);
@@ -121,10 +124,7 @@ class PembayaranController extends Controller
 
             return redirect()->back()->with('success', 'Tagihan siswa berhasil ditagihkan.');
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-            }
-            return redirect()->back()->with('error', $e->getMessage());
+            return $this->handleException($request, 'Gagal memproses tagihan siswa', $e);
         }
     }
 
@@ -145,10 +145,7 @@ class PembayaranController extends Controller
 
             return redirect()->back()->with('success', 'Pembayaran siswa berhasil diproses.');
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-            }
-            return redirect()->back()->with('error', $e->getMessage());
+            return $this->handleException($request, 'Gagal memproses pembayaran', $e);
         }
     }
 
@@ -157,32 +154,46 @@ class PembayaranController extends Controller
         try {
             $siswas = Siswa::whereNotNull('paket_pembayaran')->with('paket')->get();
             $count = 0;
+            $now = Carbon::now();
+            $bulanTahun = $now->translatedFormat('F Y');
 
             foreach ($siswas as $siswa) {
                 if ($siswa->paket) {
                     Pembayaran::create([
                         'id_siswa' => $siswa->id,
                         'harga' => $siswa->paket->harga,
-                        'keterangan' => 'Tagihan Paket ' . $siswa->paket->nama_paket . ' - ' . Carbon::now()->translatedFormat('F Y'),
+                        'keterangan' => "Tagihan Paket {$siswa->paket->nama_paket} - {$bulanTahun}",
                         'status' => 0
                     ]);
                     $count++;
                 }
             }
 
+            $message = "{$count} Tagihan massal berhasil dibuat.";
             if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'success',
-                    'message' => $count . ' Tagihan massal berhasil dibuat.'
-                ]);
+                return response()->json(['status' => 'success', 'message' => $message]);
             }
 
-            return redirect()->back()->with('success', $count . ' Tagihan massal berhasil dibuat.');
+            return redirect()->back()->with('success', $message);
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-            }
-            return redirect()->back()->with('error', $e->getMessage());
+            return $this->handleException($request, 'Gagal membuat tagihan massal', $e);
         }
+    }
+
+    private function handleNotFound($request, $item)
+    {
+        $msg = "Maaf, data $item tidak ditemukan. Silakan segarkan halaman.";
+        return $request->wantsJson()
+            ? response()->json(['status' => 'error', 'message' => $msg], 404)
+            : redirect()->back()->with('error', $msg);
+    }
+
+    private function handleException($request, $prefix, $e)
+    {
+        $msg = $prefix . ': ' . $e->getMessage();
+        if ($request->wantsJson()) {
+            return response()->json(['status' => 'error', 'message' => $msg], 500);
+        }
+        return redirect()->back()->withInput()->with('error', $msg);
     }
 }

@@ -1150,6 +1150,10 @@
                         animation: 150,
                         ghostClass: 'opacity-50',
                         onEnd: function(evt) {
+                            if (!toSlot.dataset.sesiId || !toSlot.dataset.hariId) {
+                                console.error("Slot tujuan tidak memiliki metadata yang lengkap.");
+                                return;
+                            }
                             const card = evt.item;
                             const fromSlot = evt.from;
                             const toSlot = evt.to;
