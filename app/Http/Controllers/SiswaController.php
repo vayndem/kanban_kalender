@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Siswa;
 use App\Models\Arsip;
+use App\Models\jadwal;
 
 class SiswaController extends Controller
 {
@@ -82,10 +83,9 @@ class SiswaController extends Controller
             $siswa = Siswa::find($id);
 
             if (!$siswa) {
-                return $this->handleNotFound($request, "Siswa (ID: $id)");
+                return $this->handleNotFound($request, "Siswa");
             }
 
-            // Proses Arsip
             Arsip::create([
                 'name'             => $siswa->name,
                 'panggilan'        => $siswa->panggilan,
@@ -94,18 +94,20 @@ class SiswaController extends Controller
                 'paket_pembayaran' => $siswa->paket_pembayaran,
             ]);
 
+            Jadwal::where('siswa_id', $id)->delete();
+
             $siswa->delete();
 
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'Data berhasil diarsipkan dan dihapus.'
+                    'message' => 'Siswa berhasil diarsipkan dan jadwal telah dibersihkan.'
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Data berhasil diarsipkan dan dihapus.');
+            return redirect()->back()->with('success', 'Siswa berhasil diarsipkan.');
         } catch (\Exception $e) {
-            return $this->handleException($request, 'Gagal mengarsipkan data', $e);
+            return $this->handleException($request, 'Gagal memproses', $e);
         }
     }
 

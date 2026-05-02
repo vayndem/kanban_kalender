@@ -475,14 +475,30 @@
                     const noHp = item.siswa.no_hp;
                     if (!noHp) return Swal.fire('Error', 'No HP tidak ditemukan', 'error');
 
-                    let rincianTeks = "";
-                    item.rincian_data.forEach(d => {
-                        rincianTeks +=
-                            `*${d.keterangan || 'Tagihan'}* = Rp ${new Intl.NumberFormat('id-ID').format(d.harga)}\n`;
-                    });
+                    const bulanIndo = ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+                    ];
+                    const now = new Date();
+                    const periode = `${bulanIndo[now.getMonth()]} ${now.getFullYear()}`;
+                    const keterangan = item.rincian_data.map(d => d.keterangan || 'Tagihan').join(
+                        ', ');
 
-                    const text =
-                        `*Assalamu'alaikum Warahmatullahi Wabarakatuh*\n\nBapak/Ibu yang kami muliakan,\n\nKami dari pihak administrasi *E-Ling* mendoakan semoga Bapak/Ibu sekeluarga senantiasa dalam keadaan sehat dan dalam lindungan Allah SWT.\n\nMelalui pesan ini, kami bermaksud menyampaikan informasi mengenai kewajiban administrasi ananda *${nama}* dengan rincian sebagai berikut:\n\n${rincianTeks}\n*Total Tagihan: Rp ${total}*\n\nMohon Bapak/Ibu dapat segera menindaklanjuti informasi ini. Atas perhatian dan kerja samanya, kami ucapkan terima kasih.\n\n*Jazakumullah Khairan Katsiran.*\n\n*Wassalamu'alaikum Warahmatullahi Wabarakatuh*`;
+                    const text = `*REMINDER*
+
+                        Kepada Yth.
+                        Bapak/Ibu Wali Murid E-Ling Course
+
+                        Berikut kami sampaikan Tagihan bulanan Bimbel dengan rincian:
+
+                        *Nama siswa* : ${nama}
+                        *Keterangan* : ${keterangan}
+                        *Periode* : ${periode}
+                        *Tagihan* : Rp ${total}
+
+                        Silakan konfirmasi sesudah melakukan pembayaran. Terima kasih atas kepercayaan Anda pada layanan pendidikan E-ling Course.
+
+                        *Salam hormat,*
+                        *E-ling Course*`;
 
                     window.open(
                         `https://wa.me/${noHp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`,
@@ -493,7 +509,9 @@
                         await fetch(`{{ url('admin/pembayaran/lunas-siswa') }}/${item.id_siswa}`, {
                             method: 'POST',
                             headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
                             }
                         });
                         this.refreshToTab();
