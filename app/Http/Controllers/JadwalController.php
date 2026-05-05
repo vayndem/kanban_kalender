@@ -12,6 +12,7 @@ use App\Models\Hari;
 use App\Models\Jadwal;
 use App\Models\Sesi;
 use App\Models\Tanda;
+use Illuminate\Support\Facades\Response;
 
 class JadwalController extends Controller
 {
@@ -335,5 +336,89 @@ class JadwalController extends Controller
         }
 
         return response()->json(['status' => 'success', 'text' => $textOutput]);
+    }
+
+    public function downloadStash()
+    {
+        // Ambil seluruh data jadwal mentah tanpa filter
+        $allJadwals = Jadwal::all()->map(function ($j) {
+            return [
+                'h' => $j->hari_id,
+                's' => $j->sesi_id,
+                'm' => $j->mata_pelajaran_id,
+                'g' => $j->guru_id,
+                'r' => $j->ruang_id,
+                'si' => $j->siswa_id,
+            ];
+        });
+
+        $data = [
+            'app' => 'E-Ling-Course',
+            'version' => '1.0',
+            'timestamp' => now()->toDateTimeString(),
+            'content' => $allJadwals
+        ];
+
+        // Encode ke Base64 agar user tidak bisa baca langsung isinya
+        $encodedData = base64_encode(json_encode($data));
+        $filename = "JADWAL_STASH_" . date('Ymd_His') . ".stash";
+
+        return Response::make($encodedData, 200, [
+            'Content-Type' => 'application/octet-stream',
+            'Content-Disposition' => 'attachment; filename=' . $filename,
+        ]);
+    }
+
+    public function uploadStash(Request $request)
+    {
+        $request->validate([
+            'file_stash' => 'required|file'
+        ]);
+
+        try {
+            $fileContent = file_get_contents($request->file('file_stash')->getRealPath());
+            $decodedData = json_decode(base64_decode($fileContent), true);
+
+            if (!$decodedData || !isset($decodedData['app']) || $decodedData['app'] !== 'E-Ling-Course') {
+                return response()->json(['status' => 'error', 'message' => 'Format file stash tidak dikenali!'], 422);
+            }
+
+            $incomingJadwals = $decodedData['content'];
+
+            DB::beginTransaction();
+            Jadwal::query()->delete();
+
+            $insertData = [];
+            $now = now();
+            foreach ($incomingJadwals as $j) {
+                $insertData[] = [
+                    'hari_id'           => $j['h'],
+                    'sesi_id'           => $j['s'],
+                    'mata_pelajaran_id' => $j['m'],
+                    'guru_id'           => $j['g'],
+                    'ruang_id'          => $j['r'],
+                    'siswa_id'          => $j['si'],
+                    'created_at'        => $now,
+                    'updated_at'        => $now,
+                ];
+            }
+
+            // Chunk insert untuk performa
+            foreach (array_chunk($insertData, 500) as $chunk) {
+                Jadwal::insert($chunk);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Seluruh jadwal berhasil direplace dengan data stash!'
+            ]);
+        } catch (\Exception $e) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+            return response()->json(['status' => 'error', 'message' => 'Gagal upload: ' . $e->getMessage()], 500);
+        }
     }
 }

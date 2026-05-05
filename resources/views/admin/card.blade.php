@@ -137,7 +137,7 @@
 
                 <template x-if="viewMode === 'aktif'">
                     <div class="text-[8px] text-white font-black text-center py-0.5 uppercase tracking-widest transition-colors duration-500"
-                        :class="getStatusJadwal(siswa).isKurang ? '' : 'bg-blue-500'">
+                        :class="getStatusJadwal(siswa).isKurang ? '' : ''">
                         <span
                             x-text="getStatusJadwal(siswa).kuota > 0
                             ? getStatusJadwal(siswa).total + ' dari ' + getStatusJadwal(siswa).kuota + ' Pertemuan'

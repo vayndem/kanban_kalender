@@ -72,6 +72,11 @@
                                     <i class="fas fa-file-export mr-2"></i> Export / Copy
                                 </button>
 
+                                <button @click.prevent="openStashOptions()" type="button"
+                                    class="inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-emerald-600 text-base font-medium text-white hover:bg-emerald-700 transition-colors">
+                                    <i class="fas fa-database mr-2"></i> Stash
+                                </button>
+
                                 <div class="relative inline-block text-left">
                                     <button @click="showAddMenu = !showAddMenu" type="button"
                                         class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:ring-offset-gray-800">
@@ -1002,6 +1007,79 @@
                                 btn.disabled = false;
                                 btn.innerHTML = 'Simpan Jadwal Baru';
                             });
+                    },
+
+                    openStashOptions() {
+                        Swal.fire({
+                            title: 'Stash Manager',
+                            text: 'Backup atau Restore data jadwal, perubahan jadwal bersifat permanen dan tidak bisa dibatalkan!',
+                            icon: 'info',
+                            showCancelButton: true,
+                            showDenyButton: true,
+                            confirmButtonText: '<i class="fas fa-cloud-download-alt mr-2"></i> Download Stash',
+                            denyButtonText: '<i class="fas fa-cloud-upload-alt mr-2"></i> Upload Stash',
+                            confirmButtonColor: '#059669',
+                            denyButtonColor: '#3b82f6',
+                            background: document.documentElement.classList.contains('dark') ?
+                                '#1f2937' : '#fff',
+                            color: document.documentElement.classList.contains('dark') ? '#fff' :
+                                '#000',
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                this.downloadStash();
+                            } else if (result.isDenied) {
+                                this.uploadStash();
+                            }
+                        });
+                    },
+
+                    downloadStash() {
+                        window.location.href = "{{ route('admin.jadwal.downloadStash') }}";
+                    },
+
+                    async uploadStash() {
+                        const {
+                            value: file
+                        } = await Swal.fire({
+                            title: 'Upload & Replace Jadwal',
+                            text: 'PERINGATAN: Seluruh jadwal saat ini akan dihapus dan diganti dengan isi file ini!',
+                            input: 'file',
+                            inputAttributes: {
+                                'accept': '.stash',
+                                'aria-label': 'Pilih file stash'
+                            },
+                            showCancelButton: true,
+                            confirmButtonText: 'PROSES REPLACE',
+                            confirmButtonColor: '#d33',
+                        });
+
+                        if (file) {
+                            Swal.showLoading();
+                            let formData = new FormData();
+                            formData.append('file_stash', file);
+                            formData.append('_token', this.csrfToken);
+
+                            try {
+                                const response = await fetch(
+                                    "{{ route('admin.jadwal.uploadStash') }}", {
+                                        method: 'POST',
+                                        body: formData,
+                                        headers: {
+                                            'Accept': 'application/json'
+                                        }
+                                    });
+                                const res = await response.json();
+
+                                if (res.status === 'success') {
+                                    Swal.fire('Berhasil!', res.message, 'success').then(() => window
+                                        .location.reload());
+                                } else {
+                                    Swal.fire('Gagal!', res.message, 'error');
+                                }
+                            } catch (err) {
+                                Swal.fire('Error', 'Terjadi kesalahan jaringan.', 'error');
+                            }
+                        }
                     },
 
                     openExportOptions() {

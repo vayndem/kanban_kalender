@@ -34,6 +34,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/admin/jadwal/store', [JadwalController::class, 'store'])->name('admin.jadwal.store');
     Route::get('/admin/jadwal/export', [JadwalController::class, 'exportPdf'])->name('admin.jadwal.export');
     Route::get('/admin/jadwal/generate-text', [JadwalController::class, 'generateTextJadwal'])->name('admin.jadwal.generateText');
+    Route::get('/admin/jadwal/download-stash', [JadwalController::class, 'downloadStash'])->name('admin.jadwal.downloadStash');
+    Route::post('/admin/jadwal/upload-stash', [JadwalController::class, 'uploadStash'])->name('admin.jadwal.uploadStash');
 
     // --- MANAJEMEN DATA MASTER (CRUD Lengkap) ---
 
