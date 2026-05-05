@@ -269,6 +269,12 @@
                             <input type="number" x-model.number="paketForm.harga" required
                                 class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm">
                         </div>
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Pertemuan</label>
+                            <input type="number" x-model.number="paketForm.pertemuan" required
+                                class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm">
+                        </div>
                         <div class="flex gap-2 pt-2">
                             <button type="submit" :disabled="isLoading"
                                 class="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-bold shadow-lg transform active:scale-95 flex items-center justify-center gap-2">
@@ -290,8 +296,13 @@
                                 <div>
                                     <div class="text-sm font-bold text-gray-800 dark:text-white"
                                         x-text="p.nama_paket"></div>
-                                    <div class="text-xs font-mono mt-1 text-purple-600 dark:text-purple-400"
-                                        x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(p.harga)"></div>
+                                    <div class="flex gap-2 mt-1">
+                                        <span class="text-xs font-mono text-purple-600 dark:text-purple-400"
+                                            x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(p.harga)"></span>
+                                        <span
+                                            class="text-[10px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 px-1.5 py-0.5 rounded-md font-bold"
+                                            x-text="p.pertemuan + ' Pertemuan'"></span>
+                                    </div>
                                 </div>
                                 <div class="flex gap-1">
                                     <button @click="editPaket(p)" :disabled="isLoading"
@@ -334,7 +345,8 @@
                 paketForm: {
                     id: null,
                     nama_paket: '',
-                    harga: ''
+                    harga: '',
+                    pertemuan: 3
                 },
 
                 refreshToTab() {
@@ -409,7 +421,8 @@
                     const p = this.pakets.find(x => x.id == paketId);
                     if (p) {
                         this.form.harga = p.harga;
-                        this.form.keterangan = 'Pembayaran Paket ' + p.nama_paket;
+                        this.form.keterangan =
+                            `Pembayaran Paket ${p.nama_paket} (${p.pertemuan} Pertemuan)`;
                     }
                 },
 
@@ -628,7 +641,8 @@
                     this.paketForm = {
                         id: null,
                         nama_paket: '',
-                        harga: ''
+                        harga: '',
+                        pertemuan: 3
                     };
                 },
 
@@ -660,7 +674,8 @@
                     this.paketForm = {
                         id: p.id,
                         nama_paket: p.nama_paket,
-                        harga: p.harga
+                        harga: p.harga,
+                        pertemuan: p.pertemuan
                     };
                 },
 

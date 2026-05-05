@@ -18,7 +18,7 @@ class JadwalController extends Controller
     public function tampilKalender()
     {
         $haris = Hari::orderBy('id')->get();
-        $sesis = Sesi::orderBy('id')->get();
+        $sesis = Sesi::orderBy('start_time')->get();
 
         $jadwalsData = Jadwal::with(['siswa', 'mataPelajaran', 'guru', 'ruang'])->get();
 
@@ -81,66 +81,64 @@ class JadwalController extends Controller
 
     public function updateKelas(Request $request)
     {
-        // 1. Validasi Input
-        $validated = $request->validate([
-            // Validasi data jadwal lama (untuk referensi hapus)
-            'old_mapel_id' => 'required|integer',
-            'old_guru_id' => 'required|integer',
-            'old_ruang_id' => 'required|integer',
-            'old_hari_id' => 'required|integer',
-            'old_sesi_id' => 'required|integer',
-
-            // Validasi data jadwal baru (untuk insert ulang)
-            'mapel_id' => 'required|integer',
-            'guru_id' => 'required|integer',
-            'ruang_id' => 'required|integer',
-            'siswa_ids' => 'present|array',
-            'siswa_ids.*' => 'integer',
-
-            // === [BARU] Validasi Array ID Tanda yang akan dihapus ===
-            'deleted_tanda_ids' => 'nullable|array',
-            'deleted_tanda_ids.*' => 'integer',
-        ]);
-
-        DB::beginTransaction();
         try {
-            // 2. Hapus Jadwal Lama (Logic yang sudah ada)
-            Jadwal::where('hari_id', $validated['old_hari_id'])->where('sesi_id', $validated['old_sesi_id'])->where('mata_pelajaran_id', $validated['old_mapel_id'])->where('guru_id', $validated['old_guru_id'])->where('ruang_id', $validated['old_ruang_id'])->delete();
+            $validated = $request->validate([
+                'old_mapel_id' => 'required|integer',
+                'old_guru_id' => 'required|integer',
+                'old_ruang_id' => 'required|integer',
+                'old_hari_id' => 'required|integer',
+                'old_sesi_id' => 'required|integer',
+                'mapel_id' => 'required|integer',
+                'guru_id' => 'required|integer',
+                'ruang_id' => 'required|integer',
+                'siswa_ids' => 'present|array',
+                'siswa_ids.*' => 'integer',
+                'deleted_tanda_ids' => 'nullable|array',
+                'deleted_tanda_ids.*' => 'integer',
+            ]);
 
-            // 3. Siapkan Data Jadwal Baru
-            $newSiswaIds = array_map('intval', $validated['siswa_ids']);
-            $insertData = [];
-            $now = now();
+            DB::beginTransaction();
 
-            foreach ($newSiswaIds as $siswaId) {
-                if ($siswaId > 0) {
-                    $insertData[] = [
-                        'hari_id' => $validated['old_hari_id'],
-                        'sesi_id' => $validated['old_sesi_id'],
-                        'mata_pelajaran_id' => $validated['mapel_id'],
-                        'guru_id' => $validated['guru_id'],
-                        'ruang_id' => $validated['ruang_id'],
-                        'siswa_id' => $siswaId,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ];
+            Jadwal::where('hari_id', $validated['old_hari_id'])
+                ->where('sesi_id', $validated['old_sesi_id'])
+                ->where('mata_pelajaran_id', $validated['old_mapel_id'])
+                ->where('guru_id', $validated['old_guru_id'])
+                ->where('ruang_id', $validated['old_ruang_id'])
+                ->delete();
+
+            if (!empty($validated['siswa_ids'])) {
+                $now = now();
+                $insertData = [];
+                foreach ($validated['siswa_ids'] as $siswaId) {
+                    if ($siswaId > 0) {
+                        $insertData[] = [
+                            'hari_id' => $validated['old_hari_id'],
+                            'sesi_id' => $validated['old_sesi_id'],
+                            'mata_pelajaran_id' => $validated['mapel_id'],
+                            'guru_id' => $validated['guru_id'],
+                            'ruang_id' => $validated['ruang_id'],
+                            'siswa_id' => $siswaId,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
+                }
+                if (!empty($insertData)) {
+                    Jadwal::insert($insertData);
                 }
             }
 
-            // 4. Insert Jadwal Baru
-            if (!empty($insertData)) {
-                Jadwal::insert($insertData);
-            }
-
-            // 5. === [BARU] Eksekusi Hapus Tanda ===
-            // Jika ada ID tanda yang dikirim untuk dihapus, hapus dari database
             if (!empty($request->deleted_tanda_ids)) {
                 Tanda::whereIn('id', $request->deleted_tanda_ids)->delete();
             }
 
             DB::commit();
-
             return response()->json(['status' => 'success', 'message' => 'Jadwal dan Catatan berhasil diperbarui.']);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => implode(' ', $e->validator->errors()->all()),
+            ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['status' => 'error', 'message' => 'Gagal menyimpan: ' . $e->getMessage()], 500);
@@ -150,58 +148,41 @@ class JadwalController extends Controller
     public function store(Request $request)
     {
         try {
-            // 1. Validasi Data
             $validated = $request->validate([
                 'hari_id' => 'required|exists:haris,id',
                 'sesi_id' => 'required|exists:sesis,id',
                 'mata_pelajaran_id' => 'required|exists:mata_pelajarans,id',
                 'guru_id' => 'required|exists:gurus,id',
                 'ruang_id' => 'required|exists:ruangs,id',
-                'siswa_ids' => 'required|array|min:1', // Harus ada minimal 1 siswa
-                'siswa_ids.*' => 'exists:siswas,id', // Memastikan setiap ID siswa ada
+                'siswa_ids' => 'required|array|min:1',
+                'siswa_ids.*' => 'exists:siswas,id',
+            ], [
+                'required' => 'Kolom :attribute wajib diisi.',
+                'siswa_ids.required' => 'Pilih minimal satu siswa.',
+                'exists' => 'Data :attribute tidak valid.'
             ]);
 
-            // 2. Ekstrak data utama jadwal yang sama untuk semua siswa
             $jadwalDataUtama = Arr::only($validated, ['hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id']);
-
-            $siswa_ids = $validated['siswa_ids'];
-
-            // 3. Iterasi dan Simpan Setiap Siswa
             $newJadwals = [];
-            foreach ($siswa_ids as $siswa_id) {
-                // Buat data lengkap untuk satu entri Jadwal
-                $entriJadwal = array_merge($jadwalDataUtama, [
-                    'siswa_id' => $siswa_id,
-                ]);
 
-                // Simpan ke database
-                $newJadwals[] = Jadwal::create($entriJadwal);
+            foreach ($validated['siswa_ids'] as $siswa_id) {
+                $newJadwals[] = Jadwal::create(array_merge($jadwalDataUtama, ['siswa_id' => $siswa_id]));
             }
 
-            // 4. Respon Sukses
             return response()->json([
                 'status' => 'success',
                 'message' => count($newJadwals) . ' jadwal baru berhasil dibuat.',
             ]);
         } catch (ValidationException $e) {
-            // Tangani error validasi (e.g., ID tidak valid, siswa_ids kosong)
-            return response()->json(
-                [
-                    'status' => 'error',
-                    'message' => 'Validasi gagal.',
-                    'errors' => $e->errors(),
-                ],
-                422,
-            );
+            return response()->json([
+                'status' => 'error',
+                'message' => implode(' ', $e->validator->errors()->all()),
+            ], 422);
         } catch (\Exception $e) {
-            // Tangani error umum
-            return response()->json(
-                [
-                    'status' => 'error',
-                    'message' => 'Gagal menyimpan jadwal: ' . $e->getMessage(),
-                ],
-                500,
-            );
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal menyimpan jadwal: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -239,23 +220,18 @@ class JadwalController extends Controller
         $activeSesiIds = $jadwalsData->pluck('sesi_id')->unique()->sort()->values();
 
         $haris = Hari::whereIn('id', $activeHariIds)->orderBy('id')->get();
-        $sesis = Sesi::whereIn('id', $activeSesiIds)->orderBy('id')->get();
+        $sesis = Sesi::whereIn('id', $activeSesiIds)->orderBy('start_time')->get();
 
-        if ($haris->isEmpty()) {
-            $haris = Hari::orderBy('id')->get();
-        }
-        if ($sesis->isEmpty()) {
-            $sesis = Sesi::orderBy('id')->get();
-        }
+        if ($haris->isEmpty()) $haris = Hari::orderBy('id')->get();
+        if ($sesis->isEmpty()) $sesis = Sesi::orderBy('start_time')->get();
 
         $finalJadwals = [];
         $studentsWithNotes = collect();
 
         foreach ($jadwalsData as $jadwal) {
-            $formattedStudentName = $jadwal->siswa->name . ' - ' . $jadwal->siswa->kelas;
-            $jadwal->siswa->formatted_name_class = $formattedStudentName;
-
+            $jadwal->siswa->formatted_name_class = $jadwal->siswa->name . ' - ' . $jadwal->siswa->kelas;
             $classKey = $jadwal->mata_pelajaran_id . '_' . $jadwal->guru_id . '_' . $jadwal->ruang_id;
+
             if (!isset($finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey])) {
                 $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey] = [
                     'mapel' => $jadwal->mataPelajaran,
@@ -318,6 +294,7 @@ class JadwalController extends Controller
                     });
             });
         }
+
         $jadwals = $query->get()->sortBy([['hari_id', 'asc'], ['sesi.start_time', 'asc']]);
         $header = $request->filled('search') ? 'Filter: ' . ucwords($request->search) : 'Jadwal Lengkap';
         $textOutput = '*' . $header . "*\n\n";
@@ -326,7 +303,6 @@ class JadwalController extends Controller
 
         foreach ($groupedByHari as $hariName => $jadwalsPerHari) {
             $textOutput .= '🗓️ *' . strtoupper($hariName) . "*\n";
-
             $groupedBySesi = $jadwalsPerHari->groupBy('sesi.id');
 
             foreach ($groupedBySesi as $sesiId => $items) {
@@ -344,12 +320,10 @@ class JadwalController extends Controller
                     $ruangName = $classItems->first()->ruang->name;
                     $mataPelajaranName = $classItems->first()->mataPelajaran->name;
 
-                    $studentDetails = $classItems
-                        ->map(function ($j) {
-                            $displayName = $j->siswa->panggilan ?? explode(' ', trim($j->siswa->name))[0];
-                            return $displayName . ' - ' . $j->siswa->kelas;
-                        })
-                        ->implode(', ');
+                    $studentDetails = $classItems->map(function ($j) {
+                        $displayName = $j->siswa->panggilan ?? explode(' ', trim($j->siswa->name))[0];
+                        return $displayName . ' - ' . $j->siswa->kelas;
+                    })->implode(', ');
 
                     $textOutput .= "\n";
                     $textOutput .= '📚 *' . $mataPelajaranName . "*\n";
@@ -360,9 +334,6 @@ class JadwalController extends Controller
             }
         }
 
-        return response()->json([
-            'status' => 'success',
-            'text' => $textOutput,
-        ]);
+        return response()->json(['status' => 'success', 'text' => $textOutput]);
     }
 }

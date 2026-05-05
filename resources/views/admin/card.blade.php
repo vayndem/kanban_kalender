@@ -52,23 +52,22 @@
                 :class="viewMode === 'arsip' ? 'opacity-75 grayscale-[0.5]' : ''">
 
                 <div class="h-1 w-full transition-colors duration-500"
-                    :class="sudahPunyaJadwal(siswa.id) ? 'bg-blue-500' : 'bg-orange-500 animate-pulse'">
+                    :class="getStatusJadwal(siswa).isKurang ? 'bg-orange-500 animate-pulse' : 'bg-blue-500'">
                 </div>
 
                 <div class="p-5">
                     <div class="flex items-start justify-between mb-4">
                         <div class="flex items-center gap-3">
                             <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0 transition-transform group-hover:scale-110 duration-300"
-                                :class="sudahPunyaJadwal(siswa.id) ?
-                                    'bg-gradient-to-br from-blue-500 to-indigo-600' :
-                                    'bg-gradient-to-br from-orange-400 to-red-500 shadow-orange-500/20'">
+                                :class="getStatusJadwal(siswa).isKurang ? 'bg-gradient-to-br from-orange-400 to-red-500' :
+                                    'bg-gradient-to-br from-blue-500 to-indigo-600'">
                                 <span class="text-lg font-bold" x-text="siswa.name.charAt(0)"></span>
                             </div>
 
                             <div class="overflow-hidden">
                                 <h4 class="font-bold truncate text-base transition-colors duration-300"
-                                    :class="sudahPunyaJadwal(siswa.id) ? 'text-gray-900 dark:text-white' :
-                                        'text-orange-500 dark:text-orange-400'"
+                                    :class="getStatusJadwal(siswa).isKurang ? 'text-orange-500' :
+                                        'text-gray-900 dark:text-white'"
                                     x-text="siswa.name">
                                 </h4>
                                 <p
@@ -81,9 +80,9 @@
 
                         <template x-if="siswa.paket_pembayaran">
                             <span class="px-2 py-0.5 text-[9px] font-black uppercase rounded-md border"
-                                :class="sudahPunyaJadwal(siswa.id) ?
-                                    'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800' :
-                                    'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800'">
+                                :class="getStatusJadwal(siswa).isKurang ?
+                                    'bg-orange-50 dark:bg-orange-900/20 text-orange-600 border-orange-200' :
+                                    'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-100'">
                                 <span x-text="getPaketName(siswa.paket_pembayaran)"></span>
                             </span>
                         </template>
@@ -100,9 +99,11 @@
                     <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
                         <div class="flex items-center gap-1.5">
                             <div class="w-2 h-2 rounded-full"
-                                :class="viewMode === 'aktif' ? 'bg-green-500' : 'bg-gray-400'"></div>
+                                :class="viewMode === 'aktif' ? (getStatusJadwal(siswa).isKurang ? 'bg-orange-500' :
+                                    'bg-green-500') : 'bg-gray-400'">
+                            </div>
                             <span class="text-[9px] font-bold uppercase tracking-widest text-gray-400"
-                                x-text="viewMode === 'aktif' ? 'Active' : 'Archived'"></span>
+                                x-text="viewMode === 'aktif' ? (getStatusJadwal(siswa).isKurang ? 'Incomplete' : 'Active') : 'Archived'"></span>
                         </div>
 
                         <div class="flex gap-1">
@@ -134,9 +135,14 @@
                     </div>
                 </div>
 
-                <template x-if="!sudahPunyaJadwal(siswa.id) && viewMode === 'aktif'">
-                    <div class="text-[8px] text-white font-black text-center py-0.5 uppercase tracking-widest">
-                        Jadwal Belum Diatur
+                <template x-if="viewMode === 'aktif'">
+                    <div class="text-[8px] text-white font-black text-center py-0.5 uppercase tracking-widest transition-colors duration-500"
+                        :class="getStatusJadwal(siswa).isKurang ? '' : 'bg-blue-500'">
+                        <span
+                            x-text="getStatusJadwal(siswa).kuota > 0
+                            ? getStatusJadwal(siswa).total + ' dari ' + getStatusJadwal(siswa).kuota + ' Pertemuan'
+                            : 'Jadwal Belum Diatur'">
+                        </span>
                     </div>
                 </template>
             </div>
@@ -211,7 +217,6 @@
                 viewMode: 'aktif',
                 showSiswaModal: false,
                 siswaSearch: '',
-                siswaSort: 'name',
                 siswaForm: {
                     id: null,
                     name: '',
@@ -220,6 +225,7 @@
                     no_hp: '',
                     paket_pembayaran: ''
                 },
+
                 get filteredSiswa() {
                     let data = this.viewMode === 'aktif' ? this.allSiswas : this.allArsips;
                     if (this.siswaSearch) {
@@ -229,9 +235,24 @@
                     }
                     return data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
                 },
+
                 getPaketName(id) {
                     const p = this.pakets.find(x => x.id == id);
                     return p ? p.nama_paket : 'N/A';
+                },
+
+                getStatusJadwal(siswa) {
+                    const totalJadwal = this.allJadwals.filter(j => Number(j.siswa_id) === Number(siswa
+                        .id)).length;
+                    const paket = this.pakets.find(p => p.id == siswa.paket_pembayaran);
+                    const kuota = paket ? paket.pertemuan : 0;
+
+                    return {
+                        total: totalJadwal,
+                        kuota: kuota,
+                        isKurang: totalJadwal < kuota,
+                        isComplete: totalJadwal >= kuota && kuota > 0
+                    };
                 },
 
                 openTambah() {
@@ -245,6 +266,7 @@
                     };
                     this.showSiswaModal = true;
                 },
+
                 openEdit(siswa) {
                     this.siswaForm = {
                         id: siswa.id,
@@ -256,9 +278,9 @@
                     };
                     this.showSiswaModal = true;
                 },
+
                 async simpanSiswa() {
                     const isEdit = !!this.siswaForm.id;
-
                     let phone = this.siswaForm.no_hp ? this.siswaForm.no_hp.trim() : '';
                     if (phone) {
                         phone = phone.replace(/\D/g, '');
@@ -297,6 +319,7 @@
                         alert('Sistem Error');
                     }
                 },
+
                 async hapusSiswa(id) {
                     if (!confirm('Pindahkan ke arsip?')) return;
                     try {
@@ -307,11 +330,13 @@
                                 'Accept': 'application/json'
                             }
                         });
-                        if ((await response.json()).status === 'success') window.location.reload();
+                        const res = await response.json();
+                        if (res.status === 'success') window.location.reload();
                     } catch (e) {
                         alert('Gagal mengarsipkan');
                     }
                 },
+
                 async restoreSiswa(id) {
                     if (!confirm('Kembalikan ke daftar aktif?')) return;
                     try {
@@ -326,11 +351,13 @@
                                 _method: 'PUT'
                             })
                         });
-                        if ((await response.json()).status === 'success') window.location.reload();
+                        const res = await response.json();
+                        if (res.status === 'success') window.location.reload();
                     } catch (e) {
                         alert('Gagal memulihkan');
                     }
                 },
+
                 async hapusPermanen(id) {
                     if (!confirm('Hapus permanen dari arsip?')) return;
                     try {
@@ -341,7 +368,8 @@
                                 'Accept': 'application/json'
                             }
                         });
-                        if ((await response.json()).status === 'success') window.location.reload();
+                        const res = await response.json();
+                        if (res.status === 'success') window.location.reload();
                     } catch (e) {
                         alert('Gagal menghapus');
                     }

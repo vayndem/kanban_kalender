@@ -12,8 +12,10 @@ class PaketController extends Controller
         $validated = $request->validate([
             'nama_paket' => 'required|string|max:255',
             'harga' => 'nullable|integer',
+            'pertemuan' => 'required|integer|min:1',
         ], [
             'nama_paket.required' => 'Nama paket wajib diisi.',
+            'pertemuan.required' => 'Jumlah pertemuan wajib diisi.',
         ]);
 
         try {
@@ -44,8 +46,10 @@ class PaketController extends Controller
         $validated = $request->validate([
             'nama_paket' => 'required|string|max:255',
             'harga' => 'nullable|integer',
+            'pertemuan' => 'required|integer|min:1',
         ], [
             'nama_paket.required' => 'Nama paket wajib diisi.',
+            'pertemuan.required' => 'Jumlah pertemuan wajib diisi.',
         ]);
 
         try {

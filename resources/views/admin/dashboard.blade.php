@@ -681,6 +681,7 @@
                     showAddJadwalModal: false,
                     editingJadwal: {},
                     deletedTandaIds: [],
+                    allJadwals: data.jadwalsData || [],
                     newJadwal: {
                         hari_id: null,
                         sesi_id: null,
@@ -770,9 +771,7 @@
 
                     deleteDataItem(id) {
                         if (!this.currentForm) {
-                            Swal.fire('Error',
-                                'Tipe data tidak terdeteksi. Silakan pilih tab terlebih dahulu.',
-                                'error');
+                            Swal.fire('Error', 'Tipe data tidak terdeteksi.', 'error');
                             return;
                         }
                         Swal.fire({
@@ -781,13 +780,12 @@
                             icon: 'warning',
                             showCancelButton: true,
                             confirmButtonColor: '#d33',
-                            cancelButtonColor: '#3085d6',
                             confirmButtonText: 'Ya, Hapus!',
                             cancelButtonText: 'Batal'
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                let routeTemplate = this.routes[this.currentForm].destroy;
-                                let endpoint = routeTemplate.replace(':id', id);
+                                let endpoint = this.routes[this.currentForm].destroy.replace(':id',
+                                    id);
                                 fetch(endpoint, {
                                         method: 'DELETE',
                                         headers: {
@@ -941,17 +939,21 @@
                                 },
                                 body: JSON.stringify(payload)
                             })
-                            .then(response => response.json())
+                            .then(async r => {
+                                const res = await r.json();
+                                if (!r.ok) throw res;
+                                return res;
+                            })
                             .then(data => {
                                 if (data.status === 'success') {
                                     this.showModal = false;
                                     this.deletedTandaIds = [];
                                     window.location.reload();
-                                } else {
-                                    alert('Gagal menyimpan: ' + data.message);
                                 }
                             })
-                            .catch(() => alert('Gagal menyimpan. Cek konsol.'))
+                            .catch(error => {
+                                Swal.fire('Gagal!', error.message || 'Gagal menyimpan.', 'error');
+                            })
                             .finally(() => {
                                 saveButton.disabled = false;
                                 saveButton.innerHTML = 'Simpan Perubahan';
@@ -985,12 +987,17 @@
                                 },
                                 body: JSON.stringify(this.newJadwal)
                             })
-                            .then(r => r.json())
+                            .then(async r => {
+                                const res = await r.json();
+                                if (!r.ok) throw res;
+                                return res;
+                            })
                             .then(data => {
                                 if (data.status === 'success') window.location.reload();
-                                else alert(data.message);
                             })
-                            .catch(() => alert('Gagal menyimpan.'))
+                            .catch(error => {
+                                Swal.fire('Gagal!', error.message || 'Gagal menyimpan.', 'error');
+                            })
                             .finally(() => {
                                 btn.disabled = false;
                                 btn.innerHTML = 'Simpan Jadwal Baru';
@@ -1068,17 +1075,25 @@
                                         new_sesi_id: toSlot.dataset.sesiId,
                                     })
                                 })
-                                .then(r => r.json())
+                                .then(async r => {
+                                    const res = await r.json();
+                                    if (!r.ok) throw res;
+                                    return res;
+                                })
                                 .then(data => {
                                     if (data.status === 'success') {
                                         card.dataset.hariId = toSlot.dataset.hariId;
                                         card.dataset.sesiId = toSlot.dataset.sesiId;
                                     } else {
                                         fromSlot.appendChild(card);
-                                        alert(data.message);
+                                        Swal.fire('Gagal!', data.message, 'error');
                                     }
                                 })
-                                .catch(() => fromSlot.appendChild(card));
+                                .catch(error => {
+                                    fromSlot.appendChild(card);
+                                    Swal.fire('Gagal!', error.message ||
+                                        'Gagal memindahkan jadwal.', 'error');
+                                });
                         }
                     });
                 });
