@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\PembayaranExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use App\Models\Pembayaran;
 use App\Models\Siswa;
@@ -195,5 +197,11 @@ class PembayaranController extends Controller
             return response()->json(['status' => 'error', 'message' => $msg], 500);
         }
         return redirect()->back()->withInput()->with('error', $msg);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $fileName = 'Laporan_Pembayaran_' . now()->format('Y-m-d_His') . '.xlsx';
+        return Excel::download(new PembayaranExport($request), $fileName);
     }
 }

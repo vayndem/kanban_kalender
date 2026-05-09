@@ -75,4 +75,25 @@ class DashboardController extends Controller
             'jadwalsData' => $jadwalsData,
         ]);
     }
+
+    public function guestIndex()
+    {
+        $dayOfWeek = \Carbon\Carbon::now()->isoFormat('E');
+
+        $jadwalHariIni = Jadwal::with(['mataPelajaran', 'guru', 'ruang'])
+            ->where('hari_id', $dayOfWeek)
+            ->get();
+
+        $stats = [
+            'total_siswa' => Siswa::count(),
+            'kelas_aktif' => $jadwalHariIni->groupBy(function ($q) {
+                return $q->mata_pelajaran_id . $q->guru_id . $q->sesi_id;
+            })->count(),
+            'pengajar' => Guru::count(),
+        ];
+
+        $listJadwal = $jadwalHariIni->groupBy('sesi_id');
+
+        return view('welcome', compact('stats', 'listJadwal'));
+    }
 }

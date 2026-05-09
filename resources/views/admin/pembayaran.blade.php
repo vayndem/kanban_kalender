@@ -11,6 +11,10 @@
                     x-text="filteredSummaries.length"></span> Siswa</p>
         </div>
         <div class="flex flex-wrap gap-2">
+            <button @click="exportExcel()" :disabled="isLoading"
+                class="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-sm">
+                <i class="fas fa-file-excel"></i> Export Excel
+            </button>
             <button @click="prosesPenagihanMassal()" :disabled="isLoading"
                 class="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-sm">
                 <i class="fas" :class="isLoading ? 'fa-spinner fa-spin' : 'fa-file-invoice-dollar'"></i>
@@ -488,33 +492,32 @@
                     const noHp = item.siswa.no_hp;
                     if (!noHp) return Swal.fire('Error', 'No HP tidak ditemukan', 'error');
 
-                    const bulanIndo = ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
-                        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-                    ];
-                    const now = new Date();
-                    const periode = `${bulanIndo[now.getMonth()]} ${now.getFullYear()}`;
-                    const keterangan = item.rincian_data.map(d => d.keterangan || 'Tagihan').join(
-                        ', ');
+                    let rincianTeks = "";
+                    item.rincian_data.forEach(d => {
+                        const hargaSatuan = new Intl.NumberFormat('id-ID').format(d.harga);
+                        rincianTeks +=
+                            `• *${d.keterangan || 'Tagihan'}* : Rp ${hargaSatuan}\n`;
+                    });
 
-                    const text = `*REMINDER*
+                    const text = `*Assalamu'alaikum Warahmatullahi Wabarakatuh*
 
-                        Kepada Yth.
-                        Bapak/Ibu Wali Murid E-Ling Course
+                    Bapak/Ibu yang kami muliakan,
 
-                        Berikut kami sampaikan Tagihan bulanan Bimbel dengan rincian:
+                    Kami dari pihak administrasi *E-Ling* mendoakan semoga Bapak/Ibu sekeluarga senantiasa dalam keadaan sehat dan dalam lindungan Allah SWT.
 
-                        *Nama siswa* : ${nama}
-                        *Keterangan* : ${keterangan}
-                        *Periode* : ${periode}
-                        *Tagihan* : Rp ${total}
+                    Melalui pesan ini, kami bermaksud menyampaikan informasi mengenai kewajiban administrasi ananda *${nama}* dengan rincian sebagai berikut:
 
-                        Silakan konfirmasi sesudah melakukan pembayaran. Terima kasih atas kepercayaan Anda pada layanan pendidikan E-ling Course.
+                    ${rincianTeks}
+                    *Total Tagihan: Rp ${total}*
 
-                        *Salam hormat,*
-                        *E-ling Course*`;
+                    Mohon Bapak/Ibu dapat segera menindaklanjuti informasi ini. Atas perhatian dan kerja samanya, kami ucapkan terima kasih.
 
-                    window.open(
-                        `https://wa.me/${noHp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`,
+                    *Jazakumullah Khairan Katsiran.*
+
+                    *Wassalamu'alaikum Warahmatullahi Wabarakatuh*`;
+
+                    const cleanNoHp = noHp.replace(/[^0-9]/g, '');
+                    window.open(`https://wa.me/${cleanNoHp}?text=${encodeURIComponent(text)}`,
                         '_blank');
 
                     this.isLoading = true;
@@ -529,12 +532,11 @@
                         });
                         this.refreshToTab();
                     } catch (e) {
-                        console.error(e);
+                        console.error("Error updating payment:", e);
                     } finally {
                         this.isLoading = false;
                     }
                 },
-
                 async prosesBayarSiswa(item) {
                     const {
                         value: formValues
@@ -630,6 +632,28 @@
                             this.isLoading = false;
                         }
                     }
+                },
+                async exportExcel() {
+                    const params = new URLSearchParams({
+                        search: this.filterSearch,
+                        bulan: this.filterBulan,
+                        status: this.filterStatus
+                    });
+                    const exportUrl =
+                        `{{ route('admin.pembayaran.export') }}?${params.toString()}`;
+
+                    window.location.href = exportUrl;
+
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                    Toast.fire({
+                        icon: 'success',
+                        title: 'Sedang menyiapkan file Excel...'
+                    });
                 },
 
                 openPaketModal() {

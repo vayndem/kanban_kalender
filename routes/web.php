@@ -14,9 +14,7 @@ use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\PaketController;
 use App\Http\Controllers\ArsipController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [DashboardController::class, 'guestIndex'])->name('welcome');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
@@ -77,6 +75,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/admin/pembayaran/penagihan-massal', [PembayaranController::class, 'penagihanMassal'])->name('admin.pembayaran.penagihanMassal');
     Route::post('/admin/pembayaran/lunas-siswa/{id_siswa}', [PembayaranController::class, 'lunasPerSiswa'])->name('admin.pembayaran.lunasSiswa');
     Route::post('/admin/pembayaran/bayar-siswa/{id_siswa}', [PembayaranController::class, 'bayarPerSiswa'])->name('admin.pembayaran.bayarSiswa');
+    Route::get('/admin/pembayaran/export', [PembayaranController::class, 'exportExcel'])->name('admin.pembayaran.export');
 
     // 8. Paket
     Route::post('/admin/paket', [PaketController::class, 'store'])->name('admin.paket.store');
