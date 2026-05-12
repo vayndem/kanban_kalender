@@ -4,7 +4,6 @@
 
 @section('content')
     <div class="p-6 space-y-10">
-        <!-- Hero Section (Lebih Ramah Tamu) -->
         <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-700 p-10 shadow-2xl">
             <div class="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-10">
                 <div class="text-center lg:text-left max-w-2xl">
@@ -44,7 +43,6 @@
             </div>
         </div>
 
-        <!-- Live Stats (Dinamis dari Controller) -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div
                 class="bg-white dark:bg-gray-800 p-8 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm text-center group hover:border-emerald-500 transition-all">
@@ -77,7 +75,6 @@
             </div>
         </div>
 
-        <!-- Jadwal Section -->
         <div id="jadwal" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div
                 class="lg:col-span-2 bg-white dark:bg-gray-800 p-8 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm">
@@ -91,28 +88,46 @@
                     </span>
                 </div>
 
-                <div class="space-y-4">
-                    @forelse($listJadwal as $sesiId => $jadwals)
+                <div class="space-y-6">
+                    @forelse($listJadwal as $namaSesi => $jadwals)
                         <div
-                            class="flex gap-6 p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-all border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
-                            <div class="flex-shrink-0 w-20 text-center">
+                            class="flex flex-col md:flex-row gap-6 p-6 rounded-3xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 shadow-sm">
+                            <div
+                                class="flex-shrink-0 w-full md:w-24 text-center border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 pb-4 md:pb-0 md:pr-6">
                                 <span
-                                    class="text-xs font-black text-emerald-600 dark:text-emerald-400 uppercase">Sesi</span>
-                                <div class="text-2xl font-black text-gray-900 dark:text-white">{{ $sesiId }}</div>
+                                    class="text-xs font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Waktu</span>
+                                <div class="text-xl font-black text-gray-900 dark:text-white mt-1">{{ $namaSesi }}</div>
+                                <div class="text-[10px] text-gray-400 font-medium">{{ $jadwals->first()->sesi->start_time }}
+                                    - {{ $jadwals->first()->sesi->end_time }}</div>
                             </div>
+
                             <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4">
                                 @foreach ($jadwals as $j)
-                                    <div class="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl">
-                                        <div class="font-bold text-sm text-gray-800 dark:text-white">
-                                            {{ $j->mataPelajaran->name }}</div>
-                                        <div class="text-[10px] text-gray-500 font-medium">Mentor: {{ $j->guru->name }}
+                                    <div
+                                        class="bg-white dark:bg-gray-700/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-600 shadow-sm transition-all hover:shadow-md">
+                                        <div class="flex items-start justify-between">
+                                            <div>
+                                                <div class="font-bold text-sm text-gray-800 dark:text-white leading-tight">
+                                                    {{ $j->mataPelajaran->name }}
+                                                </div>
+                                                <div
+                                                    class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold mt-1 flex items-center gap-1">
+                                                    <i class="fas fa-user-tie text-[9px]"></i>
+                                                    {{ $j->guru->name }}
+                                                </div>
+                                            </div>
+                                            <div
+                                                class="text-[10px] bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded-lg text-gray-500 dark:text-gray-300 font-bold">
+                                                {{ $j->ruang->name }}
+                                            </div>
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
                         </div>
                     @empty
-                        <div class="text-center py-10">
+                        <div
+                            class="text-center py-20 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
                             <i class="fas fa-mug-hot text-gray-300 fa-3x mb-4"></i>
                             <p class="text-gray-400 italic">Tidak ada jadwal belajar untuk hari ini.</p>
                         </div>
@@ -120,7 +135,6 @@
                 </div>
             </div>
 
-            <!-- Sidebar Info -->
             <div class="space-y-6">
                 <div
                     class="bg-emerald-50 dark:bg-emerald-900/10 p-8 rounded-3xl border border-emerald-100 dark:border-emerald-800/30">

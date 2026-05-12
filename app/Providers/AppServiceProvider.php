@@ -9,7 +9,6 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-
     }
 
     public function boot(): void
@@ -17,6 +16,6 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }
+        config(['excel.temporary_files_path' => '/tmp']);
     }
-
 }

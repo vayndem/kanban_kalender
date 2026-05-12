@@ -80,7 +80,7 @@ class DashboardController extends Controller
     {
         $dayOfWeek = \Carbon\Carbon::now()->isoFormat('E');
 
-        $jadwalHariIni = Jadwal::with(['mataPelajaran', 'guru', 'ruang'])
+        $jadwalHariIni = Jadwal::with(['mataPelajaran', 'guru', 'ruang', 'sesi'])
             ->where('hari_id', $dayOfWeek)
             ->get();
 
@@ -92,7 +92,11 @@ class DashboardController extends Controller
             'pengajar' => Guru::count(),
         ];
 
-        $listJadwal = $jadwalHariIni->groupBy('sesi_id');
+        $listJadwal = $jadwalHariIni->unique(function ($item) {
+            return $item->sesi_id . $item->mata_pelajaran_id . $item->guru_id;
+        })->groupBy(function ($item) {
+            return $item->sesi->name;
+        });
 
         return view('welcome', compact('stats', 'listJadwal'));
     }
