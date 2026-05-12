@@ -182,7 +182,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 uppercase">Nomor HP</label>
-                    <input type="text" x-model="siswaForm.no_hp" placeholder="0812..."
+                    <input type="text" x-model="siswaForm.no_hp" @input="formatPhone" placeholder="+62812..."
                         class="mt-1 block w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 <div>
@@ -255,6 +255,27 @@
                     };
                 },
 
+                formatPhone() {
+                    let val = this.siswaForm.no_hp;
+                    if (!val) return;
+
+                    let digits = val.replace(/\D/g, '');
+
+                    if (digits.startsWith('0')) {
+                        digits = '62' + digits.substring(1);
+                    }
+
+                    if (digits.startsWith('8')) {
+                        digits = '62' + digits;
+                    }
+
+                    if (digits.length > 0) {
+                        this.siswaForm.no_hp = '+' + digits;
+                    } else {
+                        this.siswaForm.no_hp = '';
+                    }
+                },
+
                 openTambah() {
                     this.siswaForm = {
                         id: null,
@@ -281,19 +302,9 @@
 
                 async simpanSiswa() {
                     const isEdit = !!this.siswaForm.id;
-                    let phone = this.siswaForm.no_hp ? this.siswaForm.no_hp.trim() : '';
-                    if (phone) {
-                        phone = phone.replace(/\D/g, '');
-                        if (phone.startsWith('0')) {
-                            phone = '+62' + phone.substring(1);
-                        } else if (phone.startsWith('8')) {
-                            phone = '+62' + phone;
-                        }
-                        this.siswaForm.no_hp = phone;
-                    }
-
                     const url = isEdit ? `{{ url('admin/siswa') }}/${this.siswaForm.id}` :
                         `{{ route('admin.siswa.store') }}`;
+
                     const payload = {
                         ...this.siswaForm,
                         _token: '{{ csrf_token() }}'

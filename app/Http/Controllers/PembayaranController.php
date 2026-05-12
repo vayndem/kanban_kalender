@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\PembayaranExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use App\Models\Pembayaran;
 use App\Models\Siswa;
@@ -199,9 +200,42 @@ class PembayaranController extends Controller
         return redirect()->back()->withInput()->with('error', $msg);
     }
 
-    public function exportExcel(Request $request)
+    public function exportPdf(Request $request)
     {
-        $fileName = 'Laporan_Pembayaran_' . now()->format('Y-m-d_His') . '.xlsx';
-        return Excel::download(new PembayaranExport($request), $fileName);
+        $statuses = [
+            0 => 'Belum Bayar',
+            1 => 'Tertagih',
+            2 => 'Lunas'
+        ];
+
+        $allData = [];
+        foreach ($statuses as $code => $name) {
+            $query = Pembayaran::with(['siswa'])->where('status', $code);
+
+            if ($request->search) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->whereHas('siswa', function ($s) use ($search) {
+                        $s->where('name', 'like', "%$search%");
+                    })->orWhere('keterangan', 'like', "%$search%");
+                });
+            }
+
+            if ($request->bulan && $request->bulan !== 'all') {
+                $query->whereMonth('created_at', $request->bulan);
+            }
+
+            $allData[$name] = [
+                'code' => $code,
+                'groups' => $query->orderBy('id_siswa')->get()->groupBy('id_siswa')
+            ];
+        }
+
+        $pdf = Pdf::loadView('pdf.pembayaran', [
+            'allData' => $allData,
+            'bulan' => $request->bulan
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download('Laporan-Pembayaran-' . now()->format('YmdHis') . '.pdf');
     }
 }

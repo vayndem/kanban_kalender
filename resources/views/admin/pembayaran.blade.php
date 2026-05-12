@@ -13,7 +13,7 @@
         <div class="flex flex-wrap gap-2">
             <button @click="exportExcel()" :disabled="isLoading"
                 class="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-sm">
-                <i class="fas fa-file-excel"></i> Export Excel
+                <i class="fas fa-file-excel"></i> Export PDF
             </button>
             <button @click="prosesPenagihanMassal()" :disabled="isLoading"
                 class="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-sm">
@@ -490,7 +490,14 @@
                     const total = new Intl.NumberFormat('id-ID').format(item.total_harga);
                     const nama = item.siswa.name;
                     const noHp = item.siswa.no_hp;
+
                     if (!noHp) return Swal.fire('Error', 'No HP tidak ditemukan', 'error');
+
+                    let cleanNoHp = noHp.replace(/[^0-9]/g, '');
+
+                    if (cleanNoHp.startsWith('0')) {
+                        cleanNoHp = '62' + cleanNoHp.substring(1);
+                    }
 
                     let rincianTeks = "";
                     item.rincian_data.forEach(d => {
@@ -516,7 +523,6 @@
 
                     *Wassalamu'alaikum Warahmatullahi Wabarakatuh*`;
 
-                    const cleanNoHp = noHp.replace(/[^0-9]/g, '');
                     window.open(`https://wa.me/${cleanNoHp}?text=${encodeURIComponent(text)}`,
                         '_blank');
 
