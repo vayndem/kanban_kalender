@@ -16,6 +16,11 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }
-        config(['excel.temporary_files_path' => '/tmp']);
+
+        config([
+            'excel.temporary_files_path' => '/tmp',
+            'excel.local_path' => '/tmp',
+            'excel.exports.temp_path' => '/tmp'
+        ]);
     }
 }

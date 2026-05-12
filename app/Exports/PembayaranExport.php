@@ -17,7 +17,8 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 
-class PembayaranExport implements WithMultipleSheets
+class PembayaranExport implements
+    WithMultipleSheets
 {
     protected $request;
 
@@ -43,7 +44,14 @@ class PembayaranExport implements WithMultipleSheets
     }
 }
 
-class PembayaranStatusSheet implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithEvents, WithTitle
+class PembayaranStatusSheet implements
+    FromCollection,
+    WithHeadings,
+    WithMapping,
+    ShouldAutoSize,
+    WithStyles,
+    WithEvents,
+    WithTitle
 {
     protected $request;
     protected $statusCode;
@@ -63,7 +71,7 @@ class PembayaranStatusSheet implements FromCollection, WithHeadings, WithMapping
 
     public function collection()
     {
-        $query = Pembayaran::with('siswa')->where('status', $this->statusCode);
+        $query = Pembayaran::with(['siswa'])->where('status', $this->statusCode);
 
         if ($this->request->search) {
             $search = $this->request->search;
@@ -78,7 +86,13 @@ class PembayaranStatusSheet implements FromCollection, WithHeadings, WithMapping
             $query->whereMonth('created_at', $this->request->bulan);
         }
 
-        return $query->orderBy('id_siswa')->get()->groupBy('id_siswa');
+        $data = $query->orderBy('id_siswa')->get();
+
+        if ($data->isEmpty()) {
+            return collect();
+        }
+
+        return $data->groupBy('id_siswa');
     }
 
     public function headings(): array
@@ -96,11 +110,11 @@ class PembayaranStatusSheet implements FromCollection, WithHeadings, WithMapping
         $rows = [];
         foreach ($group as $data) {
             $rows[] = [
-                $data->siswa->name,
-                $data->keterangan,
-                'Rp ' . number_format($data->harga, 0, ',', '.'),
+                $data->siswa->name ?? 'Siswa Tidak Ditemukan',
+                $data->keterangan ?? '-',
+                'Rp ' . number_format($data->harga ?? 0, 0, ',', '.'),
                 $data->pembayaran_via == 1 ? 'Transfer' : ($data->pembayaran_via === 0 ? 'Cash' : '-'),
-                $data->created_at->format('d/m/Y')
+                $data->created_at ? $data->created_at->format('d/m/Y') : '-'
             ];
         }
         return $rows;
@@ -150,6 +164,7 @@ class PembayaranStatusSheet implements FromCollection, WithHeadings, WithMapping
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => Border::BORDER_THIN,
+                            'color' => ['rgb' => '000000'],
                         ],
                     ],
                     'alignment' => [
