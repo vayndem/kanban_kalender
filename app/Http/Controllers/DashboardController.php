@@ -94,9 +94,13 @@ class DashboardController extends Controller
 
         $listJadwal = $jadwalHariIni->unique(function ($item) {
             return $item->sesi_id . $item->mata_pelajaran_id . $item->guru_id;
-        })->groupBy(function ($item) {
-            return $item->sesi->name;
-        });
+        })
+            ->sortBy(function ($item) {
+                return $item->sesi->start_time;
+            })
+            ->groupBy(function ($item) {
+                return $item->sesi->name;
+            });
 
         return view('welcome', compact('stats', 'listJadwal'));
     }
