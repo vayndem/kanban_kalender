@@ -1,4 +1,5 @@
 <div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-xl shadow-inner" x-data="siswaHandler({{ $allSiswas->toJson() }}, {{ $allArsips->toJson() }}, {{ $pakets->toJson() }}, {{ $jadwalsData->toJson() }}, {{ $haris->toJson() }}, {{ $sesis->toJson() }})">
+    <div class="hidden max-w-3xl md:grid-cols-2"></div>
 
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
