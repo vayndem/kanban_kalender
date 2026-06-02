@@ -549,7 +549,7 @@
                     } finally {
                         this.isLoading = false;
                     }
-                }
+                },
                 async prosesBayarSiswa(item) {
                     const {
                         value: formValues
