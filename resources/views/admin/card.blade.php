@@ -1,104 +1,110 @@
 <div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-xl shadow-inner" x-data="siswaHandler({{ $allSiswas->toJson() }}, {{ $allArsips->toJson() }}, {{ $pakets->toJson() }}, {{ $jadwalsData->toJson() }}, {{ $haris->toJson() }}, {{ $sesis->toJson() }})">
-    <div class="hidden max-w-3xl md:grid-cols-2"></div>
 
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div class="hidden max-w-md max-w-3xl grid-cols-1 md:grid-cols-2"></div>
+
+    <div class="flex flex-col gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h3 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+            <h3 class="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white flex items-center">
                 <i class="fas mr-3 text-blue-500"
                     :class="viewMode === 'aktif' ? 'fa-user-graduate' : 'fa-archive'"></i>
                 <span x-text="viewMode === 'aktif' ? 'Data Master Siswa' : 'Arsip Data Siswa'"></span>
             </h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
+            <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                 Total: <span x-text="viewMode === 'aktif' ? allSiswas.length : allArsips.length"></span> Siswa
             </p>
         </div>
 
-        <div class="flex flex-wrap md:flex-nowrap gap-3 items-center">
-            <div class="flex bg-gray-200 dark:bg-gray-700 p-1 rounded-xl shadow-sm border dark:border-gray-600">
+        <div class="flex flex-col gap-3 w-full sm:w-auto sm:flex-row sm:items-center">
+            <div
+                class="flex bg-gray-200 dark:bg-gray-700 p-1 rounded-xl shadow-sm border dark:border-gray-600 w-full sm:w-auto">
                 <button @click="viewMode = 'aktif'"
-                    :class="viewMode === 'aktif' ? 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-300' :
-                        'text-gray-500 dark:text-gray-400'"
-                    class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200">
+                    :class="{ 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-300': viewMode === 'aktif', 'text-gray-500 dark:text-gray-400': viewMode !== 'aktif' }"
+                    class="flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200">
                     AKTIF
                 </button>
                 <button @click="viewMode = 'arsip'"
-                    :class="viewMode === 'arsip' ? 'bg-white dark:bg-gray-600 shadow-sm text-red-600 dark:text-red-300' :
-                        'text-gray-500 dark:text-gray-400'"
-                    class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200">
+                    :class="{ 'bg-white dark:bg-gray-600 shadow-sm text-red-600 dark:text-red-300': viewMode === 'arsip', 'text-gray-500 dark:text-gray-400': viewMode !== 'arsip' }"
+                    class="flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200">
                     ARSIP
                 </button>
             </div>
 
-            <div class="relative flex-grow">
+            <div class="relative w-full sm:w-64">
                 <input type="text" x-model="siswaSearch" placeholder="Cari nama atau kelas..."
-                    class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                    class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-blue-500">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <i class="fas fa-search text-gray-400"></i>
                 </div>
             </div>
 
             <button x-show="viewMode === 'aktif'" @click="openTambah()"
-                class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
                 <i class="fas fa-plus mr-2"></i> Tambah
             </button>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         <template x-for="siswa in filteredSiswa" :key="siswa.id">
             <div x-transition:enter="transition ease-out duration-300"
                 x-transition:enter-start="opacity-0 transform scale-95"
                 x-transition:enter-end="opacity-100 transform scale-100"
-                class="group relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 overflow-hidden"
-                :class="viewMode === 'arsip' ? 'opacity-75 grayscale-[0.5]' : ''">
+                class="group relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col justify-between h-full"
+                :class="{ 'opacity-75 grayscale-[0.5]': viewMode === 'arsip' }">
 
-                <div class="h-1 w-full transition-colors duration-500"
-                    :class="getStatusJadwal(siswa).isKurang ? 'bg-orange-500 animate-pulse' : 'bg-blue-500'">
+                <div>
+                    <div class="h-1 w-full transition-colors duration-500"
+                        :class="getStatusJadwal(siswa).isKurang ? 'bg-orange-500 animate-pulse' : 'bg-blue-500'">
+                    </div>
+
+                    <div class="p-4 sm:p-5">
+                        <div class="flex items-start justify-between mb-4 gap-2">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0 transition-transform group-hover:scale-105 duration-300"
+                                    :class="getStatusJadwal(siswa).isKurang ? 'bg-gradient-to-br from-orange-400 to-red-500' :
+                                        'bg-gradient-to-br from-blue-500 to-indigo-600'">
+                                    <span class="text-base sm:text-lg font-bold" x-text="siswa.name.charAt(0)"></span>
+                                </div>
+
+                                <div class="overflow-hidden min-w-0 flex-1">
+                                    <h4 class="font-bold truncate text-sm sm:text-base transition-colors duration-300 leading-snug"
+                                        :class="getStatusJadwal(siswa).isKurang ? 'text-orange-500' :
+                                            'text-gray-900 dark:text-white'"
+                                        x-text="siswa.name">
+                                    </h4>
+                                    <p
+                                        class="text-[10px] text-gray-500 dark:text-gray-400 flex items-center gap-1 uppercase tracking-wider font-semibold mt-0.5">
+                                        <i class="fas fa-id-badge opacity-50"></i>
+                                        <span x-text="siswa.kelas || 'N/A'"></span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <template x-if="siswa.paket_pembayaran">
+                                <span
+                                    class="px-2 py-0.5 text-[9px] font-black uppercase rounded-md border shrink-0 max-w-[80px] truncate"
+                                    :class="getStatusJadwal(siswa).isKurang ?
+                                        'bg-orange-50 dark:bg-orange-900/20 text-orange-600 border-orange-200' :
+                                        'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-100'">
+                                    <span x-text="getPaketName(siswa.paket_pembayaran)"></span>
+                                </span>
+                            </template>
+                        </div>
+
+                        <div class="flex items-center gap-2 mb-4 text-gray-600 dark:text-gray-400 min-w-0">
+                            <div
+                                class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700/50 flex items-center justify-center shrink-0">
+                                <i class="fas fa-phone-alt text-[10px]"></i>
+                            </div>
+                            <span class="text-xs font-medium truncate" x-text="siswa.no_hp || '-'"></span>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="p-5">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0 transition-transform group-hover:scale-110 duration-300"
-                                :class="getStatusJadwal(siswa).isKurang ? 'bg-gradient-to-br from-orange-400 to-red-500' :
-                                    'bg-gradient-to-br from-blue-500 to-indigo-600'">
-                                <span class="text-lg font-bold" x-text="siswa.name.charAt(0)"></span>
-                            </div>
-
-                            <div class="overflow-hidden">
-                                <h4 class="font-bold truncate text-base transition-colors duration-300"
-                                    :class="getStatusJadwal(siswa).isKurang ? 'text-orange-500' :
-                                        'text-gray-900 dark:text-white'"
-                                    x-text="siswa.name">
-                                </h4>
-                                <p
-                                    class="text-[10px] text-gray-500 dark:text-gray-400 flex items-center gap-1 uppercase tracking-wider font-semibold">
-                                    <i class="fas fa-id-badge opacity-50"></i>
-                                    <span x-text="siswa.kelas || 'N/A'"></span>
-                                </p>
-                            </div>
-                        </div>
-
-                        <template x-if="siswa.paket_pembayaran">
-                            <span class="px-2 py-0.5 text-[9px] font-black uppercase rounded-md border"
-                                :class="getStatusJadwal(siswa).isKurang ?
-                                    'bg-orange-50 dark:bg-orange-900/20 text-orange-600 border-orange-200' :
-                                    'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-100'">
-                                <span x-text="getPaketName(siswa.paket_pembayaran)"></span>
-                            </span>
-                        </template>
-                    </div>
-
-                    <div class="flex items-center gap-2 mb-5 text-gray-600 dark:text-gray-400">
-                        <div
-                            class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700/50 flex items-center justify-center">
-                            <i class="fas fa-phone-alt text-[10px]"></i>
-                        </div>
-                        <span class="text-xs font-medium" x-text="siswa.no_hp || '-'"></span>
-                    </div>
-
-                    <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
-                        <div class="flex items-center gap-1.5">
+                <div>
+                    <div
+                        class="flex items-center justify-between p-4 sm:p-5 pt-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30">
+                        <div class="flex items-center gap-1.5 shrink-0">
                             <div class="w-2 h-2 rounded-full"
                                 :class="viewMode === 'aktif' ? (getStatusJadwal(siswa).isKurang ? 'bg-orange-500' :
                                     'bg-green-500') : 'bg-gray-400'">
@@ -107,7 +113,7 @@
                                 x-text="viewMode === 'aktif' ? (getStatusJadwal(siswa).isKurang ? 'Incomplete' : 'Active') : 'Archived'"></span>
                         </div>
 
-                        <div class="flex gap-1">
+                        <div class="flex gap-1 shrink-0">
                             <template x-if="viewMode === 'aktif'">
                                 <div class="flex gap-1">
                                     <button @click="openEdit(siswa)"
@@ -134,18 +140,15 @@
                             </template>
                         </div>
                     </div>
-                </div>
 
-                <template x-if="viewMode === 'aktif'">
-                    <div
-                        class="text-[8px] text-white font-black text-center py-0.5 uppercase tracking-widest transition-colors duration-500">
-                        <span
-                            x-text="getStatusJadwal(siswa).kuota > 0
-                            ? getStatusJadwal(siswa).total + ' dari ' + getStatusJadwal(siswa).kuota + ' Pertemuan'
-                            : 'Jadwal Belum Diatur'">
-                        </span>
-                    </div>
-                </template>
+                    <template x-if="viewMode === 'aktif'">
+                        <div class="text-[8px] text-white font-black text-center py-1 uppercase tracking-widest transition-colors duration-500"
+                            :class="getStatusJadwal(siswa).isKurang ? 'bg-orange-500/90' : 'bg-blue-500/90'">
+                            <span
+                                x-text="getStatusJadwal(siswa).kuota > 0 ? getStatusJadwal(siswa).total + ' dari ' + getStatusJadwal(siswa).kuota + ' Pertemuan' : 'Jadwal Belum Diatur'"></span>
+                        </div>
+                    </template>
+                </div>
             </div>
         </template>
     </div>
@@ -154,102 +157,127 @@
         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         style="display: none;" x-transition>
         <div @click="showSiswaModal = false" class="absolute inset-0"></div>
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md transition-all duration-300 overflow-hidden relative border dark:border-gray-700"
-            :class="siswaForm.id ? 'max-w-3xl' : 'max-w-md'" @click.stop>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full overflow-hidden relative border dark:border-gray-700 transition-all duration-300 max-h-[90vh] flex flex-col"
+            :class="{ 'max-w-3xl': siswaForm.id, 'max-w-md': !siswaForm.id }" @click.stop>
+
             <div
-                class="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
-                <h3 class="font-bold text-gray-900 dark:text-white"
+                class="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900 shrink-0">
+                <h3 class="font-bold text-gray-900 dark:text-white text-base sm:text-lg"
                     x-text="siswaForm.id ? 'Edit Data Siswa' : 'Tambah Siswa Baru'"></h3>
-                <button @click="showSiswaModal = false" class="text-gray-400 hover:text-gray-600"><i
-                        class="fas fa-times fa-lg"></i></button>
+                <button @click="showSiswaModal = false"
+                    class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <i class="fas fa-times fa-lg"></i>
+                </button>
             </div>
-            <div class="grid grid-cols-1" :class="siswaForm.id ? 'md:grid-cols-2' : 'grid-cols-1'">
-                <form @submit.prevent="simpanSiswa" class="p-6 space-y-4 border-r border-gray-100 dark:border-gray-700">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="col-span-2">
-                            <label class="block text-xs font-semibold text-gray-500 uppercase">Nama Lengkap</label>
-                            <input type="text" x-model="siswaForm.name" required
-                                class="mt-1 block w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase">Panggilan</label>
-                            <input type="text" x-model="siswaForm.panggilan"
-                                class="mt-1 block w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase">Kelas</label>
-                            <input type="text" x-model="siswaForm.kelas"
-                                class="mt-1 block w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase">Nomor HP</label>
-                        <input type="text" x-model="siswaForm.no_hp" @input="formatPhone" placeholder="+62812..."
-                            class="mt-1 block w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase">Paket Pembayaran</label>
-                        <select x-model="siswaForm.paket_pembayaran"
-                            class="mt-1 block w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">-- Pilih Paket --</option>
-                            <template x-for="paket in pakets" :key="paket.id">
-                                <option :value="paket.id" x-text="paket.nama_paket"></option>
-                            </template>
-                        </select>
-                    </div>
-                    <div class="pt-4 flex justify-end gap-2">
-                        <button type="button" @click="showSiswaModal = false"
-                            class="px-4 py-2 text-sm border rounded-lg dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
-                        <button type="submit"
-                            class="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-sm">Simpan</button>
-                    </div>
-                </form>
 
-                <template x-if="siswaForm.id">
-                    <div class="p-6 bg-gray-50 dark:bg-gray-800/50 space-y-4 overflow-y-auto max-h-[450px]">
-                        <h4
-                            class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
-                            <i class="fas fa-calendar-alt text-blue-500"></i> Jadwal Kelas Diikuti
-                        </h4>
-                        <div class="space-y-3">
-                            <template x-for="j in getSiswaJadwalList(siswaForm.id)" :key="j.id">
-                                <div
-                                    class="p-3 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm flex items-start gap-3">
+            <div class="overflow-y-auto flex-1">
+                <div class="grid grid-cols-1"
+                    :class="{ 'md:grid-cols-2': siswaForm.id, 'grid-cols-1': !siswaForm.id }">
+
+                    <form @submit.prevent="simpanSiswa" class="p-4 sm:p-6 space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="col-span-1 sm:col-span-2">
+                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama
+                                    Lengkap</label>
+                                <input type="text" x-model="siswaForm.name" required
+                                    class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Panggilan</label>
+                                <input type="text" x-model="siswaForm.panggilan"
+                                    class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Kelas</label>
+                                <input type="text" x-model="siswaForm.kelas"
+                                    class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Nomor
+                                HP</label>
+                            <input type="text" x-model="siswaForm.no_hp" @input="formatPhone"
+                                placeholder="+62812..."
+                                class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Paket
+                                Pembayaran</label>
+                            <select x-model="siswaForm.paket_pembayaran"
+                                class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <option value="">-- Pilih Paket --</option>
+                                <template x-for="paket in pakets" :key="paket.id">
+                                    <option :value="paket.id" x-text="paket.nama_paket"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div
+                            class="pt-4 flex justify-end gap-2 border-t border-gray-100 dark:border-gray-700 md:hidden">
+                            <button type="button" @click="showSiswaModal = false"
+                                class="px-4 py-2 text-sm border rounded-lg dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
+                            <button type="submit"
+                                class="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-sm">Simpan</button>
+                        </div>
+                    </form>
+
+                    <template x-if="siswaForm.id">
+                        <div
+                            class="p-4 sm:p-6 bg-gray-50/50 dark:bg-gray-800/40 space-y-4 border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-700">
+                            <h4
+                                class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fas fa-calendar-alt text-blue-500"></i> Jadwal Kelas Diikuti
+                            </h4>
+                            <div class="space-y-3 max-h-[300px] md:max-h-[400px] overflow-y-auto pr-1">
+                                <template x-for="j in getSiswaJadwalList(siswaForm.id)" :key="j.id">
                                     <div
-                                        class="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400 shrink-0">
-                                        <i class="fas fa-clock text-sm"></i>
+                                        class="p-3 bg-white dark:bg-gray-700 rounded-xl border border-gray-100 dark:border-gray-600 shadow-sm flex items-start gap-3">
+                                        <div
+                                            class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400 shrink-0">
+                                            <i class="fas fa-clock text-sm"></i>
+                                        </div>
+                                        <div class="flex-grow min-w-0">
+                                            <p class="text-sm font-bold text-gray-900 dark:text-white truncate"
+                                                x-text="j.mapel_name"></p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">
+                                                <span class="capitalize" x-text="j.hari_name"></span> | <span
+                                                    x-text="j.sesi_name"></span> (<span x-text="j.sesi_time"></span>)
+                                            </p>
+                                            <p
+                                                class="text-[11px] text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1">
+                                                <i class="fas fa-chalkboard-user opacity-60"></i> <span
+                                                    x-text="j.guru_name"></span>
+                                                <span class="mx-1">•</span>
+                                                <i class="fas fa-door-open opacity-60"></i> <span
+                                                    x-text="j.ruang_name"></span>
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div class="flex-grow min-w-0">
-                                        <p class="text-sm font-bold text-gray-900 dark:text-white truncate"
-                                            x-text="j.mapel_name"></p>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">
-                                            <span class="capitalize" x-text="j.hari_name"></span> | <span
-                                                x-text="j.sesi_name"></span> (<span x-text="j.sesi_time"></span>)
-                                        </p>
-                                        <p
-                                            class="text-[11px] text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1">
-                                            <i class="fas fa-chalkboard-user opacity-60"></i> <span
-                                                x-text="j.guru_name"></span>
-                                            <span class="mx-1">•</span>
-                                            <i class="fas fa-door-open opacity-60"></i> <span
-                                                x-text="j.ruang_name"></span>
-                                        </p>
-                                    </div>
-                                </div>
-                            </template>
+                                </template>
 
-                            <template x-if="getSiswaJadwalList(siswaForm.id).length === 0">
-                                <div
-                                    class="text-center py-8 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl">
-                                    <i
-                                        class="fas fa-calendar-times text-gray-300 dark:text-gray-600 text-3xl mb-2"></i>
-                                    <p class="text-xs text-gray-400 dark:text-gray-500">Belum ada jadwal yang diatur
-                                        untuk siswa ini.</p>
-                                </div>
-                            </template>
+                                <template x-if="getSiswaJadwalList(siswaForm.id).length === 0">
+                                    <div
+                                        class="text-center py-8 border border-dashed border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700/30">
+                                        <i
+                                            class="fas fa-calendar-times text-gray-300 dark:text-gray-600 text-2xl mb-2"></i>
+                                        <p class="text-xs text-gray-400 dark:text-gray-500">Belum ada jadwal yang
+                                            diatur untuk siswa ini.</p>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
-                    </div>
-                </template>
+                    </template>
+                </div>
+            </div>
+
+            <div
+                class="p-4 border-t dark:border-gray-700 justify-end gap-2 bg-gray-50 dark:bg-gray-900 shrink-0 hidden md:flex">
+                <button type="button" @click="showSiswaModal = false"
+                    class="px-4 py-2 text-sm border rounded-lg dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
+                <button type="button"
+                    @click="document.querySelector('#showSiswaModal form, .bg-white form').requestSubmit()"
+                    class="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-sm">Simpan</button>
             </div>
         </div>
     </div>
