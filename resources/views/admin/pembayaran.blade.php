@@ -491,7 +491,9 @@
                     const nama = item.siswa.name;
                     const noHp = item.siswa.no_hp;
 
-                    if (!noHp) return Swal.fire('Error', 'No HP tidak ditemukan', 'error');
+                    if (!noHp) {
+                        return Swal.fire('Error', 'No HP tidak ditemukan', 'error');
+                    }
 
                     let cleanNoHp = noHp.replace(/[^0-9]/g, '');
 
@@ -499,34 +501,36 @@
                         cleanNoHp = '62' + cleanNoHp.substring(1);
                     }
 
-                    let rincianTeks = "";
+                    let rincianTeks = '';
+
                     item.rincian_data.forEach(d => {
-                        const hargaSatuan = new Intl.NumberFormat('id-ID').format(d.harga);
-                        rincianTeks +=
-                            `• *${d.keterangan || 'Tagihan'}* : Rp ${hargaSatuan}\n`;
+                        const harga = new Intl.NumberFormat('id-ID').format(d.harga);
+
+                        rincianTeks += `• ${d.keterangan || 'Tagihan'} : Rp ${harga}\n`;
                     });
 
-                    const text = `*Assalamu'alaikum Warahmatullahi Wabarakatuh*
+                    const text = `*Reminder:*
 
-                    Bapak/Ibu yang kami muliakan,
+                    TAGIHAN BIMBEL *E-LING COURSE*
 
-                    Kami dari pihak administrasi *E-Ling* mendoakan semoga Bapak/Ibu sekeluarga senantiasa dalam keadaan sehat dan dalam lindungan Allah SWT.
-
-                    Melalui pesan ini, kami bermaksud menyampaikan informasi mengenai kewajiban administrasi ananda *${nama}* dengan rincian sebagai berikut:
+                    Nama Siswa : ${nama}
 
                     ${rincianTeks}
-                    *Total Tagihan: Rp ${total}*
+                    *Total Tagihan : Rp ${total}*
 
-                    Mohon Bapak/Ibu dapat segera menindaklanjuti informasi ini. Atas perhatian dan kerja samanya, kami ucapkan terima kasih.
+                    Silakan melakukan pembayaran sesuai tagihan yang tertera.
 
-                    *Jazakumullah Khairan Katsiran.*
+                    Jika sudah melakukan pembayaran, mohon konfirmasi kepada admin.
 
-                    *Wassalamu'alaikum Warahmatullahi Wabarakatuh*`;
+                    Terima kasih 🙏
+                    *E-Ling Course*`;
 
                     window.open(`https://wa.me/${cleanNoHp}?text=${encodeURIComponent(text)}`,
-                        '_blank');
+                        '_blank'
+                    );
 
                     this.isLoading = true;
+
                     try {
                         await fetch(`{{ url('admin/pembayaran/lunas-siswa') }}/${item.id_siswa}`, {
                             method: 'POST',
@@ -536,13 +540,16 @@
                                 'Accept': 'application/json'
                             }
                         });
+
                         this.refreshToTab();
+
                     } catch (e) {
                         console.error("Error updating payment:", e);
+
                     } finally {
                         this.isLoading = false;
                     }
-                },
+                }
                 async prosesBayarSiswa(item) {
                     const {
                         value: formValues

@@ -102,6 +102,28 @@ class DashboardController extends Controller
                 return $item->sesi->name;
             });
 
-        return view('welcome', compact('stats', 'listJadwal'));
+        $haris = Hari::orderBy('id')->get();
+        $sesis = Sesi::orderBy('start_time')->get();
+        $allGurus = Guru::orderBy('name')->get();
+        $allMapels = MataPelajaran::orderBy('name')->get();
+        $allRuangs = Ruang::orderBy('name')->get();
+        $allSiswas = Siswa::with('tandas')->orderBy('name')->get();
+        $allArsips = Arsip::orderBy('name')->get();
+        $pakets = Paket::orderBy('nama_paket')->get();
+        $jadwalsData = Jadwal::with(['siswa.tandas', 'mataPelajaran', 'guru', 'ruang'])->get();
+
+        return view('welcome', compact(
+            'stats',
+            'listJadwal',
+            'haris',
+            'sesis',
+            'allGurus',
+            'allMapels',
+            'allRuangs',
+            'allSiswas',
+            'allArsips',
+            'pakets',
+            'jadwalsData'
+        ));
     }
 }

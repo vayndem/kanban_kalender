@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory; // <-- DITAMBAHKAN
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Sesi extends Model
 {
-    use HasFactory; // <-- DITAMBAHKAN
+    use HasFactory;
 
     protected $fillable = ['name', 'start_time', 'end_time'];
 

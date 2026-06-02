@@ -35,7 +35,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/jadwal/download-stash', [JadwalController::class, 'downloadStash'])->name('admin.jadwal.downloadStash');
     Route::post('/admin/jadwal/upload-stash', [JadwalController::class, 'uploadStash'])->name('admin.jadwal.uploadStash');
 
-    // --- MANAJEMEN DATA MASTER (CRUD Lengkap) ---
 
     // 1. Mata Pelajaran
     Route::post('/admin/mapel', [MapelController::class, 'store'])->name('admin.mapel.store');

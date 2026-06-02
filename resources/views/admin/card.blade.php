@@ -1,4 +1,4 @@
-<div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-xl shadow-inner" x-data="siswaHandler({{ $allSiswas->toJson() }}, {{ $allArsips->toJson() }}, {{ $pakets->toJson() }}, {{ $jadwalsData->toJson() }})">
+<div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-xl shadow-inner" x-data="siswaHandler({{ $allSiswas->toJson() }}, {{ $allArsips->toJson() }}, {{ $pakets->toJson() }}, {{ $jadwalsData->toJson() }}, {{ $haris->toJson() }}, {{ $sesis->toJson() }})">
 
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
@@ -136,8 +136,8 @@
                 </div>
 
                 <template x-if="viewMode === 'aktif'">
-                    <div class="text-[8px] text-white font-black text-center py-0.5 uppercase tracking-widest transition-colors duration-500"
-                        :class="getStatusJadwal(siswa).isKurang ? '' : ''">
+                    <div
+                        class="text-[8px] text-white font-black text-center py-0.5 uppercase tracking-widest transition-colors duration-500">
                         <span
                             x-text="getStatusJadwal(siswa).kuota > 0
                             ? getStatusJadwal(siswa).total + ' dari ' + getStatusJadwal(siswa).kuota + ' Pertemuan'
@@ -153,8 +153,8 @@
         class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         style="display: none;" x-transition>
         <div @click="showSiswaModal = false" class="absolute inset-0"></div>
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden relative border dark:border-gray-700"
-            @click.stop>
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md transition-all duration-300 overflow-hidden relative border dark:border-gray-700"
+            :class="siswaForm.id ? 'max-w-3xl' : 'max-w-md'" @click.stop>
             <div
                 class="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
                 <h3 class="font-bold text-gray-900 dark:text-white"
@@ -162,46 +162,94 @@
                 <button @click="showSiswaModal = false" class="text-gray-400 hover:text-gray-600"><i
                         class="fas fa-times fa-lg"></i></button>
             </div>
-            <form @submit.prevent="simpanSiswa" class="p-6 space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="col-span-2">
-                        <label class="block text-xs font-semibold text-gray-500 uppercase">Nama Lengkap</label>
-                        <input type="text" x-model="siswaForm.name" required
+            <div class="grid grid-cols-1" :class="siswaForm.id ? 'md:grid-cols-2' : 'grid-cols-1'">
+                <form @submit.prevent="simpanSiswa" class="p-6 space-y-4 border-r border-gray-100 dark:border-gray-700">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase">Nama Lengkap</label>
+                            <input type="text" x-model="siswaForm.name" required
+                                class="mt-1 block w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase">Panggilan</label>
+                            <input type="text" x-model="siswaForm.panggilan"
+                                class="mt-1 block w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase">Kelas</label>
+                            <input type="text" x-model="siswaForm.kelas"
+                                class="mt-1 block w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase">Nomor HP</label>
+                        <input type="text" x-model="siswaForm.no_hp" @input="formatPhone" placeholder="+62812..."
                             class="mt-1 block w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase">Panggilan</label>
-                        <input type="text" x-model="siswaForm.panggilan"
+                        <label class="block text-xs font-semibold text-gray-500 uppercase">Paket Pembayaran</label>
+                        <select x-model="siswaForm.paket_pembayaran"
                             class="mt-1 block w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">-- Pilih Paket --</option>
+                            <template x-for="paket in pakets" :key="paket.id">
+                                <option :value="paket.id" x-text="paket.nama_paket"></option>
+                            </template>
+                        </select>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase">Kelas</label>
-                        <input type="text" x-model="siswaForm.kelas"
-                            class="mt-1 block w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm focus:ring-blue-500 focus:border-blue-500">
+                    <div class="pt-4 flex justify-end gap-2">
+                        <button type="button" @click="showSiswaModal = false"
+                            class="px-4 py-2 text-sm border rounded-lg dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
+                        <button type="submit"
+                            class="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-sm">Simpan</button>
                     </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase">Nomor HP</label>
-                    <input type="text" x-model="siswaForm.no_hp" @input="formatPhone" placeholder="+62812..."
-                        class="mt-1 block w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase">Paket Pembayaran</label>
-                    <select x-model="siswaForm.paket_pembayaran"
-                        class="mt-1 block w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:text-white text-sm focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">-- Pilih Paket --</option>
-                        <template x-for="paket in pakets" :key="paket.id">
-                            <option :value="paket.id" x-text="paket.nama_paket"></option>
-                        </template>
-                    </select>
-                </div>
-                <div class="pt-4 flex justify-end gap-2">
-                    <button type="button" @click="showSiswaModal = false"
-                        class="px-4 py-2 text-sm border rounded-lg dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
-                    <button type="submit"
-                        class="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-sm">Simpan</button>
-                </div>
-            </form>
+                </form>
+
+                <template x-if="siswaForm.id">
+                    <div class="p-6 bg-gray-50 dark:bg-gray-800/50 space-y-4 overflow-y-auto max-h-[450px]">
+                        <h4
+                            class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fas fa-calendar-alt text-blue-500"></i> Jadwal Kelas Diikuti
+                        </h4>
+                        <div class="space-y-3">
+                            <template x-for="j in getSiswaJadwalList(siswaForm.id)" :key="j.id">
+                                <div
+                                    class="p-3 bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm flex items-start gap-3">
+                                    <div
+                                        class="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400 shrink-0">
+                                        <i class="fas fa-clock text-sm"></i>
+                                    </div>
+                                    <div class="flex-grow min-w-0">
+                                        <p class="text-sm font-bold text-gray-900 dark:text-white truncate"
+                                            x-text="j.mapel_name"></p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">
+                                            <span class="capitalize" x-text="j.hari_name"></span> | <span
+                                                x-text="j.sesi_name"></span> (<span x-text="j.sesi_time"></span>)
+                                        </p>
+                                        <p
+                                            class="text-[11px] text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1">
+                                            <i class="fas fa-chalkboard-user opacity-60"></i> <span
+                                                x-text="j.guru_name"></span>
+                                            <span class="mx-1">•</span>
+                                            <i class="fas fa-door-open opacity-60"></i> <span
+                                                x-text="j.ruang_name"></span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <template x-if="getSiswaJadwalList(siswaForm.id).length === 0">
+                                <div
+                                    class="text-center py-8 border border-dashed border-gray-300 dark:border-gray-600 rounded-xl">
+                                    <i
+                                        class="fas fa-calendar-times text-gray-300 dark:text-gray-600 text-3xl mb-2"></i>
+                                    <p class="text-xs text-gray-400 dark:text-gray-500">Belum ada jadwal yang diatur
+                                        untuk siswa ini.</p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
         </div>
     </div>
 </div>
@@ -209,183 +257,224 @@
 @push('scripts')
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('siswaHandler', (initialSiswa, initialArsip, paketData, jadwalData) => ({
-                allSiswas: initialSiswa || [],
-                allArsips: initialArsip || [],
-                pakets: paketData || [],
-                allJadwals: jadwalData || [],
-                viewMode: 'aktif',
-                showSiswaModal: false,
-                siswaSearch: '',
-                siswaForm: {
-                    id: null,
-                    name: '',
-                    panggilan: '',
-                    kelas: '',
-                    no_hp: '',
-                    paket_pembayaran: ''
-                },
-
-                get filteredSiswa() {
-                    let data = this.viewMode === 'aktif' ? this.allSiswas : this.allArsips;
-                    if (this.siswaSearch) {
-                        const search = this.siswaSearch.toLowerCase();
-                        data = data.filter(s => (s.name && s.name.toLowerCase().includes(search)) ||
-                            (s.kelas && s.kelas.toLowerCase().includes(search)));
-                    }
-                    return data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-                },
-
-                getPaketName(id) {
-                    const p = this.pakets.find(x => x.id == id);
-                    return p ? p.nama_paket : 'N/A';
-                },
-
-                getStatusJadwal(siswa) {
-                    const totalJadwal = this.allJadwals.filter(j => Number(j.siswa_id) === Number(siswa
-                        .id)).length;
-                    const paket = this.pakets.find(p => p.id == siswa.paket_pembayaran);
-                    const kuota = paket ? paket.pertemuan : 0;
-
-                    return {
-                        total: totalJadwal,
-                        kuota: kuota,
-                        isKurang: totalJadwal < kuota,
-                        isComplete: totalJadwal >= kuota && kuota > 0
-                    };
-                },
-
-                formatPhone() {
-                    let val = this.siswaForm.no_hp;
-                    if (!val) return;
-
-                    let digits = val.replace(/\D/g, '');
-
-                    if (digits.startsWith('0')) {
-                        digits = '62' + digits.substring(1);
-                    }
-
-                    if (digits.startsWith('8')) {
-                        digits = '62' + digits;
-                    }
-
-                    if (digits.length > 0) {
-                        this.siswaForm.no_hp = '+' + digits;
-                    } else {
-                        this.siswaForm.no_hp = '';
-                    }
-                },
-
-                openTambah() {
-                    this.siswaForm = {
+            Alpine.data('siswaHandler', (initialSiswa, initialArsip, paketData, jadwalData, hariData, sesiData) =>
+                ({
+                    allSiswas: initialSiswa || [],
+                    allArsips: initialArsip || [],
+                    pakets: paketData || [],
+                    allJadwals: jadwalData || [],
+                    allHaris: hariData || [],
+                    allSesis: sesiData || [],
+                    viewMode: 'aktif',
+                    showSiswaModal: false,
+                    siswaSearch: '',
+                    siswaForm: {
                         id: null,
                         name: '',
                         panggilan: '',
                         kelas: '',
                         no_hp: '',
                         paket_pembayaran: ''
-                    };
-                    this.showSiswaModal = true;
-                },
+                    },
 
-                openEdit(siswa) {
-                    this.siswaForm = {
-                        id: siswa.id,
-                        name: siswa.name || '',
-                        panggilan: siswa.panggilan || '',
-                        kelas: siswa.kelas || '',
-                        no_hp: siswa.no_hp || '',
-                        paket_pembayaran: siswa.paket_pembayaran || ''
-                    };
-                    this.showSiswaModal = true;
-                },
-
-                async simpanSiswa() {
-                    const isEdit = !!this.siswaForm.id;
-                    const url = isEdit ? `{{ url('admin/siswa') }}/${this.siswaForm.id}` :
-                        `{{ route('admin.siswa.store') }}`;
-
-                    const payload = {
-                        ...this.siswaForm,
-                        _token: '{{ csrf_token() }}'
-                    };
-                    if (isEdit) payload._method = 'PUT';
-
-                    try {
-                        const response = await fetch(url, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify(payload)
-                        });
-                        const res = await response.json();
-                        if (res.status === 'success') {
-                            window.location.reload();
-                        } else {
-                            alert(res.message);
+                    get filteredSiswa() {
+                        let data = this.viewMode === 'aktif' ? this.allSiswas : this.allArsips;
+                        if (this.siswaSearch) {
+                            const search = this.siswaSearch.toLowerCase();
+                            data = data.filter(s => (s.name && s.name.toLowerCase().includes(search)) ||
+                                (s.kelas && s.kelas.toLowerCase().includes(search)));
                         }
-                    } catch (e) {
-                        alert('Sistem Error');
-                    }
-                },
+                        return data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                    },
 
-                async hapusSiswa(id) {
-                    if (!confirm('Pindahkan ke arsip?')) return;
-                    try {
-                        const response = await fetch(`{{ url('admin/siswa') }}/${id}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json'
+                    getPaketName(id) {
+                        const p = this.pakets.find(x => x.id == id);
+                        return p ? p.nama_paket : 'N/A';
+                    },
+
+                    getStatusJadwal(siswa) {
+                        const totalJadwal = this.allJadwals.filter(j => Number(j.siswa_id) === Number(siswa
+                            .id)).length;
+                        const paket = this.pakets.find(p => p.id == siswa.paket_pembayaran);
+                        const kuota = paket ? paket.pertemuan : 0;
+
+                        return {
+                            total: totalJadwal,
+                            kuota: kuota,
+                            isKurang: totalJadwal < kuota,
+                            isComplete: totalJadwal >= kuota && kuota > 0
+                        };
+                    },
+
+                    getSiswaJadwalList(siswaId) {
+                        if (!siswaId) return [];
+                        return this.allJadwals
+                            .filter(j => Number(j.siswa_id) === Number(siswaId))
+                            .map(j => {
+                                const mapelObj = j.mata_pelajaran || j.mataPelajaran;
+                                const hariObj = j.hari || this.allHaris.find(h => Number(h.id) ===
+                                    Number(j.hari_id));
+                                const sesiObj = j.sesi || this.allSesis.find(s => Number(s.id) ===
+                                    Number(j.sesi_id));
+
+                                let startT = '';
+                                let endT = '';
+                                let sName = `Sesi ${j.sesi_id}`;
+
+                                if (sesiObj) {
+                                    sName = sesiObj.name || sesiObj.nama_sesi || sName;
+                                    if (sesiObj.start_time) startT = sesiObj.start_time.substring(0, 5);
+                                    if (sesiObj.end_time) endT = sesiObj.end_time.substring(0, 5);
+                                }
+
+                                let hName = 'N/A';
+                                if (hariObj) {
+                                    hName = hariObj.name || hariObj.nama || hName;
+                                }
+
+                                return {
+                                    id: j.id,
+                                    mapel_name: mapelObj ? mapelObj.name : 'N/A',
+                                    guru_name: j.guru ? j.guru.name : 'N/A',
+                                    ruang_name: j.ruang ? j.ruang.name : 'N/A',
+                                    hari_name: hName,
+                                    sesi_name: sName,
+                                    sesi_time: (startT && endT) ? `${startT} - ${endT}` : ''
+                                };
+                            });
+                    },
+
+                    formatPhone() {
+                        let val = this.siswaForm.no_hp;
+                        if (!val) return;
+
+                        let digits = val.replace(/\D/g, '');
+
+                        if (digits.startsWith('0')) {
+                            digits = '62' + digits.substring(1);
+                        }
+
+                        if (digits.startsWith('8')) {
+                            digits = '62' + digits;
+                        }
+
+                        if (digits.length > 0) {
+                            this.siswaForm.no_hp = '+' + digits;
+                        } else {
+                            this.siswaForm.no_hp = '';
+                        }
+                    },
+
+                    openTambah() {
+                        this.siswaForm = {
+                            id: null,
+                            name: '',
+                            panggilan: '',
+                            kelas: '',
+                            no_hp: '',
+                            paket_pembayaran: ''
+                        };
+                        this.showSiswaModal = true;
+                    },
+
+                    openEdit(siswa) {
+                        this.siswaForm = {
+                            id: siswa.id,
+                            name: siswa.name || '',
+                            panggilan: siswa.panggilan || '',
+                            kelas: siswa.kelas || '',
+                            no_hp: siswa.no_hp || '',
+                            paket_pembayaran: siswa.paket_pembayaran || ''
+                        };
+                        this.showSiswaModal = true;
+                    },
+
+                    async simpanSiswa() {
+                        const isEdit = !!this.siswaForm.id;
+                        const url = isEdit ? `{{ url('admin/siswa') }}/${this.siswaForm.id}` :
+                            `{{ route('admin.siswa.store') }}`;
+
+                        const payload = {
+                            ...this.siswaForm,
+                            _token: '{{ csrf_token() }}'
+                        };
+                        if (isEdit) payload._method = 'PUT';
+
+                        try {
+                            const response = await fetch(url, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify(payload)
+                            });
+                            const res = await response.json();
+                            if (res.status === 'success') {
+                                window.location.reload();
+                            } else {
+                                alert(res.message);
                             }
-                        });
-                        const res = await response.json();
-                        if (res.status === 'success') window.location.reload();
-                    } catch (e) {
-                        alert('Gagal mengarsipkan');
-                    }
-                },
+                        } catch (e) {
+                            alert('Sistem Error');
+                        }
+                    },
 
-                async restoreSiswa(id) {
-                    if (!confirm('Kembalikan ke daftar aktif?')) return;
-                    try {
-                        const response = await fetch(`{{ url('admin/arsip') }}/${id}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                _method: 'PUT'
-                            })
-                        });
-                        const res = await response.json();
-                        if (res.status === 'success') window.location.reload();
-                    } catch (e) {
-                        alert('Gagal memulihkan');
-                    }
-                },
+                    async hapusSiswa(id) {
+                        if (!confirm('Pindahkan ke arsip?')) return;
+                        try {
+                            const response = await fetch(`{{ url('admin/siswa') }}/${id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            const res = await response.json();
+                            if (res.status === 'success') window.location.reload();
+                        } catch (e) {
+                            alert('Gagal mengarsipkan');
+                        }
+                    },
 
-                async hapusPermanen(id) {
-                    if (!confirm('Hapus permanen dari arsip?')) return;
-                    try {
-                        const response = await fetch(`{{ url('admin/arsip') }}/${id}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json'
-                            }
-                        });
-                        const res = await response.json();
-                        if (res.status === 'success') window.location.reload();
-                    } catch (e) {
-                        alert('Gagal menghapus');
+                    async restoreSiswa(id) {
+                        if (!confirm('Kembalikan ke daftar aktif?')) return;
+                        try {
+                            const response = await fetch(`{{ url('admin/arsip') }}/${id}`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    _method: 'PUT'
+                                })
+                            });
+                            const res = await response.json();
+                            if (res.status === 'success') window.location.reload();
+                        } catch (e) {
+                            alert('Gagal memulihkan');
+                        }
+                    },
+
+                    async hapusPermanen(id) {
+                        if (!confirm('Hapus permanen dari arsip?')) return;
+                        try {
+                            const response = await fetch(`{{ url('admin/arsip') }}/${id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                            const res = await response.json();
+                            if (res.status === 'success') window.location.reload();
+                        } catch (e) {
+                            alert('Gagal menghapus');
+                        }
                     }
-                }
-            }));
+                }));
         });
     </script>
 @endpush
