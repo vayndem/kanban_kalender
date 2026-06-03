@@ -505,25 +505,27 @@
 
                     item.rincian_data.forEach(d => {
                         const harga = new Intl.NumberFormat('id-ID').format(d.harga);
-
-                        rincianTeks += `• ${d.keterangan || 'Tagihan'} : Rp ${harga}\n`;
+                        rincianTeks += `* ${d.keterangan || 'Biaya Les'} : Rp. ${harga}\n`;
                     });
 
-                    const text = `*Reminder:*
+                    const text = `Reminder:
+TAGIHAN BIMBEL "E-LING COURSE"
 
-                    TAGIHAN BIMBEL *E-LING COURSE*
+Nama Siswa : ${nama}
+Paket Belajar : ${item.paket_belajar || '-'}
+Periode : {{ Str::upper(\Carbon\Carbon::now()->locale('id')->translatedFormat('F Y')) }}
 
-                    Nama Siswa : ${nama}
+${rincianTeks}
 
-                    ${rincianTeks}
-                    *Total Tagihan : Rp ${total}*
 
-                    Silakan melakukan pembayaran sesuai tagihan yang tertera.
+Total Tagihan: Rp ${total},-
 
-                    Jika sudah melakukan pembayaran, mohon konfirmasi kepada admin.
+Pembayaran paling lambat: 10 {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('F Y') }}
 
-                    Terima kasih 🙏
-                    *E-Ling Course*`;
+Silakan konfirmasi jika sudah melakukan pembayaran.
+
+Terima kasih 🙏
+E-Ling Course`;
 
                     window.open(`https://wa.me/${cleanNoHp}?text=${encodeURIComponent(text)}`,
                         '_blank'
