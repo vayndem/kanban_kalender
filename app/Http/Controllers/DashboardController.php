@@ -50,12 +50,23 @@ class DashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($item) {
+                $namaPaket = '-';
+                if (preg_match('/Pembayaran Paket (.*?) \(/', $item->keterangan, $matches)) {
+                    $namaPaket = $matches[1];
+                } elseif (preg_match('/Pembayaran Paket (.*)/', $item->keterangan, $matches)) {
+                    $namaPaket = $matches[1];
+                }
+
                 return [
                     'id' => $item->id,
                     'id_siswa' => $item->id_siswa,
                     'siswa' => $item->siswa,
                     'harga' => (int) $item->harga,
                     'status' => (int) $item->status,
+                    'keterangan' => $item->keterangan,
+                    'nama_paket' => $namaPaket,
+                    'tanggal_pembayaran' => $item->tanggal_pembayaran ? \Carbon\Carbon::parse($item->tanggal_pembayaran)->translatedFormat('d F Y') : '-',
+                    'pembayaran_via' => $item->pembayaran_via,
                     'bulan' => $item->created_at->format('m'),
                     'tanggal_format' => $item->created_at->translatedFormat('d F Y'),
                 ];

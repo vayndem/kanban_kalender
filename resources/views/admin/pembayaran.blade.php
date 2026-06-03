@@ -379,6 +379,8 @@
                             grouped[item.id_siswa] = {
                                 id_siswa: item.id_siswa,
                                 siswa: item.siswa,
+                                nama_paket: item.nama_paket || item.paket?.nama_paket ||
+                                    '',
                                 total_harga: 0,
                                 gabungan_keterangan: [],
                                 rincian_data: [],
@@ -517,11 +519,12 @@
                         `Nama Siswa : ${nama}\n` +
                         `Paket Belajar : ${item.nama_paket || '-'}\n` +
                         `Periode : ${bulan}\n\n` +
+                        `Rincian Tagihan:\n` +
                         `${rincianTeks}\n` +
                         `Total Tagihan : Rp ${total},-\n\n` +
                         `Pembayaran paling lambat : 10 ${namaBulan} ${tahun}\n\n` +
                         `Silakan konfirmasi jika sudah melakukan pembayaran.\n\n` +
-                        `Terima kasih 🙏\n` +
+                        `Terima kasih.\n` +
                         `E-Ling Course`;
 
                     window.open(
