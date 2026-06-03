@@ -491,43 +491,41 @@
                     const nama = item.siswa.name;
                     const noHp = item.siswa.no_hp;
 
-                    if (!noHp) {
-                        return Swal.fire('Error', 'No HP tidak ditemukan', 'error');
-                    }
+                    if (!noHp) return Swal.fire('Error', 'No HP tidak ditemukan', 'error');
 
-                    let cleanNoHp = noHp.replace(/[^0-9]/g, '');
+                    const now = new Date();
+                    const bulan = now.toLocaleString('id-ID', {
+                        month: 'long',
+                        year: 'numeric'
+                    }).toUpperCase();
 
-                    if (cleanNoHp.startsWith('0')) {
-                        cleanNoHp = '62' + cleanNoHp.substring(1);
-                    }
-
-                    let rincianTeks = '';
-
-                    item.rincian_data.forEach(d => {
-                        const harga = new Intl.NumberFormat('id-ID').format(d.harga);
-                        rincianTeks += `* ${d.keterangan || 'Biaya Les'} : Rp. ${harga}\n`;
+                    const namaBulan = now.toLocaleString('id-ID', {
+                        month: 'long'
                     });
 
-                    const text = `Reminder:
-TAGIHAN BIMBEL "E-LING COURSE"
+                    const tahun = now.getFullYear();
 
-Nama Siswa : ${nama}
-Paket Belajar : ${item.paket_belajar || '-'}
-Periode : {{ Str::upper(\Carbon\Carbon::now()->locale('id')->translatedFormat('F Y')) }}
+                    let rincianTeks = "";
+                    item.rincian_data.forEach(d => {
+                        rincianTeks +=
+                            `* ${d.keterangan || 'Tagihan'} : Rp ${new Intl.NumberFormat('id-ID').format(d.harga)}\n`;
+                    });
 
-${rincianTeks}
+                    const text =
+                        `Reminder:\n` +
+                        `TAGIHAN BIMBEL "E-LING COURSE"\n\n` +
+                        `Nama Siswa : ${nama}\n` +
+                        `Paket Belajar : ${item.nama_paket || '-'}\n` +
+                        `Periode : ${bulan}\n\n` +
+                        `${rincianTeks}\n` +
+                        `Total Tagihan : Rp ${total},-\n\n` +
+                        `Pembayaran paling lambat : 10 ${namaBulan} ${tahun}\n\n` +
+                        `Silakan konfirmasi jika sudah melakukan pembayaran.\n\n` +
+                        `Terima kasih 🙏\n` +
+                        `E-Ling Course`;
 
-
-Total Tagihan: Rp ${total},-
-
-Pembayaran paling lambat: 10 {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('F Y') }}
-
-Silakan konfirmasi jika sudah melakukan pembayaran.
-
-Terima kasih 🙏
-E-Ling Course`;
-
-                    window.open(`https://wa.me/${cleanNoHp}?text=${encodeURIComponent(text)}`,
+                    window.open(
+                        `https://wa.me/${noHp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`,
                         '_blank'
                     );
 
@@ -537,21 +535,18 @@ E-Ling Course`;
                         await fetch(`{{ url('admin/pembayaran/lunas-siswa') }}/${item.id_siswa}`, {
                             method: 'POST',
                             headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
                             }
                         });
 
                         this.refreshToTab();
-
                     } catch (e) {
-                        console.error("Error updating payment:", e);
-
+                        console.error(e);
                     } finally {
                         this.isLoading = false;
                     }
                 },
+
                 async prosesBayarSiswa(item) {
                     const {
                         value: formValues
