@@ -448,15 +448,11 @@
                         if (!confirm('Pindahkan ke arsip?')) return;
                         try {
                             const response = await fetch(`{{ url('admin/siswa') }}/${id}`, {
-                                method: 'POST',
+                                method: 'DELETE',
                                 headers: {
-                                    'Content-Type': 'application/json',
                                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                                     'Accept': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    _method: 'DELETE'
-                                })
+                                }
                             });
                             const res = await response.json();
                             if (res.status === 'success') window.location.reload();
@@ -490,15 +486,11 @@
                         if (!confirm('Hapus permanen dari arsip?')) return;
                         try {
                             const response = await fetch(`{{ url('admin/arsip') }}/${id}`, {
-                                method: 'POST',
+                                method: 'DELETE',
                                 headers: {
-                                    'Content-Type': 'application/json',
                                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                                     'Accept': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    _method: 'DELETE'
-                                })
+                                }
                             });
                             const res = await response.json();
                             if (res.status === 'success') window.location.reload();

@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Siswa;
 use App\Models\Arsip;
-use App\Models\jadwal;
+use App\Models\Jadwal;
 
 class SiswaController extends Controller
 {
