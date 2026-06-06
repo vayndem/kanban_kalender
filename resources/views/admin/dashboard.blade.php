@@ -13,7 +13,7 @@
                 allRuangs: {{ $allRuangs->toJson() }},
                 allSiswas: {{ $allSiswas->toJson() }},
                 allArsips: {{ $allArsips->toJson() }},
-                allJadwals: {{ $jadwalsData->toJson() }},
+                jadwalsData: {{ $jadwalsData->toJson() }},
                 allHaris: {{ $haris->toJson() }},
                 allSesis: {{ $sesis->sortBy('start_time')->values()->toJson() }},
                 csrfToken: '{{ csrf_token() }}',
@@ -105,10 +105,6 @@
                                             <a href="#" @click.prevent="currentForm = 'sesi'; showAddMenu = false"
                                                 class="block px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
                                                 role="menuitem"><i class="fas fa-clock w-5 mr-2"></i> Sesi Waktu</a>
-                                            {{-- <a href="#"
-                                                @click.prevent="currentForm = 'siswa'; showAddMenu = false"
-                                                class="block px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
-                                                role="menuitem"><i class="fas fa-user-graduate w-5 mr-2"></i> Siswa</a> --}}
                                             <a href="#"
                                                 @click.prevent="currentForm = 'tanda'; showAddMenu = false"
                                                 class="block px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
@@ -354,15 +350,14 @@
                             </button>
                         </div>
 
-                        <form id="editJadwalForm">
+                        <form id="editJadwalForm" @submit.prevent="saveJadwal">
                             <div class="flex flex-col md:flex-row h-[70vh]">
                                 <div class="w-full md:w-2/3 p-6 overflow-y-auto border-r dark:border-gray-700">
                                     <div class="space-y-4">
                                         <div>
-                                            <label for="editMapel"
-                                                class="block text-sm font-medium text-gray-700 dark:text-white">Mata
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-white">Mata
                                                 Pelajaran</label>
-                                            <select id="editMapel" x-model="editingJadwal.mapel_id"
+                                            <select x-model="editingJadwal.mapel_id"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
                                                 <template x-for="mapel in allMapels" :key="mapel.id">
                                                     <option :value="mapel.id" x-text="mapel.name"></option>
@@ -371,9 +366,9 @@
                                         </div>
 
                                         <div>
-                                            <label for="editGuru"
+                                            <label
                                                 class="block text-sm font-medium text-gray-700 dark:text-white">Guru</label>
-                                            <select id="editGuru" x-model="editingJadwal.guru_id"
+                                            <select x-model="editingJadwal.guru_id"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
                                                 <template x-for="guru in allGurus" :key="guru.id">
                                                     <option :value="guru.id" x-text="guru.name"></option>
@@ -382,9 +377,9 @@
                                         </div>
 
                                         <div>
-                                            <label for="editRuang"
+                                            <label
                                                 class="block text-sm font-medium text-gray-700 dark:text-white">Ruang</label>
-                                            <select id="editRuang" x-model="editingJadwal.ruang_id"
+                                            <select x-model="editingJadwal.ruang_id"
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
                                                 <template x-for="ruang in allRuangs" :key="ruang.id">
                                                     <option :value="ruang.id" x-text="ruang.name"></option>
@@ -532,7 +527,7 @@
                                 <button type="button" @click="showModal = false"
                                     class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:hover:bg-gray-500">Batal</button>
                                 <button type="button" id="saveJadwalButton" @click.prevent="saveJadwal"
-                                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Simpan
+                                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none">Simpan
                                     Perubahan</button>
                             </div>
                         </form>
@@ -578,10 +573,9 @@
                                 </div>
 
                                 <div>
-                                    <label for="newMapel"
-                                        class="block text-sm font-medium text-gray-700 dark:text-white">Mata
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-white">Mata
                                         Pelajaran</label>
-                                    <select id="newMapel" x-model.number="newJadwal.mata_pelajaran_id"
+                                    <select x-model.number="newJadwal.mata_pelajaran_id"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
                                         <template x-for="mapel in allMapels" :key="mapel.id">
                                             <option :value="mapel.id" x-text="mapel.name"></option>
@@ -590,9 +584,8 @@
                                 </div>
 
                                 <div>
-                                    <label for="newGuru"
-                                        class="block text-sm font-medium text-gray-700 dark:text-white">Guru</label>
-                                    <select id="newGuru" x-model.number="newJadwal.guru_id"
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-white">Guru</label>
+                                    <select x-model.number="newJadwal.guru_id"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
                                         <template x-for="guru in allGurus" :key="guru.id">
                                             <option :value="guru.id" x-text="guru.name"></option>
@@ -601,9 +594,9 @@
                                 </div>
 
                                 <div>
-                                    <label for="newRuang"
+                                    <label
                                         class="block text-sm font-medium text-gray-700 dark:text-white">Ruang</label>
-                                    <select id="newRuang" x-model.number="newJadwal.ruang_id"
+                                    <select x-model.number="newJadwal.ruang_id"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
                                         <template x-for="ruang in allRuangs" :key="ruang.id">
                                             <option :value="ruang.id" x-text="ruang.name"></option>
@@ -665,8 +658,8 @@
                             <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 flex justify-end space-x-3">
                                 <button type="button" @click="showAddJadwalModal = false"
                                     class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:hover:bg-gray-500">Batal</button>
-                                <button type="submit" id="saveNewJadwalButton"
-                                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Simpan
+                                <button type="button" id="saveNewJadwalButton" @click.prevent="saveNewJadwal()"
+                                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none">Simpan
                                     Jadwal Baru</button>
                             </div>
                         </form>

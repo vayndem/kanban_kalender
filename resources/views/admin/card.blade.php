@@ -116,11 +116,11 @@
                         <div class="flex gap-1 shrink-0">
                             <template x-if="viewMode === 'aktif'">
                                 <div class="flex gap-1">
-                                    <button @click="openEdit(siswa)"
+                                    <button @click.stop="openEdit(siswa)"
                                         class="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
                                         <i class="fas fa-pen-to-square"></i>
                                     </button>
-                                    <button @click="hapusSiswa(siswa.id)"
+                                    <button @click.stop="hapusSiswa(siswa.id)"
                                         class="p-1.5 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg transition-colors">
                                         <i class="fas fa-box-archive"></i>
                                     </button>
@@ -128,11 +128,11 @@
                             </template>
                             <template x-if="viewMode === 'arsip'">
                                 <div class="flex gap-1">
-                                    <button @click="restoreSiswa(siswa.id)"
+                                    <button @click.stop="restoreSiswa(siswa.id)"
                                         class="p-1.5 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors">
                                         <i class="fas fa-rotate-left"></i>
                                     </button>
-                                    <button @click="hapusPermanen(siswa.id)"
+                                    <button @click.stop="hapusPermanen(siswa.id)"
                                         class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
                                         <i class="fas fa-trash-can"></i>
                                     </button>
@@ -217,7 +217,7 @@
                             class="pt-4 flex justify-end gap-2 border-t border-gray-100 dark:border-gray-700 md:hidden">
                             <button type="button" @click="showSiswaModal = false"
                                 class="px-4 py-2 text-sm border rounded-lg dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
-                            <button type="submit"
+                            <button type="button" @click="simpanSiswa()"
                                 class="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-sm">Simpan</button>
                         </div>
                     </form>
@@ -275,8 +275,7 @@
                 class="p-4 border-t dark:border-gray-700 justify-end gap-2 bg-gray-50 dark:bg-gray-900 shrink-0 hidden md:flex">
                 <button type="button" @click="showSiswaModal = false"
                     class="px-4 py-2 text-sm border rounded-lg dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
-                <button type="button"
-                    @click="document.querySelector('#showSiswaModal form, .bg-white form').requestSubmit()"
+                <button type="button" @click="simpanSiswa()"
                     class="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-sm">Simpan</button>
             </div>
         </div>
@@ -387,11 +386,7 @@
                             digits = '62' + digits;
                         }
 
-                        if (digits.length > 0) {
-                            this.siswaForm.no_hp = '+' + digits;
-                        } else {
-                            this.siswaForm.no_hp = '';
-                        }
+                        this.siswaForm.no_hp = '+' + digits;
                     },
 
                     openTambah() {
