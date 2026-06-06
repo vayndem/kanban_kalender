@@ -83,8 +83,8 @@ Route::middleware('auth')->group(function () {
 
     // 9. Arsip Siswa
     Route::get('/admin/arsip', [ArsipController::class, 'index'])->name('admin.arsip.index');
-    Route::put('/admin/arsip/{arsip}', [ArsipController::class, 'update'])->name('admin.arsip.restore');
-    Route::delete('/admin/arsip/{arsip}', [ArsipController::class, 'destroy'])->name('admin.arsip.destroy');
+    Route::put('/admin/arsip/{id}', [ArsipController::class, 'update'])->name('admin.arsip.restore');
+    Route::delete('/admin/arsip/{id}', [ArsipController::class, 'destroy'])->name('admin.arsip.destroy');
 });
 
 Route::get('/jadwal-kalender', [JadwalController::class, 'tampilKalender'])->name('jadwal.kalender');

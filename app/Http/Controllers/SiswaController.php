@@ -95,7 +95,7 @@ class SiswaController extends Controller
             ]);
 
             Jadwal::where('siswa_id', $id)->delete();
-
+            $siswa->tandas()->delete();
             $siswa->delete();
 
             if ($request->wantsJson()) {
