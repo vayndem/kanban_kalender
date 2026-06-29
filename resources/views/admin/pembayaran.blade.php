@@ -11,9 +11,9 @@
                     x-text="filteredSummaries.length"></span> Siswa</p>
         </div>
         <div class="flex flex-wrap gap-2">
-            <button @click="exportExcel()" :disabled="isLoading"
-                class="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-sm">
-                <i class="fas fa-file-excel"></i> Export PDF
+            <button @click="exportPdf()" :disabled="isLoading"
+                class="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-sm">
+                <i class="fas fa-file-pdf"></i> Export PDF
             </button>
             <button @click="prosesPenagihanMassal()" :disabled="isLoading"
                 class="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 shadow-sm">
@@ -162,9 +162,8 @@
                 </template>
                 <template x-if="filteredSummaries.length === 0">
                     <tr>
-                        <td colspan="4" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic">
-                            Data tidak ditemukan!
-                        </td>
+                        <td colspan="4" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic">Data
+                            tidak ditemukan!</td>
                     </tr>
                 </template>
             </tbody>
@@ -324,7 +323,6 @@
         </div>
     </div>
 </div>
-
 
 @push('scripts')
     <script>
@@ -500,11 +498,9 @@
                         month: 'long',
                         year: 'numeric'
                     }).toUpperCase();
-
                     const namaBulan = now.toLocaleString('id-ID', {
                         month: 'long'
                     });
-
                     const tahun = now.getFullYear();
 
                     let rincianTeks = "";
@@ -513,8 +509,7 @@
                             `* ${d.keterangan || 'Tagihan'} : Rp ${new Intl.NumberFormat('id-ID').format(d.harga)}\n`;
                     });
 
-                    const text =
-                        `Reminder:\n` +
+                    const text = `Reminder:\n` +
                         `TAGIHAN BIMBEL "E-LING COURSE"\n\n` +
                         `Nama Siswa : ${nama}\n` +
                         `Paket Belajar : ${item.nama_paket || '-'}\n` +
@@ -529,20 +524,19 @@
 
                     window.open(
                         `https://wa.me/${noHp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`,
-                        '_blank'
-                    );
+                        '_blank');
 
                     this.isLoading = true;
-
                     try {
-                        await fetch(`{{ url('admin/pembayaran/lunas-siswa') }}/${item.id_siswa}`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            }
-                        });
-
-                        this.refreshToTab();
+                        const response = await fetch(
+                            `{{ url('admin/pembayaran/lunas-siswa') }}/${item.id_siswa}`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
+                                }
+                            });
+                        if ((await response.json()).status === 'success') this.refreshToTab();
                     } catch (e) {
                         console.error(e);
                     } finally {
@@ -646,16 +640,15 @@
                         }
                     }
                 },
-                async exportExcel() {
+
+                exportPdf() {
                     const params = new URLSearchParams({
                         search: this.filterSearch,
                         bulan: this.filterBulan,
                         status: this.filterStatus
                     });
-                    const exportUrl =
+                    window.location.href =
                         `{{ route('admin.pembayaran.export') }}?${params.toString()}`;
-
-                    window.location.href = exportUrl;
 
                     const Toast = Swal.mixin({
                         toast: true,
@@ -665,7 +658,7 @@
                     });
                     Toast.fire({
                         icon: 'success',
-                        title: 'Sedang menyiapkan file Excel...'
+                        title: 'Sedang menyiapkan dokumen PDF...'
                     });
                 },
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Siswa;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Arsip;
 use App\Models\Jadwal;
 
@@ -128,5 +129,83 @@ class SiswaController extends Controller
             ], 500);
         }
         return redirect()->back()->withInput()->with('error', $prefix . ': ' . $e->getMessage());
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $query = Siswa::with([
+            'paket',
+            'jadwals.mataPelajaran',
+            'jadwals.guru',
+            'jadwals.ruang',
+            'jadwals.hari',
+            'jadwals.sesi',
+        ])->orderBy('name');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%$search%")
+                    ->orWhere('kelas', 'like', "%$search%");
+            });
+        }
+
+        if ($request->filled('kelas')) {
+            $query->where('kelas', $request->kelas);
+        }
+
+        if ($request->filled('paket_id')) {
+            $query->where('paket_pembayaran', $request->paket_id);
+        }
+
+        if ($request->filled('sesi_ids')) {
+            $sesiIds = array_filter(explode(',', $request->sesi_ids));
+            $query->whereHas('jadwals', function ($q) use ($sesiIds) {
+                $q->whereIn('sesi_id', $sesiIds);
+            });
+        }
+
+        if ($request->filled('guru_ids')) {
+            $guruIds = array_filter(explode(',', $request->guru_ids));
+            $query->whereHas('jadwals', function ($q) use ($guruIds) {
+                $q->whereIn('guru_id', $guruIds);
+            });
+        }
+
+        $siswas = $query->get();
+
+        $filterLabel = $this->buildFilterLabel($request);
+
+        $pdf = Pdf::loadView('pdf.siswa', [
+            'siswas'      => $siswas,
+            'filterLabel' => $filterLabel,
+            'exportedAt'  => now()->translatedFormat('d F Y, H:i'),
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download('Data-Siswa-' . now()->format('YmdHis') . '.pdf');
+    }
+
+    private function buildFilterLabel(Request $request): string
+    {
+        $parts = [];
+
+        if ($request->filled('kelas'))    $parts[] = 'Kelas: ' . $request->kelas;
+        if ($request->filled('paket_id')) {
+            $paket = \App\Models\Paket::find($request->paket_id);
+            $parts[] = 'Paket: ' . ($paket ? $paket->nama_paket : $request->paket_id);
+        }
+        if ($request->filled('sesi_ids')) {
+            $ids   = array_filter(explode(',', $request->sesi_ids));
+            $names = \App\Models\Sesi::whereIn('id', $ids)->pluck('name')->join(', ');
+            $parts[] = 'Sesi: ' . $names;
+        }
+        if ($request->filled('guru_ids')) {
+            $ids   = array_filter(explode(',', $request->guru_ids));
+            $names = \App\Models\Guru::whereIn('id', $ids)->pluck('name')->join(', ');
+            $parts[] = 'Guru: ' . $names;
+        }
+        if ($request->filled('search'))   $parts[] = 'Cari: "' . $request->search . '"';
+
+        return $parts ? implode(' • ', $parts) : 'Semua Siswa';
     }
 }
