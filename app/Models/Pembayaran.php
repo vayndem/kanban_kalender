@@ -2,18 +2,25 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Pembayaran extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'id_siswa',
         'harga',
         'keterangan',
-        'status',
         'tanggal_pembayaran',
-        'pembayaran_via'
+        'pembayaran_via',
+        'status',
+        'no_hp',
+        'total_pembayaran',
+        'total_sudah_dibayar',
     ];
 
     public function siswa(): BelongsTo
@@ -21,8 +28,8 @@ class Pembayaran extends Model
         return $this->belongsTo(Siswa::class, 'id_siswa');
     }
 
-    public function pembayarans()
+    public function details(): HasMany
     {
-        return $this->hasMany(Pembayaran::class, 'id_siswa');
+        return $this->hasMany(PembayaranDetail::class, 'id_pembayaran');
     }
 }

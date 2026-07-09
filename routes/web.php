@@ -13,6 +13,7 @@ use App\Http\Controllers\TandaController;
 use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\PaketController;
 use App\Http\Controllers\ArsipController;
+use App\Http\Controllers\DiskonController;
 
 Route::get('/', [DashboardController::class, 'guestIndex'])->name('welcome');
 
@@ -75,6 +76,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/admin/pembayaran/penagihan-massal', [PembayaranController::class, 'penagihanMassal'])->name('admin.pembayaran.penagihanMassal');
     Route::post('/admin/pembayaran/lunas-siswa/{id_siswa}', [PembayaranController::class, 'lunasPerSiswa'])->name('admin.pembayaran.lunasSiswa');
     Route::post('/admin/pembayaran/bayar-siswa/{id_siswa}', [PembayaranController::class, 'bayarPerSiswa'])->name('admin.pembayaran.bayarSiswa');
+    Route::post('/admin/pembayaran/ke-lunas-massal/{id_siswa}', [PembayaranController::class, 'keLunasMassal'])->name('admin.pembayaran.keLunasMassal');
+    Route::get('/admin/pembayaran/struk/{no_hp}', [PembayaranController::class, 'printStruk'])->name('admin.pembayaran.struk');
     Route::get('/admin/pembayaran/export', [PembayaranController::class, 'exportPdf'])->name('admin.pembayaran.export');
 
     // 8. Paket
@@ -86,6 +89,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/arsip', [ArsipController::class, 'index'])->name('admin.arsip.index');
     Route::put('/admin/arsip/{id}', [ArsipController::class, 'update'])->name('admin.arsip.restore');
     Route::delete('/admin/arsip/{id}', [ArsipController::class, 'destroy'])->name('admin.arsip.destroy');
+
+    // 10. Diskon
+    Route::post('/admin/diskon', [DiskonController::class, 'store'])->name('admin.diskon.store');
+    Route::put('/admin/diskon/{id}', [DiskonController::class, 'update'])->name('admin.diskon.update');
+    Route::delete('/admin/diskon/{id}', [DiskonController::class, 'destroy'])->name('admin.diskon.destroy');
 });
 
 Route::get('/jadwal-kalender', [JadwalController::class, 'tampilKalender'])->name('jadwal.kalender');

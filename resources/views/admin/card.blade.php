@@ -15,12 +15,12 @@
         <div class="flex flex-col gap-3 w-full sm:w-auto sm:flex-row sm:items-center">
             <div
                 class="flex bg-gray-200 dark:bg-gray-700 p-1 rounded-xl shadow-sm border dark:border-gray-600 w-full sm:w-auto">
-                <button @click="viewMode = 'aktif'"
+                <button @click="viewMode = 'aktif'; selectedSiswas = []"
                     :class="{ 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-300': viewMode === 'aktif', 'text-gray-500 dark:text-gray-400': viewMode !== 'aktif' }"
                     class="flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200">
                     AKTIF
                 </button>
-                <button @click="viewMode = 'arsip'"
+                <button @click="viewMode = 'arsip'; selectedSiswas = []"
                     :class="{ 'bg-white dark:bg-gray-600 shadow-sm text-red-600 dark:text-red-300': viewMode === 'arsip', 'text-gray-500 dark:text-gray-400': viewMode !== 'arsip' }"
                     class="flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200">
                     ARSIP
@@ -35,10 +35,18 @@
                 </div>
             </div>
 
-            <button x-show="viewMode === 'aktif'" @click="openTambah()"
-                class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
-                <i class="fas fa-plus mr-2"></i> Tambah
-            </button>
+            <div class="flex gap-2 w-full sm:w-auto">
+                <button x-show="viewMode === 'aktif' && selectedSiswas.length > 0"
+                    @click="hapusSiswa(selectedSiswas.join(','))"
+                    class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm animate-fade-in">
+                    <i class="fas fa-box-archive mr-2"></i> Arsipkan Terpilih (<span
+                        x-text="selectedSiswas.length"></span>)
+                </button>
+                <button x-show="viewMode === 'aktif'" @click="openTambah()"
+                    class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                    <i class="fas fa-plus mr-2"></i> Tambah
+                </button>
+            </div>
         </div>
     </div>
 
@@ -134,7 +142,13 @@
             </div>
         </div>
 
-        <div class="flex justify-end pt-2 border-t border-gray-100 dark:border-gray-700">
+        <div class="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
+            <label
+                class="inline-flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+                <input type="checkbox" @change="toggleSelectAll($el.checked)" :checked="isAllSelected()"
+                    class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 w-4 h-4">
+                Pilih Semua yang Tampil
+            </label>
             <button type="button" @click="exportPdf()"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm">
                 <i class="fas fa-file-pdf"></i> Export PDF <span x-show="hasActiveFilter"
@@ -150,11 +164,21 @@
                 x-transition:enter-start="opacity-0 transform scale-95"
                 x-transition:enter-end="opacity-100 transform scale-100"
                 class="group relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col justify-between h-full"
-                :class="{ 'opacity-75 grayscale-[0.5]': viewMode === 'arsip' }">
+                :class="{
+                    'opacity-75 grayscale-[0.5]': viewMode === 'arsip',
+                    'ring-2 ring-blue-500 border-transparent': selectedSiswas
+                        .includes(siswa.id)
+                }">
                 <div>
                     <div class="h-1 w-full transition-colors duration-500"
                         :class="getStatusJadwal(siswa).isKurang ? 'bg-orange-500 animate-pulse' : 'bg-blue-500'"></div>
-                    <div class="p-4 sm:p-5">
+
+                    <div class="absolute top-3 left-3 z-10">
+                        <input type="checkbox" :value="siswa.id" x-model="selectedSiswas"
+                            class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 w-4 h-4 shadow-sm cursor-pointer transition-transform group-hover:scale-110">
+                    </div>
+
+                    <div class="p-4 sm:p-5 pl-10">
                         <div class="flex items-start justify-between mb-4 gap-2">
                             <div class="flex items-center gap-3 min-w-0">
                                 <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0 transition-transform group-hover:scale-105 duration-300"
@@ -251,7 +275,6 @@
         <form @submit.prevent="simpanSiswa"
             class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full overflow-hidden relative border dark:border-gray-700 transition-all duration-300 max-h-[90vh] flex flex-col"
             :class="{ 'max-w-3xl': siswaForm.id, 'max-w-md': !siswaForm.id }" @click.stop>
-
             <div
                 class="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900 shrink-0">
                 <h3 class="font-bold text-gray-900 dark:text-white text-base sm:text-lg"
@@ -264,7 +287,6 @@
 
             <div class="overflow-y-auto flex-1">
                 <div class="grid grid-cols-1" :class="{ 'md:grid-cols-2': siswaForm.id }">
-
                     <div class="p-4 sm:p-6 space-y-4">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="col-span-1 sm:col-span-2">
@@ -386,6 +408,7 @@
                     viewMode: 'aktif',
                     showSiswaModal: false,
                     siswaSearch: '',
+                    selectedSiswas: [],
                     siswaForm: {
                         id: null,
                         name: '',
@@ -472,6 +495,27 @@
                         return data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
                     },
 
+                    isAllSelected() {
+                        const currentList = this.filteredSiswa;
+                        if (currentList.length === 0) return false;
+                        return currentList.every(s => this.selectedSiswas.includes(s.id));
+                    },
+
+                    toggleSelectAll(checked) {
+                        const currentList = this.filteredSiswa;
+                        if (checked) {
+                            currentList.forEach(s => {
+                                if (!this.selectedSiswas.includes(s.id)) {
+                                    this.selectedSiswas.push(s.id);
+                                }
+                            });
+                        } else {
+                            currentList.forEach(s => {
+                                this.selectedSiswas = this.selectedSiswas.filter(id => id !== s.id);
+                            });
+                        }
+                    },
+
                     resetFilter() {
                         this.filterKelas = '';
                         this.filterPaket = '';
@@ -488,8 +532,20 @@
                     getStatusJadwal(siswa) {
                         const totalJadwal = this.allJadwals.filter(j => Number(j.siswa_id) === Number(siswa
                             .id)).length;
-                        const paket = this.pakets.find(p => p.id == siswa.paket_pembayaran);
-                        const kuota = paket ? paket.pertemuan : 0;
+
+                        let kuota = 0;
+                        const kolomPaket = ['paket_pembayaran', 'paket_pembayaran_2', 'paket_pembayaran_3',
+                            'paket_pembayaran_4', 'paket_pembayaran_5'
+                        ];
+
+                        kolomPaket.forEach(kolom => {
+                            if (siswa[kolom]) {
+                                const pObj = this.pakets.find(p => p.id == siswa[kolom]);
+                                if (pObj && pObj.pertemuan) {
+                                    kuota += Number(pObj.pertemuan);
+                                }
+                            }
+                        });
 
                         return {
                             total: totalJadwal,
@@ -610,7 +666,7 @@
                     },
 
                     async hapusSiswa(id) {
-                        if (!confirm('Pindahkan ke arsip?')) return;
+                        if (!confirm('Pindahkan data terpilih ke arsip?')) return;
                         try {
                             const response = await fetch(`{{ url('admin/siswa') }}/${id}`, {
                                 method: 'DELETE',

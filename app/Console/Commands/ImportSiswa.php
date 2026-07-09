@@ -14,7 +14,7 @@ class ImportSiswa extends Command
 
     public function handle()
     {
-        $filePath = storage_path('app/1.xlsx');
+        $filePath = storage_path('app/2.xlsx');
 
         if (!file_exists($filePath)) {
             $this->error("FILE TIDAK ADA DI: " . $filePath);

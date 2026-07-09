@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\PembayaranExport;
-use Maatwebsite\Excel\Facades\Excel;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use App\Models\Pembayaran;
+use App\Models\PembayaranDetail;
 use App\Models\Siswa;
+use App\Models\Diskon;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PembayaranController extends Controller
 {
@@ -19,12 +19,13 @@ class PembayaranController extends Controller
             'harga' => 'required|integer',
             'keterangan' => 'nullable|string|max:255',
             'status' => 'required|integer|in:0,1,2',
-        ], [
-            'id_siswa.exists' => 'Siswa tidak ditemukan.',
-            'status.in' => 'Status pembayaran tidak valid.',
         ]);
 
         try {
+            $siswa = Siswa::find($request->id_siswa);
+            $validated['no_hp'] = $siswa->no_hp;
+            $validated['total_sudah_dibayar'] = 0;
+
             $pembayaran = Pembayaran::create($validated);
 
             if ($request->wantsJson()) {
@@ -43,7 +44,6 @@ class PembayaranController extends Controller
 
     public function update(Request $request, $id)
     {
-        // Gunakan find() agar tidak melempar error 500 jika ID salah
         $pembayaran = Pembayaran::find($id);
 
         if (!$pembayaran) {
@@ -58,6 +58,9 @@ class PembayaranController extends Controller
         ]);
 
         try {
+            $siswa = Siswa::find($request->id_siswa);
+            $validated['no_hp'] = $siswa->no_hp;
+
             $pembayaran->update($validated);
 
             if ($request->wantsJson()) {
@@ -79,6 +82,7 @@ class PembayaranController extends Controller
                 return $this->handleNotFound($request, "Pembayaran");
             }
 
+            $pembayaran->details()->delete();
             $pembayaran->delete();
 
             if ($request->wantsJson()) {
@@ -113,11 +117,12 @@ class PembayaranController extends Controller
     public function lunasPerSiswa(Request $request, $id_siswa)
     {
         try {
-            if (!Siswa::where('id', $id_siswa)->exists()) {
+            $siswa = Siswa::find($id_siswa);
+            if (!$siswa) {
                 return $this->handleNotFound($request, "Siswa");
             }
 
-            Pembayaran::where('id_siswa', $id_siswa)
+            Pembayaran::where('no_hp', $siswa->no_hp)
                 ->where('status', 0)
                 ->update(['status' => 1]);
 
@@ -133,42 +138,110 @@ class PembayaranController extends Controller
 
     public function bayarPerSiswa(Request $request, $id_siswa)
     {
+        $request->validate([
+            'nominal' => 'required|integer|min:1',
+            'keterangan_detail' => 'nullable|string|max:255',
+            'pembayaran_via' => 'required|integer|in:0,1',
+            'tanggal_pembayaran' => 'required|date'
+        ]);
+
         try {
-            Pembayaran::where('id_siswa', $id_siswa)
-                ->where('status', 1)
+            $siswa = Siswa::find($id_siswa);
+            if (!$siswa) {
+                return $this->handleNotFound($request, "Siswa");
+            }
+
+            $pembayarans = Pembayaran::where('no_hp', $siswa->no_hp)
+                ->whereIn('status', [0, 1])
+                ->get();
+
+            if ($pembayarans->isEmpty()) {
+                return response()->json(['status' => 'error', 'message' => 'Tidak ada tagihan aktif untuk nomor HP ini.'], 422);
+            }
+
+            $pembayaranUtama = $pembayarans->first();
+
+            PembayaranDetail::create([
+                'id_pembayaran' => $pembayaranUtama->id,
+                'pembayaran' => $request->nominal,
+                'keterangan' => $request->keterangan_detail ?? 'Pembayaran cicilan / bertahap',
+                'created_at' => $request->tanggal_pembayaran ? Carbon::parse($request->tanggal_pembayaran) : Carbon::now()
+            ]);
+
+            foreach ($pembayarans as $p) {
+                $p->increment('total_sudah_dibayar', $request->nominal / $pembayarans->count());
+                $p->update([
+                    'pembayaran_via' => $request->pembayaran_via,
+                    'tanggal_pembayaran' => $request->tanggal_pembayaran ?? Carbon::now()
+                ]);
+            }
+
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'success', 'message' => 'Pembayaran cicilan berhasil dicatat.']);
+            }
+
+            return redirect()->back()->with('success', 'Pembayaran cicilan berhasil dicatat.');
+        } catch (\Exception $e) {
+            return $this->handleException($request, 'Gagal memproses pembayaran', $e);
+        }
+    }
+
+    public function keLunasMassal(Request $request, $id_siswa)
+    {
+        try {
+            $siswa = Siswa::find($id_siswa);
+            if (!$siswa) {
+                return $this->handleNotFound($request, "Siswa");
+            }
+
+            Pembayaran::where('no_hp', $siswa->no_hp)
+                ->whereIn('status', [0, 1])
                 ->update([
                     'status' => 2,
-                    'tanggal_pembayaran' => $request->tanggal_pembayaran ?? Carbon::now(),
-                    'pembayaran_via' => $request->pembayaran_via ?? 0
+                    'tanggal_pembayaran' => Carbon::now()
                 ]);
 
             if ($request->wantsJson()) {
-                return response()->json(['status' => 'success', 'message' => 'Pembayaran siswa berhasil diproses.']);
+                return response()->json(['status' => 'success', 'message' => 'Status berhasil diubah menjadi lunas.']);
             }
 
-            return redirect()->back()->with('success', 'Pembayaran siswa berhasil diproses.');
+            return redirect()->back()->with('success', 'Status berhasil diubah menjadi lunas.');
         } catch (\Exception $e) {
-            return $this->handleException($request, 'Gagal memproses pembayaran', $e);
+            return $this->handleException($request, 'Gagal melunaskan', $e);
         }
     }
 
     public function penagihanMassal(Request $request)
     {
         try {
-            $siswas = Siswa::whereNotNull('paket_pembayaran')->with('paket')->get();
+            $siswas = Siswa::where(function ($q) {
+                $q->whereNotNull('paket_pembayaran')
+                    ->orWhereNotNull('paket_pembayaran_2')
+                    ->orWhereNotNull('paket_pembayaran_3')
+                    ->orWhereNotNull('paket_pembayaran_4')
+                    ->orWhereNotNull('paket_pembayaran_5');
+            })->get();
+
+            $allPakets = \App\Models\Paket::all()->keyBy('id');
             $count = 0;
             $now = Carbon::now();
             $bulanTahun = $now->translatedFormat('F Y');
 
             foreach ($siswas as $siswa) {
-                if ($siswa->paket) {
-                    Pembayaran::create([
-                        'id_siswa' => $siswa->id,
-                        'harga' => $siswa->paket->harga,
-                        'keterangan' => "Tagihan Paket {$siswa->paket->nama_paket} - {$bulanTahun}",
-                        'status' => 0
-                    ]);
-                    $count++;
+                $columns = ['paket_pembayaran', 'paket_pembayaran_2', 'paket_pembayaran_3', 'paket_pembayaran_4', 'paket_pembayaran_5'];
+                foreach ($columns as $col) {
+                    if ($siswa->$col && isset($allPakets[$siswa->$col])) {
+                        $pkt = $allPakets[$siswa->$col];
+                        Pembayaran::create([
+                            'id_siswa' => $siswa->id,
+                            'no_hp' => $siswa->no_hp,
+                            'harga' => $pkt->harga,
+                            'keterangan' => "Tagihan Paket {$pkt->nama_paket} - {$bulanTahun}",
+                            'status' => 0,
+                            'total_sudah_dibayar' => 0
+                        ]);
+                        $count++;
+                    }
                 }
             }
 
@@ -181,6 +254,26 @@ class PembayaranController extends Controller
         } catch (\Exception $e) {
             return $this->handleException($request, 'Gagal membuat tagihan massal', $e);
         }
+    }
+
+    public function printStruk($no_hp)
+    {
+        $pembayarans = Pembayaran::with(['siswa', 'details'])->where('no_hp', $no_hp)->where('status', 2)->get();
+        if ($pembayarans->isEmpty()) {
+            abort(404, 'Data lunas tidak ditemukan.');
+        }
+
+        $diskon = Diskon::where('no_hp', $no_hp)->first();
+        $nominalDiskon = $diskon ? (int) $diskon->diskon : 0;
+
+        $pdf = Pdf::loadView('pdf.struk', [
+            'pembayarans' => $pembayarans,
+            'no_hp' => $no_hp,
+            'diskon' => $diskon,
+            'nominalDiskon' => $nominalDiskon
+        ])->setPaper([0, 0, 226, 500], 'portrait');
+
+        return $pdf->stream('Struk-' . $no_hp . '.pdf');
     }
 
     private function handleNotFound($request, $item)
@@ -209,15 +302,18 @@ class PembayaranController extends Controller
         ];
 
         $allData = [];
+        $diskons = Diskon::all()->keyBy('no_hp');
+
         foreach ($statuses as $code => $name) {
-            $query = Pembayaran::with(['siswa'])->where('status', $code);
+            $query = Pembayaran::with(['siswa', 'details'])->where('status', $code);
 
             if ($request->search) {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
                     $q->whereHas('siswa', function ($s) use ($search) {
                         $s->where('name', 'like', "%$search%");
-                    })->orWhere('keterangan', 'like', "%$search%");
+                    })->orWhere('keterangan', 'like', "%$search%")
+                        ->orWhere('no_hp', 'like', "%$search%");
                 });
             }
 
@@ -227,13 +323,14 @@ class PembayaranController extends Controller
 
             $allData[$name] = [
                 'code' => $code,
-                'groups' => $query->orderBy('id_siswa')->get()->groupBy('id_siswa')
+                'groups' => $query->orderBy('no_hp')->get()->groupBy('no_hp')
             ];
         }
 
         $pdf = Pdf::loadView('pdf.pembayaran', [
             'allData' => $allData,
-            'bulan' => $request->bulan
+            'bulan' => $request->bulan,
+            'diskons' => $diskons
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download('Laporan-Pembayaran-' . now()->format('YmdHis') . '.pdf');

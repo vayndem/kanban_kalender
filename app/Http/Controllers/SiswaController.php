@@ -81,32 +81,35 @@ class SiswaController extends Controller
     public function destroy(Request $request, $id)
     {
         try {
-            $siswa = Siswa::find($id);
+            $ids = explode(',', $id);
+            $siswas = Siswa::whereIn('id', $ids)->get();
 
-            if (!$siswa) {
+            if ($siswas->isEmpty()) {
                 return $this->handleNotFound($request, "Siswa");
             }
 
-            Arsip::create([
-                'name'             => $siswa->name,
-                'panggilan'        => $siswa->panggilan,
-                'kelas'            => $siswa->kelas,
-                'no_hp'            => $siswa->no_hp,
-                'paket_pembayaran' => $siswa->paket_pembayaran,
-            ]);
+            foreach ($siswas as $siswa) {
+                Arsip::create([
+                    'name'             => $siswa->name,
+                    'panggilan'        => $siswa->panggilan,
+                    'kelas'            => $siswa->kelas,
+                    'no_hp'            => $siswa->no_hp,
+                    'paket_pembayaran' => $siswa->paket_pembayaran,
+                ]);
 
-            Jadwal::where('siswa_id', $id)->delete();
-            $siswa->tandas()->delete();
-            $siswa->delete();
+                Jadwal::where('siswa_id', $siswa->id)->delete();
+                $siswa->tandas()->delete();
+                $siswa->delete();
+            }
 
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'Siswa berhasil diarsipkan dan jadwal telah dibersihkan.'
+                    'message' => count($ids) . ' siswa berhasil diarsipkan dan jadwal telah dibersihkan.'
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Siswa berhasil diarsipkan.');
+            return redirect()->back()->with('success', count($ids) . ' siswa berhasil diarsipkan.');
         } catch (\Exception $e) {
             return $this->handleException($request, 'Gagal memproses', $e);
         }

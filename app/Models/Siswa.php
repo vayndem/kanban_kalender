@@ -14,7 +14,11 @@ class Siswa extends Model
         'panggilan',
         'kelas',
         'no_hp',
-        'paket_pembayaran'
+        'paket_pembayaran',
+        'paket_pembayaran_2',
+        'paket_pembayaran_3',
+        'paket_pembayaran_4',
+        'paket_pembayaran_5',
     ];
 
     public function jadwals()

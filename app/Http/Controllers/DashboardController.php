@@ -10,6 +10,7 @@ use App\Models\Guru;
 use App\Models\MataPelajaran;
 use App\Models\Ruang;
 use App\Models\Siswa;
+use App\Models\Diskon;
 use App\Models\Pembayaran;
 use App\Models\Paket;
 use App\Models\Arsip;
@@ -26,6 +27,7 @@ class DashboardController extends Controller
         $allSiswas = Siswa::with('tandas')->orderBy('name')->get();
         $allArsips = Arsip::orderBy('name')->get();
         $pakets = Paket::orderBy('nama_paket')->get();
+        $diskons = Diskon::orderBy('id', 'desc')->get();
 
         $jadwalsWithRelations = Jadwal::with(['siswa.tandas', 'mataPelajaran', 'guru', 'ruang'])->get();
 
@@ -46,7 +48,7 @@ class DashboardController extends Controller
             $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey]['siswa_list']->push($jadwal->siswa);
         }
 
-        $pembayaranSummaries = Pembayaran::with(['siswa.tandas'])
+        $pembayaranSummaries = Pembayaran::with(['siswa.tandas', 'details'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($item) {
@@ -67,6 +69,9 @@ class DashboardController extends Controller
                     'nama_paket' => $namaPaket,
                     'tanggal_pembayaran' => $item->tanggal_pembayaran ? \Carbon\Carbon::parse($item->tanggal_pembayaran)->translatedFormat('d F Y') : '-',
                     'pembayaran_via' => $item->pembayaran_via,
+                    'no_hp' => $item->no_hp,
+                    'total_sudah_dibayar' => (int) $item->total_sudah_dibayar,
+                    'details' => $item->details,
                     'bulan' => $item->created_at->format('m'),
                     'tanggal_format' => $item->created_at->translatedFormat('d F Y'),
                 ];
@@ -84,6 +89,7 @@ class DashboardController extends Controller
             'pembayaranSummaries' => $pembayaranSummaries,
             'pakets' => $pakets,
             'jadwalsData' => $jadwalsData,
+            'diskons' => $diskons,
         ]);
     }
 
