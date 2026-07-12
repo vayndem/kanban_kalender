@@ -129,7 +129,7 @@
                                         style="display: none;">
                                         <div @click="currentForm = ''" class="absolute inset-0"></div>
                                         <div @click.stop
-                                            class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md overflow-hidden relative">
+                                            class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden relative transition-all duration-300">
                                             @include('admin.form', ['type' => 'currentForm'])
                                         </div>
                                     </div>
