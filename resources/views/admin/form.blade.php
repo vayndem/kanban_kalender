@@ -1,62 +1,65 @@
-<div class="bg-white dark:bg-gray-800 sticky top-0 z-10 rounded-t-xl transition-all duration-200">
-    <div class="flex justify-between items-center p-4 md:p-5 border-b border-gray-100 dark:border-gray-700/70">
-        <h3 class="text-base md:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <i class="fas fa-pen-to-square text-blue-500"></i>
+<div class="bg-white dark:bg-gray-800 sticky top-0 z-20 rounded-t-2xl transition-all duration-200 shadow-sm">
+    <div class="flex justify-between items-center px-6 py-5 border-b border-gray-100 dark:border-gray-700/70">
+        <h3 class="text-lg md:text-xl font-extrabold text-gray-900 dark:text-white flex items-center gap-3">
+            <div class="p-2 bg-blue-50 dark:bg-blue-950/50 rounded-xl text-blue-600 dark:text-blue-400">
+                <i class="fas fa-pen-to-square text-base md:text-lg"></i>
+            </div>
             <span
                 x-text="formData.id ? 'Edit ' + (currentForm === 'tanda' ? 'Catatan' : currentForm.charAt(0).toUpperCase() + currentForm.slice(1)) : 'Tambah ' + (currentForm === 'tanda' ? 'Catatan' : currentForm.charAt(0).toUpperCase() + currentForm.slice(1))"></span>
         </h3>
         <button @click="currentForm = ''; formData = {}; activeFormTab = 'input'; formSearch = ''"
-            class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-all p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl active:scale-95">
             <i class="fas fa-times fa-lg"></i>
         </button>
     </div>
 
-    <div class="grid grid-cols-2 border-b border-gray-200 dark:border-gray-700">
+    <div
+        class="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/20 p-1.5 gap-1 mx-6 my-2 rounded-xl">
         <button @click="activeFormTab = 'input'"
             :class="activeFormTab === 'input' ?
-                'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-gray-700/50 font-bold' :
-                'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium'"
-            class="py-3 px-4 text-center border-b-2 text-xs md:text-sm transition-all duration-200 flex items-center justify-center gap-2">
-            <i class="fas fa-plus-circle text-sm"></i> Input Data
+                'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-md shadow-gray-200/50 dark:shadow-none font-bold' :
+                'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-800/50 font-medium'"
+            class="flex-1 py-3 px-4 text-center rounded-lg text-xs md:text-sm transition-all duration-200 flex items-center justify-center gap-2.5">
+            <i class="fas fa-plus-circle text-base"></i> Input Data
         </button>
         <button @click="activeFormTab = 'list'"
             :class="activeFormTab === 'list' ?
-                'border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-gray-700/50 font-bold' :
-                'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium'"
-            class="py-3 px-4 text-center border-b-2 text-xs md:text-sm transition-all duration-200 flex items-center justify-center gap-2">
-            <i class="fas fa-list-ul text-sm"></i> Lihat Daftar
+                'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-md shadow-gray-200/50 dark:shadow-none font-bold' :
+                'text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-gray-800/50 font-medium'"
+            class="flex-1 py-3 px-4 text-center rounded-lg text-xs md:text-sm transition-all duration-200 flex items-center justify-center gap-2.5">
+            <i class="fas fa-list-ul text-base"></i> Lihat Daftar
         </button>
     </div>
 </div>
 
 <form @submit.prevent="saveNewData" id="formTambahData"
-    class="flex flex-col h-full bg-white dark:bg-gray-800 rounded-b-xl">
-    <div class="p-4 md:p-6 space-y-5 max-h-[65vh] overflow-y-auto">
-        <div x-show="activeFormTab === 'input'" class="space-y-4">
+    class="flex flex-col h-full bg-white dark:bg-gray-800 rounded-b-2xl">
+    <div class="px-6 py-4 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+        <div x-show="activeFormTab === 'input'" class="space-y-5">
             <template x-if="currentForm === 'mapel'">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="sm:col-span-2">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="md:col-span-2">
                         <label
-                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Nama
+                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Nama
                             Mata Pelajaran</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i
-                                    class="fas fa-book text-xs"></i></span>
+                        <div class="relative group">
+                            <span
+                                class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors"><i
+                                    class="fas fa-book text-sm"></i></span>
                             <input type="text" x-model="formData.name" required
-                                class="pl-9 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm"
-                                placeholder="Contoh: Matematika">
+                                class="pl-10 block w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm py-2.5"
+                                placeholder="Contoh: Matematika Wajib">
                         </div>
                     </div>
                     <div>
                         <label
-                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Warna
+                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Warna
                             Indikator</label>
                         <div
-                            class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/30 p-1.5 rounded-lg border dark:border-gray-600">
+                            class="flex items-center gap-3 bg-gray-50 dark:bg-gray-700/30 p-2 rounded-xl border border-gray-200 dark:border-gray-600 h-[42px]">
                             <input type="color" x-model="formData.border_color" required
-                                class="h-8 w-12 rounded cursor-pointer border-0 bg-transparent">
-                            <span class="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Klik wadah
-                                warna</span>
+                                class="h-7 w-14 rounded-lg cursor-pointer border-0 bg-transparent">
+                            <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Pilih Warna</span>
                         </div>
                     </div>
                 </div>
@@ -65,14 +68,15 @@
             <template x-if="currentForm === 'guru'">
                 <div>
                     <label
-                        class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Nama
+                        class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Nama
                         Guru</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i
-                                class="fas fa-chalkboard-teacher text-xs"></i></span>
+                    <div class="relative group">
+                        <span
+                            class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors"><i
+                                class="fas fa-chalkboard-teacher text-sm"></i></span>
                         <input type="text" x-model="formData.name" required
-                            class="pl-9 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm"
-                            placeholder="Nama Lengkap Guru">
+                            class="pl-10 block w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm py-2.5"
+                            placeholder="Nama Lengkap beserta Gelar">
                     </div>
                 </div>
             </template>
@@ -80,114 +84,130 @@
             <template x-if="currentForm === 'ruang'">
                 <div>
                     <label
-                        class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Nama
+                        class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Nama
                         Ruang / Kelas</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i
-                                class="fas fa-building text-xs"></i></span>
+                    <div class="relative group">
+                        <span
+                            class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors"><i
+                                class="fas fa-building text-sm"></i></span>
                         <input type="text" x-model="formData.name" required
-                            class="pl-9 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm"
-                            placeholder="Contoh: Lab Komputer">
+                            class="pl-10 block w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm py-2.5"
+                            placeholder="Contoh: Ruang Teori 04 / Lab Utama">
                     </div>
                 </div>
             </template>
 
             <template x-if="currentForm === 'siswa'">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="sm:col-span-2">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="md:col-span-2">
                         <label
-                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Nama
+                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Nama
                             Lengkap Siswa</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i
-                                    class="fas fa-user-graduate text-xs"></i></span>
+                        <div class="relative group">
+                            <span
+                                class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors"><i
+                                    class="fas fa-user-graduate text-sm"></i></span>
                             <input type="text" x-model="formData.name" required
-                                class="pl-9 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm"
-                                placeholder="Nama Lengkap Paspor/Ijazah">
+                                class="pl-10 block w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm py-2.5"
+                                placeholder="Nama Lengkap Resmi">
                         </div>
                     </div>
                     <div>
                         <label
-                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Nama
+                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Nama
                             Panggilan</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i
-                                    class="fas fa-id-badge text-xs"></i></span>
+                        <div class="relative group">
+                            <span
+                                class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors"><i
+                                    class="fas fa-id-badge text-sm"></i></span>
                             <input type="text" x-model="formData.panggilan"
-                                class="pl-9 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm"
-                                placeholder="Contoh: Budi">
+                                class="pl-10 block w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm py-2.5"
+                                placeholder="Panggilan">
                         </div>
                     </div>
-                    <div class="sm:col-span-3">
+                    <div class="md:col-span-3">
                         <label
-                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Tingkatan
+                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Tingkatan
                             Kelas</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i
-                                    class="fas fa-graduation-cap text-xs"></i></span>
+                        <div class="relative group">
+                            <span
+                                class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors"><i
+                                    class="fas fa-graduation-cap text-sm"></i></span>
                             <input type="text" x-model="formData.kelas"
-                                class="pl-9 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm"
-                                placeholder="Contoh: 10 SMA">
+                                class="pl-10 block w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm py-2.5"
+                                placeholder="Contoh: XII MIPA 2 / 10 SMK">
                         </div>
                     </div>
                 </div>
             </template>
 
             <template x-if="currentForm === 'sesi'">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div class="sm:col-span-2">
                         <label
-                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Nama
+                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Nama
                             Label Sesi</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i
-                                    class="fas fa-clock text-xs"></i></span>
+                        <div class="relative group">
+                            <span
+                                class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors"><i
+                                    class="fas fa-clock text-sm"></i></span>
                             <input type="text" x-model="formData.name" required
-                                class="pl-9 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm"
-                                placeholder="Contoh: Sesi 1">
+                                class="pl-10 block w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm py-2.5"
+                                placeholder="Contoh: Sesi Pagi 01">
                         </div>
                     </div>
                     <div>
                         <label
-                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Jam
+                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Jam
                             Mulai</label>
-                        <input type="time" x-model="formData.start_time" required
-                            class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm">
+                        <div class="relative group">
+                            <span
+                                class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors"><i
+                                    class="fas fa-hourglass-start text-sm"></i></span>
+                            <input type="time" x-model="formData.start_time" step="60" required
+                                class="pl-10 block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm py-2.5">
+                        </div>
                     </div>
                     <div>
                         <label
-                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Jam
+                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Jam
                             Selesai</label>
-                        <input type="time" x-model="formData.end_time" required
-                            class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm">
+                        <div class="relative group">
+                            <span
+                                class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors"><i
+                                    class="fas fa-hourglass-end text-sm"></i></span>
+                            <input type="time" x-model="formData.end_time" step="60" required
+                                class="pl-10 block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm py-2.5">
+                        </div>
                     </div>
                 </div>
             </template>
 
             <template x-if="currentForm === 'tanda'">
-                <div class="grid grid-cols-1 gap-4">
-                    <div class="relative" x-data="{ openSiswaList: false }">
+                <div class="grid grid-cols-1 gap-5">
+                    <div>
                         <label
-                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Target
+                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Target
                             Siswa</label>
-                        <div class="relative mt-1">
+                        <div class="relative group">
+                            <span
+                                class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors"><i
+                                    class="fas fa-user text-sm"></i></span>
                             <select x-model.number="formData.siswa_id" required
-                                class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm pl-8">
+                                class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm pl-10 py-2.5 bg-none">
                                 <option value="">-- Pilih Nama Siswa Terdaftar --</option>
                                 <template x-for="siswa in allSiswas" :key="siswa.id">
                                     <option :value="siswa.id" x-text="siswa.name"></option>
                                 </template>
                             </select>
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i
-                                    class="fas fa-user text-xs"></i></span>
                         </div>
                     </div>
                     <div>
                         <label
-                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Isi
+                            class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Isi
                             Deskripsi Catatan</label>
                         <textarea x-model="formData.keterangan" rows="4" required
-                            class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm"
+                            class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm p-3.5"
                             placeholder="Tulis catatan perkembangan atau informasi penting di sini..."></textarea>
                     </div>
                 </div>
@@ -195,50 +215,61 @@
         </div>
 
         <div x-show="activeFormTab === 'list'" class="space-y-4">
-            <div class="relative">
+            <div class="relative group">
                 <input type="text" x-model="formSearch" placeholder="Ketik kata kunci pencarian..."
-                    class="pl-9 block w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm">
-                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i
-                        class="fas fa-search text-xs"></i></span>
+                    class="pl-10 block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white text-sm transition-all shadow-sm py-2.5">
+                <span
+                    class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors"><i
+                        class="fas fa-search text-sm"></i></span>
             </div>
-            <div class="border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm">
+
+            <div
+                class="border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm bg-white dark:bg-gray-800">
                 <div
-                    class="bg-gray-50 dark:bg-gray-900/60 px-4 py-2.5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center text-xs font-bold text-gray-400 uppercase tracking-wider">
-                    <span>Entitas Data</span>
+                    class="bg-gray-50 dark:bg-gray-900/60 px-5 py-3.5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <span class="flex items-center gap-2"><i class="fas fa-database text-blue-500"></i> Entitas
+                        Terdata</span>
                     <span
-                        class="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full font-mono text-[10px]">Total:
-                        <span x-text="getFilteredList().length"></span></span>
+                        class="bg-blue-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full font-mono text-xs shadow-inner">
+                        Total: <span class="font-bold" x-text="getFilteredList().length"></span>
+                    </span>
                 </div>
                 <ul
-                    class="divide-y divide-gray-100 dark:divide-gray-700/60 max-h-64 overflow-y-auto bg-white dark:bg-gray-800 custom-scrollbar">
+                    class="divide-y divide-gray-100 dark:divide-gray-700/60 max-h-80 overflow-y-auto bg-white dark:bg-gray-800 custom-scrollbar">
                     <template x-for="item in getFilteredList()" :key="item.id">
                         <li
-                            class="px-4 py-3 hover:bg-gray-50/80 dark:hover:bg-gray-700/20 flex justify-between items-center transition-colors">
+                            class="px-5 py-4 hover:bg-gray-50/70 dark:hover:bg-gray-700/30 flex justify-between items-center transition-all group/item">
                             <div class="flex flex-col min-w-0 flex-1 pr-4">
-                                <span class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate"
+                                <span
+                                    class="text-sm font-bold text-gray-800 dark:text-gray-200 group-hover/item:text-blue-600 dark:group-hover/item:text-blue-400 transition-colors truncate"
                                     x-text="item.name"></span>
                                 <template x-if="currentForm === 'sesi'">
                                     <span
-                                        class="text-[11px] text-gray-400 dark:text-gray-500 font-medium font-mono mt-0.5 flex items-center gap-1">
-                                        <i class="far fa-clock"></i> <span
-                                            x-text="item.start_time + ' - ' + item.end_time"></span>
+                                        class="text-xs text-gray-400 dark:text-gray-500 font-semibold font-mono mt-1 flex items-center gap-1.5 bg-gray-50 dark:bg-gray-900/40 px-2 py-0.5 rounded w-max">
+                                        <i class="far fa-clock text-blue-500"></i>
+                                        <span x-text="item.start_time + ' - ' + item.end_time"></span>
                                     </span>
                                 </template>
                             </div>
-                            <div class="flex items-center gap-0.5 shrink-0">
+                            <div
+                                class="flex items-center gap-1 shrink-0 opacity-80 group-hover/item:opacity-100 transition-opacity">
                                 <button type="button" @click="editDataItem(item)"
-                                    class="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/40 p-2 rounded-lg transition-colors"><i
-                                        class="fas fa-pencil-alt text-xs"></i></button>
+                                    class="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/50 p-2.5 rounded-xl transition-all active:scale-95 hover:shadow-sm">
+                                    <i class="fas fa-pencil-alt text-sm"></i>
+                                </button>
                                 <button type="button" @click="deleteDataItem(item.id)"
-                                    class="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 p-2 rounded-lg transition-colors"><i
-                                        class="fas fa-trash-alt text-xs"></i></button>
+                                    class="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 p-2.5 rounded-xl transition-all active:scale-95 hover:shadow-sm">
+                                    <i class="fas fa-trash-alt text-sm"></i>
+                                </button>
                             </div>
                         </li>
                     </template>
                     <template x-if="getFilteredList().length === 0">
                         <li
-                            class="px-4 py-8 text-center text-xs text-gray-400 dark:text-gray-500 italic font-medium bg-gray-50/30 dark:bg-transparent">
-                            Tidak ada data yang sesuai.</li>
+                            class="px-5 py-12 text-center text-sm text-gray-400 dark:text-gray-500 italic font-medium bg-gray-50/10 dark:bg-transparent flex flex-col items-center justify-center gap-2">
+                            <i class="fas fa-folder-open text-3xl text-gray-300"></i>
+                            <span>Tidak ada data yang sesuai dengan kata kunci.</span>
+                        </li>
                     </template>
                 </ul>
             </div>
@@ -246,14 +277,14 @@
     </div>
 
     <div
-        class="px-4 md:px-6 py-4 bg-gray-50 dark:bg-gray-900/40 flex justify-end gap-2.5 mt-auto border-t border-gray-100 dark:border-gray-700 rounded-b-xl">
+        class="px-6 py-4 bg-gray-50 dark:bg-gray-900/40 flex justify-end gap-3 mt-auto border-t border-gray-100 dark:border-gray-700 rounded-b-2xl">
         <button type="button" @click="currentForm = ''; formData = {}"
-            class="flex-1 sm:flex-none px-4 py-2 text-xs md:text-sm font-bold text-gray-600 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 active:scale-95 transition-all">
+            class="flex-1 sm:flex-none px-5 py-2.5 text-xs md:text-sm font-bold text-gray-600 bg-white border border-gray-300 rounded-xl shadow-sm hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 active:scale-95 transition-all">
             Batal
         </button>
         <button x-show="activeFormTab === 'input'" type="submit" id="saveNewDataButton"
-            class="flex-1 sm:flex-none px-5 py-2 text-xs md:text-sm font-bold text-white bg-green-600 border border-transparent rounded-lg shadow-md hover:bg-green-700 active:scale-95 transition-all flex items-center justify-center gap-1.5">
-            <i class="fas fa-circle-check"></i>
+            class="flex-1 sm:flex-none px-6 py-2.5 text-xs md:text-sm font-bold text-white bg-green-600 border border-transparent rounded-xl shadow-md hover:bg-green-700 active:scale-95 transition-all flex items-center justify-center gap-2">
+            <i class="fas fa-circle-check text-sm"></i>
             <span x-text="formData.id ? 'Simpan Perubahan' : 'Simpan Data Baru'"></span>
         </button>
     </div>

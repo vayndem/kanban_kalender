@@ -11,6 +11,11 @@ class Sesi extends Model
 
     protected $fillable = ['name', 'start_time', 'end_time'];
 
+    protected $casts = [
+        'start_time' => 'datetime:H:i',
+        'end_time' => 'datetime:H:i',
+    ];
+
     public function jadwals()
     {
         return $this->hasMany(Jadwal::class, 'sesi_id', 'id');
