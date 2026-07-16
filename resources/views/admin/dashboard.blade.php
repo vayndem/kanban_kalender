@@ -125,11 +125,12 @@
                                     </div>
 
                                     <div x-show="currentForm" x-transition
-                                        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+                                        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm"
                                         style="display: none;">
-                                        <div @click="currentForm = ''" class="absolute inset-0"></div>
+                                        <div @click="currentForm = ''; formData = {}; activeFormTab = 'input'; formSearch = ''"
+                                            class="absolute inset-0"></div>
                                         <div @click.stop
-                                            class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden relative transition-all duration-300">
+                                            class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transition-all duration-300">
                                             @include('admin.form', ['type' => 'currentForm'])
                                         </div>
                                     </div>
@@ -326,13 +327,13 @@
                     x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                     x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
                     x-transition:leave-end="opacity-0"
-                    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+                    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm"
                     style="display: none;">
 
                     <div @click="showModal = false" class="absolute inset-0"></div>
 
                     <div @click.stop
-                        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-5xl overflow-hidden relative"
+                        class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden relative border dark:border-gray-700"
                         x-show="showModal" x-transition:enter="ease-out duration-300"
                         x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
@@ -341,24 +342,27 @@
                         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
 
                         <div
-                            class="flex justify-between items-center p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Edit Jadwal & Catatan Siswa
+                            class="flex justify-between items-center p-5 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <i class="fas fa-calendar-check text-blue-500"></i> Edit Jadwal & Catatan Siswa
                             </h3>
                             <button @click="showModal = false"
-                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                                <i class="fas fa-times"></i>
+                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                                <i class="fas fa-times fa-lg"></i>
                             </button>
                         </div>
 
                         <form id="editJadwalForm" @submit.prevent="saveJadwal">
-                            <div class="flex flex-col md:flex-row h-[70vh]">
-                                <div class="w-full md:w-2/3 p-6 overflow-y-auto border-r dark:border-gray-700">
-                                    <div class="space-y-4">
+                            <div class="flex flex-col md:flex-row h-[75vh]">
+                                <div
+                                    class="w-full md:w-2/3 p-6 overflow-y-auto border-r dark:border-r-gray-700 bg-white dark:bg-gray-800 space-y-5">
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700 dark:text-white">Mata
+                                            <label
+                                                class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Mata
                                                 Pelajaran</label>
                                             <select x-model="editingJadwal.mapel_id"
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
+                                                class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                                 <template x-for="mapel in allMapels" :key="mapel.id">
                                                     <option :value="mapel.id" x-text="mapel.name"></option>
                                                 </template>
@@ -367,9 +371,9 @@
 
                                         <div>
                                             <label
-                                                class="block text-sm font-medium text-gray-700 dark:text-white">Guru</label>
+                                                class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Guru</label>
                                             <select x-model="editingJadwal.guru_id"
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
+                                                class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                                 <template x-for="guru in allGurus" :key="guru.id">
                                                     <option :value="guru.id" x-text="guru.name"></option>
                                                 </template>
@@ -378,75 +382,75 @@
 
                                         <div>
                                             <label
-                                                class="block text-sm font-medium text-gray-700 dark:text-white">Ruang</label>
+                                                class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ruang</label>
                                             <select x-model="editingJadwal.ruang_id"
-                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
+                                                class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                                 <template x-for="ruang in allRuangs" :key="ruang.id">
                                                     <option :value="ruang.id" x-text="ruang.name"></option>
                                                 </template>
                                             </select>
                                         </div>
+                                    </div>
 
-                                        <div>
-                                            <label
-                                                class="block text-sm font-medium text-gray-700 dark:text-white mb-2">Siswa
-                                                Terpilih (Klik Nama untuk Lihat Catatan)</label>
-                                            <div class="p-1 min-h-[100px]">
-                                                <ul class="space-y-2">
-                                                    <template x-for="siswa in selectedSiswas()"
-                                                        :key="siswa.id">
-                                                        <li class="flex justify-between items-center text-sm p-3 rounded cursor-pointer transition-all duration-200 border border-transparent"
-                                                            @click="viewStudentDetail(siswa)"
-                                                            :class="{
-                                                                'bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-500': selectedStudentDetail &&
-                                                                    selectedStudentDetail.id === siswa
-                                                                    .id,
-                                                                'hover:bg-gray-100 dark:hover:bg-gray-700': !
-                                                                    selectedStudentDetail || selectedStudentDetail
-                                                                    .id !== siswa.id
-                                                            }">
-                                                            <div class="flex items-center">
-                                                                <span x-text="siswa.name"
-                                                                    :class="hasTanda(siswa) ?
-                                                                        'text-yellow-600 dark:text-yellow-400 font-bold' :
-                                                                        'font-medium text-gray-800 dark:text-white'"></span>
-                                                            </div>
-                                                            <button @click.stop.prevent="removeSiswa(siswa.id)"
-                                                                type="button"
-                                                                class="font-medium text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs ml-3 transition-colors hover:underline">Hapus</button>
-                                                        </li>
-                                                    </template>
-                                                    <li x-show="editingJadwal.siswa_ids && editingJadwal.siswa_ids.length === 0"
-                                                        class="text-sm text-gray-400 text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
-                                                        <i class="fas fa-users mb-2 text-2xl"></i><br> Belum ada siswa
-                                                        terpilih
-                                                    </li>
-                                                </ul>
+                                    <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                                        <label
+                                            class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Cari
+                                            & Tambah Siswa Baru</label>
+                                        <div class="relative">
+                                            <div
+                                                class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fas fa-user-plus text-sm"></i>
                                             </div>
+                                            <input type="text" x-model.debounce.300ms="searchModalSiswa"
+                                                @keydown.escape.prevent="searchModalSiswa = ''"
+                                                placeholder="Ketik nama siswa terdaftar untuk ditambahkan ke kelas ini..."
+                                                class="pl-10 w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none">
+                                            <div x-show="filteredAvailableSiswas().length > 0" x-transition
+                                                @click.away="searchModalSiswa = ''"
+                                                class="absolute z-30 w-full mt-1 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-600">
+                                                <template x-for="siswa in filteredAvailableSiswas()"
+                                                    :key="siswa.id">
+                                                    <button @click.prevent="addSiswa(siswa.id)" type="button"
+                                                        class="block w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-white hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors font-medium">
+                                                        <i class="fas fa-plus text-xs text-blue-500 mr-2"></i><span
+                                                            x-text="siswa.name"></span>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                            <label
-                                                class="block text-sm font-medium text-gray-700 dark:text-white mt-6">Cari
-                                                & Tambah Siswa</label>
-                                            <div class="relative mt-1">
-                                                <div
-                                                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <i class="fas fa-search text-gray-400"></i>
+                                    <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                                        <label
+                                            class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Daftar
+                                            Siswa Terpilih Di Kelas Ini (<span
+                                                x-text="selectedSiswas().length"></span>)</label>
+                                        <div
+                                            class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[35vh] overflow-y-auto p-1 custom-scrollbar">
+                                            <template x-for="siswa in selectedSiswas()" :key="siswa.id">
+                                                <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
+                                                    @click="viewStudentDetail(siswa)"
+                                                    :class="{
+                                                        'ring-2 ring-blue-500 bg-blue-50/50 dark:bg-blue-900/20 border-transparent': selectedStudentDetail &&
+                                                            selectedStudentDetail.id === siswa.id
+                                                    }">
+                                                    <div class="flex items-center gap-2 min-w-0">
+                                                        <i class="fas fa-circle-user shrink-0 text-gray-400"
+                                                            :class="hasTanda(siswa) ? 'text-yellow-500' : ''"></i>
+                                                        <span x-text="siswa.name" class="text-sm font-bold truncate"
+                                                            :class="hasTanda(siswa) ? 'text-yellow-600 dark:text-yellow-400' :
+                                                                'text-gray-900 dark:text-white'"></span>
+                                                    </div>
+                                                    <button @click.stop.prevent="removeSiswa(siswa.id)" type="button"
+                                                        class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-xs transition-colors shrink-0 font-semibold">
+                                                        <i class="fas fa-user-minus"></i> Hapus
+                                                    </button>
                                                 </div>
-                                                <input type="text" x-model.debounce.300ms="searchModalSiswa"
-                                                    @keydown.escape.prevent="searchModalSiswa = ''"
-                                                    placeholder="Ketik nama siswa untuk menambah..."
-                                                    class="pl-10 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                                                <div x-show="filteredAvailableSiswas().length > 0" x-transition
-                                                    @click.away="searchModalSiswa = ''"
-                                                    class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                                    <template x-for="siswa in filteredAvailableSiswas()"
-                                                        :key="siswa.id">
-                                                        <button @click.prevent="addSiswa(siswa.id)" type="button"
-                                                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600">
-                                                            <span x-text="siswa.name"></span>
-                                                        </button>
-                                                    </template>
-                                                </div>
+                                            </template>
+                                            <div x-show="editingJadwal.siswa_ids && editingJadwal.siswa_ids.length === 0"
+                                                class="col-span-full text-sm text-gray-400 text-center py-10 border-2 border-dashed border-gray-200 dark:border-gray-600 bg-gray-50/50 dark:bg-gray-900/20 rounded-xl">
+                                                <i class="fas fa-users mb-2 text-3xl"></i><br> Belum ada siswa terpilih
+                                                di kelas ini
                                             </div>
                                         </div>
                                     </div>
@@ -455,56 +459,62 @@
                                 <div
                                     class="w-full md:w-1/3 bg-gray-50 dark:bg-gray-900 border-l dark:border-gray-700 flex flex-col">
                                     <div class="p-4 border-b dark:border-gray-700 bg-white dark:bg-gray-800">
-                                        <h4 class="font-semibold text-gray-800 dark:text-white"><i
-                                                class="fas fa-info-circle mr-1 text-blue-500"></i> Detail Siswa</h4>
+                                        <h4
+                                            class="font-bold text-sm text-gray-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                                            <i class="fas fa-clipboard-user text-blue-500"></i> Detail & Catatan Siswa
+                                        </h4>
                                     </div>
                                     <div class="p-6 overflow-y-auto flex-grow">
                                         <template x-if="selectedStudentDetail">
-                                            <div class="animate-fadeIn">
-                                                <div class="mb-4 text-center">
+                                            <div class="animate-fadeIn space-y-6">
+                                                <div class="text-center">
                                                     <div
-                                                        class="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-3">
-                                                        <span
-                                                            class="text-2xl font-bold text-blue-600 dark:text-blue-300"
+                                                        class="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md">
+                                                        <span class="text-2xl font-black text-white"
                                                             x-text="selectedStudentDetail.name.charAt(0)"></span>
                                                     </div>
-                                                    <h3 class="text-lg font-bold text-gray-900 dark:text-white"
+                                                    <h3 class="text-base font-black text-gray-900 dark:text-white leading-tight"
                                                         x-text="selectedStudentDetail.name"></h3>
-                                                    <span class="text-xs text-gray-500 dark:text-gray-300">Siswa
-                                                        Terdaftar</span>
+                                                    <span
+                                                        class="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded"
+                                                        x-text="'Kelas: ' + (selectedStudentDetail.kelas || 'N/A')"></span>
                                                 </div>
-                                                <div class="mt-6">
+                                                <div class="space-y-3">
                                                     <h5
-                                                        class="text-xs font-bold uppercase text-gray-500 dark:text-gray-300 tracking-wider mb-3">
-                                                        Catatan / Tanda</h5>
+                                                        class="text-xs font-black uppercase text-gray-400 tracking-widest border-b dark:border-gray-700 pb-1 flex items-center gap-1.5">
+                                                        <i class="fas fa-sticky-note text-yellow-500"></i> Catatan
+                                                        Khusus
+                                                    </h5>
                                                     <template x-if="hasTanda(selectedStudentDetail)">
-                                                        <ul class="space-y-3">
+                                                        <div
+                                                            class="space-y-2.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                                                             <template x-for="tanda in selectedStudentDetail.tandas"
                                                                 :key="tanda.id">
-                                                                <li
-                                                                    class="relative bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-3 rounded shadow-sm text-sm text-gray-800 dark:text-white mb-2">
-                                                                    <div class="pr-8">
-                                                                        <p x-text="tanda.keterangan"
-                                                                            class="break-words"></p>
-                                                                        <span class="text-xs text-gray-400 mt-1 block"
-                                                                            x-text="new Date(tanda.created_at).toLocaleDateString()"></span>
-                                                                    </div>
+                                                                <div
+                                                                    class="relative bg-yellow-50/60 dark:bg-yellow-950/20 border-l-4 border-yellow-400 p-3 rounded-xl shadow-sm text-xs text-gray-800 dark:text-gray-200">
+                                                                    <p x-text="tanda.keterangan"
+                                                                        class="break-words font-medium leading-relaxed pr-6">
+                                                                    </p>
+                                                                    <span
+                                                                        class="text-[9px] text-gray-400 dark:text-gray-500 mt-1.5 block font-mono"
+                                                                        x-text="new Date(tanda.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})"></span>
                                                                     <button type="button"
                                                                         @click.stop="markTandaForDeletion(tanda.id, selectedStudentDetail.id)"
-                                                                        class="absolute top-2 right-2 text-red-500 hover:text-red-700 hover:bg-red-100 p-1.5 rounded-full transition-colors z-10"
-                                                                        title="Hapus Tanda"><i
-                                                                            class="fas fa-times fa-lg"></i></button>
-                                                                </li>
+                                                                        class="absolute top-2 right-2 text-red-400 hover:text-red-600 p-1 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+                                                                        title="Hapus Catatan">
+                                                                        <i class="fas fa-times"></i>
+                                                                    </button>
+                                                                </div>
                                                             </template>
-                                                        </ul>
+                                                        </div>
                                                     </template>
                                                     <template x-if="!hasTanda(selectedStudentDetail)">
                                                         <div
-                                                            class="text-center py-6 bg-white dark:bg-gray-800 rounded border border-gray-100 dark:border-gray-700">
+                                                            class="text-center py-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4">
                                                             <i
-                                                                class="fas fa-check-circle text-green-400 text-3xl mb-2"></i>
-                                                            <p class="text-sm text-gray-500 dark:text-gray-400">Tidak
-                                                                ada catatan khusus untuk siswa ini.</p>
+                                                                class="fas fa-circle-check text-green-400 text-2xl mb-1 block"></i>
+                                                            <p class="text-xs text-gray-400 dark:text-gray-500">Tidak
+                                                                ada catatan untuk siswa ini.</p>
                                                         </div>
                                                     </template>
                                                 </div>
@@ -512,10 +522,11 @@
                                         </template>
                                         <template x-if="!selectedStudentDetail">
                                             <div
-                                                class="h-full flex flex-col items-center justify-center text-center text-gray-400 p-4">
-                                                <i class="fas fa-mouse-pointer text-4xl mb-4 opacity-50"></i>
-                                                <p class="text-sm">Klik nama siswa di daftar sebelah kiri untuk melihat
-                                                    detail catatan dan informasi lainnya.</p>
+                                                class="h-full flex flex-col items-center justify-center text-center text-gray-400 p-4 min-h-[200px]">
+                                                <i
+                                                    class="fas fa-arrow-pointer text-3xl mb-3 opacity-40 animate-bounce"></i>
+                                                <p class="text-xs leading-relaxed">Klik salah satu nama siswa di daftar
+                                                    sebelah kiri untuk melihat catatan khusus perkembangan mereka.</p>
                                             </div>
                                         </template>
                                     </div>
@@ -523,12 +534,12 @@
                             </div>
 
                             <div
-                                class="px-6 py-4 bg-white dark:bg-gray-800 border-t dark:border-gray-700 flex justify-end space-x-3">
+                                class="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t dark:border-gray-700 flex justify-end gap-2.5">
                                 <button type="button" @click="showModal = false"
-                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:hover:bg-gray-500">Batal</button>
+                                    class="px-4 py-2 text-sm font-bold text-gray-600 bg-white border border-gray-300 rounded-xl shadow-sm hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 transition-all">Batal</button>
                                 <button type="button" id="saveJadwalButton" @click.prevent="saveJadwal"
-                                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none">Simpan
-                                    Perubahan</button>
+                                    class="px-5 py-2 text-sm font-bold text-white bg-blue-600 border border-transparent rounded-xl shadow-md hover:bg-blue-700 transition-all flex items-center gap-2"><i
+                                        class="fas fa-save"></i> Simpan Perubahan</button>
                             </div>
                         </form>
                     </div>
@@ -538,13 +549,13 @@
                     x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                     x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
                     x-transition:leave-end="opacity-0"
-                    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+                    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm"
                     style="display: none;">
 
                     <div @click="showAddJadwalModal = false" class="absolute inset-0"></div>
 
                     <div @click.stop
-                        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg overflow-hidden relative"
+                        class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700"
                         x-show="showAddJadwalModal" x-transition:enter="ease-out duration-300"
                         x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
@@ -552,115 +563,219 @@
                         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
 
-                        <div class="flex justify-between items-center p-4 border-b dark:border-gray-700">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Tambah Jadwal Baru</h3>
+                        <div
+                            class="flex justify-between items-center p-5 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <i class="fas fa-calendar-plus text-green-500"></i> Tambah Jadwal Baru
+                            </h3>
                             <button @click="showAddJadwalModal = false"
-                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><i
-                                    class="fas fa-times"></i></button>
+                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                                <i class="fas fa-times fa-lg"></i>
+                            </button>
                         </div>
 
                         <form @submit.prevent="saveNewJadwal">
-                            <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                            <div class="flex flex-col md:flex-row h-[75vh]">
                                 <div
-                                    class="bg-blue-50 dark:bg-blue-900/50 p-3 rounded-md border border-blue-200 dark:border-blue-800">
-                                    <p class="text-sm font-semibold text-blue-800 dark:text-blue-200">
-                                        Slot Terpilih:
-                                        <span
-                                            x-text="allHaris.find(h => h.id === newJadwal.hari_id)?.name || '...'"></span>,
-                                        <span
-                                            x-text="allSesis.find(s => s.id === newJadwal.sesi_id)?.name || '...'"></span>
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-white">Mata
-                                        Pelajaran</label>
-                                    <select x-model.number="newJadwal.mata_pelajaran_id"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
-                                        <template x-for="mapel in allMapels" :key="mapel.id">
-                                            <option :value="mapel.id" x-text="mapel.name"></option>
-                                        </template>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-white">Guru</label>
-                                    <select x-model.number="newJadwal.guru_id"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
-                                        <template x-for="guru in allGurus" :key="guru.id">
-                                            <option :value="guru.id" x-text="guru.name"></option>
-                                        </template>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label
-                                        class="block text-sm font-medium text-gray-700 dark:text-white">Ruang</label>
-                                    <select x-model.number="newJadwal.ruang_id"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm dark:bg-gray-700 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:text-white">
-                                        <template x-for="ruang in allRuangs" :key="ruang.id">
-                                            <option :value="ruang.id" x-text="ruang.name"></option>
-                                        </template>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-white">Siswa
-                                        Terpilih</label>
+                                    class="w-full md:w-2/3 p-6 overflow-y-auto border-r dark:border-r-gray-700 bg-white dark:bg-gray-800 space-y-5">
                                     <div
-                                        class="mt-2 p-3 border dark:border-gray-600 rounded-md min-h-[80px] bg-gray-50 dark:bg-gray-900/50 max-h-40 overflow-y-auto">
-                                        <ul class="space-y-2">
-                                            <template x-for="siswa in selectedSiswas()" :key="siswa.id">
-                                                <li
-                                                    class="flex justify-between items-center text-sm py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                                                    <div class="flex items-center cursor-pointer"
-                                                        :class="hasTanda(siswa) ?
-                                                            'text-yellow-600 dark:text-yellow-400 font-bold' :
-                                                            'text-gray-800 dark:text-white'">
-                                                        <span x-text="siswa.name"></span>
-                                                        <template x-if="hasTanda(siswa)">
-                                                            <i
-                                                                class="fas fa-exclamation-circle ml-2 text-yellow-500 animate-pulse"></i>
-                                                        </template>
-                                                    </div>
-                                                    <button @click.prevent="removeSiswa(siswa.id)" type="button"
-                                                        class="font-medium text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-xs ml-3">Hapus</button>
-                                                </li>
-                                            </template>
-                                            <li x-show="selectedSiswas().length === 0"
-                                                class="text-sm text-gray-400 text-center py-2">Belum ada siswa terpilih
-                                            </li>
-                                        </ul>
+                                        class="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 rounded-xl shadow-inner text-white flex items-center gap-3">
+                                        <div class="p-2.5 bg-white/20 rounded-xl">
+                                            <i class="fas fa-clock text-lg"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs uppercase font-black tracking-widest text-blue-100">Slot
+                                                Mengajar Terpilih</p>
+                                            <p class="text-base font-bold">
+                                                <span
+                                                    x-text="allHaris.find(h => h.id === newJadwal.hari_id)?.name || '...'"></span>,
+                                                <span
+                                                    x-text="allSesis.find(s => s.id === newJadwal.sesi_id)?.name || '...'"></span>
+                                                <span class="text-xs font-normal opacity-80"
+                                                    x-text="allSesis.find(s => s.id === newJadwal.sesi_id)?.start_time ? '(' + allSesis.find(s => s.id === newJadwal.sesi_id).start_time.substring(0,5) + ' - ' + allSesis.find(s => s.id === newJadwal.sesi_id).end_time.substring(0,5) + ')' : ''"></span>
+                                            </p>
+                                        </div>
                                     </div>
 
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-white mt-3">Cari &
-                                        Tambah Siswa</label>
-                                    <div class="relative">
-                                        <input type="text" x-model.debounce.300ms="searchModalSiswa"
-                                            @keydown.escape.prevent="searchModalSiswa = ''"
-                                            placeholder="Ketik nama siswa untuk menambah..."
-                                            class="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                                        <div x-show="filteredAvailableSiswas().length > 0" x-transition
-                                            @click.away="searchModalSiswa = ''"
-                                            class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                                            <template x-for="siswa in filteredAvailableSiswas()"
-                                                :key="siswa.id">
-                                                <button @click.prevent="addSiswa(siswa.id)" type="button"
-                                                    class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600">
-                                                    <span x-text="siswa.name"></span>
-                                                </button>
-                                            </template>
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div>
+                                            <label
+                                                class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Mata
+                                                Pelajaran</label>
+                                            <select x-model.number="newJadwal.mata_pelajaran_id"
+                                                class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                                <template x-for="mapel in allMapels" :key="mapel.id">
+                                                    <option :value="mapel.id" x-text="mapel.name"></option>
+                                                </template>
+                                            </select>
                                         </div>
+
+                                        <div>
+                                            <label
+                                                class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Guru</label>
+                                            <select x-model.number="newJadwal.guru_id"
+                                                class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                                <template x-for="guru in allGurus" :key="guru.id">
+                                                    <option :value="guru.id" x-text="guru.name"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label
+                                                class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ruang</label>
+                                            <select x-model.number="newJadwal.ruang_id"
+                                                class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                                <template x-for="ruang in allRuangs" :key="ruang.id">
+                                                    <option :value="ruang.id" x-text="ruang.name"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                                        <label
+                                            class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Cari
+                                            & Hubungkan Siswa</label>
+                                        <div class="relative">
+                                            <div
+                                                class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                                                <i class="fas fa-user-search text-sm"></i>
+                                            </div>
+                                            <input type="text" x-model.debounce.300ms="searchModalSiswa"
+                                                @keydown.escape.prevent="searchModalSiswa = ''"
+                                                placeholder="Ketik nama lengkap atau panggilan siswa untuk dimasukkan..."
+                                                class="pl-10 w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none">
+                                            <div x-show="filteredAvailableSiswas().length > 0" x-transition
+                                                @click.away="searchModalSiswa = ''"
+                                                class="absolute z-30 w-full mt-1 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-600">
+                                                <template x-for="siswa in filteredAvailableSiswas()"
+                                                    :key="siswa.id">
+                                                    <button @click.prevent="addSiswa(siswa.id)" type="button"
+                                                        class="block w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-white hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors font-medium">
+                                                        <i class="fas fa-plus text-xs text-green-500 mr-2"></i><span
+                                                            x-text="siswa.name"></span>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                                        <label
+                                            class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Anggota
+                                            Siswa Terpilih Kelas Baru (<span
+                                                x-text="selectedSiswas().length"></span>)</label>
+                                        <div
+                                            class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[30vh] overflow-y-auto p-1 custom-scrollbar">
+                                            <template x-for="siswa in selectedSiswas()" :key="siswa.id">
+                                                <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 hover:ring-2 hover:ring-green-500 transition-all cursor-pointer"
+                                                    @click="viewStudentDetail(siswa)"
+                                                    :class="{
+                                                        'ring-2 ring-green-500 bg-green-50/30 dark:bg-green-900/10 border-transparent': selectedStudentDetail &&
+                                                            selectedStudentDetail.id === siswa.id
+                                                    }">
+                                                    <div class="flex items-center gap-2 min-w-0">
+                                                        <i class="fas fa-circle-user shrink-0 text-gray-400"
+                                                            :class="hasTanda(siswa) ? 'text-yellow-500' : ''"></i>
+                                                        <span x-text="siswa.name" class="text-sm font-bold truncate"
+                                                            :class="hasTanda(siswa) ? 'text-yellow-600 dark:text-yellow-400' :
+                                                                'text-gray-900 dark:text-white'"></span>
+                                                    </div>
+                                                    <button @click.stop.prevent="removeSiswa(siswa.id)" type="button"
+                                                        class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-xs transition-colors shrink-0 font-semibold">
+                                                        <i class="fas fa-minus"></i> Lepas
+                                                    </button>
+                                                </div>
+                                            </template>
+                                            <div x-show="selectedSiswas().length === 0"
+                                                class="col-span-full text-sm text-gray-400 text-center py-10 border-2 border-dashed border-gray-200 dark:border-gray-600 bg-gray-50/50 dark:bg-gray-900/20 rounded-xl">
+                                                <i class="fas fa-users-slash mb-2 text-3xl"></i><br> Belum melampirkan
+                                                siswa, silakan cari di kolom atas
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div
+                                    class="w-full md:w-1/3 bg-gray-50 dark:bg-gray-900 border-l dark:border-gray-700 flex flex-col">
+                                    <div class="p-4 border-b dark:border-gray-700 bg-white dark:bg-gray-800">
+                                        <h4
+                                            class="font-bold text-sm text-gray-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                                            <i class="fas fa-clipboard-user text-green-500"></i> Catatan Siswa Terpilih
+                                        </h4>
+                                    </div>
+                                    <div class="p-6 overflow-y-auto flex-grow">
+                                        <template x-if="selectedStudentDetail">
+                                            <div class="animate-fadeIn space-y-6">
+                                                <div class="text-center">
+                                                    <div
+                                                        class="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md">
+                                                        <span class="text-2xl font-black text-white"
+                                                            x-text="selectedStudentDetail.name.charAt(0)"></span>
+                                                    </div>
+                                                    <h3 class="text-base font-black text-gray-900 dark:text-white leading-tight"
+                                                        x-text="selectedStudentDetail.name"></h3>
+                                                    <span
+                                                        class="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded"
+                                                        x-text="'Kelas: ' + (selectedStudentDetail.kelas || 'N/A')"></span>
+                                                </div>
+                                                <div class="space-y-3">
+                                                    <h5
+                                                        class="text-xs font-black uppercase text-gray-400 tracking-widest border-b dark:border-gray-700 pb-1 flex items-center gap-1.5">
+                                                        <i class="fas fa-sticky-note text-yellow-500"></i> Catatan
+                                                        Khusus
+                                                    </h5>
+                                                    <template x-if="hasTanda(selectedStudentDetail)">
+                                                        <div
+                                                            class="space-y-2.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                                                            <template x-for="tanda in selectedStudentDetail.tandas"
+                                                                :key="tanda.id">
+                                                                <div
+                                                                    class="bg-yellow-50/60 dark:bg-yellow-950/20 border-l-4 border-yellow-400 p-3 rounded-xl shadow-sm text-xs text-gray-800 dark:text-gray-200">
+                                                                    <p x-text="tanda.keterangan"
+                                                                        class="break-words font-medium leading-relaxed">
+                                                                    </p>
+                                                                    <span
+                                                                        class="text-[9px] text-gray-400 dark:text-gray-500 mt-1.5 block font-mono"
+                                                                        x-text="new Date(tanda.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})"></span>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+                                                    <template x-if="!hasTanda(selectedStudentDetail)">
+                                                        <div
+                                                            class="text-center py-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4">
+                                                            <i
+                                                                class="fas fa-circle-check text-green-400 text-2xl mb-1 block"></i>
+                                                            <p class="text-xs text-gray-400 dark:text-gray-500">Tidak
+                                                                ada catatan untuk siswa ini.</p>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <template x-if="!selectedStudentDetail">
+                                            <div
+                                                class="h-full flex flex-col items-center justify-center text-center text-gray-400 p-4 min-h-[200px]">
+                                                <i
+                                                    class="fas fa-arrow-pointer text-3xl mb-3 opacity-40 animate-bounce"></i>
+                                                <p class="text-xs leading-relaxed">Klik salah satu komponen kartu siswa
+                                                    terpilih di bagian kiri untuk memeriksa lampiran rekam catatan
+                                                    bimbingan mereka.</p>
+                                            </div>
+                                        </template>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 flex justify-end space-x-3">
+                            <div
+                                class="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t dark:border-gray-700 flex justify-end gap-2.5">
                                 <button type="button" @click="showAddJadwalModal = false"
-                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:hover:bg-gray-500">Batal</button>
+                                    class="px-4 py-2 text-sm font-bold text-gray-600 bg-white border border-gray-300 rounded-xl shadow-sm hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 transition-all">Batal</button>
                                 <button type="button" id="saveNewJadwalButton" @click.prevent="saveNewJadwal()"
-                                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none">Simpan
-                                    Jadwal Baru</button>
+                                    class="px-5 py-2 text-sm font-bold text-white bg-green-600 border border-transparent rounded-xl shadow-md hover:bg-green-700 transition-all flex items-center gap-2"><i
+                                        class="fas fa-check-circle"></i> Simpan Jadwal Baru</button>
                             </div>
                         </form>
                     </div>

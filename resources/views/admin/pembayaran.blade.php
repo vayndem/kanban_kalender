@@ -8,7 +8,7 @@
                 <i class="fas fa-wallet text-emerald-500 animate-pulse"></i>
                 Ringkasan Tagihan Siswa
             </h3>
-            <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-0.5">Total terdaftar tunggakan: <span
+            <p class="text-gray-500 dark:text-gray-400 mt-0.5 text-xs md:text-sm">Total terdaftar tunggakan: <span
                     class="font-semibold text-emerald-600 dark:text-emerald-400" x-text="filteredSummaries.length"></span>
                 HP Keluarga</p>
         </div>
@@ -182,14 +182,12 @@
                         <td class="px-6 py-4 text-center space-x-1 whitespace-nowrap">
                             <button @click="openDetailModal(item)"
                                 class="text-blue-500 hover:text-blue-600 hover:underline text-xs font-bold uppercase tracking-wider mr-2 transition-all">Detail</button>
-
                             <template x-if="item.status == 0">
                                 <button @click="chatWhatsApp(item)" :disabled="isLoading"
                                     class="bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-md text-[11px] font-bold transition-all inline-flex items-center gap-1 shadow-sm active:scale-95">
                                     <i class="fab fa-whatsapp"></i> Chat WA
                                 </button>
                             </template>
-
                             <template x-if="item.status == 0 || item.status == 1">
                                 <div class="inline-flex gap-1">
                                     <button @click="prosesBayarSiswa(item)" :disabled="isLoading"
@@ -202,7 +200,6 @@
                                     </button>
                                 </div>
                             </template>
-
                             <template x-if="item.status == 2">
                                 <a :href="'/admin/pembayaran/struk/' + item.no_hp" target="_blank"
                                     class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-md text-[11px] font-bold transition-all inline-flex items-center gap-1 shadow-sm active:scale-95">
@@ -212,13 +209,11 @@
                         </td>
                     </tr>
                 </template>
-                <template x-if="filteredSummaries.length === 0">
-                    <tr>
-                        <td colspan="4"
-                            class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic font-medium">Data
-                            tidak ditemukan!</td>
-                    </tr>
-                </template>
+                <tr x-show="filteredSummaries.length === 0">
+                    <td colspan="4"
+                        class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic font-medium">Data tidak
+                        ditemukan!</td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -287,39 +282,40 @@
                 </div>
             </div>
         </template>
-        <template x-if="filteredSummaries.length === 0">
-            <p class="text-center text-xs text-gray-400 dark:text-gray-500 italic py-8">Data tidak ditemukan!</p>
-        </template>
+        <div x-show="filteredSummaries.length === 0"
+            class="text-center text-xs text-gray-400 dark:text-gray-500 italic py-8">Data tidak ditemukan!</div>
     </div>
 
     <div x-show="showDetailModal"
         class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition
         style="display: none;">
         <div @click="showDetailModal = false" class="absolute inset-0"></div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden relative border dark:border-gray-700 transform transition-all"
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
             @click.stop>
             <div
-                class="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
-                <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-info-circle text-blue-500"></i> Rincian Tagihan Keluarga
+                class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
+                <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg">
+                    <i class="fas fa-info-circle text-blue-500"></i> Rincian Tagihan Anggota Keluarga
                 </h3>
                 <button @click="showDetailModal = false"
-                    class="text-gray-400 hover:text-gray-600 transition-colors"><i
+                    class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
                         class="fas fa-times fa-lg"></i></button>
             </div>
-            <div class="p-4 md:p-6 space-y-4 text-sm text-gray-800 dark:text-gray-200 overflow-y-auto max-h-[70vh]">
-                <div>
-                    <span class="text-xs text-gray-400 font-bold uppercase block tracking-wider">Nomor HP Utama</span>
-                    <p class="text-base font-mono font-bold text-gray-900 dark:text-white"
+            <div
+                class="p-6 space-y-5 text-sm text-gray-800 dark:text-gray-200 overflow-y-auto max-h-[70vh] custom-scrollbar">
+                <div class="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border dark:border-gray-700">
+                    <span class="text-xs text-gray-400 font-bold uppercase block tracking-wider">Grup Nomor HP
+                        Utama</span>
+                    <p class="text-lg font-mono font-bold text-gray-900 dark:text-white mt-0.5"
                         x-text="activeDetail.no_hp"></p>
                 </div>
-                <div class="border-t dark:border-gray-700 pt-3">
+                <div>
                     <span class="text-xs text-gray-400 font-bold uppercase block tracking-wider mb-2">Rincian Siswa &
-                        Item Tagihan</span>
-                    <div class="space-y-2">
+                        Item Komponen Tagihan</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <template x-for="raw in activeDetail.raw_items" :key="raw.id">
                             <div
-                                class="p-3 bg-gray-50 dark:bg-gray-900/40 rounded-xl border dark:border-gray-700/60 flex justify-between items-center gap-4">
+                                class="p-3.5 bg-white dark:bg-gray-700/50 rounded-xl border dark:border-gray-600 shadow-sm flex justify-between items-center gap-4">
                                 <div class="min-w-0 flex-1">
                                     <p class="font-bold text-gray-900 dark:text-white truncate"
                                         x-text="raw.siswa ? raw.siswa.name : 'N/A'"></p>
@@ -333,34 +329,37 @@
                         </template>
                     </div>
                 </div>
-                <div
-                    class="border-t dark:border-gray-700 pt-3 flex justify-between items-center font-bold text-xs md:text-sm">
-                    <span>Total Tagihan Kotor:</span>
-                    <span class="font-mono text-gray-900 dark:text-white"
-                        x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(activeDetail.total_harga)"></span>
-                </div>
-                <template x-if="activeDetail.nominal_diskon > 0">
-                    <div class="flex justify-between items-center text-red-500 font-bold text-xs">
-                        <span x-text="'Potongan Diskon (' + activeDetail.keterangan_diskon + '):'"></span>
-                        <span class="font-mono"
-                            x-text="'- Rp ' + new Intl.NumberFormat('id-ID').format(activeDetail.nominal_diskon)"></span>
+                <div class="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-xl space-y-2 border dark:border-gray-700">
+                    <div class="flex justify-between items-center text-xs md:text-sm font-semibold">
+                        <span>Total Tagihan Kotor:</span>
+                        <span class="font-mono text-gray-900 dark:text-white"
+                            x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(activeDetail.total_harga)"></span>
                     </div>
-                </template>
-                <div
-                    class="border-t-2 border-dashed dark:border-gray-600 pt-2 flex justify-between items-center font-black text-sm md:text-base text-blue-600 dark:text-blue-400">
-                    <span>Total Tagihan Bersih:</span>
-                    <span class="font-mono"
-                        x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(activeDetail.total_akhir)"></span>
+                    <template x-if="activeDetail.nominal_diskon > 0">
+                        <div
+                            class="flex justify-between items-center text-red-500 font-bold text-xs border-t dark:border-gray-700 pt-2">
+                            <span
+                                x-text="'Kalkulasi Potongan Potongan (' + activeDetail.keterangan_diskon + '):'"></span>
+                            <span class="font-mono"
+                                x-text="'- Rp ' + new Intl.NumberFormat('id-ID').format(activeDetail.nominal_diskon)"></span>
+                        </div>
+                    </template>
+                    <div
+                        class="border-t-2 border-dashed dark:border-gray-600 pt-2 flex justify-between items-center font-black text-sm md:text-base text-blue-600 dark:text-blue-400">
+                        <span>Total Bersih Wajib Bayar:</span>
+                        <span class="font-mono"
+                            x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(activeDetail.total_akhir)"></span>
+                    </div>
                 </div>
-                <div class="border-t dark:border-gray-700 pt-3">
+                <div class="border-t dark:border-gray-700 pt-4">
                     <span class="text-xs text-gray-400 font-bold uppercase block tracking-wider mb-2">Riwayat
-                        Pembayaran Masuk (Details)</span>
-                    <div class="space-y-1.5">
+                        Pembayaran Angsuran Masuk</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <template x-for="det in activeDetail.payment_details" :key="det.id">
                             <div
-                                class="p-2 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-lg flex justify-between items-center text-xs border border-emerald-100/40 dark:border-emerald-900/30">
+                                class="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl flex justify-between items-center text-xs border border-emerald-100/40 dark:border-emerald-900/30">
                                 <div class="min-w-0 flex-1 pr-2">
-                                    <p class="font-semibold text-emerald-800 dark:text-emerald-400 truncate"
+                                    <p class="font-bold text-emerald-800 dark:text-emerald-400 truncate"
                                         x-text="det.keterangan"></p>
                                     <p class="text-[10px] text-gray-400 mt-0.5"
                                         x-text="new Date(det.created_at).toLocaleDateString('id-ID', {day: '2-digit', month: 'long', year: 'numeric'})">
@@ -371,15 +370,17 @@
                             </div>
                         </template>
                         <template x-if="activeDetail.payment_details && activeDetail.payment_details.length === 0">
-                            <p class="text-xs text-gray-400 italic text-center py-2 font-medium">Belum ada catatan
-                                pembayaran cicilan masuk.</p>
+                            <div
+                                class="col-span-full text-xs text-gray-400 italic text-center py-6 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                                Belum ada cicilan atau setoran dana masuk.</div>
                         </template>
                     </div>
                 </div>
             </div>
             <div class="p-4 border-t dark:border-gray-700 flex justify-end bg-gray-50 dark:bg-gray-900">
                 <button type="button" @click="showDetailModal = false"
-                    class="w-full sm:w-auto px-5 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 font-bold rounded-lg dark:text-white transition-colors">Tutup</button>
+                    class="px-5 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 font-bold rounded-xl dark:text-white transition-all">Tutup
+                    Rincian</button>
             </div>
         </div>
     </div>
@@ -388,90 +389,114 @@
         class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition
         style="display: none;">
         <div @click="showDiskonModal = false" class="absolute inset-0"></div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
             @click.stop>
             <div
-                class="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
-                <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-tags text-purple-500"></i> Kelola Potongan Diskon Keluarga
+                class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+                <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg">
+                    <i class="fas fa-tags text-purple-500"></i> Kelola Potongan Diskon (Spesifik & Universal)
                 </h3>
                 <button @click="showDiskonModal = false"
-                    class="text-gray-400 hover:text-gray-600 transition-colors"><i
+                    class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
                         class="fas fa-times fa-lg"></i></button>
             </div>
-            <div class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto max-h-[80vh]">
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto max-h-[80vh] custom-scrollbar">
                 <div class="space-y-4">
                     <h4 class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider border-b dark:border-gray-700 pb-1"
                         x-text="diskonForm.id ? 'Edit Aturan Diskon' : 'Tambah Diskon Baru'"></h4>
                     <form @submit.prevent="simpanDiskon" class="space-y-4">
-                        <div class="relative" x-data="{ openHpSearch: false }">
+                        <div
+                            class="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-xl border dark:border-gray-700 flex items-center justify-between">
+                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Jadikan Diskon Universal
+                                (Semua Siswa)</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" x-model="diskonForm.is_universal"
+                                    :disabled="diskonForm.id !== null" class="sr-only peer">
+                                <div
+                                    class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600">
+                                </div>
+                            </label>
+                        </div>
+                        <div class="relative" x-data="{ openHpSearch: false }" x-show="!diskonForm.is_universal">
                             <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Pilih Keluarga
-                                (No HP)</label>
+                                Terdaftar (No HP)</label>
                             <div class="relative mt-1">
                                 <input type="text" x-model="hpSearchModal" @focus="openHpSearch = true"
                                     @click.away="openHpSearch = false" :readonly="diskonForm.id !== null"
-                                    placeholder="Cari No HP / Nama Anak..."
-                                    class="block w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm font-mono focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all pl-8">
-                                <i class="fas fa-search absolute left-2.5 top-3 text-gray-400 text-xs"></i>
+                                    placeholder="Ketik No HP / Nama Anak untuk mencari..."
+                                    class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm font-mono focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all pl-8 py-2.5 focus:outline-none">
+                                <i class="fas fa-search absolute left-3 top-3.5 text-gray-400 text-xs"></i>
                             </div>
                             <div x-show="openHpSearch && filteredFamiliesForModal.length > 0 && !diskonForm.id"
-                                class="absolute z-[120] w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-xl max-h-40 overflow-y-auto"
+                                class="absolute z-[120] w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-xl max-h-40 overflow-y-auto divide-y dark:divide-gray-700"
                                 x-transition>
                                 <template x-for="fam in filteredFamiliesForModal" :key="fam.no_hp">
                                     <button type="button"
                                         @click="diskonForm.no_hp = fam.no_hp; hpSearchModal = fam.no_hp + ' - (' + fam.siswa_names + ')'; openHpSearch = false"
-                                        class="w-full text-left px-3 py-2 text-xs hover:bg-purple-50 dark:hover:bg-purple-900/30 dark:text-white border-b last:border-0 dark:border-gray-700 transition-colors flex flex-col">
+                                        class="w-full text-left px-4 py-2.5 text-xs hover:bg-purple-50 dark:hover:bg-purple-900/30 dark:text-white transition-colors flex flex-col font-medium">
                                         <span x-text="fam.no_hp"
                                             class="font-bold font-mono text-gray-900 dark:text-white"></span>
                                         <span x-text="fam.siswa_names"
-                                            class="text-[10px] text-gray-400 dark:text-gray-500 font-medium truncate w-full"></span>
+                                            class="text-[10px] text-gray-400 dark:text-gray-500 truncate w-full mt-0.5"></span>
                                     </button>
                                 </template>
                             </div>
+                        </div>
+                        <div class="bg-purple-50 dark:bg-purple-950/20 p-3 rounded-xl border border-purple-200 dark:border-purple-900 text-xs text-purple-800 dark:text-purple-300 font-semibold flex items-center gap-2"
+                            x-show="diskonForm.is_universal">
+                            <i class="fas fa-bullhorn text-sm shrink-0"></i>
+                            <span>Diskon Universal aktif akan otomatis memotong tagihan akhir <strong>seluruh
+                                    siswa</strong> tanpa terkecuali.</span>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Nominal Diskon
                                 (Rp)</label>
                             <input type="number" x-model.number="diskonForm.diskon" required
-                                class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                placeholder="Masukkan nominal rupiah...">
+                                class="block w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none"
+                                placeholder="Masukkan nilai rupiah potongan...">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Keterangan
-                                Diskon</label>
-                            <input type="text" x-model="diskonForm.keterangan"
-                                class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                placeholder="Contoh: Diskon Kakak Beradik">
+                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Nama Potongan
+                                / Keterangan Event</label>
+                            <input type="text" x-model="diskonForm.keterangan" required
+                                class="block w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none"
+                                placeholder="Contoh: Diskon Ramadhan / Kakak Beradik">
                         </div>
                         <div class="flex gap-2 pt-2">
                             <button type="submit" :disabled="isLoading"
-                                class="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-bold shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                class="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all">
                                 <i x-show="isLoading" class="fas fa-spinner fa-spin"></i>
-                                <span x-text="diskonForm.id ? 'Update Data' : 'Simpan Diskon'"></span>
+                                <span x-text="diskonForm.id ? 'Update Aturan' : 'Terapkan Aturan'"></span>
                             </button>
                             <button type="button" x-show="diskonForm.id" @click="resetDiskonForm"
-                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium dark:text-white transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
+                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium dark:text-white transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
                         </div>
                     </form>
                 </div>
                 <div
                     class="flex flex-col border-t md:border-t-0 md:border-l dark:border-gray-700 pt-4 md:pt-0 md:pl-6">
                     <h4 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Daftar
-                        Diskon Aktif</h4>
-                    <div class="space-y-2 overflow-y-auto max-h-[260px] pr-1 custom-scrollbar">
+                        Aturan Diskon Terdata</h4>
+                    <div class="space-y-2 overflow-y-auto max-h-[280px] pr-1 custom-scrollbar">
                         <template x-for="d in diskons" :key="d.id">
-                            <div
-                                class="p-3 bg-gray-50 dark:bg-gray-700/20 rounded-xl flex justify-between items-center border border-gray-100 dark:border-gray-700/60 hover:border-purple-300 dark:hover:border-purple-500 transition-all">
+                            <div class="p-3 bg-gray-50 dark:bg-gray-700/20 rounded-xl flex justify-between items-center border border-gray-100 dark:border-gray-700/60 hover:border-purple-300 dark:hover:border-purple-500 transition-all"
+                                :class="d.no_hp === null ? 'ring-2 ring-purple-500 bg-purple-50/20 dark:bg-purple-950/10' : ''">
                                 <div class="min-w-0 flex-1 pr-2">
-                                    <div class="text-xs font-bold text-gray-800 dark:text-white font-mono"
-                                        x-text="d.no_hp"></div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-sm font-bold font-mono text-gray-900 dark:text-white"
+                                            x-text="d.no_hp === null ? 'GLOBAL / UNIVERSAL' : d.no_hp"></span>
+                                        <template x-if="d.no_hp === null">
+                                            <span
+                                                class="bg-purple-600 text-white text-[8px] font-black uppercase px-1 rounded tracking-wider">Massal</span>
+                                        </template>
+                                    </div>
                                     <div class="text-[10px] text-gray-400 dark:text-gray-500 font-semibold truncate mt-0.5"
                                         x-text="getKeluargaLabelByHp(d.no_hp)"></div>
                                     <div class="flex flex-wrap items-center gap-1.5 mt-1">
                                         <span class="text-xs font-mono font-black text-red-500 dark:text-red-400"
-                                            x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(d.diskon)"></span>
+                                            x-text="'- Rp ' + new Intl.NumberFormat('id-ID').format(d.diskon)"></span>
                                         <span
-                                            class="text-[9px] bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 px-1 py-0.5 rounded font-bold"
+                                            class="text-[9px] bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded font-bold"
                                             x-text="d.keterangan || 'Potongan'"></span>
                                     </div>
                                 </div>
@@ -488,7 +513,7 @@
                         </template>
                         <template x-if="diskons.length === 0">
                             <p class="text-xs text-gray-400 dark:text-gray-500 italic text-center py-8 font-medium">
-                                Belum ada potongan diskon yang dibuat.</p>
+                                Belum ada master potongan diskon yang dibuat.</p>
                         </template>
                     </div>
                 </div>
@@ -500,70 +525,80 @@
         class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition
         style="display: none;">
         <div @click="showAddModal = false" class="absolute inset-0"></div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative border dark:border-gray-700 transform transition-all"
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
             @click.stop>
             <div
-                class="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
-                <h3 class="font-bold text-gray-900 dark:text-white">Tambah Tagihan Manual</h3>
-                <button @click="showAddModal = false" class="text-gray-400 hover:text-gray-600 transition-colors"><i
+                class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
+                <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg">
+                    <i class="fas fa-file-invoice-dollar text-blue-500"></i> Buat Input Tagihan Manual Baru
+                </h3>
+                <button @click="showAddModal = false"
+                    class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
                         class="fas fa-times fa-lg"></i></button>
             </div>
-            <form @submit.prevent="simpanTagihan" class="p-4 md:p-6 space-y-4">
+            <form @submit.prevent="simpanTagihan" class="p-6 space-y-5">
                 <div class="relative" x-data="{ openSearch: false }">
-                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Pilih Siswa</label>
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Pilih Target
+                        Siswa Bimbel</label>
                     <div class="relative mt-1">
                         <input type="text" x-model="siswaSearchModal" @focus="openSearch = true"
-                            @click.away="openSearch = false" placeholder="Cari nama lengkap..."
-                            class="block w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-search text-gray-400 text-xs"></i>
+                            @click.away="openSearch = false" placeholder="Ketik nama lengkap siswa untuk memfilter..."
+                            class="block w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all focus:outline-none">
+                        <div
+                            class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                            <i class="fas fa-user text-sm"></i>
                         </div>
                     </div>
                     <div x-show="openSearch && filteredSiswasForModal.length > 0"
-                        class="absolute z-[120] w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-xl max-h-40 overflow-y-auto"
+                        class="absolute z-[120] w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y dark:divide-gray-700"
                         x-transition>
                         <template x-for="s in filteredSiswasForModal" :key="s.id">
                             <button type="button"
                                 @click="form.id_siswa = s.id; siswaSearchModal = s.name; openSearch = false"
-                                class="w-full text-left px-4 py-2 text-xs hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:text-white border-b last:border-0 dark:border-gray-700 transition-colors">
-                                <span x-text="s.name" class="font-bold"></span> - <span x-text="s.kelas || 'N/A'"
-                                    class="text-[10px] text-gray-400 dark:text-gray-500 font-medium"></span>
+                                class="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:text-white transition-colors flex items-center gap-2 font-medium">
+                                <i class="fas fa-check-circle text-xs text-blue-500"></i>
+                                <span x-text="s.name" class="font-bold"></span> — <span x-text="s.kelas || 'N/A'"
+                                    class="text-xs text-gray-400 font-medium"></span>
                             </button>
                         </template>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Gunakan Paket
-                        (Opsional)</label>
-                    <select @change="applyPaket($event.target.value)"
-                        class="mt-1 block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all">
-                        <option value="">-- Pilih Paket Referensi --</option>
-                        <template x-for="p in pakets" :key="p.id">
-                            <option :value="p.id"
-                                x-text="p.nama_paket + ' (Rp ' + new Intl.NumberFormat('id-ID').format(p.harga) + ')'">
-                            </option>
-                        </template>
-                    </select>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Gunakan
+                            Paket Referensi (Opsional)</label>
+                        <select @change="applyPaket($event.target.value)"
+                            class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all focus:outline-none">
+                            <option value="">-- Silakan Pilih Paket (Bila Ada) --</option>
+                            <template x-for="p in pakets" :key="p.id">
+                                <option :value="p.id"
+                                    x-text="p.nama_paket + ' (Rp ' + new Intl.NumberFormat('id-ID').format(p.harga) + ')'">
+                                </option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nominal
+                            Harga Tagihan (Rp)</label>
+                        <input type="number" x-model.number="form.harga" required
+                            class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all focus:outline-none"
+                            placeholder="Masukkan angka tarif tagihan...">
+                    </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Harga (Rp)</label>
-                    <input type="number" x-model.number="form.harga" required
-                        class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Keterangan
-                        Tagihan</label>
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Keterangan
+                        Catatan Tagihan</label>
                     <textarea x-model="form.keterangan" rows="3" required
-                        class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all"
-                        placeholder="Catatan perihal tagihan manual ini..."></textarea>
+                        class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-3.5 bg-white dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all focus:outline-none"
+                        placeholder="Tuliskan alasan atau keterangan perihal pembuatan tagihan manual ini..."></textarea>
                 </div>
-                <div class="pt-2 flex justify-end gap-2">
+                <div class="pt-3 flex justify-end gap-2.5 border-t dark:border-gray-700">
                     <button type="button" @click="showAddModal = false" :disabled="isLoading"
-                        class="flex-1 sm:flex-none px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Batal</button>
+                        class="px-5 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-xl dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">Batal</button>
                     <button type="submit" :disabled="isLoading"
-                        class="flex-1 sm:flex-none px-5 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-bold transition-all flex items-center justify-center gap-2 active:scale-95 shadow-md">
+                        class="px-6 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 font-bold transition-all flex items-center gap-2 shadow-md active:scale-95">
                         <i x-show="isLoading" class="fas fa-spinner fa-spin"></i>
-                        <span x-text="isLoading ? 'Memproses...' : 'Simpan Tagihan'"></span>
+                        <span x-text="isLoading ? 'Memproses...' : 'Simpan Tagihan Baru'"></span>
                     </button>
                 </div>
             </form>
@@ -574,60 +609,61 @@
         class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition
         style="display: none;">
         <div @click="showPaketModal = false" class="absolute inset-0"></div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
             @click.stop>
             <div
-                class="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
-                <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2"><i
-                        class="fas fa-box text-purple-500"></i> Kelola Paket Pembayaran</h3>
-                <button @click="showPaketModal = false" class="text-gray-400 hover:text-gray-600 transition-colors"><i
+                class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+                <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg"><i
+                        class="fas fa-box text-purple-500"></i> Kelola Paket Master Pembayaran Bimbel</h3>
+                <button @click="showPaketModal = false"
+                    class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
                         class="fas fa-times fa-lg"></i></button>
             </div>
-            <div class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto max-h-[80vh]">
+            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto max-h-[80vh] custom-scrollbar">
                 <div class="space-y-4">
                     <h4 class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider border-b dark:border-gray-700 pb-1"
                         x-text="paketForm.id ? 'Edit Data Paket' : 'Tambah Paket Baru'"></h4>
                     <form @submit.prevent="savePaket" class="space-y-4">
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Nama
-                                Paket</label>
+                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Nama Paket
+                                Program</label>
                             <input type="text" x-model="paketForm.nama_paket" required
-                                class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                                placeholder="Contoh: SPP Bulanan">
+                                class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none"
+                                placeholder="Contoh: SPP Bulanan Reguler">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Harga Paket
-                                (Rp)</label>
+                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Harga Tarif
+                                Paket (Rp)</label>
                             <input type="number" x-model.number="paketForm.harga" required
-                                class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all">
+                                class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Jumlah
-                                Pertemuan</label>
+                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Jumlah Jatah
+                                Pertemuan Sesi</label>
                             <input type="number" x-model.number="paketForm.pertemuan" required
-                                class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all">
+                                class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none">
                         </div>
                         <div class="flex gap-2 pt-2">
                             <button type="submit" :disabled="isLoading"
-                                class="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-bold shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                class="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all">
                                 <i x-show="isLoading" class="fas fa-spinner fa-spin"></i>
-                                <span x-text="paketForm.id ? 'Update Paket' : 'Simpan Paket'"></span>
+                                <span x-text="paketForm.id ? 'Update Aturan Paket' : 'Simpan Paket Baru'"></span>
                             </button>
                             <button type="button" x-show="paketForm.id" @click="resetPaketForm"
-                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium dark:text-white transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
+                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium dark:text-white transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
                         </div>
                     </form>
                 </div>
                 <div
                     class="flex flex-col border-t md:border-t-0 md:border-l dark:border-gray-700 pt-4 md:pt-0 md:pl-6">
                     <h4 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Daftar
-                        Paket Master</h4>
-                    <div class="space-y-2 overflow-y-auto max-h-[260px] pr-1 custom-scrollbar">
+                        Paket Master Terdaftar</h4>
+                    <div class="space-y-2 overflow-y-auto max-h-[280px] pr-1 custom-scrollbar">
                         <template x-for="p in pakets" :key="p.id">
                             <div
                                 class="p-3 bg-gray-50 dark:bg-gray-700/20 rounded-xl flex justify-between items-center border border-gray-100 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 transition-all">
                                 <div class="min-w-0 flex-1 pr-2">
-                                    <div class="text-xs font-bold text-gray-800 dark:text-white truncate"
+                                    <div class="text-sm font-bold text-gray-800 dark:text-white truncate"
                                         x-text="p.nama_paket"></div>
                                     <div class="flex items-center gap-2 mt-1">
                                         <span class="text-xs font-mono font-bold text-purple-600 dark:text-purple-400"
@@ -690,7 +726,8 @@
                     id: null,
                     no_hp: '',
                     diskon: '',
-                    keterangan: ''
+                    keterangan: '',
+                    is_universal: false
                 },
 
                 refreshToTab() {
@@ -757,13 +794,28 @@
                         }
                     });
 
+                    const universalDiskonObj = this.diskons.find(d => d.no_hp === null);
+                    const nominalUniversal = universalDiskonObj ? parseInt(universalDiskonObj
+                        .diskon || 0) : 0;
+                    const keteranganUniversal = universalDiskonObj ? universalDiskonObj.keterangan :
+                        '';
+
                     return Object.values(grouped).map(g => {
                         const diskonObj = this.diskons.find(d => d.no_hp === g.no_hp);
-                        const nominalDiskon = diskonObj ? parseInt(diskonObj.diskon || 0) :
-                            0;
-                        const keteranganDiskon = diskonObj ? diskonObj.keterangan : '';
+                        const nominalDiskonSpesifik = diskonObj ? parseInt(diskonObj
+                            .diskon || 0) : 0;
+                        const keteranganDiskonSpesifik = diskonObj ? diskonObj.keterangan :
+                            '';
 
-                        let totalAkhir = g.total_harga - nominalDiskon;
+                        const totalNominalDiskon = nominalDiskonSpesifik + nominalUniversal;
+
+                        let gabunganKetDiskon = [];
+                        if (keteranganDiskonSpesifik) gabunganKetDiskon.push(
+                            keteranganDiskonSpesifik);
+                        if (keteranganUniversal) gabunganKetDiskon.push(
+                            `${keteranganUniversal} (Massal)`);
+
+                        let totalAkhir = g.total_harga - totalNominalDiskon;
                         if (totalAkhir < 0) totalAkhir = 0;
 
                         return {
@@ -772,8 +824,9 @@
                             siswa_names: g.siswa_names_arr.join(', '),
                             gabungan_keterangan: g.gabungan_keterangan.filter(k => k).join(
                                 ', '),
-                            nominal_diskon: nominalDiskon,
-                            keterangan_diskon: keteranganDiskon,
+                            nominal_diskon: totalNominalDiskon,
+                            keterangan_diskon: gabunganKetDiskon.join(' + ') ||
+                                'Tanpa Potongan',
                             total_akhir: totalAkhir
                         };
                     });
@@ -816,6 +869,7 @@
                 },
 
                 getKeluargaLabelByHp(hp) {
+                    if (hp === null) return 'Seluruh Siswa Terdaftar (Universal)';
                     let families = {};
                     this.summaries.forEach(item => {
                         let hpKey = item.no_hp || (item.siswa ? item.siswa.no_hp : null);
@@ -855,7 +909,7 @@
                 },
 
                 async simpanTagihan() {
-                    if (!this.form.id_siswa) return Swal.fire('Peringatan', 'Pilih siswa!',
+                    if (!this.form.id_siswa) return Swal.fire('Peringatan', 'Pilih target siswa!',
                         'warning');
                     this.isLoading = true;
                     try {
@@ -870,7 +924,7 @@
                         });
                         if ((await response.json()).status === 'success') this.refreshToTab();
                     } catch (e) {
-                        Swal.fire('Error', 'Gagal menyimpan.', 'error');
+                        Swal.fire('Error', 'Gagal menyimpan komponen tagihan.', 'error');
                     } finally {
                         this.isLoading = false;
                     }
@@ -878,12 +932,13 @@
 
                 async prosesPenagihanMassal() {
                     const result = await Swal.fire({
-                        title: 'Proses Penagihan?',
-                        text: "Sistem akan membuat tagihan otomatis sesuai seluruh paket siswa.",
+                        title: 'Jalankan Penagihan Massal?',
+                        text: "Sistem otomatis membuat row tagihan bulanan baru ke semua siswa aktif berdasarkan paket terdaftar.",
                         icon: 'question',
                         showCancelButton: true,
                         confirmButtonColor: '#f97316',
-                        confirmButtonText: 'Ya, Proses!',
+                        confirmButtonText: 'Ya, Jalankan!',
+                        cancelButtonText: 'Batal',
                         background: document.documentElement.classList.contains('dark') ?
                             '#1f2937' : '#fff',
                         color: document.documentElement.classList.contains('dark') ?
@@ -903,7 +958,7 @@
                                 });
                             if ((await response.json()).status === 'success') this.refreshToTab();
                         } catch (e) {
-                            Swal.fire('Error', 'Gagal memproses.', 'error');
+                            Swal.fire('Error', 'Gagal memproses pembuatan otomatis.', 'error');
                         } finally {
                             this.isLoading = false;
                         }
@@ -950,7 +1005,7 @@
                         `Periode : ${bulan}\n\n` +
                         `Rincian Tagihan:\n` +
                         `${rincianTeks}\n` +
-                        `Total Tagihan Bersih : Rp ${total},-\n\n` +
+                        `Total Tagihan Bersih : Rp ${total},--\n\n` +
                         `Pembayaran paling lambat : 10 ${namaBulan} ${tahun}\n\n` +
                         `Silakan konfirmasi jika sudah melakukan pembayaran.\n\n` +
                         `Terima kasih.\n` +
@@ -978,46 +1033,56 @@
 
                 async prosesBayarSiswa(item) {
                     const sisaTagihan = item.total_akhir - item.total_sudah_dibayar;
+                    const isDark = document.documentElement.classList.contains('dark');
+
                     const {
                         value: formValues
                     } = await Swal.fire({
-                        title: '<span class="text-xl font-bold">Catat Setoran</span>',
+                        title: 'Form Pencatatan Kas Masuk',
                         html: `
-                            <div class="text-left space-y-3 px-2 pt-2">
-                                <p class="text-xs text-gray-500">Sisa kekurangan tagihan saat ini: <strong>Rp ${new Intl.NumberFormat('id-ID').format(sisaTagihan)}</strong></p>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Nominal Rupiah (Setoran)</label>
-                                    <input id="swal-nominal" type="number" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-white" value="${sisaTagihan > 0 ? sisaTagihan : ''}">
+                            <div style="text-align: left; font-family: inherit;" class="space-y-4">
+                                <div style="background-color: ${isDark ? '#374151' : '#f3f4f6'}; border: 1px solid ${isDark ? '#4b5563' : '#e5e7eb'};" class="p-3.5 rounded-xl">
+                                    <p style="font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Sisa Kekurangan</p>
+                                    <p style="font-size: 18px; font-weight: 900; color: #10b981; margin-top: 2px;">Rp ${new Intl.NumberFormat('id-ID').format(sisaTagihan)}</p>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Keterangan Catatan Transaksi</label>
-                                    <input id="swal-keterangan" type="text" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-white" value="Bayar Angsuran / Cicilan">
+                                    <label style="display: block; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Nominal Uang Setoran (Rp)</label>
+                                    <input id="swal-nominal" type="number" style="width: 100%; border-radius: 12px; padding: 10px 14px; font-size: 14px; background-color: ${isDark ? '#1f2937' : '#fff'}; border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'}; color: ${isDark ? '#fff' : '#000'}; focus:outline-none;" value="${sisaTagihan > 0 ? sisaTagihan : ''}">
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Tanggal Pembayaran</label>
-                                    <input id="swal-tanggal" type="date" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-white" value="${new Date().toISOString().split('T')[0]}">
+                                    <label style="display: block; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Keterangan Transaksi</label>
+                                    <input id="swal-keterangan" type="text" style="width: 100%; border-radius: 12px; padding: 10px 14px; font-size: 14px; background-color: ${isDark ? '#1f2937' : '#fff'}; border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'}; color: ${isDark ? '#fff' : '#000'}; focus:outline-none;" value="Bayar Angsuran / Cicilan">
                                 </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Metode Via</label>
-                                    <select id="swal-via" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-white">
-                                        <option value="0">💵 Tunai / Cash</option>
-                                        <option value="1">🏦 Transfer Bank</option>
-                                    </select>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label style="display: block; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Tanggal Bayar</label>
+                                        <input id="swal-tanggal" type="date" style="width: 100%; border-radius: 12px; padding: 10px 14px; font-size: 14px; background-color: ${isDark ? '#1f2937' : '#fff'}; border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'}; color: ${isDark ? '#fff' : '#000'}; focus:outline-none;" value="${new Date().toISOString().split('T')[0]}">
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Metode Via</label>
+                                        <select id="swal-via" style="width: 100%; border-radius: 12px; padding: 10px 14px; font-size: 14px; background-color: ${isDark ? '#1f2937' : '#fff'}; border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'}; color: ${isDark ? '#fff' : '#000'}; focus:outline-none; height: 44px;">
+                                            <option value="0">💵 Tunai / Cash</option>
+                                            <option value="1">🏦 Transfer Bank</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         `,
                         showCancelButton: true,
-                        confirmButtonText: 'Simpan Setoran',
+                        confirmButtonText: '<i class="fas fa-save mr-1.5"></i> Simpan Setoran',
+                        cancelButtonText: 'Batal',
                         confirmButtonColor: '#2563eb',
-                        background: document.documentElement.classList.contains('dark') ?
-                            '#111827' : '#fff',
-                        color: document.documentElement.classList.contains('dark') ?
-                            '#fff' : '#000',
+                        cancelButtonColor: '#4b5563',
+                        background: isDark ? '#111827' : '#fff',
+                        color: isDark ? '#fff' : '#000',
+                        customClass: {
+                            popup: 'rounded-2xl border dark:border-gray-700 shadow-2xl w-full max-w-xl p-6'
+                        },
                         preConfirm: () => {
                             const nom = document.getElementById('swal-nominal').value;
                             if (!nom || parseInt(nom) <= 0) {
                                 Swal.showValidationMessage(
-                                    'Nominal harus diisi dengan benar!');
+                                    'Nominal wajib diisi dengan benar!');
                                 return false;
                             }
                             return {
@@ -1047,7 +1112,7 @@
                                 });
                             if ((await response.json()).status === 'success') this.refreshToTab();
                         } catch (e) {
-                            Swal.fire('Error', 'Gagal mencatat data setoran.', 'error');
+                            Swal.fire('Error', 'Gagal mencatat data transaksi kas masuk.', 'error');
                         } finally {
                             this.isLoading = false;
                         }
@@ -1057,11 +1122,12 @@
                 async ubahKeLunas(item) {
                     const result = await Swal.fire({
                         title: 'Ubah Ke Lunas?',
-                        text: "Status tagihan keluarga ini akan langsung diselesaikan penuh menjadi Lunas.",
+                        text: "Seluruh row status komponen tagihan dari keluarga ini langsung diselesaikan menjadi Lunas penuh.",
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonColor: '#10b981',
                         confirmButtonText: 'Ya, Set Lunas!',
+                        cancelButtonText: 'Batal',
                         background: document.documentElement.classList.contains('dark') ?
                             '#1f2937' : '#fff',
                         color: document.documentElement.classList.contains('dark') ?
@@ -1081,7 +1147,8 @@
                                 });
                             if ((await response.json()).status === 'success') this.refreshToTab();
                         } catch (e) {
-                            Swal.fire('Error', 'Gagal memproses perubahan status.', 'error');
+                            Swal.fire('Error', 'Gagal memproses pembaruan status lunas massal.',
+                                'error');
                         } finally {
                             this.isLoading = false;
                         }
@@ -1098,45 +1165,62 @@
                         id: null,
                         no_hp: '',
                         diskon: '',
-                        keterangan: ''
+                        keterangan: '',
+                        is_universal: false
                     };
                     this.hpSearchModal = '';
                 },
 
                 editDiskon(d) {
+                    const isGlobal = d.no_hp === null;
                     this.diskonForm = {
                         id: d.id,
-                        no_hp: d.no_hp,
+                        no_hp: d.no_hp || '',
                         diskon: d.diskon,
-                        keterangan: d.keterangan || ''
+                        keterangan: d.keterangan || '',
+                        is_universal: isGlobal
                     };
-                    this.hpSearchModal = `${d.no_hp} - (${this.getKeluargaLabelByHp(d.no_hp)})`;
+                    this.hpSearchModal = isGlobal ? 'SEMUA KELUARGA TERDAFTAR (UNIVERSAL)' :
+                        `${d.no_hp} - (${this.getKeluargaLabelByHp(d.no_hp)})`;
                 },
 
                 async simpanDiskon() {
-                    if (!this.diskonForm.no_hp) return Swal.fire('Peringatan',
-                        'Pilih nomor HP keluarga!', 'warning');
+                    if (!this.diskonForm.is_universal && !this.diskonForm.no_hp) {
+                        return Swal.fire('Peringatan', 'Silakan pilih nomor HP keluarga target!',
+                            'warning');
+                    }
                     this.isLoading = true;
+
+                    const isEdit = this.diskonForm.id !== null;
+                    const url = isEdit ? `{{ url('admin/diskon') }}/${this.diskonForm.id}` :
+                        `{{ route('admin.diskon.store') }}`;
+                    const method = isEdit ? 'PUT' : 'POST';
+
+                    const payload = {
+                        ...this.diskonForm,
+                        _token: '{{ csrf_token() }}'
+                    };
+
                     try {
-                        const response = await fetch(`{{ route('admin.diskon.store') }}`, {
+                        const response = await fetch(url, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                                 'Accept': 'application/json'
                             },
-                            body: JSON.stringify(this.diskonForm)
+                            body: JSON.stringify(payload)
                         });
                         if ((await response.json()).status === 'success') this.refreshToTab();
                     } catch (e) {
-                        Swal.fire('Error', 'Gagal memproses diskon.', 'error');
+                        Swal.fire('Error', 'Gagal memproses data pembaruan diskon.', 'error');
                     } finally {
                         this.isLoading = false;
                     }
                 },
 
                 async hapusDiskon(id) {
-                    if (!confirm('Hapus aturan diskon ini?')) return;
+                    if (!confirm('Hapus aturan potongan kupon diskon ini?')) return;
                     this.isLoading = true;
                     try {
                         const response = await fetch(`{{ url('admin/diskon') }}/${id}`, {
@@ -1148,7 +1232,7 @@
                         });
                         if ((await response.json()).status === 'success') this.refreshToTab();
                     } catch (e) {
-                        Swal.fire('Error', 'Gagal menghapus diskon.', 'error');
+                        Swal.fire('Error', 'Gagal merestore status potongan diskon.', 'error');
                     } finally {
                         this.isLoading = false;
                     }
@@ -1156,12 +1240,13 @@
 
                 async lunaskanSemua() {
                     const result = await Swal.fire({
-                        title: 'Selesaikan Semua?',
-                        text: "Semua sistem tagihan tanpa terkecuali akan langsung dianggap lunas.",
+                        title: 'Selesaikan Semua Tunggakan?',
+                        text: "Peringatan: Seluruh data tagihan tanpa terkecuali akan diselesaikan penuh dan berstatus Lunas.",
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonColor: '#059669',
-                        confirmButtonText: 'Ya, Lunaskan!',
+                        confirmButtonText: 'Ya, Selesaikan!',
+                        cancelButtonText: 'Batal',
                         background: document.documentElement.classList.contains('dark') ?
                             '#1f2937' : '#fff',
                         color: document.documentElement.classList.contains('dark') ?
@@ -1181,7 +1266,8 @@
                                 });
                             if ((await response.json()).status === 'success') this.refreshToTab();
                         } catch (e) {
-                            Swal.fire('Error', 'Gagal memproses.', 'error');
+                            Swal.fire('Error', 'Gagal memproses penyelesaian massal data.',
+                                'error');
                         } finally {
                             this.isLoading = false;
                         }
@@ -1196,15 +1282,14 @@
                     });
                     window.location.href =
                         `{{ route('admin.pembayaran.export') }}?${params.toString()}`;
-
                     Swal.mixin({
                         toast: true,
                         position: 'top-end',
                         showConfirmButton: false,
-                        timer: 3000
+                        timer: 2500
                     }).fire({
                         icon: 'success',
-                        title: 'Sedang menyiapkan dokumen PDF...'
+                        title: 'Sedang memproses kompilasi berkas PDF...'
                     });
                 },
 
@@ -1240,7 +1325,7 @@
                         });
                         if ((await response.json()).status === 'success') this.refreshToTab();
                     } catch (e) {
-                        Swal.fire('Error', 'Gagal menyimpan paket.', 'error');
+                        Swal.fire('Error', 'Gagal menyimpan aturan paket master.', 'error');
                     } finally {
                         this.isLoading = false;
                     }
@@ -1256,7 +1341,7 @@
                 },
 
                 async deletePaket(id) {
-                    if (!confirm('Hapus paket ini?')) return;
+                    if (!confirm('Hapus entitas master data paket pembayaran ini?')) return;
                     this.isLoading = true;
                     try {
                         const response = await fetch(`{{ url('admin/paket') }}/${id}`, {
@@ -1268,7 +1353,7 @@
                         });
                         if ((await response.json()).status === 'success') this.refreshToTab();
                     } catch (e) {
-                        Swal.fire('Error', 'Gagal menghapus.', 'error');
+                        Swal.fire('Error', 'Gagal menghapus komponen paket.', 'error');
                     } finally {
                         this.isLoading = false;
                     }

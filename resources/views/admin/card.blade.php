@@ -68,7 +68,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div>
                 <label class="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Kelas</label>
                 <select x-model="filterKelas"
@@ -140,6 +140,29 @@
                     </template>
                 </div>
             </div>
+
+            <div x-data="{ openRuang: false }" class="relative">
+                <label
+                    class="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Ruang</label>
+                <button type="button" @click="openRuang = !openRuang"
+                    class="w-full text-sm text-left rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 flex items-center justify-between focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <span x-text="filterRuangs.length ? filterRuangs.length + ' ruang dipilih' : 'Semua Ruang'"
+                        :class="filterRuangs.length ? 'text-blue-600 dark:text-blue-300 font-semibold' : ''"></span>
+                    <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200"
+                        :class="openRuang ? 'rotate-180' : ''"></i>
+                </button>
+                <div x-show="openRuang" @click.outside="openRuang = false" x-transition
+                    class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                    <template x-for="r in ruangList" :key="r.id">
+                        <label
+                            class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                            <input type="checkbox" :value="r.id" x-model="filterRuangs"
+                                class="rounded text-blue-600 focus:ring-blue-500">
+                            <span class="text-sm text-gray-900 dark:text-white" x-text="r.name"></span>
+                        </label>
+                    </template>
+                </div>
+            </div>
         </div>
 
         <div class="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
@@ -158,113 +181,156 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-        <template x-for="siswa in filteredSiswa" :key="siswa.id">
-            <div x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 transform scale-95"
-                x-transition:enter-end="opacity-100 transform scale-100"
-                class="group relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col justify-between h-full"
-                :class="{
-                    'opacity-75 grayscale-[0.5]': viewMode === 'arsip',
-                    'ring-2 ring-blue-500 border-transparent': selectedSiswas
-                        .includes(siswa.id)
-                }">
-                <div>
-                    <div class="h-1 w-full transition-colors duration-500"
-                        :class="getStatusJadwal(siswa).isKurang ? 'bg-orange-500 animate-pulse' : 'bg-blue-500'"></div>
-
-                    <div class="absolute top-3 left-3 z-10">
-                        <input type="checkbox" :value="siswa.id" x-model="selectedSiswas"
-                            class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 w-4 h-4 shadow-sm cursor-pointer transition-transform group-hover:scale-110">
-                    </div>
-
-                    <div class="p-4 sm:p-5 pl-10">
-                        <div class="flex items-start justify-between mb-4 gap-2">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0 transition-transform group-hover:scale-105 duration-300"
-                                    :class="getStatusJadwal(siswa).isKurang ? 'bg-gradient-to-br from-orange-400 to-red-500' :
-                                        'bg-gradient-to-br from-blue-500 to-indigo-600'">
-                                    <span class="text-base sm:text-lg font-bold" x-text="siswa.name.charAt(0)"></span>
+    <div
+        class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr
+                        class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 select-none">
+                        <th class="p-4 w-10 text-center">
+                            <input type="checkbox" @change="toggleSelectAll($el.checked)" :checked="isAllSelected()"
+                                class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 w-4 h-4 shadow-sm cursor-pointer">
+                        </th>
+                        <th class="p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            @click="toggleSort('name')">
+                            Siswa <i class="fas ml-1 text-[10px]"
+                                :class="sortField === 'name' ? (sortOrder === 'asc' ? 'fa-sort-up' :
+                                    'fa-sort-down') : 'fa-sort text-gray-300'"></i>
+                        </th>
+                        <th class="p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            @click="toggleSort('kelas')">
+                            Kelas & Paket <i class="fas ml-1 text-[10px]"
+                                :class="sortField === 'kelas' ? (sortOrder === 'asc' ? 'fa-sort-up' :
+                                    'fa-sort-down') : 'fa-sort text-gray-300'"></i>
+                        </th>
+                        <th class="p-4">Kontak</th>
+                        <th class="p-4">Status & Kuota Pertemuan</th>
+                        <th class="p-4 text-center w-28">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-sm">
+                    <template x-for="siswa in filteredSiswa" :key="siswa.id">
+                        <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors group"
+                            :class="{
+                                'opacity-75 grayscale-[0.5]': viewMode === 'arsip',
+                                'bg-blue-50/30 dark:bg-blue-900/10': selectedSiswas
+                                    .includes(siswa.id)
+                            }">
+                            <td class="p-4 text-center">
+                                <input type="checkbox" :value="siswa.id" x-model="selectedSiswas"
+                                    class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 w-4 h-4 shadow-sm cursor-pointer transition-transform group-hover:scale-105">
+                            </td>
+                            <td class="p-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0 text-sm font-bold"
+                                        :class="getStatusJadwal(siswa).isKurang && viewMode === 'aktif' ?
+                                            'bg-gradient-to-br from-orange-400 to-red-500' :
+                                            'bg-gradient-to-br from-blue-50 to-indigo-600'">
+                                        <span x-text="siswa.name.charAt(0)"></span>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="font-bold text-gray-900 dark:text-white truncate"
+                                            :class="getStatusJadwal(siswa).isKurang && viewMode === 'aktif' ?
+                                                'text-orange-500' : ''"
+                                            x-text="siswa.name"></p>
+                                        <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5"
+                                            x-text="'ID: #' + siswa.id"></p>
+                                    </div>
                                 </div>
-                                <div class="overflow-hidden min-w-0 flex-1">
-                                    <h4 class="font-bold truncate text-sm sm:text-base transition-colors duration-300 leading-snug"
-                                        :class="getStatusJadwal(siswa).isKurang ? 'text-orange-500' :
-                                            'text-gray-900 dark:text-white'"
-                                        x-text="siswa.name"></h4>
-                                    <p
-                                        class="text-[10px] text-gray-500 dark:text-gray-400 flex items-center gap-1 uppercase tracking-wider font-semibold mt-0.5">
-                                        <i class="fas fa-id-badge opacity-50"></i>
-                                        <span x-text="siswa.kelas || 'N/A'"></span>
-                                    </p>
+                            </td>
+                            <td class="p-4">
+                                <div class="space-y-1">
+                                    <span
+                                        class="inline-flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                                        <i class="fas fa-id-badge opacity-60 text-[10px]"></i> <span
+                                            x-text="siswa.kelas || 'N/A'"></span>
+                                    </span>
+                                    <template x-if="siswa.paket_pembayaran">
+                                        <div class="text-[10px] font-bold uppercase tracking-wide truncate max-w-[150px]"
+                                            :class="getStatusJadwal(siswa).isKurang && viewMode === 'aktif' ?
+                                                'text-orange-500' : 'text-blue-500'">
+                                            <span x-text="getPaketName(siswa.paket_pembayaran)"></span>
+                                        </div>
+                                    </template>
                                 </div>
-                            </div>
-                            <template x-if="siswa.paket_pembayaran">
-                                <span
-                                    class="px-2 py-0.5 text-[9px] font-black uppercase rounded-md border shrink-0 max-w-[80px] truncate"
-                                    :class="getStatusJadwal(siswa).isKurang ?
-                                        'bg-orange-50 dark:bg-orange-900/20 text-orange-600 border-orange-200' :
-                                        'bg-blue-50 dark:bg-blue-900/20 text-blue-600 border-blue-100'">
-                                    <span x-text="getPaketName(siswa.paket_pembayaran)"></span>
-                                </span>
-                            </template>
-                        </div>
-                        <div class="flex items-center gap-2 mb-4 text-gray-600 dark:text-gray-400 min-w-0">
-                            <div
-                                class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700/50 flex items-center justify-center shrink-0">
-                                <i class="fas fa-phone-alt text-[10px]"></i>
-                            </div>
-                            <span class="text-xs font-medium truncate" x-text="siswa.no_hp || '-'"></span>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <div
-                        class="flex items-center justify-between p-4 sm:p-5 pt-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30">
-                        <div class="flex items-center gap-1.5 shrink-0">
-                            <div class="w-2 h-2 rounded-full"
-                                :class="viewMode === 'aktif' ? (getStatusJadwal(siswa).isKurang ? 'bg-orange-500' :
-                                    'bg-green-500') : 'bg-gray-400'">
-                            </div>
-                            <span class="text-[9px] font-bold uppercase tracking-widest text-gray-400"
-                                x-text="viewMode === 'aktif' ? (getStatusJadwal(siswa).isKurang ? 'Incomplete' : 'Active') : 'Archived'"></span>
-                        </div>
-                        <div class="flex gap-1 shrink-0">
-                            <template x-if="viewMode === 'aktif'">
-                                <div class="flex gap-1">
-                                    <button type="button" @click.stop="openEdit(siswa)"
-                                        class="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
-                                        <i class="fas fa-pen-to-square"></i>
-                                    </button>
-                                    <button type="button" @click.stop="hapusSiswa(siswa.id)"
-                                        class="p-1.5 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg transition-colors">
-                                        <i class="fas fa-box-archive"></i>
-                                    </button>
+                            </td>
+                            <td class="p-4 text-gray-600 dark:text-gray-400 font-medium">
+                                <div class="flex items-center gap-1.5">
+                                    <i class="fas fa-phone-alt text-[10px] text-gray-400"></i>
+                                    <span x-text="siswa.no_hp || '-'"></span>
                                 </div>
-                            </template>
-                            <template x-if="viewMode === 'arsip'">
-                                <div class="flex gap-1">
-                                    <button type="button" @click.stop="restoreSiswa(siswa.id)"
-                                        class="p-1.5 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors">
-                                        <i class="fas fa-rotate-left"></i>
-                                    </button>
-                                    <button type="button" @click.stop="hapusPermanen(siswa.id)"
-                                        class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
-                                        <i class="fas fa-trash-can"></i>
-                                    </button>
+                            </td>
+                            <td class="p-4">
+                                <div class="flex flex-col gap-1.5 max-w-xs">
+                                    <div class="flex items-center justify-between text-xs font-semibold">
+                                        <div class="flex items-center gap-1.5">
+                                            <div class="w-2 h-2 rounded-full"
+                                                :class="viewMode === 'aktif' ? (getStatusJadwal(siswa).isKurang ?
+                                                    'bg-orange-500 animate-pulse' : 'bg-green-500') : 'bg-gray-400'">
+                                            </div>
+                                            <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400"
+                                                x-text="viewMode === 'aktif' ? (getStatusJadwal(siswa).isKurang ? 'Incomplete' : 'Active') : 'Archived'"></span>
+                                        </div>
+                                        <span class="text-gray-500 dark:text-gray-400 text-[10px]"
+                                            x-text="getStatusJadwal(siswa).kuota > 0 ? getStatusJadwal(siswa).total + ' / ' + getStatusJadwal(siswa).kuota + ' Pertemuan' : 'Jadwal Belum Diatur'"></span>
+                                    </div>
+                                    <template x-if="getStatusJadwal(siswa).kuota > 0">
+                                        <div
+                                            class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+                                            <div class="h-full rounded-full transition-all duration-500"
+                                                :class="getStatusJadwal(siswa).isKurang ? 'bg-orange-500' : 'bg-green-500'"
+                                                :style="`width: ${Math.min((getStatusJadwal(siswa).total / getStatusJadwal(siswa).kuota) * 100, 100)}%`">
+                                            </div>
+                                        </div>
+                                    </template>
                                 </div>
-                            </template>
-                        </div>
-                    </div>
-                    <template x-if="viewMode === 'aktif'">
-                        <div class="text-[8px] text-white font-black text-center py-1 uppercase tracking-widest transition-colors duration-500"
-                            :class="getStatusJadwal(siswa).isKurang ? 'bg-orange-500/90' : 'bg-blue-500/90'">
-                            <span
-                                x-text="getStatusJadwal(siswa).kuota > 0 ? getStatusJadwal(siswa).total + ' dari ' + getStatusJadwal(siswa).kuota + ' Pertemuan' : 'Jadwal Belum Diatur'"></span>
-                        </div>
+                            </td>
+                            <td class="p-4 text-center">
+                                <div class="flex justify-center gap-1">
+                                    <template x-if="viewMode === 'aktif'">
+                                        <div class="flex gap-1">
+                                            <button type="button" @click.stop="openEdit(siswa)"
+                                                class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                                                title="Edit">
+                                                <i class="fas fa-pen-to-square"></i>
+                                            </button>
+                                            <button type="button" @click.stop="hapusSiswa(siswa.id)"
+                                                class="p-2 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg transition-colors"
+                                                title="Arsipkan">
+                                                <i class="fas fa-box-archive"></i>
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <template x-if="viewMode === 'arsip'">
+                                        <div class="flex gap-1">
+                                            <button type="button" @click.stop="restoreSiswa(siswa.id)"
+                                                class="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
+                                                title="Pulihkan">
+                                                <i class="fas fa-rotate-left"></i>
+                                            </button>
+                                            <button type="button" @click.stop="hapusPermanen(siswa.id)"
+                                                class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                                title="Hapus Permanen">
+                                                <i class="fas fa-trash-can"></i>
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </td>
+                        </tr>
                     </template>
-                </div>
-            </div>
-        </template>
+                    <template x-if="filteredSiswa.length === 0">
+                        <tr>
+                            <td colspan="6" class="p-8 text-center text-gray-400 dark:text-gray-500">
+                                <i class="fas fa-user-slash text-3xl mb-2 block"></i>
+                                Tidak ada data siswa yang ditemukan.
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div x-show="showSiswaModal"
@@ -409,6 +475,8 @@
                     showSiswaModal: false,
                     siswaSearch: '',
                     selectedSiswas: [],
+                    sortField: 'name',
+                    sortOrder: 'asc',
                     siswaForm: {
                         id: null,
                         name: '',
@@ -421,6 +489,7 @@
                     filterPaket: '',
                     filterSesis: [],
                     filterGurus: [],
+                    filterRuangs: [],
 
                     get kelasList() {
                         return [...new Set(
@@ -443,10 +512,23 @@
                             .sort((a, b) => a.name.localeCompare(b.name));
                     },
 
+                    get ruangList() {
+                        const seen = new Set();
+                        return this.allJadwals
+                            .filter(j => j.ruang)
+                            .filter(j => {
+                                if (seen.has(j.ruang.id)) return false;
+                                seen.add(j.ruang.id);
+                                return true;
+                            })
+                            .map(j => j.ruang)
+                            .sort((a, b) => a.name.localeCompare(b.name));
+                    },
+
                     get hasActiveFilter() {
                         return this.filterKelas || this.filterPaket ||
                             this.filterSesis.length > 0 || this.filterGurus.length > 0 ||
-                            this.siswaSearch;
+                            this.filterRuangs.length > 0 || this.siswaSearch;
                     },
 
                     get filteredSiswa() {
@@ -490,9 +572,42 @@
                                 );
                                 data = data.filter(s => siswaIdsDenganGuru.has(Number(s.id)));
                             }
+
+                            if (this.filterRuangs.length > 0) {
+                                const ruangIds = this.filterRuangs.map(Number);
+                                const siswaIdsDenganRuang = new Set(
+                                    this.allJadwals
+                                    .filter(j => j.ruang && ruangIds.includes(Number(j.ruang_id || j
+                                        .ruang?.id)))
+                                    .map(j => Number(j.siswa_id))
+                                );
+                                data = data.filter(s => siswaIdsDenganRuang.has(Number(s.id)));
+                            }
                         }
 
-                        return data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                        data.sort((a, b) => {
+                            let valA = a[this.sortField] || '';
+                            let valB = b[this.sortField] || '';
+
+                            if (typeof valA === 'string') {
+                                return this.sortOrder === 'asc' ?
+                                    valA.localeCompare(valB) :
+                                    valB.localeCompare(valA);
+                            }
+
+                            return this.sortOrder === 'asc' ? valA - valB : valB - valA;
+                        });
+
+                        return data;
+                    },
+
+                    toggleSort(field) {
+                        if (this.sortField === field) {
+                            this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+                        } else {
+                            this.sortField = field;
+                            this.sortOrder = 'asc';
+                        }
                     },
 
                     isAllSelected() {
@@ -521,6 +636,7 @@
                         this.filterPaket = '';
                         this.filterSesis = [];
                         this.filterGurus = [];
+                        this.filterRuangs = [];
                         this.siswaSearch = '';
                     },
 
@@ -532,7 +648,6 @@
                     getStatusJadwal(siswa) {
                         const totalJadwal = this.allJadwals.filter(j => Number(j.siswa_id) === Number(siswa
                             .id)).length;
-
                         let kuota = 0;
                         const kolomPaket = ['paket_pembayaran', 'paket_pembayaran_2', 'paket_pembayaran_3',
                             'paket_pembayaran_4', 'paket_pembayaran_5'
@@ -596,17 +711,9 @@
                     formatPhone() {
                         let val = this.siswaForm.no_hp;
                         if (!val) return;
-
                         let digits = val.replace(/\D/g, '');
-
-                        if (digits.startsWith('0')) {
-                            digits = '62' + digits.substring(1);
-                        }
-
-                        if (digits.startsWith('8')) {
-                            digits = '62' + digits;
-                        }
-
+                        if (digits.startsWith('0')) digits = '62' + digits.substring(1);
+                        if (digits.startsWith('8')) digits = '62' + digits;
                         this.siswaForm.no_hp = '+' + digits;
                     },
 
@@ -638,7 +745,6 @@
                         const isEdit = !!this.siswaForm.id;
                         const url = isEdit ? `{{ url('admin/siswa') }}/${this.siswaForm.id}` :
                             `{{ route('admin.siswa.store') }}`;
-
                         const payload = {
                             ...this.siswaForm,
                             _token: '{{ csrf_token() }}'
@@ -722,11 +828,11 @@
 
                     exportPdf() {
                         const params = new URLSearchParams();
-
                         if (this.filterKelas) params.set('kelas', this.filterKelas);
                         if (this.filterPaket) params.set('paket_id', this.filterPaket);
                         if (this.filterSesis.length) params.set('sesi_ids', this.filterSesis.join(','));
                         if (this.filterGurus.length) params.set('guru_ids', this.filterGurus.join(','));
+                        if (this.filterRuangs.length) params.set('ruang_ids', this.filterRuangs.join(','));
                         if (this.siswaSearch) params.set('search', this.siswaSearch);
 
                         window.location.href = `/admin/siswa/export-pdf?${params.toString()}`;

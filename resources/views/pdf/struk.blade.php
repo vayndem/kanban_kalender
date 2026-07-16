@@ -33,10 +33,25 @@
             width: 100%;
             border-collapse: collapse;
         }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .logo-img {
+            width: 60px;
+            height: auto;
+        }
     </style>
 </head>
 
 <body>
+    <div class="logo-container">
+        <img src="data:image/png;base64,{{ base64_encode(file_get_contents(storage_path('app/public/Logo.png'))) }}"
+            class="logo-img">
+    </div>
+
     <div class="text-center bold">
         E-LING COURSE BIMBEL<br>
         NOTA PELUNASAN RESMI
@@ -93,7 +108,7 @@
     </table>
     <div class="line"></div>
     <div class="text-center bold" style="font-size: 11px; margin-top: 5px;">
-        STATUS: LUNAS ✔<br>
+        STATUS: LUNAS<br>
         TERIMA KASIH
     </div>
 </body>

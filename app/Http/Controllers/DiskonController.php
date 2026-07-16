@@ -11,33 +11,52 @@ class DiskonController extends Controller
     {
         $validated = $request->validate([
             'id' => 'nullable|integer|exists:diskons,id',
-            'no_hp' => 'required|string',
+            'no_hp' => 'nullable|string',
             'diskon' => 'required|integer|min:0',
             'keterangan' => 'nullable|string|max:255',
+            'is_universal' => 'required|boolean'
         ]);
 
         try {
+            $isUniversal = $request->boolean('is_universal');
+            $noHp = $isUniversal ? null : $request->no_hp;
+
+            if (!$isUniversal && empty($noHp)) {
+                return response()->json(['status' => 'error', 'message' => 'Nomor HP wajib diisi untuk diskon spesifik.'], 422);
+            }
+
             if (!empty($request->id)) {
                 $diskon = Diskon::find($request->id);
                 if ($diskon) {
                     $diskon->update([
-                        'no_hp' => $request->no_hp,
+                        'no_hp' => $noHp,
                         'diskon' => $request->diskon,
-                        'keterangan' => $request->keterangan ?? 'Potongan Diskon Keluarga'
+                        'keterangan' => $request->keterangan ?? ($isUniversal ? 'Diskon Massal' : 'Potongan Diskon Keluarga')
                     ]);
                     $message = 'Diskon berhasil diperbarui.';
                 } else {
                     return response()->json(['status' => 'error', 'message' => 'Data diskon tidak ditemukan.'], 404);
                 }
             } else {
-                $diskon = Diskon::updateOrCreate(
-                    ['no_hp' => $request->no_hp],
-                    [
-                        'diskon' => $request->diskon,
-                        'keterangan' => $request->keterangan ?? 'Potongan Diskon Keluarga'
-                    ]
-                );
-                $message = 'Diskon berhasil diterapkan pada nomor HP ini.';
+                if ($isUniversal) {
+                    $diskon = Diskon::updateOrCreate(
+                        ['no_hp' => null],
+                        [
+                            'diskon' => $request->diskon,
+                            'keterangan' => $request->keterangan ?? 'Diskon Massal'
+                        ]
+                    );
+                    $message = 'Diskon universal berhasil diterapkan ke seluruh siswa.';
+                } else {
+                    $diskon = Diskon::updateOrCreate(
+                        ['no_hp' => $noHp],
+                        [
+                            'diskon' => $request->diskon,
+                            'keterangan' => $request->keterangan ?? 'Potongan Diskon Keluarga'
+                        ]
+                    );
+                    $message = 'Diskon berhasil diterapkan pada nomor HP ini.';
+                }
             }
 
             if ($request->wantsJson()) {
@@ -60,9 +79,10 @@ class DiskonController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'no_hp' => 'required|string',
+            'no_hp' => 'nullable|string',
             'diskon' => 'required|integer|min:0',
             'keterangan' => 'nullable|string|max:255',
+            'is_universal' => 'required|boolean'
         ]);
 
         try {
@@ -75,10 +95,13 @@ class DiskonController extends Controller
                 return redirect()->back()->with('error', 'Data diskon tidak ditemukan.');
             }
 
+            $isUniversal = $request->boolean('is_universal');
+            $noHp = $isUniversal ? null : $request->no_hp;
+
             $diskon->update([
-                'no_hp' => $request->no_hp,
+                'no_hp' => $noHp,
                 'diskon' => $request->diskon,
-                'keterangan' => $request->keterangan ?? 'Potongan Diskon Keluarga'
+                'keterangan' => $request->keterangan ?? ($isUniversal ? 'Diskon Massal' : 'Potongan Diskon Keluarga')
             ]);
 
             if ($request->wantsJson()) {
@@ -115,7 +138,7 @@ class DiskonController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'Diskon berhasil dihapus, total tagihan kembali normal.'
+                    'message' => 'Diskon berhasil dihapus, kalkulasi tagihan kembali normal.'
                 ]);
             }
 
