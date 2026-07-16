@@ -914,10 +914,16 @@
                     const total = new Intl.NumberFormat('id-ID').format(item.total_akhir);
                     const nama = item.siswa_names;
                     const noHp = item.no_hp;
-
-                    if (!noHp || noHp === 'N/A') return Swal.fire('Error', 'No HP tidak valid',
-                        'error');
-
+                
+                    if (!noHp || noHp === 'N/A') return Swal.fire('Error', 'No HP tidak valid', 'error');
+                
+                    let formattedNoHp = noHp.replace(/[^0-9]/g, '');
+                    if (formattedNoHp.startsWith('0')) {
+                        formattedNoHp = '62' + formattedNoHp.slice(1);
+                    } else if (!formattedNoHp.startsWith('62')) {
+                        formattedNoHp = '62' + formattedNoHp;
+                    }
+                
                     const now = new Date();
                     const bulan = now.toLocaleString('id-ID', {
                         month: 'long',
@@ -927,18 +933,16 @@
                         month: 'long'
                     });
                     const tahun = now.getFullYear();
-
+                
                     let rincianTeks = "";
                     item.raw_items.forEach(d => {
-                        rincianTeks +=
-                            `* Tagihan : Rp ${new Intl.NumberFormat('id-ID').format(d.harga)} (${d.keterangan || '-'})\n`;
+                        rincianTeks += `* Tagihan : Rp ${new Intl.NumberFormat('id-ID').format(d.harga)} (${d.keterangan || '-'})\n`;
                     });
-
+                
                     if (item.nominal_diskon > 0) {
-                        rincianTeks +=
-                            `* Potongan Diskon : - Rp ${new Intl.NumberFormat('id-ID').format(item.nominal_diskon)} (${item.keterangan_diskon})\n`;
+                        rincianTeks += `* Potongan Diskon : - Rp ${new Intl.NumberFormat('id-ID').format(item.nominal_diskon)} (${item.keterangan_diskon})\n`;
                     }
-
+                
                     const text = `Reminder:\n` +
                         `TAGIHAN BIMBEL "E-LING COURSE"\n\n` +
                         `Anggota Keluarga Siswa : ${nama}\n` +
@@ -951,10 +955,25 @@
                         `Silakan konfirmasi jika sudah melakukan pembayaran.\n\n` +
                         `Terima kasih.\n` +
                         `E-Ling Course`;
-
-                    window.open(
-                        `https://wa.me/${noHp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`,
-                        '_blank');
+                
+                    window.open(`https://wa.me/${formattedNoHp}?text=${encodeURIComponent(text)}`, '_blank');
+                
+                    this.isLoading = true;
+                    try {
+                        await fetch(`{{ url('admin/pembayaran/lunas-siswa') }}/${item.id_siswa}`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            }
+                        });
+                        this.refreshToTab();
+                    } catch (e) {
+                        console.error(e);
+                    } finally {
+                        this.isLoading = false;
+                    }
                 },
 
                 async prosesBayarSiswa(item) {
