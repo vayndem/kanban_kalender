@@ -296,11 +296,11 @@ class PembayaranController extends Controller
 
         $diskon = Diskon::where('no_hp', $no_hp)->first();
         $nominalDiskon = $diskon ? (int) $diskon->diskon : 0;
-        $logoPath = storage_path('app/Logo.png');
+        $logoPath = storage_path('app/public/Logo.png');
         $logoDataUri = null;
 
         if (!is_file($logoPath) || !is_readable($logoPath)) {
-            $logoPath = storage_path('app/public/Logo.png');
+            $logoPath = storage_path('app/Logo.png');
         }
 
         if (is_file($logoPath) && is_readable($logoPath)) {
@@ -310,20 +310,13 @@ class PembayaranController extends Controller
             }
         }
 
-        $pdf = Pdf::loadView('pdf.struk', [
-            'pembayarans' => $pembayarans,
-            'no_hp' => $no_hp,
-            'diskon' => $diskon,
-            'nominalDiskon' => $nominalDiskon,
-            'logoDataUri' => $logoDataUri,
-        ])
-            ->setOptions($this->dompdfRuntimeOptions())
-            ->setPaper([0, 0, 226, 500], 'portrait');
+        try {
+            return $this->renderStrukPdfResponse($pembayarans, $no_hp, $diskon, $nominalDiskon, $logoDataUri);
+        } catch (\Throwable $e) {
+            report($e);
 
-        return response($pdf->output(), 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="Struk-' . rawurlencode($no_hp) . '.pdf"',
-        ]);
+            return $this->renderStrukPdfResponse($pembayarans, $no_hp, $diskon, $nominalDiskon, null);
+        }
     }
 
     private function settlePembayarans($pembayarans, string $keterangan): int
@@ -358,6 +351,24 @@ class PembayaranController extends Controller
         }
 
         return $updatedCount;
+    }
+
+    private function renderStrukPdfResponse($pembayarans, string $no_hp, ?Diskon $diskon, int $nominalDiskon, ?string $logoDataUri)
+    {
+        $pdf = Pdf::loadView('pdf.struk', [
+            'pembayarans' => $pembayarans,
+            'no_hp' => $no_hp,
+            'diskon' => $diskon,
+            'nominalDiskon' => $nominalDiskon,
+            'logoDataUri' => $logoDataUri,
+        ])
+            ->setOptions($this->dompdfRuntimeOptions())
+            ->setPaper([0, 0, 226, 500], 'portrait');
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="Struk-' . rawurlencode($no_hp) . '.pdf"',
+        ]);
     }
 
     private function dompdfRuntimeOptions(): array
