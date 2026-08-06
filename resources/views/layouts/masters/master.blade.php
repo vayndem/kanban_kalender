@@ -26,7 +26,7 @@
     <header
         class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm w-full sticky top-0 z-50 border-b border-gray-100 dark:border-gray-800">
         <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
+            <div class="flex justify-between gap-2 h-16">
                 <div class="flex items-center">
                     <a href="{{ url('/') }}"
                         class="group flex items-center gap-2 text-2xl font-black tracking-tighter">
@@ -34,8 +34,8 @@
                             class="bg-emerald-500 text-white p-1.5 rounded-lg group-hover:rotate-6 transition-transform">
                             <i class="fas fa-calendar-check"></i>
                         </div>
-                        <span
-                            class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-300">
+                        <span class="hidden sm:inline bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-300"
+                            >
                             E-ling Schedule
                         </span>
                     </a>
@@ -43,19 +43,19 @@
 
                 <div class="flex items-center space-x-2">
                     <a href="{{ route('jadwal.kalender') }}"
-                        class="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 px-4 py-2 rounded-xl text-sm font-bold transition-all">
+                        class="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 px-2 sm:px-4 py-2 rounded-xl text-sm font-bold transition-all">
                         <i class="fas fa-columns text-emerald-500"></i>
-                        Kanban
+                        <span class="hidden sm:inline">Kalender</span>
                     </a>
 
-                    <div class="h-6 w-[1px] bg-gray-200 dark:bg-gray-700 mx-2"></div>
+                    <div class="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1 sm:mx-2"></div>
 
                     @if (Route::has('login'))
                         @auth
                             <a href="{{ url('/dashboard') }}"
-                                class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-lg shadow-emerald-200 dark:shadow-none transition-all flex items-center gap-2">
+                                class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 sm:px-5 py-2 rounded-xl text-sm font-bold shadow-lg shadow-emerald-200 dark:shadow-none transition-all flex items-center gap-2">
                                 <i class="fas fa-th-large"></i>
-                                Dashboard
+                                <span class="hidden sm:inline">Dashboard</span>
                             </a>
                         @else
                             <a href="{{ route('login') }}"

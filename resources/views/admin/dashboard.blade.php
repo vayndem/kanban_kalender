@@ -1,21 +1,29 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-white leading-tight">
-            {{ __('Dashboard') }}
-        </h2>
+        <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-[.2em] text-emerald-600 dark:text-emerald-400">Control Center</p>
+                <h2 class="text-xl font-black tracking-tight text-slate-900 dark:text-white sm:text-2xl">Dashboard Operasional</h2>
+            </div>
+            <div class="mt-2 inline-flex items-center gap-2 self-start rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300 sm:mt-0">
+                <span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span></span>
+                Sistem aktif
+            </div>
+        </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-full mx-auto sm:px-6 lg:px-8">
+    <div class="py-5 sm:py-8">
+        <div class="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8">
             <div class="container mx-auto" x-data="jadwalHandler({
-                allMapels: {{ $allMapels->toJson() }},
-                allGurus: {{ $allGurus->toJson() }},
-                allRuangs: {{ $allRuangs->toJson() }},
-                allSiswas: {{ $allSiswas->toJson() }},
-                allArsips: {{ $allArsips->toJson() }},
-                jadwalsData: {{ $jadwalsData->toJson() }},
-                allHaris: {{ $haris->toJson() }},
-                allSesis: {{ $sesis->sortBy('start_time')->values()->toJson() }},
+                allMapels: @js($activeTab === 'jadwal' ? $allMapels : []),
+                allGurus: @js($activeTab === 'jadwal' ? $allGurus : []),
+                allRuangs: @js($activeTab === 'jadwal' ? $allRuangs : []),
+                allSiswas: @js($activeTab === 'jadwal' ? $allSiswas : []),
+                jadwalsData: @js($activeTab === 'jadwal' ? $jadwalsData : []),
+                allHaris: @js($activeTab === 'jadwal' ? $haris : []),
+                allSesis: @js($activeTab === 'jadwal' ? $sesis->sortBy('start_time')->values() : []),
+                activeTab: @js($activeTab),
+                searchIndex: @js($scheduleSearchIndex),
                 csrfToken: '{{ csrf_token() }}',
                 routes: {
                     mapel: { destroy: '{{ route('admin.mapel.destroy', ':id') }}', store: '{{ route('admin.mapel.store') }}', update: '{{ route('admin.mapel.update', ':id') }}' },
@@ -33,34 +41,27 @@
                 }
             })">
 
-                <div class="mb-5">
-                    <div class="border-b border-gray-200 dark:border-gray-700">
-                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                            <button @click="activeTab = 'jadwal'; currentForm = ''"
-                                :class="activeTab === 'jadwal' ? 'border-blue-500 text-blue-600 dark:text-blue-400' :
-                                    'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
-                                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                                Jadwal Pelajaran
-                            </button>
+                <div class="mb-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                        <nav class="flex min-w-max gap-1" aria-label="Tabs">
+                            <a href="{{ route('dashboard', ['tab' => 'jadwal']) }}"
+                                class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition {{ $activeTab === 'jadwal' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200 dark:shadow-none' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white' }}">
+                                <i class="fas fa-calendar-days"></i> Jadwal Pelajaran
+                            </a>
 
-                            <button @click="activeTab = 'data_siswa'; currentForm = 'siswa'; formSearch = ''"
-                                :class="activeTab === 'data_siswa' ? 'border-blue-500 text-blue-600 dark:text-blue-400' :
-                                    'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
-                                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                                Data Siswa
-                            </button>
+                            <a href="{{ route('dashboard', ['tab' => 'data_siswa']) }}"
+                                class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition {{ $activeTab === 'data_siswa' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200 dark:shadow-none' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white' }}">
+                                <i class="fas fa-user-graduate"></i> Data Siswa
+                            </a>
 
-                            <button @click="activeTab = 'pembayaran'; currentForm = 'pembayaran'; formSearch = ''"
-                                :class="activeTab === 'pembayaran' ? 'border-blue-500 text-blue-600 dark:text-blue-400' :
-                                    'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'"
-                                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                                Pembayaran
-                            </button>
+                            <a href="{{ route('dashboard', ['tab' => 'pembayaran']) }}"
+                                class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition {{ $activeTab === 'pembayaran' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200 dark:shadow-none' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white' }}">
+                                <i class="fas fa-wallet"></i> Pembayaran
+                            </a>
                         </nav>
-                    </div>
                 </div>
 
-                <div x-show="activeTab === 'jadwal'" x-transition:enter="transition ease-out duration-300"
+                @if ($activeTab === 'jadwal')
+                <div x-transition:enter="transition ease-out duration-300"
                     x-transition:enter-start="opacity-0 transform -translate-y-4"
                     x-transition:enter-end="opacity-100 transform translate-y-0">
                     <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg mb-6">
@@ -111,17 +112,6 @@
                                                 role="menuitem"><i class="fas fa-sticky-note w-5 mr-2"></i> Tanda /
                                                 Catatan</a>
                                         </div>
-                                    </div>
-
-                                    <div x-show="activeTab === 'jadwal'">
-                                    </div>
-
-                                    <div x-show="activeTab === 'data_siswa'">
-                                        @include('admin.card')
-                                    </div>
-
-                                    <div x-show="activeTab === 'pembayaran'">
-                                        @include('admin.pembayaran')
                                     </div>
 
                                     <div x-show="currentForm" x-transition
@@ -180,7 +170,7 @@
                                     @endphp
 
                                     @foreach ($haris as $index => $hari)
-                                        <th
+                                        <th x-show="dayMatches({{ $hari->id }})"
                                             class="border border-gray-300 dark:border-gray-600 p-3 text-center uppercase text-xs tracking-wider font-semibold text-gray-600 dark:text-white min-w-[200px]">
                                             <div class="text-base">{{ $hari->name }}</div>
                                             @php
@@ -196,7 +186,7 @@
                             </thead>
                             <tbody class="bg-white dark:bg-gray-800">
                                 @foreach ($sesis->sortBy('start_time') as $sesi)
-                                    <tr class="even:bg-gray-50/50 dark:even:bg-gray-800/60">
+                                    <tr x-show="sessionMatches({{ $sesi->id }})" class="even:bg-gray-50/50 dark:even:bg-gray-800/60">
                                         <td
                                             class="border border-gray-200 dark:border-gray-600 p-2 text-center align-middle font-semibold text-gray-700 dark:text-white">
                                             {{ $sesi->name }}
@@ -207,7 +197,7 @@
                                         </td>
 
                                         @foreach ($haris as $hari)
-                                            <td class="kanban-slot border border-gray-200 dark:border-gray-600 p-2 align-top h-64 relative cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors duration-150"
+                                            <td x-show="dayMatches({{ $hari->id }})" class="kanban-slot border border-gray-200 dark:border-gray-600 p-2 align-top h-64 relative cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors duration-150"
                                                 id="slot-{{ $hari->id }}-{{ $sesi->id }}"
                                                 data-hari-id="{{ $hari->id }}"
                                                 data-sesi-id="{{ $sesi->id }}"
@@ -310,18 +300,23 @@
                         </table>
                     </div>
                 </div>
+                @endif
 
-                <div x-show="activeTab === 'data_siswa'" x-transition:enter="transition ease-out duration-300"
+                @if ($activeTab === 'data_siswa')
+                <div x-transition:enter="transition ease-out duration-300"
                     x-transition:enter-start="opacity-0 transform -translate-y-4"
-                    x-transition:enter-end="opacity-100 transform translate-y-0" style="display: none;">
+                    x-transition:enter-end="opacity-100 transform translate-y-0">
                     @include('admin.card')
                 </div>
+                @endif
 
-                <div x-show="activeTab === 'pembayaran'" x-transition:enter="transition ease-out duration-300"
+                @if ($activeTab === 'pembayaran')
+                <div x-transition:enter="transition ease-out duration-300"
                     x-transition:enter-start="opacity-0 transform -translate-y-4"
-                    x-transition:enter-end="opacity-100 transform translate-y-0" style="display: none;">
+                    x-transition:enter-end="opacity-100 transform translate-y-0">
                     @include('admin.pembayaran')
                 </div>
+                @endif
 
                 <div x-show="showModal" x-transition:enter="ease-out duration-300"
                     x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
@@ -788,7 +783,7 @@
         <script>
             document.addEventListener('alpine:init', () => {
                 Alpine.data('jadwalHandler', (data) => ({
-                    activeTab: new URLSearchParams(window.location.search).get('tab') || 'jadwal',
+                    activeTab: data.activeTab || 'jadwal',
                     universalSearch: '',
                     showModal: false,
                     showAddJadwalModal: false,
@@ -809,6 +804,7 @@
                     allSiswas: data.allSiswas,
                     allHaris: data.allHaris,
                     allSesis: data.allSesis,
+                    searchIndex: data.searchIndex || { days: {}, sessions: {} },
                     routes: data.routes,
                     csrfToken: data.csrfToken,
                     searchModalSiswa: '',
@@ -823,6 +819,19 @@
                         const url = new URL(window.location.href);
                         url.searchParams.set('tab', this.activeTab);
                         window.location.href = url.toString();
+                    },
+
+                    matchesIndex(text) {
+                        const query = this.universalSearch.toLocaleLowerCase('id-ID').trim();
+                        return query === '' || String(text || '').includes(query);
+                    },
+
+                    dayMatches(dayId) {
+                        return this.matchesIndex(this.searchIndex.days[dayId]);
+                    },
+
+                    sessionMatches(sessionId) {
+                        return this.matchesIndex(this.searchIndex.sessions[sessionId]);
                     },
 
                     sudahPunyaJadwal(siswaId) {

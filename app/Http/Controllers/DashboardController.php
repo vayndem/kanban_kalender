@@ -19,19 +19,58 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        $activeTab = request()->string('tab')->toString();
+        if (!in_array($activeTab, ['jadwal', 'data_siswa', 'pembayaran'], true)) {
+            $activeTab = 'jadwal';
+        }
+
         $haris = Hari::orderBy('id')->get();
         $sesis = Sesi::orderBy('start_time')->get();
         $allGurus = Guru::orderBy('name')->get();
         $allMapels = MataPelajaran::orderBy('name')->get();
         $allRuangs = Ruang::orderBy('name')->get();
-        $allSiswas = Siswa::with('tandas')->orderBy('name')->get();
-        $allArsips = Arsip::orderBy('name')->get();
-        $pakets = Paket::orderBy('nama_paket')->get();
-        $diskons = Diskon::orderBy('id', 'desc')->get();
+        $allSiswas = collect();
+        $allArsips = collect();
+        $pakets = collect();
+        $diskons = collect();
+        $jadwalsData = collect();
+        $jadwalsWithRelations = collect();
+        $scheduleSearchIndex = ['days' => [], 'sessions' => []];
 
-        $jadwalsWithRelations = Jadwal::with(['siswa.tandas', 'mataPelajaran', 'guru', 'ruang'])->get();
+        if ($activeTab === 'jadwal') {
+            $allSiswas = Siswa::select(['id', 'name', 'panggilan', 'kelas', 'no_hp'])->with('tandas:id,siswa_id,keterangan,created_at')->orderBy('name')->get();
+            $jadwalsWithRelations = Jadwal::select(['id', 'hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id', 'siswa_id'])
+                ->with(['siswa:id,name,panggilan,kelas', 'siswa.tandas:id,siswa_id,keterangan,created_at', 'mataPelajaran:id,name', 'guru:id,name', 'ruang:id,name', 'hari:id,name', 'sesi:id,name,start_time,end_time'])
+                ->get();
+            $jadwalsData = $jadwalsWithRelations
+                ->map(fn (Jadwal $jadwal) => ['siswa_id' => $jadwal->siswa_id])
+                ->unique('siswa_id')
+                ->values();
 
-        $jadwalsData = $jadwalsWithRelations;
+            foreach ($jadwalsWithRelations as $jadwal) {
+                $searchText = mb_strtolower(implode(' ', array_filter([
+                    $jadwal->hari?->name,
+                    $jadwal->sesi?->name,
+                    $jadwal->mataPelajaran?->name,
+                    $jadwal->guru?->name,
+                    $jadwal->ruang?->name,
+                    $jadwal->siswa?->name,
+                    $jadwal->siswa?->panggilan,
+                    $jadwal->siswa?->kelas,
+                ])));
+                $scheduleSearchIndex['days'][$jadwal->hari_id] = trim(($scheduleSearchIndex['days'][$jadwal->hari_id] ?? '') . ' ' . $searchText);
+                $scheduleSearchIndex['sessions'][$jadwal->sesi_id] = trim(($scheduleSearchIndex['sessions'][$jadwal->sesi_id] ?? '') . ' ' . $searchText);
+            }
+        } elseif ($activeTab === 'data_siswa') {
+            $allSiswas = Siswa::with('tandas:id,siswa_id,keterangan,created_at')->orderBy('name')->get();
+            $allArsips = Arsip::orderBy('name')->get();
+            $pakets = Paket::orderBy('nama_paket')->get();
+            $jadwalsData = Jadwal::select(['id', 'hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id', 'siswa_id'])->get();
+        } else {
+            $allSiswas = Siswa::select(['id', 'name', 'panggilan', 'kelas', 'no_hp', 'paket_pembayaran', 'paket_pembayaran_2', 'paket_pembayaran_3', 'paket_pembayaran_4', 'paket_pembayaran_5'])->orderBy('name')->get();
+            $pakets = Paket::orderBy('nama_paket')->get();
+            $diskons = Diskon::orderBy('id', 'desc')->get();
+        }
 
         $finalJadwals = [];
         foreach ($jadwalsWithRelations as $jadwal) {
@@ -48,7 +87,7 @@ class DashboardController extends Controller
             $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey]['siswa_list']->push($jadwal->siswa);
         }
 
-        $pembayaranSummaries = Pembayaran::with(['siswa.tandas', 'details'])
+        $pembayaranSummaries = $activeTab === 'pembayaran' ? Pembayaran::with(['siswa:id,name,panggilan,kelas,no_hp', 'details:id,id_pembayaran,pembayaran,keterangan,created_at'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($item) {
@@ -75,7 +114,7 @@ class DashboardController extends Controller
                     'bulan' => $item->created_at->format('m'),
                     'tanggal_format' => $item->created_at->translatedFormat('d F Y'),
                 ];
-            });
+            }) : collect();
 
         return view('admin.dashboard', [
             'haris' => $haris,
@@ -90,6 +129,8 @@ class DashboardController extends Controller
             'pakets' => $pakets,
             'jadwalsData' => $jadwalsData,
             'diskons' => $diskons,
+            'activeTab' => $activeTab,
+            'scheduleSearchIndex' => $scheduleSearchIndex,
         ]);
     }
 

@@ -97,5 +97,6 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/jadwal-kalender', [JadwalController::class, 'tampilKalender'])->name('jadwal.kalender');
+Route::get('/jadwal-kalender/export', [JadwalController::class, 'exportPdf'])->name('jadwal.kalender.export');
 
 require __DIR__ . '/auth.php';

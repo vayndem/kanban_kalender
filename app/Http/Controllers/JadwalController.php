@@ -48,33 +48,48 @@ class JadwalController extends Controller
 
     public function updatePosisi(Request $request)
     {
-        $request->validate([
-            'mapel_id' => 'required|integer',
-            'guru_id' => 'required|integer',
-            'ruang_id' => 'required|integer',
-            'old_hari_id' => 'required|integer',
-            'old_sesi_id' => 'required|integer',
-            'new_hari_id' => 'required|integer',
-            'new_sesi_id' => 'required|integer',
+        $validated = $request->validate([
+            'mapel_id' => 'required|exists:mata_pelajarans,id',
+            'guru_id' => 'required|exists:gurus,id',
+            'ruang_id' => 'required|exists:ruangs,id',
+            'old_hari_id' => 'required|exists:haris,id',
+            'old_sesi_id' => 'required|exists:sesis,id',
+            'new_hari_id' => 'required|exists:haris,id',
+            'new_sesi_id' => 'required|exists:sesis,id',
         ]);
 
         try {
-            $affectedRows = Jadwal::where('mata_pelajaran_id', $request->mapel_id)
-                ->where('guru_id', $request->guru_id)
-                ->where('ruang_id', $request->ruang_id)
-                ->where('hari_id', $request->old_hari_id)
-                ->where('sesi_id', $request->old_sesi_id)
-                ->update([
-                    'hari_id' => $request->new_hari_id,
-                    'sesi_id' => $request->new_sesi_id,
-                    'updated_at' => now(),
-                ]);
+            $source = Jadwal::where('mata_pelajaran_id', $validated['mapel_id'])
+                ->where('guru_id', $validated['guru_id'])
+                ->where('ruang_id', $validated['ruang_id'])
+                ->where('hari_id', $validated['old_hari_id'])
+                ->where('sesi_id', $validated['old_sesi_id']);
+            $studentIds = (clone $source)->pluck('siswa_id')->all();
+
+            if ($studentIds === []) {
+                return response()->json(['status' => 'warning', 'message' => 'Jadwal asal tidak ditemukan.']);
+            }
+
+            $this->ensureNoConflicts(
+                $validated['new_hari_id'], $validated['new_sesi_id'],
+                $validated['mapel_id'], $validated['guru_id'], $validated['ruang_id'],
+                $studentIds,
+                Arr::only($validated, ['old_hari_id', 'old_sesi_id', 'mapel_id', 'guru_id', 'ruang_id'])
+            );
+
+            $affectedRows = DB::transaction(fn () => $source->update([
+                'hari_id' => $validated['new_hari_id'],
+                'sesi_id' => $validated['new_sesi_id'],
+                'updated_at' => now(),
+            ]));
 
             if ($affectedRows > 0) {
                 return response()->json(['status' => 'success', 'message' => 'Jadwal berhasil dipindahkan.']);
             } else {
                 return response()->json(['status' => 'warning', 'message' => 'Tidak ada jadwal yang dipindahkan.'], 200);
             }
+        } catch (ValidationException $e) {
+            return response()->json(['status' => 'error', 'message' => implode(' ', $e->validator->errors()->all())], 422);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
@@ -84,19 +99,30 @@ class JadwalController extends Controller
     {
         try {
             $validated = $request->validate([
-                'old_mapel_id' => 'required|integer',
-                'old_guru_id' => 'required|integer',
-                'old_ruang_id' => 'required|integer',
-                'old_hari_id' => 'required|integer',
-                'old_sesi_id' => 'required|integer',
-                'mapel_id' => 'required|integer',
-                'guru_id' => 'required|integer',
-                'ruang_id' => 'required|integer',
+                'old_mapel_id' => 'required|exists:mata_pelajarans,id',
+                'old_guru_id' => 'required|exists:gurus,id',
+                'old_ruang_id' => 'required|exists:ruangs,id',
+                'old_hari_id' => 'required|exists:haris,id',
+                'old_sesi_id' => 'required|exists:sesis,id',
+                'mapel_id' => 'required|exists:mata_pelajarans,id',
+                'guru_id' => 'required|exists:gurus,id',
+                'ruang_id' => 'required|exists:ruangs,id',
                 'siswa_ids' => 'present|array',
-                'siswa_ids.*' => 'integer',
+                'siswa_ids.*' => 'distinct|exists:siswas,id',
                 'deleted_tanda_ids' => 'nullable|array',
                 'deleted_tanda_ids.*' => 'integer',
             ]);
+
+            $this->ensureNoConflicts(
+                $validated['old_hari_id'], $validated['old_sesi_id'],
+                $validated['mapel_id'], $validated['guru_id'], $validated['ruang_id'],
+                $validated['siswa_ids'],
+                [
+                    'old_hari_id' => $validated['old_hari_id'], 'old_sesi_id' => $validated['old_sesi_id'],
+                    'mapel_id' => $validated['old_mapel_id'], 'guru_id' => $validated['old_guru_id'],
+                    'ruang_id' => $validated['old_ruang_id'],
+                ]
+            );
 
             DB::beginTransaction();
 
@@ -156,7 +182,7 @@ class JadwalController extends Controller
                 'guru_id' => 'required|exists:gurus,id',
                 'ruang_id' => 'required|exists:ruangs,id',
                 'siswa_ids' => 'required|array|min:1',
-                'siswa_ids.*' => 'exists:siswas,id',
+                'siswa_ids.*' => 'distinct|exists:siswas,id',
             ], [
                 'required' => 'Kolom :attribute wajib diisi.',
                 'siswa_ids.required' => 'Pilih minimal satu siswa.',
@@ -164,15 +190,21 @@ class JadwalController extends Controller
             ]);
 
             $jadwalDataUtama = Arr::only($validated, ['hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id']);
-            $newJadwals = [];
+            $this->ensureNoConflicts(
+                $validated['hari_id'], $validated['sesi_id'], $validated['mata_pelajaran_id'],
+                $validated['guru_id'], $validated['ruang_id'], $validated['siswa_ids']
+            );
 
-            foreach ($validated['siswa_ids'] as $siswa_id) {
-                $newJadwals[] = Jadwal::create(array_merge($jadwalDataUtama, ['siswa_id' => $siswa_id]));
-            }
+            $createdCount = DB::transaction(function () use ($jadwalDataUtama, $validated) {
+                foreach ($validated['siswa_ids'] as $siswaId) {
+                    Jadwal::create(array_merge($jadwalDataUtama, ['siswa_id' => $siswaId]));
+                }
+                return count($validated['siswa_ids']);
+            });
 
             return response()->json([
                 'status' => 'success',
-                'message' => count($newJadwals) . ' jadwal baru berhasil dibuat.',
+                'message' => $createdCount . ' jadwal baru berhasil dibuat.',
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -184,6 +216,43 @@ class JadwalController extends Controller
                 'status' => 'error',
                 'message' => 'Gagal menyimpan jadwal: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    private function ensureNoConflicts(
+        int $hariId,
+        int $sesiId,
+        int $mapelId,
+        int $guruId,
+        int $ruangId,
+        array $studentIds,
+        ?array $excludeClass = null
+    ): void {
+        $query = Jadwal::where('hari_id', $hariId)->where('sesi_id', $sesiId);
+
+        if ($excludeClass) {
+            $query->where(function ($q) use ($excludeClass) {
+                $q->where('hari_id', '!=', $excludeClass['old_hari_id'])
+                    ->orWhere('sesi_id', '!=', $excludeClass['old_sesi_id'])
+                    ->orWhere('mata_pelajaran_id', '!=', $excludeClass['mapel_id'])
+                    ->orWhere('guru_id', '!=', $excludeClass['guru_id'])
+                    ->orWhere('ruang_id', '!=', $excludeClass['ruang_id']);
+            });
+        }
+
+        $conflicts = [];
+        if ((clone $query)->where('guru_id', $guruId)->exists()) {
+            $conflicts[] = 'Guru sudah mengajar pada hari dan sesi tersebut.';
+        }
+        if ((clone $query)->where('ruang_id', $ruangId)->exists()) {
+            $conflicts[] = 'Ruang sudah digunakan pada hari dan sesi tersebut.';
+        }
+        if ($studentIds !== [] && (clone $query)->whereIn('siswa_id', $studentIds)->exists()) {
+            $conflicts[] = 'Satu atau lebih siswa sudah memiliki jadwal pada waktu tersebut.';
+        }
+
+        if ($conflicts !== []) {
+            throw ValidationException::withMessages(['jadwal' => $conflicts]);
         }
     }
 
@@ -296,6 +365,11 @@ class JadwalController extends Controller
             });
         }
 
+        return response()->json([
+            'status' => 'success',
+            'text' => $this->buildWhatsappScheduleText($query->get(), $request->string('search')->toString()),
+        ]);
+
         $jadwals = $query->get()->sortBy([['hari_id', 'asc'], ['sesi.start_time', 'asc']]);
         $header = $request->filled('search') ? 'Filter: ' . ucwords($request->search) : 'Jadwal Lengkap';
         $textOutput = '*' . $header . "*\n\n";
@@ -336,6 +410,49 @@ class JadwalController extends Controller
         }
 
         return response()->json(['status' => 'success', 'text' => $textOutput]);
+    }
+
+    private function buildWhatsappScheduleText($jadwals, string $search): string
+    {
+        $jadwals = $jadwals->sortBy([['hari_id', 'asc'], ['sesi.start_time', 'asc']]);
+        $text = "*JADWAL E-LING COURSE*\n";
+        if ($search !== '') {
+            $text .= '_Jadwal untuk: ' . ucwords($search) . "_\n";
+        }
+        $text .= '_Dibuat ' . now()->translatedFormat('d F Y, H:i') . "_\n";
+
+        if ($jadwals->isEmpty()) {
+            return $text . "\nTidak ada jadwal yang ditemukan.";
+        }
+
+        foreach ($jadwals->groupBy('hari.name') as $hariName => $daySchedules) {
+            $text .= "\n━━━━━━━━━━━━━━\n📅 *" . mb_strtoupper((string) $hariName) . "*\n";
+
+            foreach ($daySchedules->groupBy('sesi.id') as $items) {
+                $session = $items->first()->sesi;
+                $start = \Carbon\Carbon::parse($session->start_time)->format('H.i');
+                $end = \Carbon\Carbon::parse($session->end_time)->format('H.i');
+
+                $classes = $items->groupBy(fn ($item) => implode('-', [
+                    $item->guru_id, $item->mata_pelajaran_id, $item->ruang_id,
+                ]));
+
+                foreach ($classes as $classItems) {
+                    $schedule = $classItems->first();
+                    $students = $classItems->map(function ($item) {
+                        $name = $item->siswa->panggilan ?: explode(' ', trim($item->siswa->name))[0];
+                        return $name . ($item->siswa->kelas ? ' – ' . $item->siswa->kelas : '');
+                    })->unique()->join(', ');
+
+                    $text .= "\n⏰ *{$start}–{$end}* · *{$schedule->mataPelajaran->name}*\n";
+                    $text .= "   👩‍🏫 {$schedule->guru->name}\n";
+                    $text .= "   🏫 {$schedule->ruang->name}\n";
+                    $text .= "   👥 {$students}\n";
+                }
+            }
+        }
+
+        return $text . "\n━━━━━━━━━━━━━━\n_Simpan pesan ini sebagai pengingat jadwal._";
     }
 
     public function downloadStash()

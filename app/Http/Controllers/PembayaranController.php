@@ -9,6 +9,8 @@ use App\Models\Siswa;
 use App\Models\Diskon;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PembayaranController extends Controller
 {
@@ -151,36 +153,58 @@ class PembayaranController extends Controller
                 return $this->handleNotFound($request, "Siswa");
             }
 
-            $pembayarans = Pembayaran::where('no_hp', $siswa->no_hp)
-                ->whereIn('status', [0, 1])
-                ->get();
+            DB::transaction(function () use ($request, $siswa) {
+                $pembayarans = Pembayaran::where('no_hp', $siswa->no_hp)
+                    ->whereIn('status', [0, 1])
+                    ->orderBy('created_at')
+                    ->lockForUpdate()
+                    ->get();
 
-            if ($pembayarans->isEmpty()) {
-                return response()->json(['status' => 'error', 'message' => 'Tidak ada tagihan aktif untuk nomor HP ini.'], 422);
-            }
+                if ($pembayarans->isEmpty()) {
+                    throw ValidationException::withMessages(['nominal' => 'Tidak ada tagihan aktif untuk nomor HP ini.']);
+                }
 
-            $pembayaranUtama = $pembayarans->first();
+                $remaining = (int) $request->nominal;
+                $totalOutstanding = $pembayarans->sum(fn ($item) => max(0, (int) $item->harga - (int) $item->total_sudah_dibayar));
+                if ($remaining > $totalOutstanding) {
+                    throw ValidationException::withMessages([
+                        'nominal' => 'Nominal melebihi sisa tagihan sebesar Rp ' . number_format($totalOutstanding, 0, ',', '.') . '.',
+                    ]);
+                }
 
-            PembayaranDetail::create([
-                'id_pembayaran' => $pembayaranUtama->id,
-                'pembayaran' => $request->nominal,
-                'keterangan' => $request->keterangan_detail ?? 'Pembayaran cicilan / bertahap',
-                'created_at' => $request->tanggal_pembayaran ? Carbon::parse($request->tanggal_pembayaran) : Carbon::now()
-            ]);
+                foreach ($pembayarans as $pembayaran) {
+                    if ($remaining <= 0) break;
 
-            foreach ($pembayarans as $p) {
-                $p->increment('total_sudah_dibayar', $request->nominal / $pembayarans->count());
-                $p->update([
-                    'pembayaran_via' => $request->pembayaran_via,
-                    'tanggal_pembayaran' => $request->tanggal_pembayaran ?? Carbon::now()
-                ]);
-            }
+                    $outstanding = max(0, (int) $pembayaran->harga - (int) $pembayaran->total_sudah_dibayar);
+                    $allocated = min($remaining, $outstanding);
+                    if ($allocated === 0) continue;
+
+                    $detail = PembayaranDetail::create([
+                        'id_pembayaran' => $pembayaran->id,
+                        'pembayaran' => $allocated,
+                        'keterangan' => $request->keterangan_detail ?? 'Pembayaran cicilan / bertahap',
+                    ]);
+                    $detail->created_at = Carbon::parse($request->tanggal_pembayaran);
+                    $detail->save();
+
+                    $newTotal = (int) $pembayaran->total_sudah_dibayar + $allocated;
+                    $pembayaran->update([
+                        'total_sudah_dibayar' => $newTotal,
+                        'status' => $newTotal >= (int) $pembayaran->harga ? 2 : 1,
+                        'pembayaran_via' => $request->pembayaran_via,
+                        'tanggal_pembayaran' => $request->tanggal_pembayaran,
+                    ]);
+                    $remaining -= $allocated;
+                }
+            });
 
             if ($request->wantsJson()) {
                 return response()->json(['status' => 'success', 'message' => 'Pembayaran cicilan berhasil dicatat.']);
             }
 
             return redirect()->back()->with('success', 'Pembayaran cicilan berhasil dicatat.');
+        } catch (ValidationException $e) {
+            return response()->json(['status' => 'error', 'message' => implode(' ', $e->validator->errors()->all())], 422);
         } catch (\Exception $e) {
             return $this->handleException($request, 'Gagal memproses pembayaran', $e);
         }

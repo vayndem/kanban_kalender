@@ -3,171 +3,132 @@
 @section('title', 'Kalender Jadwal')
 
 @section('content')
-
-    <h1 class="text-2xl lg:text-3xl font-bold text-center mb-8 text-gray-800 dark:text-gray-100">
-        Jadwal Kalender
-    </h1>
-
-    <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
-        <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                <i class="fas fa-search mr-1"></i> Pencarian Universal
-            </label>
-            <input type="text" x-model.debounce.300ms="universalSearch"
-                placeholder="Cari Hari, Sesi, Mapel, Guru, Ruang, atau Nama Siswa..."
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-        </div>
-
-        <div class="self-end">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                <i class="fas fa-calendar-alt mr-1"></i> Tanggal Hari Ini
-            </label>
-            <input type="text" disabled :value="todayLabel"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-gray-100 dark:bg-gray-600 text-gray-900 dark:text-gray-100 cursor-default">
+<div class="mx-auto w-full max-w-7xl px-3 py-5 sm:px-6 lg:px-8 lg:py-8"
+    x-data="calendarApp()" x-init="init()">
+    <div class="mb-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 p-5 text-white shadow-lg sm:p-7">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[.2em] text-emerald-100">E-ling Course</p>
+                <h1 class="mt-1 text-2xl font-black sm:text-3xl">Kalender Jadwal</h1>
+                <p class="mt-2 max-w-2xl text-sm text-emerald-50">Cari jadwal berdasarkan hari, sesi, pelajaran, guru, ruang, atau siswa.</p>
+            </div>
+            <a :href="exportUrl" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-emerald-700 shadow hover:bg-emerald-50">
+                <i class="fas fa-file-pdf"></i> Export PDF
+            </a>
         </div>
     </div>
 
-    <div class="overflow-x-auto shadow-md rounded-lg">
-        <table class="min-w-full w-full border-collapse table-fixed">
-            <thead class="bg-gray-50 dark:bg-gray-700">
+    <div class="mb-6 grid gap-3 sm:grid-cols-[1fr_auto]">
+        <label class="relative block">
+            <span class="sr-only">Cari jadwal</span>
+            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="search" x-model.debounce.200ms="query" placeholder="Cari jadwal..."
+                class="min-h-12 w-full rounded-xl border-gray-300 bg-white pl-11 pr-10 text-gray-900 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+            <button x-show="query" @click="query = ''" type="button" aria-label="Hapus pencarian"
+                class="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">&times;</button>
+        </label>
+        <div class="flex min-h-12 items-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+            <i class="far fa-calendar mr-2 text-emerald-500"></i><span x-text="todayLabel"></span>
+        </div>
+    </div>
+
+    {{-- Mobile: daftar per hari agar tidak memaksa tabel horizontal. --}}
+    <div class="space-y-5 md:hidden">
+        @foreach ($haris as $hari)
+            <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <header class="flex items-center justify-between bg-gray-50 px-4 py-3 dark:bg-gray-900/60"
+                    :class="isCurrentDay(@js($hari->name)) ? 'ring-2 ring-inset ring-emerald-500' : ''">
+                    <h2 class="font-black text-gray-900 dark:text-white">{{ $hari->name }}</h2>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ now()->startOfWeek()->addDays($loop->index)->translatedFormat('d M') }}</span>
+                </header>
+                <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                    @foreach ($sesis->sortBy('start_time') as $sesi)
+                        @if (isset($jadwals[$hari->id][$sesi->id]))
+                            @foreach ($jadwals[$hari->id][$sesi->id] as $groupedClass)
+                                @php($searchText = strtolower($hari->name.' '.$sesi->name.' '.$groupedClass['mapel']->name.' '.$groupedClass['guru']->name.' '.$groupedClass['ruang']->name.' '.$groupedClass['siswa_list']->pluck('name')->implode(' ')))
+                                <article x-show="matches(@js($searchText))" x-transition class="p-4">
+                                    <div class="mb-2 flex items-start justify-between gap-3">
+                                        <div>
+                                            <p class="font-black text-gray-900 dark:text-white">{{ $groupedClass['mapel']->name }}</p>
+                                            <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{{ $sesi->name }} · {{ \Carbon\Carbon::parse($sesi->start_time)->format('H:i') }}–{{ \Carbon\Carbon::parse($sesi->end_time)->format('H:i') }}</p>
+                                        </div>
+                                        <span class="h-3 w-3 shrink-0 rounded-full" style="background: {{ $groupedClass['mapel']->border_color }}"></span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-300">
+                                        <span><i class="fas fa-chalkboard-teacher mr-1 text-blue-500"></i>{{ $groupedClass['guru']->name }}</span>
+                                        <span><i class="fas fa-building mr-1 text-emerald-500"></i>{{ $groupedClass['ruang']->name }}</span>
+                                    </div>
+                                    <div class="mt-3 flex flex-wrap gap-1.5">
+                                        @foreach ($groupedClass['siswa_list'] as $siswa)
+                                            <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200">{{ $siswa->panggilan ?: $siswa->name }}{{ $siswa->kelas ? ' · '.$siswa->kelas : '' }}</span>
+                                        @endforeach
+                                    </div>
+                                </article>
+                            @endforeach
+                        @endif
+                    @endforeach
+                </div>
+            </section>
+        @endforeach
+    </div>
+
+    {{-- Desktop/tablet: kalender matriks. --}}
+    <div class="hidden overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 md:block">
+        <table class="min-w-[980px] w-full table-fixed border-collapse">
+            <thead><tr class="bg-gray-50 dark:bg-gray-900/60">
+                <th class="w-28 border-b border-r border-gray-200 p-3 text-sm dark:border-gray-700">Sesi</th>
+                @foreach ($haris as $hari)
+                    <th class="border-b border-gray-200 p-3 text-sm dark:border-gray-700" :class="isCurrentDay(@js($hari->name)) ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : ''">{{ $hari->name }}</th>
+                @endforeach
+            </tr></thead>
+            <tbody>
+            @foreach ($sesis->sortBy('start_time') as $sesi)
                 <tr>
-                    <th
-                        class="border border-gray-300 dark:border-gray-600 p-3 text-center font-semibold text-gray-600 dark:text-gray-300 w-24 lg:w-32">
-                        Sesi
+                    <th class="border-r border-t border-gray-200 p-3 align-top text-xs dark:border-gray-700">
+                        <span class="block font-bold">{{ $sesi->name }}</span>
+                        <span class="font-normal text-gray-500">{{ \Carbon\Carbon::parse($sesi->start_time)->format('H:i') }}–{{ \Carbon\Carbon::parse($sesi->end_time)->format('H:i') }}</span>
                     </th>
-
-                    @php
-                        $startOfWeek = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY);
-                        $dayOffsets = [
-                            'Senin' => 0,
-                            'Selasa' => 1,
-                            'Rabu' => 2,
-                            'Kamis' => 3,
-                            'Jumat' => 4,
-                            'Sabtu' => 5,
-                        ];
-                    @endphp
-
-                    @foreach ($haris as $index => $hari)
-                        @php
-                            $offset = $dayOffsets[$hari->name] ?? $index;
-                            $date = $startOfWeek->copy()->addDays($offset);
-                        @endphp
-                        <th class="border border-gray-300 dark:border-gray-600 p-3 text-center font-semibold min-w-[150px]"
-                            :class="isCurrentDay('{{ $hari->name }}') ?
-                                'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 border-blue-400' :
-                                'text-gray-600 dark:text-gray-300'">
-                            <div class="text-base">{{ $hari->name }}</div>
-                            <span class="block mt-1 text-[10px] font-normal">
-                                {{ $date->translatedFormat('d F Y') }}
-                            </span>
-                        </th>
+                    @foreach ($haris as $hari)
+                        <td class="h-36 border-t border-gray-200 p-2 align-top dark:border-gray-700">
+                            @foreach (($jadwals[$hari->id][$sesi->id] ?? []) as $groupedClass)
+                                @php($searchText = strtolower($hari->name.' '.$sesi->name.' '.$groupedClass['mapel']->name.' '.$groupedClass['guru']->name.' '.$groupedClass['ruang']->name.' '.$groupedClass['siswa_list']->pluck('name')->implode(' ')))
+                                <article x-show="matches(@js($searchText))" x-transition class="mb-2 rounded-xl border-l-4 bg-gray-50 p-3 text-xs shadow-sm dark:bg-gray-700/70" style="border-left-color: {{ $groupedClass['mapel']->border_color }}">
+                                    <strong class="block text-sm text-gray-900 dark:text-white">{{ $groupedClass['mapel']->name }}</strong>
+                                    <span class="mt-1 block text-gray-600 dark:text-gray-300"><i class="fas fa-chalkboard-teacher mr-1 text-blue-500"></i>{{ $groupedClass['guru']->name }}</span>
+                                    <span class="block text-gray-500 dark:text-gray-400"><i class="fas fa-building mr-1 text-emerald-500"></i>{{ $groupedClass['ruang']->name }}</span>
+                                    <p class="mt-2 line-clamp-3 text-gray-500 dark:text-gray-300">{{ $groupedClass['siswa_list']->map(fn($s) => $s->panggilan ?: $s->name)->join(', ') }}</p>
+                                </article>
+                            @endforeach
+                        </td>
                     @endforeach
                 </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-800">
-                @foreach ($sesis->sortBy('start_time') as $sesi)
-                    <tr>
-                        <td
-                            class="border border-gray-300 dark:border-gray-600 p-2 text-center align-middle font-semibold text-gray-700 dark:text-gray-200">
-                            {{ $sesi->name }}
-                            <span class="block text-xs text-gray-500 dark:text-gray-400 font-normal">
-                                {{ \Carbon\Carbon::parse($sesi->start_time)->format('H:i') }} -
-                                {{ \Carbon\Carbon::parse($sesi->end_time)->format('H:i') }}
-                            </span>
-                        </td>
-
-                        @foreach ($haris as $hari)
-                            <td class="border border-gray-300 dark:border-gray-600 p-2 align-top h-40">
-                                @if (isset($jadwals[$hari->id][$sesi->id]))
-                                    @foreach ($jadwals[$hari->id][$sesi->id] as $groupedClass)
-                                        @php
-                                            $siswaNames = $groupedClass['siswa_list']->pluck('name')->implode(' ');
-                                            $searchableText = strtolower(
-                                                "{$hari->name} {$sesi->name} {$groupedClass['mapel']->name} {$groupedClass['guru']->name} {$groupedClass['ruang']->name} {$siswaNames}",
-                                            );
-                                        @endphp
-
-                                        <div class="bg-white dark:bg-gray-700 p-2.5 mb-2 rounded-lg shadow border-l-4 text-sm transition-all duration-300"
-                                            style="border-left-color: {{ $groupedClass['mapel']->border_color }};"
-                                            x-show="!filterCard('{{ $searchableText }}')" x-transition>
-
-                                            <strong class="block font-bold text-gray-900 dark:text-white truncate">
-                                                {{ $groupedClass['mapel']->name }}
-                                            </strong>
-
-                                            <span class="block text-gray-600 dark:text-gray-300 mt-1 text-xs">
-                                                <i
-                                                    class="fas fa-chalkboard-teacher mr-1 text-blue-500"></i>{{ $groupedClass['guru']->name }}
-                                            </span>
-
-                                            <span class="block text-gray-500 dark:text-gray-400 text-xs mt-1">
-                                                <i
-                                                    class="fas fa-building mr-1 text-green-500"></i>{{ $groupedClass['ruang']->name }}
-                                            </span>
-
-                                            <div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-                                                <span
-                                                    class="block text-gray-500 dark:text-gray-400 text-[11px] font-semibold mb-1">
-                                                    <i class="fas fa-users mr-1"></i>Siswa:
-                                                </span>
-                                                <ul
-                                                    class="list-none text-gray-500 dark:text-gray-400 text-xs space-y-1 max-h-24 overflow-y-auto pr-1">
-                                                    @foreach ($groupedClass['siswa_list'] as $siswa)
-                                                        <li
-                                                            class="flex items-center {{ $siswa->tandas->isNotEmpty() ? 'text-yellow-600 dark:text-yellow-400 font-bold' : '' }}">
-                                                            <span class="truncate">{{ $siswa->panggilan ?? $siswa->name }}
-                                                                ({{ $siswa->kelas }})
-                                                            </span>
-                                                            @if ($siswa->tandas->isNotEmpty())
-                                                                <i
-                                                                    class="fas fa-exclamation-circle ml-1 text-yellow-500"></i>
-                                                            @endif
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                @endif
-                            </td>
-                        @endforeach
-                    </tr>
-                @endforeach
+            @endforeach
             </tbody>
         </table>
     </div>
-    </div>
+</div>
 
-    <script>
-        function calendarApp() {
-            return {
-                universalSearch: '',
-                todayLabel: '',
-
-                initDate() {
-                    this.todayLabel = moment().format('DD MMMM YYYY');
-                },
-
-                filterCard(searchableText) {
-                    const query = this.universalSearch.toLowerCase().trim();
-                    if (query === '') return false;
-                    return !searchableText.includes(query);
-                },
-
-                isCurrentDay(dayName) {
-                    const dayMap = {
-                        'Monday': 'Senin',
-                        'Tuesday': 'Selasa',
-                        'Wednesday': 'Rabu',
-                        'Thursday': 'Kamis',
-                        'Friday': 'Jumat',
-                        'Saturday': 'Sabtu',
-                        'Sunday': 'Minggu'
-                    };
-                    return dayMap[moment().format('dddd')] === dayName;
-                }
-            }
+<script>
+function calendarApp() {
+    return {
+        query: '',
+        todayLabel: '',
+        exportBase: @js(route('jadwal.kalender.export')),
+        init() {
+            this.todayLabel = new Intl.DateTimeFormat('id-ID', { dateStyle: 'full' }).format(new Date());
+        },
+        matches(text) {
+            return !this.query.trim() || text.includes(this.query.toLocaleLowerCase('id-ID').trim());
+        },
+        isCurrentDay(dayName) {
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            return days[new Date().getDay()] === dayName;
+        },
+        get exportUrl() {
+            const search = this.query.trim();
+            return search ? `${this.exportBase}?search=${encodeURIComponent(search)}` : this.exportBase;
         }
-    </script>
+    };
+}
+</script>
 @endsection

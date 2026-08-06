@@ -23,6 +23,36 @@ class Pembayaran extends Model
         'total_sudah_dibayar',
     ];
 
+    protected $appends = ['status_label', 'status_color'];
+
+    protected function casts(): array
+    {
+        return [
+            'status' => 'integer',
+            'harga' => 'integer',
+            'total_sudah_dibayar' => 'integer',
+            'tanggal_pembayaran' => 'date',
+        ];
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return match ((int) $this->status) {
+            1 => 'Tertagih',
+            2 => 'Lunas',
+            default => 'Belum Bayar',
+        };
+    }
+
+    public function getStatusColorAttribute(): string
+    {
+        return match ((int) $this->status) {
+            1 => 'amber',
+            2 => 'emerald',
+            default => 'rose',
+        };
+    }
+
     public function siswa(): BelongsTo
     {
         return $this->belongsTo(Siswa::class, 'id_siswa');

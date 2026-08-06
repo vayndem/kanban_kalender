@@ -16,12 +16,13 @@ class SiswaController extends Controller
             'name' => 'required|string|max:255|unique:siswas,name',
             'panggilan' => 'nullable|string|max:100',
             'kelas' => 'nullable|string|max:50',
-            'no_hp' => 'nullable|string|max:20',
+            'no_hp' => ['nullable', 'string', 'max:20', 'regex:/^\+62[0-9]{8,15}$/'],
             'paket_pembayaran' => 'nullable|integer|exists:pakets,id',
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
             'name.unique' => 'Nama siswa sudah terdaftar di sistem.',
             'paket_pembayaran.exists' => 'Paket pembayaran yang dipilih tidak valid.',
+            'no_hp.regex' => 'Nomor WhatsApp harus menggunakan format +628xxxxxxxxxx.',
         ]);
 
         try {
@@ -53,12 +54,13 @@ class SiswaController extends Controller
             'name' => 'required|string|max:255|unique:siswas,name,' . $id,
             'panggilan' => 'nullable|string|max:100',
             'kelas' => 'nullable|string|max:50',
-            'no_hp' => 'nullable|string|max:20',
+            'no_hp' => ['nullable', 'string', 'max:20', 'regex:/^\+62[0-9]{8,15}$/'],
             'paket_pembayaran' => 'nullable|integer|exists:pakets,id',
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
             'name.unique' => 'Nama siswa sudah digunakan oleh data lain.',
             'paket_pembayaran.exists' => 'Paket pembayaran tidak ditemukan.',
+            'no_hp.regex' => 'Nomor WhatsApp harus menggunakan format +628xxxxxxxxxx.',
         ]);
 
         try {

@@ -1,5 +1,5 @@
 <div class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 transition-all duration-200"
-    x-data="pembayaranHandler({{ $pembayaranSummaries->toJson() }}, {{ $allSiswas->toJson() }}, {{ $pakets->toJson() }}, {{ $diskons->toJson() }})">
+    x-data="pembayaranHandler(@js($pembayaranSummaries), @js($allSiswas), @js($pakets), @js($diskons))">
 
     <div
         class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 border-b border-gray-50 dark:border-gray-700/50 pb-4">
@@ -801,6 +801,10 @@
                         '';
 
                     return Object.values(grouped).map(g => {
+                        const statuses = g.raw_items.map(item => Number(item.status));
+                        g.status = statuses.every(status => status === 2) ? 2 :
+                            (statuses.some(status => status === 1 || status === 2) ? 1 : 0);
+                        g.status_label = ['Belum Bayar', 'Tertagih', 'Lunas'][g.status];
                         const diskonObj = this.diskons.find(d => d.no_hp === g.no_hp);
                         const nominalDiskonSpesifik = diskonObj ? parseInt(diskonObj
                             .diskon || 0) : 0;
@@ -972,13 +976,6 @@
                 
                     if (!noHp || noHp === 'N/A') return Swal.fire('Error', 'No HP tidak valid', 'error');
                 
-                    let formattedNoHp = noHp.replace(/[^0-9]/g, '');
-                    if (formattedNoHp.startsWith('0')) {
-                        formattedNoHp = '62' + formattedNoHp.slice(1);
-                    } else if (!formattedNoHp.startsWith('62')) {
-                        formattedNoHp = '62' + formattedNoHp;
-                    }
-                
                     const now = new Date();
                     const bulan = now.toLocaleString('id-ID', {
                         month: 'long',
@@ -1011,7 +1008,7 @@
                         `Terima kasih.\n` +
                         `E-Ling Course`;
                 
-                    window.open(`https://wa.me/${formattedNoHp}?text=${encodeURIComponent(text)}`, '_blank');
+                    window.open(`https://wa.me/${noHp}?text=${encodeURIComponent(text)}`, '_blank');
                 
                     this.isLoading = true;
                     try {

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Jadwal extends Model
 {
@@ -21,37 +22,37 @@ class Jadwal extends Model
     ];
 
 
-    public function siswa()
+    public function siswa(): BelongsTo
     {
         return $this->belongsTo(Siswa::class, 'siswa_id', 'id');
     }
 
 
-    public function mataPelajaran()
+    public function mataPelajaran(): BelongsTo
     {
         return $this->belongsTo(MataPelajaran::class, 'mata_pelajaran_id', 'id');
     }
 
 
-    public function guru()
+    public function guru(): BelongsTo
     {
         return $this->belongsTo(Guru::class, 'guru_id', 'id');
     }
 
 
-    public function hari()
+    public function hari(): BelongsTo
     {
         return $this->belongsTo(Hari::class, 'hari_id', 'id');
     }
 
 
-    public function ruang()
+    public function ruang(): BelongsTo
     {
         return $this->belongsTo(Ruang::class, 'ruang_id', 'id');
     }
 
 
-    public function sesi()
+    public function sesi(): BelongsTo
     {
         return $this->belongsTo(Sesi::class, 'sesi_id', 'id');
     }

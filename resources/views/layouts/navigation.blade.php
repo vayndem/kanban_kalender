@@ -1,10 +1,11 @@
-<nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+<nav x-data="{ open: false }" class="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 shadow-sm backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/90">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex">
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800 dark:text-gray-200" />
+                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
+                        <x-application-logo class="block h-10 w-10" />
+                        <span class="hidden lg:block"><strong class="block text-sm font-black tracking-tight text-slate-900 dark:text-white">E-ling Admin</strong><small class="block text-[10px] font-bold uppercase tracking-[.16em] text-emerald-600 dark:text-emerald-400">Course Manager</small></span>
                     </a>
                 </div>
 
@@ -28,7 +29,8 @@
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition ease-in-out duration-150">
+                        <button class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 transition hover:border-emerald-300 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                            <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-xs font-black text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">{{ mb_strtoupper(mb_substr(Auth::user()->name, 0, 1)) }}</div>
                             <div>{{ Auth::user()->name }}</div>
 
                             <div class="ms-1">

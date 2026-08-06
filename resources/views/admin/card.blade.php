@@ -1,4 +1,4 @@
-<div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-xl shadow-inner" x-data="siswaHandler({{ $allSiswas->toJson() }}, {{ $allArsips->toJson() }}, {{ $pakets->toJson() }}, {{ $jadwalsData->toJson() }}, {{ $haris->toJson() }}, {{ $sesis->toJson() }})">
+<div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-xl shadow-inner" x-data="siswaHandler(@js($allSiswas), @js($allArsips), @js($pakets), @js($jadwalsData), @js($haris), @js($sesis))">
 
     <div class="flex flex-col gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>

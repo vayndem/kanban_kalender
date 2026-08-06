@@ -21,3 +21,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Konfigurasi PHP lokal khusus perangkat
+/php83.ini
+/project-terminal.cmd
