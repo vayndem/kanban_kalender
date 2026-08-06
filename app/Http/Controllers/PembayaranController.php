@@ -10,6 +10,7 @@ use App\Models\Diskon;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Validation\ValidationException;
 
 class PembayaranController extends Controller
@@ -315,9 +316,14 @@ class PembayaranController extends Controller
             'diskon' => $diskon,
             'nominalDiskon' => $nominalDiskon,
             'logoDataUri' => $logoDataUri,
-        ])->setPaper([0, 0, 226, 500], 'portrait');
+        ])
+            ->setOptions($this->dompdfRuntimeOptions())
+            ->setPaper([0, 0, 226, 500], 'portrait');
 
-        return $pdf->stream('Struk-' . $no_hp . '.pdf');
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="Struk-' . rawurlencode($no_hp) . '.pdf"',
+        ]);
     }
 
     private function settlePembayarans($pembayarans, string $keterangan): int
@@ -352,6 +358,26 @@ class PembayaranController extends Controller
         }
 
         return $updatedCount;
+    }
+
+    private function dompdfRuntimeOptions(): array
+    {
+        $baseTmpPath = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'dompdf';
+        $fontPath = $baseTmpPath . DIRECTORY_SEPARATOR . 'fonts';
+
+        foreach ([$baseTmpPath, $fontPath] as $path) {
+            if (!File::exists($path)) {
+                File::makeDirectory($path, 0755, true, true);
+            }
+        }
+
+        return [
+            'tempDir' => $baseTmpPath,
+            'fontDir' => $fontPath,
+            'fontCache' => $fontPath,
+            'isRemoteEnabled' => false,
+            'chroot' => [realpath(base_path()), realpath(storage_path('app'))],
+        ];
     }
 
     private function handleNotFound($request, $item)
