@@ -1217,7 +1217,8 @@
                 },
 
                 async hapusDiskon(id) {
-                    if (!confirm('Hapus aturan potongan kupon diskon ini?')) return;
+                    const confirmation = await AppSwal.confirm('Hapus diskon?', 'Aturan potongan ini akan dihapus dari sistem.', 'Ya, hapus diskon');
+                    if (!confirmation.isConfirmed) return;
                     this.isLoading = true;
                     try {
                         const response = await fetch(`{{ url('admin/diskon') }}/${id}`, {
@@ -1338,7 +1339,8 @@
                 },
 
                 async deletePaket(id) {
-                    if (!confirm('Hapus entitas master data paket pembayaran ini?')) return;
+                    const confirmation = await AppSwal.confirm('Hapus paket?', 'Paket pembayaran ini akan dihapus permanen.', 'Ya, hapus paket');
+                    if (!confirmation.isConfirmed) return;
                     this.isLoading = true;
                     try {
                         const response = await fetch(`{{ url('admin/paket') }}/${id}`, {

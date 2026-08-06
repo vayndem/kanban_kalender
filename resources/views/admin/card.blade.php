@@ -91,7 +91,7 @@
                 </select>
             </div>
 
-            <div x-data="{ openSesi: false }" class="relative">
+            <div x-data="{ openSesi: false, searchSesi: '' }" class="relative">
                 <label class="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Sesi</label>
                 <button type="button" @click="openSesi = !openSesi"
                     class="w-full text-sm text-left rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 flex items-center justify-between focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -102,7 +102,10 @@
                 </button>
                 <div x-show="openSesi" @click.outside="openSesi = false" x-transition
                     class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                    <template x-for="s in allSesis" :key="s.id">
+                    <div class="sticky top-0 z-10 border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
+                        <input type="search" x-model="searchSesi" placeholder="Cari sesi atau jam..." class="w-full rounded-lg border px-3 py-2 text-xs">
+                    </div>
+                    <template x-for="s in allSesis.filter(item => ((item.name || item.nama_sesi || '') + ' ' + (item.start_time || '') + ' ' + (item.end_time || '')).toLowerCase().includes(searchSesi.toLowerCase()))" :key="s.id">
                         <label
                             class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                             <input type="checkbox" :value="s.id" x-model="filterSesis"
@@ -119,7 +122,7 @@
                 </div>
             </div>
 
-            <div x-data="{ openGuru: false }" class="relative">
+            <div x-data="{ openGuru: false, searchGuru: '' }" class="relative">
                 <label class="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Guru</label>
                 <button type="button" @click="openGuru = !openGuru"
                     class="w-full text-sm text-left rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 flex items-center justify-between focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -130,7 +133,10 @@
                 </button>
                 <div x-show="openGuru" @click.outside="openGuru = false" x-transition
                     class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                    <template x-for="g in guruList" :key="g.id">
+                    <div class="sticky top-0 z-10 border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
+                        <input type="search" x-model="searchGuru" placeholder="Cari nama guru..." class="w-full rounded-lg border px-3 py-2 text-xs">
+                    </div>
+                    <template x-for="g in guruList.filter(item => item.name.toLowerCase().includes(searchGuru.toLowerCase()))" :key="g.id">
                         <label
                             class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                             <input type="checkbox" :value="g.id" x-model="filterGurus"
@@ -141,7 +147,7 @@
                 </div>
             </div>
 
-            <div x-data="{ openRuang: false }" class="relative">
+            <div x-data="{ openRuang: false, searchRuang: '' }" class="relative">
                 <label
                     class="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Ruang</label>
                 <button type="button" @click="openRuang = !openRuang"
@@ -153,7 +159,10 @@
                 </button>
                 <div x-show="openRuang" @click.outside="openRuang = false" x-transition
                     class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                    <template x-for="r in ruangList" :key="r.id">
+                    <div class="sticky top-0 z-10 border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
+                        <input type="search" x-model="searchRuang" placeholder="Cari ruang..." class="w-full rounded-lg border px-3 py-2 text-xs">
+                    </div>
+                    <template x-for="r in ruangList.filter(item => item.name.toLowerCase().includes(searchRuang.toLowerCase()))" :key="r.id">
                         <label
                             class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                             <input type="checkbox" :value="r.id" x-model="filterRuangs"
@@ -762,17 +771,19 @@
                             });
                             const res = await response.json();
                             if (res.status === 'success') {
+                                await AppSwal.toast(res.message || 'Data siswa berhasil disimpan.');
                                 window.location.reload();
                             } else {
-                                alert(res.message);
+                                AppSwal.error(res.message);
                             }
                         } catch (e) {
-                            alert('Sistem Error');
+                            AppSwal.error('Sistem tidak dapat menyimpan data siswa.');
                         }
                     },
 
                     async hapusSiswa(id) {
-                        if (!confirm('Pindahkan data terpilih ke arsip?')) return;
+                        const confirmation = await AppSwal.confirm('Arsipkan siswa?', 'Data siswa dan jadwal terkait akan dipindahkan ke arsip.', 'Ya, arsipkan');
+                        if (!confirmation.isConfirmed) return;
                         try {
                             const response = await fetch(`{{ url('admin/siswa') }}/${id}`, {
                                 method: 'DELETE',
@@ -782,14 +793,18 @@
                                 }
                             });
                             const res = await response.json();
-                            if (res.status === 'success') window.location.reload();
+                            if (res.status === 'success') {
+                                await AppSwal.toast(res.message || 'Siswa berhasil diarsipkan.');
+                                window.location.reload();
+                            } else AppSwal.error(res.message);
                         } catch (e) {
-                            alert('Gagal mengarsipkan');
+                            AppSwal.error('Gagal mengarsipkan siswa.');
                         }
                     },
 
                     async restoreSiswa(id) {
-                        if (!confirm('Kembalikan ke daftar aktif?')) return;
+                        const confirmation = await AppSwal.confirm('Pulihkan siswa?', 'Siswa akan dikembalikan ke daftar aktif.', 'Ya, pulihkan');
+                        if (!confirmation.isConfirmed) return;
                         try {
                             const response = await fetch(`{{ url('admin/arsip') }}/${id}`, {
                                 method: 'POST',
@@ -803,14 +818,18 @@
                                 })
                             });
                             const res = await response.json();
-                            if (res.status === 'success') window.location.reload();
+                            if (res.status === 'success') {
+                                await AppSwal.toast(res.message || 'Siswa berhasil dipulihkan.');
+                                window.location.reload();
+                            } else AppSwal.error(res.message);
                         } catch (e) {
-                            alert('Gagal memulihkan');
+                            AppSwal.error('Gagal memulihkan siswa.');
                         }
                     },
 
                     async hapusPermanen(id) {
-                        if (!confirm('Hapus permanen dari arsip?')) return;
+                        const confirmation = await AppSwal.confirm('Hapus permanen?', 'Data ini tidak dapat dikembalikan setelah dihapus.', 'Ya, hapus permanen');
+                        if (!confirmation.isConfirmed) return;
                         try {
                             const response = await fetch(`{{ url('admin/arsip') }}/${id}`, {
                                 method: 'DELETE',
@@ -820,9 +839,12 @@
                                 }
                             });
                             const res = await response.json();
-                            if (res.status === 'success') window.location.reload();
+                            if (res.status === 'success') {
+                                await AppSwal.toast(res.message || 'Data berhasil dihapus permanen.');
+                                window.location.reload();
+                            } else AppSwal.error(res.message);
                         } catch (e) {
-                            alert('Gagal menghapus');
+                            AppSwal.error('Gagal menghapus data arsip.');
                         }
                     },
 

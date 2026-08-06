@@ -42,6 +42,25 @@
 
     <!-- TAMBAHKAN BARIS INI -->
     @stack('scripts')
+
+    @if (session('success') || session('error') || session('status'))
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const success = @js(session('success'));
+                const error = @js(session('error'));
+                const status = @js(session('status'));
+                const statusMessages = {
+                    'profile-updated': 'Profil berhasil diperbarui.',
+                    'password-updated': 'Password berhasil diperbarui.',
+                    'verification-link-sent': 'Tautan verifikasi telah dikirim.',
+                };
+
+                if (error) AppSwal.error(error);
+                else if (success) AppSwal.toast(success);
+                else if (status) AppSwal.toast(statusMessages[status] || status, 'info');
+            });
+        </script>
+    @endif
 </body>
 
 </html>

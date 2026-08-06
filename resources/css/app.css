@@ -41,15 +41,35 @@
     }
 
     .searchable-select-input {
-        @apply min-h-10 w-full rounded-xl border border-gray-300 bg-white px-3 pr-10 text-sm text-gray-900 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white;
+        @apply min-h-10 w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white;
     }
 
-    .searchable-select-icon {
-        @apply pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400;
+    .searchable-select-trigger {
+        @apply flex min-h-10 w-full items-center justify-between gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2 text-left text-sm font-semibold text-gray-800 shadow-sm outline-none transition hover:border-emerald-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white;
+    }
+
+    .searchable-select-trigger-label {
+        @apply min-w-0 truncate;
+    }
+
+    .searchable-select-chevron {
+        @apply shrink-0 text-xs text-gray-400 transition-transform;
     }
 
     .searchable-select-panel {
-        @apply absolute z-[160] mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white p-1 shadow-2xl dark:border-gray-600 dark:bg-gray-800;
+        @apply absolute z-[160] mt-1 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-600 dark:bg-gray-800;
+    }
+
+    .searchable-select-search-wrap {
+        @apply relative border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800;
+    }
+
+    .searchable-select-search-wrap > i {
+        @apply pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-xs text-gray-400;
+    }
+
+    .searchable-select-results {
+        @apply max-h-56 overflow-y-auto p-1;
     }
 
     .searchable-select-option {

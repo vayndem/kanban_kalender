@@ -1032,8 +1032,9 @@
                         this.selectedStudentDetail = siswa;
                     },
 
-                    markTandaForDeletion(tandaId, studentId) {
-                        if (!confirm('Hapus tanda ini?')) return;
+                    async markTandaForDeletion(tandaId, studentId) {
+                        const confirmation = await AppSwal.confirm('Hapus catatan?', 'Catatan akan dihapus saat perubahan jadwal disimpan.', 'Ya, tandai hapus');
+                        if (!confirmation.isConfirmed) return;
                         this.deletedTandaIds.push(tandaId);
                         this.selectedStudentDetail.tandas = this.selectedStudentDetail.tandas.filter(t => t
                             .id !== tandaId);
