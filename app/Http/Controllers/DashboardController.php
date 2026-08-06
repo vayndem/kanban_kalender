@@ -36,6 +36,7 @@ class DashboardController extends Controller
         $jadwalsData = collect();
         $jadwalsWithRelations = collect();
         $scheduleSearchIndex = ['days' => [], 'sessions' => []];
+        $scheduleOccupancy = collect();
 
         if ($activeTab === 'jadwal') {
             $allSiswas = Siswa::select(['id', 'name', 'panggilan', 'kelas', 'no_hp'])->with('tandas:id,siswa_id,keterangan,created_at')->orderBy('name')->get();
@@ -46,6 +47,14 @@ class DashboardController extends Controller
                 ->map(fn (Jadwal $jadwal) => ['siswa_id' => $jadwal->siswa_id])
                 ->unique('siswa_id')
                 ->values();
+            $scheduleOccupancy = $jadwalsWithRelations->map(fn (Jadwal $jadwal) => [
+                'hari_id' => $jadwal->hari_id,
+                'sesi_id' => $jadwal->sesi_id,
+                'mapel_id' => $jadwal->mata_pelajaran_id,
+                'guru_id' => $jadwal->guru_id,
+                'ruang_id' => $jadwal->ruang_id,
+                'siswa_id' => $jadwal->siswa_id,
+            ])->values();
 
             foreach ($jadwalsWithRelations as $jadwal) {
                 $searchText = mb_strtolower(implode(' ', array_filter([
@@ -131,6 +140,7 @@ class DashboardController extends Controller
             'diskons' => $diskons,
             'activeTab' => $activeTab,
             'scheduleSearchIndex' => $scheduleSearchIndex,
+            'scheduleOccupancy' => $scheduleOccupancy,
         ]);
     }
 

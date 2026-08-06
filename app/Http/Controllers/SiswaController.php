@@ -7,9 +7,32 @@ use App\Models\Siswa;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Arsip;
 use App\Models\Jadwal;
+use Illuminate\Http\JsonResponse;
 
 class SiswaController extends Controller
 {
+    public function jadwal(Siswa $siswa): JsonResponse
+    {
+        $jadwals = Jadwal::query()
+            ->select(['id', 'hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id', 'siswa_id'])
+            ->where('siswa_id', $siswa->id)
+            ->with([
+                'mataPelajaran:id,name',
+                'guru:id,name',
+                'ruang:id,name',
+                'hari:id,name',
+                'sesi:id,name,start_time,end_time',
+            ])
+            ->orderBy('hari_id')
+            ->orderBy('sesi_id')
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $jadwals,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([

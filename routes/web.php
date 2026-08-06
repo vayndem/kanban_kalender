@@ -59,6 +59,7 @@ Route::middleware('auth')->group(function () {
 
     // 5. Siswa
     Route::get('/admin/siswa/export-pdf', [SiswaController::class, 'exportPdf'])->name('admin.siswa.exportPdf');
+    Route::get('/admin/siswa/{siswa}/jadwal', [SiswaController::class, 'jadwal'])->name('admin.siswa.jadwal');
     Route::post('/admin/siswa', [SiswaController::class, 'store'])->name('admin.siswa.store');
     Route::put('/admin/siswa/{id}', [SiswaController::class, 'update'])->name('admin.siswa.update');
     Route::delete('/admin/siswa/{id}', [SiswaController::class, 'destroy'])->name('admin.siswa.destroy');

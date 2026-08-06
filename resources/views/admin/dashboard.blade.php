@@ -24,6 +24,7 @@
                 allSesis: @js($activeTab === 'jadwal' ? $sesis->sortBy('start_time')->values() : []),
                 activeTab: @js($activeTab),
                 searchIndex: @js($scheduleSearchIndex),
+                occupancy: @js($activeTab === 'jadwal' ? $scheduleOccupancy : []),
                 csrfToken: '{{ csrf_token() }}',
                 routes: {
                     mapel: { destroy: '{{ route('admin.mapel.destroy', ':id') }}', store: '{{ route('admin.mapel.store') }}', update: '{{ route('admin.mapel.update', ':id') }}' },
@@ -369,7 +370,7 @@
                                                 class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Guru</label>
                                             <select x-model="editingJadwal.guru_id"
                                                 class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                                <template x-for="guru in allGurus" :key="guru.id">
+                                                <template x-for="guru in availableGurus(editingJadwal)" :key="guru.id">
                                                     <option :value="guru.id" x-text="guru.name"></option>
                                                 </template>
                                             </select>
@@ -380,7 +381,7 @@
                                                 class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ruang</label>
                                             <select x-model="editingJadwal.ruang_id"
                                                 class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                                <template x-for="ruang in allRuangs" :key="ruang.id">
+                                                <template x-for="ruang in availableRuangs(editingJadwal)" :key="ruang.id">
                                                     <option :value="ruang.id" x-text="ruang.name"></option>
                                                 </template>
                                             </select>
@@ -610,7 +611,7 @@
                                                 class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Guru</label>
                                             <select x-model.number="newJadwal.guru_id"
                                                 class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                                <template x-for="guru in allGurus" :key="guru.id">
+                                                <template x-for="guru in availableGurus(newJadwal)" :key="guru.id">
                                                     <option :value="guru.id" x-text="guru.name"></option>
                                                 </template>
                                             </select>
@@ -621,7 +622,7 @@
                                                 class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ruang</label>
                                             <select x-model.number="newJadwal.ruang_id"
                                                 class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                                <template x-for="ruang in allRuangs" :key="ruang.id">
+                                                <template x-for="ruang in availableRuangs(newJadwal)" :key="ruang.id">
                                                     <option :value="ruang.id" x-text="ruang.name"></option>
                                                 </template>
                                             </select>
@@ -805,6 +806,7 @@
                     allHaris: data.allHaris,
                     allSesis: data.allSesis,
                     searchIndex: data.searchIndex || { days: {}, sessions: {} },
+                    occupancy: data.occupancy || [],
                     routes: data.routes,
                     csrfToken: data.csrfToken,
                     searchModalSiswa: '',
@@ -832,6 +834,32 @@
 
                     sessionMatches(sessionId) {
                         return this.matchesIndex(this.searchIndex.sessions[sessionId]);
+                    },
+
+                    occupancyFor(target) {
+                        if (!target?.hari_id || !target?.sesi_id) return [];
+                        return this.occupancy.filter(item => {
+                            if (Number(item.hari_id) !== Number(target.hari_id) || Number(item.sesi_id) !== Number(target.sesi_id)) return false;
+                            const isOwnClass = target.old_hari_id &&
+                                Number(item.hari_id) === Number(target.old_hari_id) &&
+                                Number(item.sesi_id) === Number(target.old_sesi_id) &&
+                                Number(item.mapel_id) === Number(target.old_mapel_id) &&
+                                Number(item.guru_id) === Number(target.old_guru_id) &&
+                                Number(item.ruang_id) === Number(target.old_ruang_id);
+                            return !isOwnClass;
+                        });
+                    },
+
+                    availableGurus(target) {
+                        const occupiedIds = new Set(this.occupancyFor(target).map(item => Number(item.guru_id)));
+                        const allowCurrent = Boolean(target?.old_hari_id);
+                        return this.allGurus.filter(guru => !occupiedIds.has(Number(guru.id)) || (allowCurrent && Number(guru.id) === Number(target?.guru_id)));
+                    },
+
+                    availableRuangs(target) {
+                        const occupiedIds = new Set(this.occupancyFor(target).map(item => Number(item.ruang_id)));
+                        const allowCurrent = Boolean(target?.old_hari_id);
+                        return this.allRuangs.filter(ruang => !occupiedIds.has(Number(ruang.id)) || (allowCurrent && Number(ruang.id) === Number(target?.ruang_id)));
                     },
 
                     sudahPunyaJadwal(siswaId) {
@@ -1003,11 +1031,13 @@
                         const selectedIds = this.showModal ? this.editingJadwal.siswa_ids : this.newJadwal
                             .siswa_ids;
                         if (search === '') return [];
+                        const target = this.showModal ? this.editingJadwal : this.newJadwal;
+                        const occupiedStudentIds = new Set(this.occupancyFor(target).map(item => Number(item.siswa_id)));
                         return this.allSiswas.filter(s => {
                             const isSelected = selectedIds && selectedIds.includes(s.id);
                             const matchesSearch = s.name.toLowerCase().includes(search) || (s
                                 .panggilan && s.panggilan.toLowerCase().includes(search));
-                            return !isSelected && matchesSearch;
+                            return !isSelected && !occupiedStudentIds.has(Number(s.id)) && matchesSearch;
                         }).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 10);
                     },
 
@@ -1088,10 +1118,12 @@
                             hari_id: hariId,
                             sesi_id: sesiId,
                             mata_pelajaran_id: this.allMapels.length > 0 ? this.allMapels[0].id : null,
-                            guru_id: this.allGurus.length > 0 ? this.allGurus[0].id : null,
-                            ruang_id: this.allRuangs.length > 0 ? this.allRuangs[0].id : null,
+                            guru_id: null,
+                            ruang_id: null,
                             siswa_ids: []
                         };
+                        this.newJadwal.guru_id = this.availableGurus(this.newJadwal)[0]?.id || null;
+                        this.newJadwal.ruang_id = this.availableRuangs(this.newJadwal)[0]?.id || null;
                         this.searchModalSiswa = '';
                         this.showAddJadwalModal = true;
                         this.selectedStudentDetail = null;

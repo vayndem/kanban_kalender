@@ -1,4 +1,4 @@
-<div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-xl shadow-inner" x-data="siswaHandler(@js($allSiswas), @js($allArsips), @js($pakets), @js($jadwalsData), @js($haris), @js($sesis))">
+<div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-xl shadow-inner" x-data="siswaHandler(@js($allSiswas), @js($allArsips), @js($pakets), @js($jadwalsData), @js($haris), @js($sesis), @js($allGurus), @js($allRuangs))">
 
     <div class="flex flex-col gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -418,6 +418,12 @@
                                 <i class="fas fa-calendar-alt text-blue-500"></i> Jadwal Kelas Diikuti
                             </h4>
                             <div class="space-y-3 max-h-[300px] md:max-h-[400px] overflow-y-auto pr-1">
+                                <template x-if="isLoadingJadwal">
+                                    <div class="flex items-center justify-center gap-2 py-8 text-sm text-gray-400">
+                                        <i class="fas fa-spinner fa-spin text-blue-500"></i>
+                                        <span>Memuat jadwal...</span>
+                                    </div>
+                                </template>
                                 <template x-for="j in getSiswaJadwalList(siswaForm.id)" :key="j.id">
                                     <div
                                         class="p-3 bg-white dark:bg-gray-700 rounded-xl border border-gray-100 dark:border-gray-600 shadow-sm flex items-start gap-3">
@@ -443,7 +449,7 @@
                                         </div>
                                     </div>
                                 </template>
-                                <template x-if="getSiswaJadwalList(siswaForm.id).length === 0">
+                                <template x-if="!isLoadingJadwal && getSiswaJadwalList(siswaForm.id).length === 0">
                                     <div
                                         class="text-center py-8 border border-dashed border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700/30">
                                         <i
@@ -472,7 +478,7 @@
 @push('scripts')
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('siswaHandler', (initialSiswa, initialArsip, paketData, jadwalData, hariData, sesiData) =>
+            Alpine.data('siswaHandler', (initialSiswa, initialArsip, paketData, jadwalData, hariData, sesiData, guruData, ruangData) =>
                 ({
                     allSiswas: initialSiswa || [],
                     allArsips: initialArsip || [],
@@ -480,6 +486,9 @@
                     allJadwals: jadwalData || [],
                     allHaris: hariData || [],
                     allSesis: sesiData || [],
+                    allGurus: guruData || [],
+                    allRuangs: ruangData || [],
+                    isLoadingJadwal: false,
                     viewMode: 'aktif',
                     showSiswaModal: false,
                     siswaSearch: '',
@@ -509,29 +518,11 @@
                     },
 
                     get guruList() {
-                        const seen = new Set();
-                        return this.allJadwals
-                            .filter(j => j.guru)
-                            .filter(j => {
-                                if (seen.has(j.guru.id)) return false;
-                                seen.add(j.guru.id);
-                                return true;
-                            })
-                            .map(j => j.guru)
-                            .sort((a, b) => a.name.localeCompare(b.name));
+                        return [...this.allGurus].sort((a, b) => a.name.localeCompare(b.name));
                     },
 
                     get ruangList() {
-                        const seen = new Set();
-                        return this.allJadwals
-                            .filter(j => j.ruang)
-                            .filter(j => {
-                                if (seen.has(j.ruang.id)) return false;
-                                seen.add(j.ruang.id);
-                                return true;
-                            })
-                            .map(j => j.ruang)
-                            .sort((a, b) => a.name.localeCompare(b.name));
+                        return [...this.allRuangs].sort((a, b) => a.name.localeCompare(b.name));
                     },
 
                     get hasActiveFilter() {
@@ -575,8 +566,7 @@
                                 const guruIds = this.filterGurus.map(Number);
                                 const siswaIdsDenganGuru = new Set(
                                     this.allJadwals
-                                    .filter(j => j.guru && guruIds.includes(Number(j.guru_id || j
-                                        .guru?.id)))
+                                    .filter(j => guruIds.includes(Number(j.guru_id || j.guru?.id)))
                                     .map(j => Number(j.siswa_id))
                                 );
                                 data = data.filter(s => siswaIdsDenganGuru.has(Number(s.id)));
@@ -586,8 +576,7 @@
                                 const ruangIds = this.filterRuangs.map(Number);
                                 const siswaIdsDenganRuang = new Set(
                                     this.allJadwals
-                                    .filter(j => j.ruang && ruangIds.includes(Number(j.ruang_id || j
-                                        .ruang?.id)))
+                                    .filter(j => ruangIds.includes(Number(j.ruang_id || j.ruang?.id)))
                                     .map(j => Number(j.siswa_id))
                                 );
                                 data = data.filter(s => siswaIdsDenganRuang.has(Number(s.id)));
@@ -738,7 +727,7 @@
                         this.showSiswaModal = true;
                     },
 
-                    openEdit(siswa) {
+                    async openEdit(siswa) {
                         this.siswaForm = {
                             id: siswa.id,
                             name: siswa.name || '',
@@ -748,6 +737,26 @@
                             paket_pembayaran: siswa.paket_pembayaran || ''
                         };
                         this.showSiswaModal = true;
+                        this.isLoadingJadwal = true;
+                        const previousJadwals = this.allJadwals
+                            .filter(j => Number(j.siswa_id) === Number(siswa.id));
+                        this.allJadwals = this.allJadwals
+                            .filter(j => Number(j.siswa_id) !== Number(siswa.id));
+
+                        try {
+                            const response = await fetch(`{{ url('admin/siswa') }}/${siswa.id}/jadwal`, {
+                                headers: { 'Accept': 'application/json' }
+                            });
+                            if (!response.ok) throw new Error('Jadwal siswa gagal dimuat.');
+
+                            const result = await response.json();
+                            this.allJadwals = this.allJadwals.concat(result.data || []);
+                        } catch (error) {
+                            this.allJadwals = this.allJadwals.concat(previousJadwals);
+                            await AppSwal.error(error.message || 'Jadwal siswa gagal dimuat.');
+                        } finally {
+                            this.isLoadingJadwal = false;
+                        }
                     },
 
                     async simpanSiswa() {
