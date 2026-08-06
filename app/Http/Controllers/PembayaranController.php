@@ -100,17 +100,20 @@ class PembayaranController extends Controller
     public function lunasSemua(Request $request)
     {
         try {
-            Pembayaran::whereIn('status', [0, 1])->update([
-                'status' => 2,
-                'tanggal_pembayaran' => Carbon::now(),
-                'pembayaran_via' => 0
-            ]);
+            $updatedCount = DB::transaction(function () {
+                $pembayarans = Pembayaran::whereIn('status', [0, 1])
+                    ->orderBy('created_at')
+                    ->lockForUpdate()
+                    ->get();
+
+                return $this->settlePembayarans($pembayarans, 'Selesai sistem');
+            });
 
             if ($request->wantsJson()) {
-                return response()->json(['status' => 'success', 'message' => 'Semua tagihan telah diselesaikan.']);
+                return response()->json(['status' => 'success', 'message' => $updatedCount . ' tagihan telah diselesaikan.']);
             }
 
-            return redirect()->back()->with('success', 'Semua tagihan telah diselesaikan.');
+            return redirect()->back()->with('success', $updatedCount . ' tagihan telah diselesaikan.');
         } catch (\Exception $e) {
             return $this->handleException($request, 'Gagal memproses pelunasan massal', $e);
         }
@@ -218,18 +221,21 @@ class PembayaranController extends Controller
                 return $this->handleNotFound($request, "Siswa");
             }
 
-            Pembayaran::where('no_hp', $siswa->no_hp)
-                ->whereIn('status', [0, 1])
-                ->update([
-                    'status' => 2,
-                    'tanggal_pembayaran' => Carbon::now()
-                ]);
+            $updatedCount = DB::transaction(function () use ($siswa) {
+                $pembayarans = Pembayaran::where('no_hp', $siswa->no_hp)
+                    ->whereIn('status', [0, 1])
+                    ->orderBy('created_at')
+                    ->lockForUpdate()
+                    ->get();
+
+                return $this->settlePembayarans($pembayarans, 'Selesai sistem');
+            });
 
             if ($request->wantsJson()) {
-                return response()->json(['status' => 'success', 'message' => 'Status berhasil diubah menjadi lunas.']);
+                return response()->json(['status' => 'success', 'message' => $updatedCount . ' tagihan berhasil diubah menjadi lunas.']);
             }
 
-            return redirect()->back()->with('success', 'Status berhasil diubah menjadi lunas.');
+            return redirect()->back()->with('success', $updatedCount . ' tagihan berhasil diubah menjadi lunas.');
         } catch (\Exception $e) {
             return $this->handleException($request, 'Gagal melunaskan', $e);
         }
@@ -289,15 +295,63 @@ class PembayaranController extends Controller
 
         $diskon = Diskon::where('no_hp', $no_hp)->first();
         $nominalDiskon = $diskon ? (int) $diskon->diskon : 0;
+        $logoPath = storage_path('app/Logo.png');
+        $logoDataUri = null;
+
+        if (!is_file($logoPath) || !is_readable($logoPath)) {
+            $logoPath = storage_path('app/public/Logo.png');
+        }
+
+        if (is_file($logoPath) && is_readable($logoPath)) {
+            $binary = @file_get_contents($logoPath);
+            if ($binary !== false) {
+                $logoDataUri = 'data:image/png;base64,' . base64_encode($binary);
+            }
+        }
 
         $pdf = Pdf::loadView('pdf.struk', [
             'pembayarans' => $pembayarans,
             'no_hp' => $no_hp,
             'diskon' => $diskon,
-            'nominalDiskon' => $nominalDiskon
+            'nominalDiskon' => $nominalDiskon,
+            'logoDataUri' => $logoDataUri,
         ])->setPaper([0, 0, 226, 500], 'portrait');
 
         return $pdf->stream('Struk-' . $no_hp . '.pdf');
+    }
+
+    private function settlePembayarans($pembayarans, string $keterangan): int
+    {
+        $settledAt = Carbon::now();
+        $updatedCount = 0;
+
+        foreach ($pembayarans as $pembayaran) {
+            $harga = (int) $pembayaran->harga;
+            $sudahDibayar = (int) $pembayaran->total_sudah_dibayar;
+            $sisa = max(0, $harga - $sudahDibayar);
+
+            if ($sisa > 0) {
+                $detail = PembayaranDetail::create([
+                    'id_pembayaran' => $pembayaran->id,
+                    'pembayaran' => $sisa,
+                    'keterangan' => $keterangan,
+                ]);
+                $detail->created_at = $settledAt;
+                $detail->updated_at = $settledAt;
+                $detail->save();
+            }
+
+            $pembayaran->update([
+                'total_sudah_dibayar' => $harga,
+                'status' => 2,
+                'tanggal_pembayaran' => $settledAt,
+                'pembayaran_via' => 0,
+            ]);
+
+            $updatedCount++;
+        }
+
+        return $updatedCount;
     }
 
     private function handleNotFound($request, $item)

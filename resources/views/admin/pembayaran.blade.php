@@ -201,7 +201,7 @@
                                 </div>
                             </template>
                             <template x-if="item.status == 2">
-                                <a :href="'/admin/pembayaran/struk/' + item.no_hp" target="_blank"
+                                <a :href="'/admin/pembayaran/struk/' + encodeURIComponent(item.no_hp)" target="_blank"
                                     class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-md text-[11px] font-bold transition-all inline-flex items-center gap-1 shadow-sm active:scale-95">
                                     <i class="fas fa-print"></i> Cetak Struk
                                 </a>
@@ -275,7 +275,7 @@
                             Lunas</button>
                     </template>
                     <template x-if="item.status == 2">
-                        <a :href="'/admin/pembayaran/struk/' + item.no_hp" target="_blank"
+                        <a :href="'/admin/pembayaran/struk/' + encodeURIComponent(item.no_hp)" target="_blank"
                             class="flex-1 text-center bg-purple-600 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95"><i
                                 class="fas fa-print mr-1"></i>Struk</a>
                     </template>

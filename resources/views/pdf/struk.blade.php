@@ -47,10 +47,11 @@
 </head>
 
 <body>
-    <div class="logo-container">
-        <img src="data:image/png;base64,{{ base64_encode(file_get_contents(storage_path('app/public/Logo.png'))) }}"
-            class="logo-img">
-    </div>
+    @if (!empty($logoDataUri))
+        <div class="logo-container">
+            <img src="{{ $logoDataUri }}" class="logo-img">
+        </div>
+    @endif
 
     <div class="text-center bold">
         E-LING COURSE BIMBEL<br>

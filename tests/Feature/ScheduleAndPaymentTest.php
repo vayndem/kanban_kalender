@@ -7,6 +7,7 @@ use App\Models\Hari;
 use App\Models\Jadwal;
 use App\Models\MataPelajaran;
 use App\Models\Pembayaran;
+use App\Models\PembayaranDetail;
 use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
@@ -95,6 +96,67 @@ class ScheduleAndPaymentTest extends TestCase
 
         $this->assertSame(0, (int) $invoice->fresh()->total_sudah_dibayar);
         $this->assertDatabaseCount('pembayaran_details', 0);
+    }
+
+    public function test_lunas_semua_settles_remaining_balances_and_creates_system_details(): void
+    {
+        $user = User::factory()->create();
+        $student = Siswa::factory()->create(['no_hp' => '+6281230000001']);
+
+        $first = Pembayaran::create([
+            'id_siswa' => $student->id,
+            'no_hp' => $student->no_hp,
+            'harga' => 100000,
+            'status' => 0,
+            'total_sudah_dibayar' => 25000,
+        ]);
+
+        $second = Pembayaran::create([
+            'id_siswa' => $student->id,
+            'no_hp' => $student->no_hp,
+            'harga' => 80000,
+            'status' => 1,
+            'total_sudah_dibayar' => 80000,
+        ]);
+
+        $this->actingAs($user)
+            ->postJson(route('admin.pembayaran.lunasSemua'))
+            ->assertOk()
+            ->assertJsonPath('status', 'success');
+
+        $this->assertSame(100000, (int) $first->fresh()->total_sudah_dibayar);
+        $this->assertSame(2, (int) $first->fresh()->status);
+        $this->assertSame(2, (int) $second->fresh()->status);
+        $this->assertDatabaseHas('pembayaran_details', [
+            'id_pembayaran' => $first->id,
+            'pembayaran' => 75000,
+            'keterangan' => 'Selesai sistem',
+        ]);
+    }
+
+    public function test_paid_receipt_can_be_rendered_without_logo_file(): void
+    {
+        $user = User::factory()->create();
+        $student = Siswa::factory()->create(['no_hp' => '+6281230000002']);
+        $invoice = Pembayaran::create([
+            'id_siswa' => $student->id,
+            'no_hp' => $student->no_hp,
+            'harga' => 50000,
+            'status' => 2,
+            'total_sudah_dibayar' => 50000,
+            'tanggal_pembayaran' => now()->toDateString(),
+            'pembayaran_via' => 0,
+        ]);
+
+        PembayaranDetail::create([
+            'id_pembayaran' => $invoice->id,
+            'pembayaran' => 50000,
+            'keterangan' => 'Pelunasan',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('admin.pembayaran.struk', ['no_hp' => $student->no_hp]))
+            ->assertOk();
     }
 
     public function test_dashboard_renders_only_the_requested_tab_payload(): void
