@@ -489,6 +489,7 @@
                     allGurus: guruData || [],
                     allRuangs: ruangData || [],
                     isLoadingJadwal: false,
+                    editJadwalRequestKey: 0,
                     viewMode: 'aktif',
                     showSiswaModal: false,
                     siswaSearch: '',
@@ -706,6 +707,21 @@
                             });
                     },
 
+                    mergeSiswaJadwal(siswaId, jadwalBaru) {
+                        const targetId = Number(siswaId);
+                        const merged = this.allJadwals
+                            .filter(j => Number(j.siswa_id) !== targetId)
+                            .concat(jadwalBaru || []);
+                        const seen = new Set();
+
+                        this.allJadwals = merged.filter(item => {
+                            const key = Number(item.id || 0);
+                            if (!key || seen.has(key)) return false;
+                            seen.add(key);
+                            return true;
+                        });
+                    },
+
                     formatPhone() {
                         let val = this.siswaForm.no_hp;
                         if (!val) return;
@@ -728,6 +744,7 @@
                     },
 
                     async openEdit(siswa) {
+                        const requestKey = ++this.editJadwalRequestKey;
                         this.siswaForm = {
                             id: siswa.id,
                             name: siswa.name || '',
@@ -745,8 +762,7 @@
                         this.isLoadingJadwal = true;
                         const previousJadwals = this.allJadwals
                             .filter(j => Number(j.siswa_id) === Number(siswa.id));
-                        this.allJadwals = this.allJadwals
-                            .filter(j => Number(j.siswa_id) !== Number(siswa.id));
+                        this.mergeSiswaJadwal(siswa.id, []);
 
                         try {
                             const response = await fetch(`{{ url('admin/siswa') }}/${siswa.id}/jadwal`, {
@@ -755,12 +771,16 @@
                             if (!response.ok) throw new Error('Jadwal siswa gagal dimuat.');
 
                             const result = await response.json();
-                            this.allJadwals = this.allJadwals.concat(result.data || []);
+                            if (requestKey !== this.editJadwalRequestKey) return;
+                            this.mergeSiswaJadwal(siswa.id, result.data || []);
                         } catch (error) {
-                            this.allJadwals = this.allJadwals.concat(previousJadwals);
+                            if (requestKey !== this.editJadwalRequestKey) return;
+                            this.mergeSiswaJadwal(siswa.id, previousJadwals);
                             await AppSwal.error(error.message || 'Jadwal siswa gagal dimuat.');
                         } finally {
-                            this.isLoadingJadwal = false;
+                            if (requestKey === this.editJadwalRequestKey) {
+                                this.isLoadingJadwal = false;
+                            }
                         }
                     },
 

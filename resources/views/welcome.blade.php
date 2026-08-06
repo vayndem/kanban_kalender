@@ -108,24 +108,7 @@
 
                             <div class="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 @foreach ($jadwals as $j)
-                                    @php
-                                        $slotStudents = $jadwalsData
-                                            ->filter(function ($item) use ($j) {
-                                                return $item->hari_id == $j->hari_id &&
-                                                    $item->sesi_id == $j->sesi_id &&
-                                                    $item->mata_pelajaran_id == $j->mata_pelajaran_id &&
-                                                    $item->guru_id == $j->guru_id &&
-                                                    $item->siswa;
-                                            })
-                                            ->map(function ($item) {
-                                                return [
-                                                    'name' => $item->siswa->name,
-                                                    'kelas' => $item->siswa->kelas ?? 'N/A',
-                                                ];
-                                            })
-                                            ->values();
-                                    @endphp
-                                    <div @click="modalTitle = '{{ $j->mataPelajaran->name }}'; modalStudents = {{ $slotStudents->toJson() }}; showSiswaModal = true"
+                                    <div @click="modalTitle = '{{ $j->mataPelajaran->name }}'; modalStudents = {{ $j->slot_students->toJson() }}; showSiswaModal = true"
                                         class="bg-white dark:bg-gray-700/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-600 shadow-sm transition-all hover:shadow-md cursor-pointer flex flex-col justify-between gap-4">
                                         <div class="flex items-start justify-between gap-2">
                                             <div class="min-w-0 flex-1">

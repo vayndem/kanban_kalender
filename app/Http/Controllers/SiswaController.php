@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Siswa;
-use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Arsip;
 use App\Models\Jadwal;
+use App\Models\Siswa;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SiswaController extends Controller
 {
@@ -55,7 +56,7 @@ class SiswaController extends Controller
                 return response()->json([
                     'status' => 'success',
                     'message' => 'Siswa berhasil ditambahkan.',
-                    'data' => $siswa
+                    'data' => $siswa,
                 ]);
             }
 
@@ -93,7 +94,7 @@ class SiswaController extends Controller
                 return response()->json([
                     'status' => 'success',
                     'message' => 'Siswa berhasil diperbarui.',
-                    'data' => $siswa
+                    'data' => $siswa,
                 ]);
             }
 
@@ -110,27 +111,29 @@ class SiswaController extends Controller
             $siswas = Siswa::whereIn('id', $ids)->get();
 
             if ($siswas->isEmpty()) {
-                return $this->handleNotFound($request, "Siswa");
+                return $this->handleNotFound($request, 'Siswa');
             }
 
-            foreach ($siswas as $siswa) {
-                Arsip::create([
-                    'name'             => $siswa->name,
-                    'panggilan'        => $siswa->panggilan,
-                    'kelas'            => $siswa->kelas,
-                    'no_hp'            => $siswa->no_hp,
-                    'paket_pembayaran' => $siswa->paket_pembayaran,
-                ]);
+            DB::transaction(function () use ($siswas) {
+                foreach ($siswas as $siswa) {
+                    Arsip::create([
+                        'name' => $siswa->name,
+                        'panggilan' => $siswa->panggilan,
+                        'kelas' => $siswa->kelas,
+                        'no_hp' => $siswa->no_hp,
+                        'paket_pembayaran' => $siswa->paket_pembayaran,
+                    ]);
 
-                Jadwal::where('siswa_id', $siswa->id)->delete();
-                $siswa->tandas()->delete();
-                $siswa->delete();
-            }
+                    Jadwal::where('siswa_id', $siswa->id)->delete();
+                    $siswa->tandas()->delete();
+                    $siswa->delete();
+                }
+            });
 
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => count($ids) . ' siswa berhasil diarsipkan dan jadwal telah dibersihkan.'
+                    'message' => count($ids) . ' siswa berhasil diarsipkan dan jadwal telah dibersihkan.',
                 ]);
             }
 
@@ -143,6 +146,7 @@ class SiswaController extends Controller
     private function handleNotFound($request, $item)
     {
         $msg = "Maaf, data $item tidak ditemukan. Silakan segarkan halaman.";
+
         return $request->wantsJson()
             ? response()->json(['status' => 'error', 'message' => $msg], 404)
             : redirect()->back()->with('error', $msg);
@@ -153,9 +157,10 @@ class SiswaController extends Controller
         if ($request->wantsJson()) {
             return response()->json([
                 'status' => 'error',
-                'message' => $prefix . ': ' . $e->getMessage()
+                'message' => $prefix . ': ' . $e->getMessage(),
             ], 500);
         }
+
         return redirect()->back()->withInput()->with('error', $prefix . ': ' . $e->getMessage());
     }
 
@@ -200,14 +205,21 @@ class SiswaController extends Controller
             });
         }
 
+        if ($request->filled('ruang_ids')) {
+            $ruangIds = array_filter(explode(',', $request->ruang_ids));
+            $query->whereHas('jadwals', function ($q) use ($ruangIds) {
+                $q->whereIn('ruang_id', $ruangIds);
+            });
+        }
+
         $siswas = $query->get();
 
         $filterLabel = $this->buildFilterLabel($request);
 
         $pdf = Pdf::loadView('pdf.siswa', [
-            'siswas'      => $siswas,
+            'siswas' => $siswas,
             'filterLabel' => $filterLabel,
-            'exportedAt'  => now()->translatedFormat('d F Y, H:i'),
+            'exportedAt' => now()->translatedFormat('d F Y, H:i'),
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download('Data-Siswa-' . now()->format('YmdHis') . '.pdf');
@@ -217,23 +229,37 @@ class SiswaController extends Controller
     {
         $parts = [];
 
-        if ($request->filled('kelas'))    $parts[] = 'Kelas: ' . $request->kelas;
+        if ($request->filled('kelas')) {
+            $parts[] = 'Kelas: ' . $request->kelas;
+        }
+
         if ($request->filled('paket_id')) {
             $paket = \App\Models\Paket::find($request->paket_id);
             $parts[] = 'Paket: ' . ($paket ? $paket->nama_paket : $request->paket_id);
         }
+
         if ($request->filled('sesi_ids')) {
-            $ids   = array_filter(explode(',', $request->sesi_ids));
+            $ids = array_filter(explode(',', $request->sesi_ids));
             $names = \App\Models\Sesi::whereIn('id', $ids)->pluck('name')->join(', ');
             $parts[] = 'Sesi: ' . $names;
         }
+
         if ($request->filled('guru_ids')) {
-            $ids   = array_filter(explode(',', $request->guru_ids));
+            $ids = array_filter(explode(',', $request->guru_ids));
             $names = \App\Models\Guru::whereIn('id', $ids)->pluck('name')->join(', ');
             $parts[] = 'Guru: ' . $names;
         }
-        if ($request->filled('search'))   $parts[] = 'Cari: "' . $request->search . '"';
 
-        return $parts ? implode(' • ', $parts) : 'Semua Siswa';
+        if ($request->filled('ruang_ids')) {
+            $ids = array_filter(explode(',', $request->ruang_ids));
+            $names = \App\Models\Ruang::whereIn('id', $ids)->pluck('name')->join(', ');
+            $parts[] = 'Ruang: ' . $names;
+        }
+
+        if ($request->filled('search')) {
+            $parts[] = 'Cari: "' . $request->search . '"';
+        }
+
+        return $parts ? implode(' | ', $parts) : 'Semua Siswa';
     }
 }

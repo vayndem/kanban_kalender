@@ -148,7 +148,13 @@ class DashboardController extends Controller
     {
         $dayOfWeek = \Carbon\Carbon::now()->isoFormat('E');
 
-        $jadwalHariIni = Jadwal::with(['mataPelajaran', 'guru', 'ruang', 'sesi'])
+        $jadwalHariIni = Jadwal::with([
+            'mataPelajaran:id,name',
+            'guru:id,name',
+            'ruang:id,name',
+            'sesi:id,name,start_time,end_time',
+            'siswa:id,name,kelas',
+        ])
             ->where('hari_id', $dayOfWeek)
             ->get();
 
@@ -160,9 +166,22 @@ class DashboardController extends Controller
             'pengajar' => Guru::count(),
         ];
 
-        $listJadwal = $jadwalHariIni->unique(function ($item) {
-            return $item->sesi_id . $item->mata_pelajaran_id . $item->guru_id;
-        })
+        $kelasHariIni = $jadwalHariIni->groupBy(function ($item) {
+            return implode('_', [$item->hari_id, $item->sesi_id, $item->mata_pelajaran_id, $item->guru_id, $item->ruang_id]);
+        })->map(function ($items) {
+            $kelas = $items->first();
+            $kelas->slot_students = $items
+                ->filter(fn ($jadwal) => $jadwal->siswa !== null)
+                ->map(fn ($jadwal) => [
+                    'name' => $jadwal->siswa->name,
+                    'kelas' => $jadwal->siswa->kelas ?? 'N/A',
+                ])
+                ->values();
+
+            return $kelas;
+        })->values();
+
+        $listJadwal = $kelasHariIni
             ->sortBy(function ($item) {
                 return $item->sesi->start_time;
             })
@@ -170,28 +189,6 @@ class DashboardController extends Controller
                 return $item->sesi->name;
             });
 
-        $haris = Hari::orderBy('id')->get();
-        $sesis = Sesi::orderBy('start_time')->get();
-        $allGurus = Guru::orderBy('name')->get();
-        $allMapels = MataPelajaran::orderBy('name')->get();
-        $allRuangs = Ruang::orderBy('name')->get();
-        $allSiswas = Siswa::with('tandas')->orderBy('name')->get();
-        $allArsips = Arsip::orderBy('name')->get();
-        $pakets = Paket::orderBy('nama_paket')->get();
-        $jadwalsData = Jadwal::with(['siswa.tandas', 'mataPelajaran', 'guru', 'ruang'])->get();
-
-        return view('welcome', compact(
-            'stats',
-            'listJadwal',
-            'haris',
-            'sesis',
-            'allGurus',
-            'allMapels',
-            'allRuangs',
-            'allSiswas',
-            'allArsips',
-            'pakets',
-            'jadwalsData'
-        ));
+        return view('welcome', compact('stats', 'listJadwal'));
     }
 }

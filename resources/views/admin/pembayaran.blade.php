@@ -913,8 +913,7 @@
                 },
 
                 async simpanTagihan() {
-                    if (!this.form.id_siswa) return Swal.fire('Peringatan', 'Pilih target siswa!',
-                        'warning');
+                    if (!this.form.id_siswa) return AppSwal.error('Pilih target siswa terlebih dahulu.');
                     this.isLoading = true;
                     try {
                         const response = await fetch(`{{ route('admin.pembayaran.store') }}`, {
@@ -928,26 +927,18 @@
                         });
                         if ((await response.json()).status === 'success') this.refreshToTab();
                     } catch (e) {
-                        Swal.fire('Error', 'Gagal menyimpan komponen tagihan.', 'error');
+                        AppSwal.error('Gagal menyimpan komponen tagihan.');
                     } finally {
                         this.isLoading = false;
                     }
                 },
 
                 async prosesPenagihanMassal() {
-                    const result = await Swal.fire({
-                        title: 'Jalankan Penagihan Massal?',
-                        text: "Sistem otomatis membuat row tagihan bulanan baru ke semua siswa aktif berdasarkan paket terdaftar.",
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonColor: '#f97316',
-                        confirmButtonText: 'Ya, Jalankan!',
-                        cancelButtonText: 'Batal',
-                        background: document.documentElement.classList.contains('dark') ?
-                            '#1f2937' : '#fff',
-                        color: document.documentElement.classList.contains('dark') ?
-                            '#fff' : '#000'
-                    });
+                    const result = await AppSwal.confirm(
+                        'Jalankan penagihan massal?',
+                        'Sistem akan membuat tagihan bulanan baru ke semua siswa aktif berdasarkan paket terdaftar.',
+                        'Ya, jalankan'
+                    );
 
                     if (result.isConfirmed) {
                         this.isLoading = true;
@@ -962,7 +953,7 @@
                                 });
                             if ((await response.json()).status === 'success') this.refreshToTab();
                         } catch (e) {
-                            Swal.fire('Error', 'Gagal memproses pembuatan otomatis.', 'error');
+                            AppSwal.error('Gagal memproses pembuatan otomatis.');
                         } finally {
                             this.isLoading = false;
                         }
@@ -974,7 +965,7 @@
                     const nama = item.siswa_names;
                     const noHp = item.no_hp;
                 
-                    if (!noHp || noHp === 'N/A') return Swal.fire('Error', 'No HP tidak valid', 'error');
+                    if (!noHp || noHp === 'N/A') return AppSwal.error('No HP tidak valid.');
                 
                     const now = new Date();
                     const bulan = now.toLocaleString('id-ID', {
@@ -1008,7 +999,8 @@
                         `Terima kasih.\n` +
                         `E-Ling Course`;
                 
-                    window.open(`https://wa.me/${noHp}?text=${encodeURIComponent(text)}`, '_blank');
+                    const waTarget = String(noHp).replace(/\D/g, '');
+                    window.open(`https://wa.me/${waTarget}?text=${encodeURIComponent(text)}`, '_blank');
                 
                     this.isLoading = true;
                     try {
@@ -1109,7 +1101,7 @@
                                 });
                             if ((await response.json()).status === 'success') this.refreshToTab();
                         } catch (e) {
-                            Swal.fire('Error', 'Gagal mencatat data transaksi kas masuk.', 'error');
+                            AppSwal.error('Gagal mencatat data transaksi kas masuk.');
                         } finally {
                             this.isLoading = false;
                         }
@@ -1117,19 +1109,11 @@
                 },
 
                 async ubahKeLunas(item) {
-                    const result = await Swal.fire({
-                        title: 'Ubah Ke Lunas?',
-                        text: "Seluruh row status komponen tagihan dari keluarga ini langsung diselesaikan menjadi Lunas penuh.",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#10b981',
-                        confirmButtonText: 'Ya, Set Lunas!',
-                        cancelButtonText: 'Batal',
-                        background: document.documentElement.classList.contains('dark') ?
-                            '#1f2937' : '#fff',
-                        color: document.documentElement.classList.contains('dark') ?
-                            '#fff' : '#000'
-                    });
+                    const result = await AppSwal.confirm(
+                        'Ubah ke lunas?',
+                        'Seluruh row status komponen tagihan dari keluarga ini akan langsung diselesaikan menjadi lunas penuh.',
+                        'Ya, set lunas'
+                    );
 
                     if (result.isConfirmed) {
                         this.isLoading = true;
@@ -1144,8 +1128,7 @@
                                 });
                             if ((await response.json()).status === 'success') this.refreshToTab();
                         } catch (e) {
-                            Swal.fire('Error', 'Gagal memproses pembaruan status lunas massal.',
-                                'error');
+                            AppSwal.error('Gagal memproses pembaruan status lunas massal.');
                         } finally {
                             this.isLoading = false;
                         }
@@ -1183,8 +1166,7 @@
 
                 async simpanDiskon() {
                     if (!this.diskonForm.is_universal && !this.diskonForm.no_hp) {
-                        return Swal.fire('Peringatan', 'Silakan pilih nomor HP keluarga target!',
-                            'warning');
+                        return AppSwal.error('Silakan pilih nomor HP keluarga target.');
                     }
                     this.isLoading = true;
 
@@ -1210,7 +1192,7 @@
                         });
                         if ((await response.json()).status === 'success') this.refreshToTab();
                     } catch (e) {
-                        Swal.fire('Error', 'Gagal memproses data pembaruan diskon.', 'error');
+                        AppSwal.error('Gagal memproses data pembaruan diskon.');
                     } finally {
                         this.isLoading = false;
                     }
@@ -1230,26 +1212,18 @@
                         });
                         if ((await response.json()).status === 'success') this.refreshToTab();
                     } catch (e) {
-                        Swal.fire('Error', 'Gagal merestore status potongan diskon.', 'error');
+                        AppSwal.error('Gagal merestore status potongan diskon.');
                     } finally {
                         this.isLoading = false;
                     }
                 },
 
                 async lunaskanSemua() {
-                    const result = await Swal.fire({
-                        title: 'Selesaikan Semua Tunggakan?',
-                        text: "Peringatan: Seluruh data tagihan tanpa terkecuali akan diselesaikan penuh dan berstatus Lunas.",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#059669',
-                        confirmButtonText: 'Ya, Selesaikan!',
-                        cancelButtonText: 'Batal',
-                        background: document.documentElement.classList.contains('dark') ?
-                            '#1f2937' : '#fff',
-                        color: document.documentElement.classList.contains('dark') ?
-                            '#fff' : '#000'
-                    });
+                    const result = await AppSwal.confirm(
+                        'Selesaikan semua tunggakan?',
+                        'Seluruh data tagihan tanpa terkecuali akan diselesaikan penuh dan berstatus lunas.',
+                        'Ya, selesaikan'
+                    );
 
                     if (result.isConfirmed) {
                         this.isLoading = true;
@@ -1264,8 +1238,7 @@
                                 });
                             if ((await response.json()).status === 'success') this.refreshToTab();
                         } catch (e) {
-                            Swal.fire('Error', 'Gagal memproses penyelesaian massal data.',
-                                'error');
+                            AppSwal.error('Gagal memproses penyelesaian massal data.');
                         } finally {
                             this.isLoading = false;
                         }
@@ -1280,15 +1253,7 @@
                     });
                     window.location.href =
                         `{{ route('admin.pembayaran.export') }}?${params.toString()}`;
-                    Swal.mixin({
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 2500
-                    }).fire({
-                        icon: 'success',
-                        title: 'Sedang memproses kompilasi berkas PDF...'
-                    });
+                    AppSwal.toast('Sedang memproses kompilasi berkas PDF...', 'info');
                 },
 
                 openPaketModal() {
@@ -1323,7 +1288,7 @@
                         });
                         if ((await response.json()).status === 'success') this.refreshToTab();
                     } catch (e) {
-                        Swal.fire('Error', 'Gagal menyimpan aturan paket master.', 'error');
+                        AppSwal.error('Gagal menyimpan aturan paket master.');
                     } finally {
                         this.isLoading = false;
                     }
@@ -1352,7 +1317,7 @@
                         });
                         if ((await response.json()).status === 'success') this.refreshToTab();
                     } catch (e) {
-                        Swal.fire('Error', 'Gagal menghapus komponen paket.', 'error');
+                        AppSwal.error('Gagal menghapus komponen paket.');
                     } finally {
                         this.isLoading = false;
                     }
