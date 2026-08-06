@@ -158,8 +158,15 @@ function enhanceSelect(select) {
         }
     });
 
+    select.addEventListener('input', syncTrigger);
     select.addEventListener('change', syncTrigger);
-    document.addEventListener('click', event => { if (!wrapper.contains(event.target)) close(); });
+    document.addEventListener('click', event => {
+        // Alpine dapat mengubah value select secara programatis saat form Edit
+        // dibuka tanpa memicu event change. Sinkronkan label pada click yang sama.
+        syncTrigger();
+        if (!wrapper.contains(event.target)) close();
+    });
+    select.addEventListener('searchable-select:sync', syncTrigger);
     new MutationObserver(() => {
         syncTrigger();
         if (!panel.hidden) render(search.value);

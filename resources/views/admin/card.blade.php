@@ -397,7 +397,7 @@
                                 class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                 <option value="">-- Pilih Paket --</option>
                                 <template x-for="paket in pakets" :key="paket.id">
-                                    <option :value="paket.id" x-text="paket.nama_paket"></option>
+                                    <option :value="String(paket.id)" x-text="paket.nama_paket"></option>
                                 </template>
                             </select>
                         </div>
@@ -734,9 +734,14 @@
                             panggilan: siswa.panggilan || '',
                             kelas: siswa.kelas || '',
                             no_hp: siswa.no_hp || '',
-                            paket_pembayaran: siswa.paket_pembayaran || ''
+                            paket_pembayaran: siswa.paket_pembayaran == null ? '' : String(siswa.paket_pembayaran)
                         };
                         this.showSiswaModal = true;
+                        this.$nextTick(() => {
+                            this.$root.querySelectorAll('select').forEach(select =>
+                                select.dispatchEvent(new Event('searchable-select:sync'))
+                            );
+                        });
                         this.isLoadingJadwal = true;
                         const previousJadwals = this.allJadwals
                             .filter(j => Number(j.siswa_id) === Number(siswa.id));
