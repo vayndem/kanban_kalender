@@ -78,6 +78,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/admin/pembayaran/lunas-siswa/{id_siswa}', [PembayaranController::class, 'lunasPerSiswa'])->name('admin.pembayaran.lunasSiswa');
     Route::post('/admin/pembayaran/bayar-siswa/{id_siswa}', [PembayaranController::class, 'bayarPerSiswa'])->name('admin.pembayaran.bayarSiswa');
     Route::post('/admin/pembayaran/ke-lunas-massal/{id_siswa}', [PembayaranController::class, 'keLunasMassal'])->name('admin.pembayaran.keLunasMassal');
+    Route::get('/admin/pembayaran/keluarga/{no_hp}/detail', [PembayaranController::class, 'detailKeluarga'])->name('admin.pembayaran.detailKeluarga');
     Route::get('/admin/pembayaran/struk/{no_hp}', [PembayaranController::class, 'printStruk'])->name('admin.pembayaran.struk');
     Route::get('/admin/pembayaran/export', [PembayaranController::class, 'exportPdf'])->name('admin.pembayaran.export');
 

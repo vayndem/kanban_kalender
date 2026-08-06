@@ -159,6 +159,97 @@ class ScheduleAndPaymentTest extends TestCase
             ->assertOk();
     }
 
+    public function test_payment_family_detail_is_loaded_from_dedicated_endpoint(): void
+    {
+        $user = User::factory()->create();
+        $student = Siswa::factory()->create(['no_hp' => '+6281230000008']);
+
+        $first = Pembayaran::create([
+            'id_siswa' => $student->id,
+            'no_hp' => $student->no_hp,
+            'harga' => 100000,
+            'status' => 1,
+            'keterangan' => 'Tagihan A',
+            'total_sudah_dibayar' => 25000,
+        ]);
+
+        $second = Pembayaran::create([
+            'id_siswa' => $student->id,
+            'no_hp' => $student->no_hp,
+            'harga' => 50000,
+            'status' => 2,
+            'keterangan' => 'Tagihan B',
+            'total_sudah_dibayar' => 50000,
+            'tanggal_pembayaran' => now()->toDateString(),
+            'pembayaran_via' => 0,
+        ]);
+
+        PembayaranDetail::create([
+            'id_pembayaran' => $first->id,
+            'pembayaran' => 25000,
+            'keterangan' => 'Cicilan 1',
+        ]);
+
+        PembayaranDetail::create([
+            'id_pembayaran' => $second->id,
+            'pembayaran' => 50000,
+            'keterangan' => 'Pelunasan',
+        ]);
+
+        $response = $this->actingAs($user)->getJson(route('admin.pembayaran.detailKeluarga', [
+            'no_hp' => $student->no_hp,
+            'ids' => $first->id . ',' . $second->id,
+        ]));
+
+        $response->assertOk()->assertJsonPath('status', 'success');
+        $this->assertCount(2, $response->json('data.raw_items'));
+        $this->assertCount(2, $response->json('data.payment_details'));
+        $this->assertSame(150000, $response->json('data.total_harga'));
+        $this->assertSame(75000, $response->json('data.total_sudah_dibayar'));
+    }
+
+    public function test_penagihan_massal_skips_duplicate_invoices_for_same_period(): void
+    {
+        $user = User::factory()->create();
+        $student = Siswa::factory()->create([
+            'no_hp' => '+6281230000003',
+            'paket_pembayaran' => null,
+        ]);
+
+        $paket = \App\Models\Paket::create([
+            'nama_paket' => 'Paket A',
+            'harga' => 150000,
+            'pertemuan' => 4,
+        ]);
+
+        $student->update(['paket_pembayaran' => $paket->id]);
+
+        $this->actingAs($user)->postJson(route('admin.pembayaran.penagihanMassal'))->assertOk();
+        $this->actingAs($user)->postJson(route('admin.pembayaran.penagihanMassal'))->assertOk();
+
+        $bulanTahun = now()->translatedFormat('F Y');
+        $this->assertSame(1, Pembayaran::where('id_siswa', $student->id)
+            ->where('keterangan', "Tagihan Paket {$paket->nama_paket} - {$bulanTahun}")
+            ->count());
+    }
+
+    public function test_store_payment_invoice_forces_unpaid_status(): void
+    {
+        $user = User::factory()->create();
+        $student = Siswa::factory()->create(['no_hp' => '+6281230000004']);
+
+        $this->actingAs($user)->postJson(route('admin.pembayaran.store'), [
+            'id_siswa' => $student->id,
+            'harga' => 125000,
+            'keterangan' => 'Tagihan uji',
+            'status' => 2,
+        ])->assertOk();
+
+        $invoice = Pembayaran::where('id_siswa', $student->id)->latest('id')->first();
+        $this->assertSame(0, (int) $invoice->status);
+        $this->assertSame(0, (int) $invoice->total_sudah_dibayar);
+    }
+
     public function test_dashboard_renders_only_the_requested_tab_payload(): void
     {
         $user = User::factory()->create();
@@ -170,7 +261,7 @@ class ScheduleAndPaymentTest extends TestCase
         $students->assertOk()->assertSee('Data Master Siswa')->assertDontSee('Ringkasan Tagihan Siswa');
 
         $payments = $this->actingAs($user)->get(route('dashboard', ['tab' => 'pembayaran']));
-        $payments->assertOk()->assertSee('Ringkasan Tagihan Siswa')->assertDontSee('Data Master Siswa');
+        $payments->assertOk()->assertSee('Administrasi Pembayaran Siswa')->assertDontSee('Data Master Siswa');
 
         $this->assertLessThan(1_000_000, strlen($jadwal->getContent()));
         $this->assertLessThan(1_000_000, strlen($students->getContent()));

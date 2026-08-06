@@ -6,40 +6,71 @@
         <div>
             <h3 class="text-lg md:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <i class="fas fa-wallet text-emerald-500 animate-pulse"></i>
-                Ringkasan Tagihan Siswa
+                Administrasi Pembayaran Siswa
             </h3>
-            <p class="text-gray-500 dark:text-gray-400 mt-0.5 text-xs md:text-sm">Total terdaftar tunggakan: <span
-                    class="font-semibold text-emerald-600 dark:text-emerald-400" x-text="filteredSummaries.length"></span>
-                HP Keluarga</p>
+            <p class="text-gray-500 dark:text-gray-400 mt-0.5 text-xs md:text-sm">
+                Ringkasan keuangan ditampilkan per nomor HP keluarga untuk memudahkan penagihan, pelunasan, dan pencetakan bukti pembayaran.
+            </p>
         </div>
         <div class="flex flex-wrap gap-2 w-full lg:w-auto">
             <button @click="exportPdf()" :disabled="isLoading"
-                class="flex-1 lg:flex-none justify-center bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all flex items-center gap-2 shadow-sm active:scale-95">
+                class="btn-export flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-file-pdf"></i> <span class="hidden sm:inline">Export</span> PDF
             </button>
             <button @click="openDiskonManagerModal()" :disabled="isLoading"
-                class="flex-1 lg:flex-none justify-center bg-purple-500 hover:bg-purple-600 disabled:opacity-50 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all flex items-center gap-2 shadow-sm active:scale-95">
+                class="btn-accent flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-tags"></i> Kelola Diskon
             </button>
             <button @click="prosesPenagihanMassal()" :disabled="isLoading"
-                class="flex-1 lg:flex-none justify-center bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all flex items-center gap-2 shadow-sm active:scale-95">
+                class="btn-warning flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas" :class="isLoading ? 'fa-spinner fa-spin' : 'fa-file-invoice-dollar'"></i>
                 <span>Penagihan Massal</span>
             </button>
             <button @click="openPaketModal()" :disabled="isLoading"
-                class="flex-1 lg:flex-none justify-center bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all flex items-center gap-2 shadow-sm active:scale-95">
+                class="btn-accent flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-box"></i> <span class="hidden sm:inline">Kelola</span> Paket
             </button>
             <button @click="openAddPembayaran()" :disabled="isLoading"
-                class="flex-1 lg:flex-none justify-center bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all flex items-center gap-2 shadow-sm active:scale-95">
+                class="btn-primary flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-plus"></i> Tagihan
             </button>
             <button @click="lunaskanSemua()" :disabled="isLoading"
-                class="w-full lg:w-auto justify-center bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all flex items-center gap-2 shadow-sm active:scale-95">
+                class="btn-sacred w-full lg:w-auto text-xs md:text-sm">
                 <i class="fas" :class="isLoading ? 'fa-spinner fa-spin' : 'fa-check-double'"></i>
                 <span>Selesaikan Seluruh Status</span>
             </button>
         </div>
+    </div>
+
+    <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        <div class="rounded-xl border border-emerald-200/70 dark:border-emerald-900/50 bg-emerald-50/70 dark:bg-emerald-950/20 p-4">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Keluarga Ditampilkan</p>
+            <p class="mt-2 text-2xl font-black text-emerald-800 dark:text-emerald-200" x-text="summaryStats.totalFamilies"></p>
+            <p class="mt-1 text-[11px] text-emerald-700/80 dark:text-emerald-300/80">Sesuai filter aktif saat ini</p>
+        </div>
+        <div class="rounded-xl border border-red-200/70 dark:border-red-900/50 bg-red-50/70 dark:bg-red-950/20 p-4">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-red-700 dark:text-red-300">Total Tagihan Bersih</p>
+            <p class="mt-2 text-lg font-black text-red-800 dark:text-red-200" x-text="formatCurrency(summaryStats.totalNet)"></p>
+            <p class="mt-1 text-[11px] text-red-700/80 dark:text-red-300/80">Akumulasi kewajiban setelah diskon</p>
+        </div>
+        <div class="rounded-xl border border-blue-200/70 dark:border-blue-900/50 bg-blue-50/70 dark:bg-blue-950/20 p-4">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">Dana Sudah Tercatat</p>
+            <p class="mt-2 text-lg font-black text-blue-800 dark:text-blue-200" x-text="formatCurrency(summaryStats.totalPaid)"></p>
+            <p class="mt-1 text-[11px] text-blue-700/80 dark:text-blue-300/80">Nominal pembayaran yang sudah masuk</p>
+        </div>
+        <div class="rounded-xl border border-amber-200/70 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-950/20 p-4">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">Sisa Piutang Aktif</p>
+            <p class="mt-2 text-lg font-black text-amber-800 dark:text-amber-200" x-text="formatCurrency(summaryStats.totalRemaining)"></p>
+            <p class="mt-1 text-[11px] text-amber-700/80 dark:text-amber-300/80">Nilai yang belum terlunasi</p>
+        </div>
+    </div>
+
+    <div class="mb-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 px-4 py-3 text-xs md:text-sm text-slate-600 dark:text-slate-300 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <div class="flex items-start gap-2">
+            <i class="fas fa-shield-alt text-emerald-500 mt-0.5"></i>
+            <span>Mode minimum formal aktif: tampilan dan validasi diperketat tanpa mengubah struktur database maupun histori lama.</span>
+        </div>
+        <span class="font-semibold text-slate-500 dark:text-slate-400">Status default menampilkan tagihan yang masih perlu ditindaklanjuti.</span>
     </div>
 
     <div
@@ -82,12 +113,6 @@
             <div
                 class="flex flex-wrap items-center gap-2 bg-white dark:bg-gray-800 p-1.5 rounded-lg border dark:border-gray-600">
                 <label
-                    class="flex-1 inline-flex items-center justify-center text-xs dark:text-gray-300 cursor-pointer px-2 py-1 rounded md:hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">
-                    <input type="radio" x-model="filterStatus" value="all"
-                        class="text-emerald-500 focus:ring-0 w-3 h-3">
-                    <span class="ml-1.5 font-medium">Semua</span>
-                </label>
-                <label
                     class="flex-1 inline-flex items-center justify-center text-xs text-red-500 font-bold cursor-pointer px-2 py-1 rounded md:hover:bg-red-50 dark:hover:bg-red-950/20 transition-all">
                     <input type="radio" x-model="filterStatus" value="0"
                         class="text-red-500 focus:ring-0 w-3 h-3">
@@ -121,9 +146,9 @@
                     <th class="px-6 py-4 text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">No
                         HP / Anggota Keluarga</th>
                     <th class="px-6 py-4 text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
-                        Tagihan Akhir</th>
+                        Status & Posisi Pembayaran</th>
                     <th class="px-6 py-4 text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
-                        Keterangan Akumulasi</th>
+                        Ringkasan Administratif</th>
                     <th
                         class="px-6 py-4 text-center text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
                         Aksi</th>
@@ -146,34 +171,40 @@
                                         'bg-orange-50 dark:bg-orange-900/20 text-orange-600': item.status == 1,
                                         'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600': item.status == 2
                                     }">
-                                    Rp <span x-text="new Intl.NumberFormat('id-ID').format(item.total_akhir)"></span>
+                                    <span x-text="item.status_label"></span> - Rp <span x-text="new Intl.NumberFormat('id-ID').format(item.total_akhir)"></span>
                                 </span>
                                 <template x-if="item.nominal_diskon > 0">
                                     <div class="flex items-center gap-1 mt-1 text-[10px] text-red-500 font-bold">
                                         <i class="fas fa-percent text-[9px]"></i>
                                         <span
-                                            x-text="'Diskon: Rp ' + new Intl.NumberFormat('id-ID').format(item.nominal_diskon)"></span>
+                                            x-text="'Potongan aktif: ' + formatCurrency(item.nominal_diskon)"></span>
                                     </div>
                                 </template>
                                 <span class="text-[10px] text-gray-400 mt-1 font-medium"
-                                    x-text="'Sudah Dibayar: Rp ' + new Intl.NumberFormat('id-ID').format(item.total_sudah_dibayar)"></span>
+                                    x-text="'Sudah diterima: ' + formatCurrency(item.total_sudah_dibayar)"></span>
+                                <span class="text-[10px] text-gray-400 mt-1 font-medium"
+                                    x-text="'Sisa kewajiban: ' + formatCurrency(item.remaining_amount)"></span>
                             </div>
                         </td>
                         <td class="px-6 py-4 max-w-xs">
-                            <p class="text-xs text-gray-600 dark:text-gray-400 truncate font-medium"
-                                x-text="item.gabungan_keterangan || '-'"></p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 truncate font-semibold"
+                                x-text="item.gabungan_keterangan || 'Belum ada keterangan tagihan.'"></p>
                             <template x-if="item.status != 2">
-                                <span class="text-[9px] text-gray-400 font-medium block mt-1"
-                                    x-text="item.tanggal_format"></span>
+                                <div class="mt-1 space-y-0.5">
+                                    <span class="text-[9px] text-gray-400 font-medium block"
+                                        x-text="'Periode input: ' + item.tanggal_format"></span>
+                                    <span class="text-[9px] text-gray-400 font-medium block"
+                                        x-text="'Status administrasi: ' + item.status_label"></span>
+                                </div>
                             </template>
                             <template x-if="item.status == 2">
                                 <div class="mt-1 flex flex-col gap-0.5">
                                     <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-                                        <i class="fas fa-check-circle"></i> Lunas: <span
+                                        <i class="fas fa-check-circle"></i> Pelunasan tercatat: <span
                                             x-text="item.tanggal_pembayaran"></span>
                                     </span>
                                     <span class="text-[9px] text-gray-400 font-medium">
-                                        Metode: <span
+                                        Metode penerimaan: <span
                                             x-text="item.pembayaran_via == 1 ? 'Transfer Bank' : 'Cash/Tunai'"></span>
                                     </span>
                                 </div>
@@ -181,29 +212,29 @@
                         </td>
                         <td class="px-6 py-4 text-center space-x-1 whitespace-nowrap">
                             <button @click="openDetailModal(item)"
-                                class="text-blue-500 hover:text-blue-600 hover:underline text-xs font-bold uppercase tracking-wider mr-2 transition-all">Detail</button>
+                                class="text-blue-500 hover:text-blue-600 hover:underline text-xs font-bold uppercase tracking-wider mr-2 transition-all">Lihat Detail</button>
                             <template x-if="item.status == 0">
                                 <button @click="chatWhatsApp(item)" :disabled="isLoading"
-                                    class="bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-md text-[11px] font-bold transition-all inline-flex items-center gap-1 shadow-sm active:scale-95">
-                                    <i class="fab fa-whatsapp"></i> Chat WA
+                                    class="btn-success px-3 py-1.5 text-[11px] rounded-md">
+                                    <i class="fab fa-whatsapp"></i> Kirim WA
                                 </button>
                             </template>
                             <template x-if="item.status == 0 || item.status == 1">
                                 <div class="inline-flex gap-1">
                                     <button @click="prosesBayarSiswa(item)" :disabled="isLoading"
-                                        class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-md text-[11px] font-bold transition-all inline-flex items-center gap-1 shadow-sm active:scale-95">
-                                        <i class="fas fa-hand-holding-usd"></i> Bayar
+                                        class="btn-primary px-3 py-1.5 text-[11px] rounded-md">
+                                        <i class="fas fa-hand-holding-usd"></i> Catat Bayar
                                     </button>
                                     <button @click="ubahKeLunas(item)" :disabled="isLoading"
-                                        class="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-md text-[11px] font-bold transition-all inline-flex items-center gap-1 shadow-sm active:scale-95">
-                                        <i class="fas fa-check"></i> Lunas
+                                        class="btn-sacred px-3 py-1.5 text-[11px] rounded-md">
+                                        <i class="fas fa-check"></i> Set Lunas
                                     </button>
                                 </div>
                             </template>
                             <template x-if="item.status == 2">
-                                <a :href="'/admin/pembayaran/struk/' + encodeURIComponent(item.no_hp)" target="_blank"
-                                    class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-md text-[11px] font-bold transition-all inline-flex items-center gap-1 shadow-sm active:scale-95">
-                                    <i class="fas fa-print"></i> Cetak Struk
+                                <a :href="buildStrukUrl(item)" target="_blank"
+                                    class="btn-accent px-3 py-1.5 text-[11px] rounded-md">
+                                    <i class="fas fa-print"></i> Cetak Bukti
                                 </a>
                             </template>
                         </td>
@@ -245,18 +276,20 @@
                 <div
                     class="text-xs space-y-1 bg-white dark:bg-gray-800 p-2.5 rounded-lg border dark:border-gray-700 font-medium text-gray-600 dark:text-gray-400">
                     <p class="truncate"><span
-                            class="text-gray-400 dark:text-gray-500 font-bold text-[10px] uppercase block">Akumulasi:</span>
-                        <span x-text="item.gabungan_keterangan || '-'"></span>
+                            class="text-gray-400 dark:text-gray-500 font-bold text-[10px] uppercase block">Administrasi:</span>
+                        <span x-text="item.gabungan_keterangan || 'Belum ada keterangan tagihan.'"></span>
                     </p>
                     <template x-if="item.nominal_diskon > 0">
-                        <p class="text-red-500 font-bold text-[11px] pt-1">Diskon Aktif: Rp <span
-                                x-text="new Intl.NumberFormat('id-ID').format(item.nominal_diskon)"></span></p>
+                        <p class="text-red-500 font-bold text-[11px] pt-1">Potongan Aktif: <span
+                                x-text="formatCurrency(item.nominal_diskon)"></span></p>
                     </template>
-                    <div class="pt-1 border-t dark:border-gray-700 mt-1 flex justify-between text-[10px]">
+                    <div class="pt-1 border-t dark:border-gray-700 mt-1 space-y-1 text-[10px]">
+                        <span class="block"
+                            x-text="'Sudah diterima: ' + formatCurrency(item.total_sudah_dibayar)"></span>
+                        <span class="block"
+                            x-text="'Sisa kewajiban: ' + formatCurrency(item.remaining_amount)"></span>
                         <span
-                            x-text="'Paid: Rp ' + new Intl.NumberFormat('id-ID').format(item.total_sudah_dibayar)"></span>
-                        <span
-                            x-text="item.status == 2 ? 'Lunas: ' + item.tanggal_pembayaran : item.tanggal_format"></span>
+                            x-text="item.status == 2 ? 'Pelunasan: ' + item.tanggal_pembayaran : 'Periode input: ' + item.tanggal_format"></span>
                     </div>
                 </div>
                 <div class="flex gap-1.5 pt-1">
@@ -275,7 +308,7 @@
                             Lunas</button>
                     </template>
                     <template x-if="item.status == 2">
-                        <a :href="'/admin/pembayaran/struk/' + encodeURIComponent(item.no_hp)" target="_blank"
+                        <a :href="buildStrukUrl(item)" target="_blank"
                             class="flex-1 text-center bg-purple-600 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95"><i
                                 class="fas fa-print mr-1"></i>Struk</a>
                     </template>
@@ -303,6 +336,11 @@
             </div>
             <div
                 class="p-6 space-y-5 text-sm text-gray-800 dark:text-gray-200 overflow-y-auto max-h-[70vh] custom-scrollbar">
+                <div x-show="isLoadingDetail"
+                    class="rounded-xl border border-dashed border-emerald-300 dark:border-emerald-700 bg-emerald-50/70 dark:bg-emerald-950/20 px-4 py-5 text-center">
+                    <i class="fas fa-circle-notch fa-spin text-emerald-500 text-lg"></i>
+                    <p class="mt-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300">Memuat rincian pembayaran keluarga...</p>
+                </div>
                 <div class="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border dark:border-gray-700">
                     <span class="text-xs text-gray-400 font-bold uppercase block tracking-wider">Grup Nomor HP
                         Utama</span>
@@ -327,6 +365,12 @@
                                     x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(raw.harga)"></span>
                             </div>
                         </template>
+                        <template x-if="!isLoadingDetail && (!activeDetail.raw_items || activeDetail.raw_items.length === 0)">
+                            <div
+                                class="col-span-full text-xs text-gray-400 italic text-center py-6 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                                Belum ada item tagihan yang bisa ditampilkan.
+                            </div>
+                        </template>
                     </div>
                 </div>
                 <div class="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-xl space-y-2 border dark:border-gray-700">
@@ -335,15 +379,25 @@
                         <span class="font-mono text-gray-900 dark:text-white"
                             x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(activeDetail.total_harga)"></span>
                     </div>
+                    <div class="flex justify-between items-center text-xs md:text-sm font-semibold">
+                        <span>Total Sudah Diterima:</span>
+                        <span class="font-mono text-gray-900 dark:text-white"
+                            x-text="formatCurrency(activeDetail.total_sudah_dibayar || 0)"></span>
+                    </div>
                     <template x-if="activeDetail.nominal_diskon > 0">
                         <div
                             class="flex justify-between items-center text-red-500 font-bold text-xs border-t dark:border-gray-700 pt-2">
                             <span
-                                x-text="'Kalkulasi Potongan Potongan (' + activeDetail.keterangan_diskon + '):'"></span>
+                                x-text="'Potongan berlaku (' + activeDetail.keterangan_diskon + '):'"></span>
                             <span class="font-mono"
                                 x-text="'- Rp ' + new Intl.NumberFormat('id-ID').format(activeDetail.nominal_diskon)"></span>
                         </div>
                     </template>
+                    <div class="flex justify-between items-center text-xs md:text-sm font-semibold">
+                        <span>Sisa Kewajiban:</span>
+                        <span class="font-mono text-amber-600 dark:text-amber-400"
+                            x-text="formatCurrency(Math.max((activeDetail.total_akhir || 0) - (activeDetail.total_sudah_dibayar || 0), 0))"></span>
+                    </div>
                     <div
                         class="border-t-2 border-dashed dark:border-gray-600 pt-2 flex justify-between items-center font-black text-sm md:text-base text-blue-600 dark:text-blue-400">
                         <span>Total Bersih Wajib Bayar:</span>
@@ -709,6 +763,7 @@
                 siswaSearchModal: '',
                 hpSearchModal: '',
                 isLoading: false,
+                isLoadingDetail: false,
                 activeDetail: {},
                 form: {
                     id_siswa: '',
@@ -746,8 +801,7 @@
                                 .filterSearch.toLowerCase()));
                         const matchesBulan = this.filterBulan === 'all' || item.bulan ===
                             this.filterBulan;
-                        const matchesStatus = this.filterStatus === 'all' || item.status
-                            .toString() === this.filterStatus;
+                        const matchesStatus = item.status.toString() === this.filterStatus;
                         return matchesSearch && matchesBulan && matchesStatus;
                     });
 
@@ -783,15 +837,6 @@
                             .total_sudah_dibayar || 0);
                         grouped[hpKey].gabungan_keterangan.push(item.keterangan);
                         grouped[hpKey].raw_items.push(item);
-
-                        if (item.details && Array.isArray(item.details)) {
-                            item.details.forEach(d => {
-                                if (!grouped[hpKey].payment_details.some(existing =>
-                                        existing.id === d.id)) {
-                                    grouped[hpKey].payment_details.push(d);
-                                }
-                            });
-                        }
                     });
 
                     const universalDiskonObj = this.diskons.find(d => d.no_hp === null);
@@ -821,6 +866,7 @@
 
                         let totalAkhir = g.total_harga - totalNominalDiskon;
                         if (totalAkhir < 0) totalAkhir = 0;
+                        const remainingAmount = Math.max(totalAkhir - g.total_sudah_dibayar, 0);
 
                         return {
                             ...g,
@@ -831,9 +877,29 @@
                             nominal_diskon: totalNominalDiskon,
                             keterangan_diskon: gabunganKetDiskon.join(' + ') ||
                                 'Tanpa Potongan',
-                            total_akhir: totalAkhir
+                            total_akhir: totalAkhir,
+                            remaining_amount: remainingAmount
                         };
                     });
+                },
+
+                get summaryStats() {
+                    return this.filteredSummaries.reduce((carry, item) => {
+                        carry.totalFamilies += 1;
+                        carry.totalNet += Number(item.total_akhir || 0);
+                        carry.totalPaid += Number(item.total_sudah_dibayar || 0);
+                        carry.totalRemaining += Number(item.remaining_amount || 0);
+                        return carry;
+                    }, {
+                        totalFamilies: 0,
+                        totalNet: 0,
+                        totalPaid: 0,
+                        totalRemaining: 0
+                    });
+                },
+
+                formatCurrency(amount) {
+                    return 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(amount || 0));
                 },
 
                 get filteredSiswasForModal() {
@@ -886,9 +952,55 @@
                     return families[hp] ? families[hp].join(', ') : 'Anggota tidak terdeteksi';
                 },
 
-                openDetailModal(item) {
-                    this.activeDetail = item;
+                async openDetailModal(item) {
+                    this.activeDetail = {
+                        ...item,
+                        raw_items: [],
+                        payment_details: []
+                    };
                     this.showDetailModal = true;
+                    this.isLoadingDetail = true;
+
+                    try {
+                        const params = new URLSearchParams();
+                        const ids = (item.raw_items || []).map(row => row.id).filter(Boolean);
+                        if (ids.length) params.set('ids', ids.join(','));
+
+                        const response = await fetch(
+                            `/admin/pembayaran/keluarga/${encodeURIComponent(item.no_hp)}/detail?${params.toString()}`, {
+                                headers: {
+                                    'Accept': 'application/json'
+                                }
+                            });
+
+                        const payload = await response.json();
+                        if (!response.ok || payload.status !== 'success') {
+                            throw new Error(payload.message || 'Gagal mengambil rincian keluarga.');
+                        }
+
+                        this.activeDetail = {
+                            ...item,
+                            ...payload.data
+                        };
+                    } catch (error) {
+                        this.showDetailModal = false;
+                        AppSwal.error(error.message || 'Gagal memuat rincian pembayaran.');
+                    } finally {
+                        this.isLoadingDetail = false;
+                    }
+                },
+
+                buildStrukUrl(item) {
+                    const params = new URLSearchParams();
+                    const ids = (item.raw_items || []).map(row => row.id).filter(Boolean);
+                    if (ids.length) params.set('ids', ids.join(','));
+                    if (this.filterSearch) params.set('search', this.filterSearch);
+                    if (this.filterBulan) params.set('bulan', this.filterBulan);
+                    if (this.filterStatus) params.set('status', this.filterStatus);
+
+                    const query = params.toString();
+                    const base = `/admin/pembayaran/struk/${encodeURIComponent(item.no_hp)}`;
+                    return query ? `${base}?${query}` : base;
                 },
 
                 openAddPembayaran() {
@@ -914,6 +1026,17 @@
 
                 async simpanTagihan() {
                     if (!this.form.id_siswa) return AppSwal.error('Pilih target siswa terlebih dahulu.');
+                    if (!this.form.harga || Number(this.form.harga) <= 0) {
+                        return AppSwal.error('Nominal tagihan wajib lebih besar dari Rp 0.');
+                    }
+
+                    const confirmation = await AppSwal.confirm(
+                        'Buat tagihan baru?',
+                        'Sistem akan mencatat komponen tagihan baru untuk siswa yang dipilih. Pastikan nominal dan keterangan sudah benar.',
+                        'Ya, simpan tagihan'
+                    );
+                    if (!confirmation.isConfirmed) return;
+
                     this.isLoading = true;
                     try {
                         const response = await fetch(`{{ route('admin.pembayaran.store') }}`, {
@@ -936,7 +1059,7 @@
                 async prosesPenagihanMassal() {
                     const result = await AppSwal.confirm(
                         'Jalankan penagihan massal?',
-                        'Sistem akan membuat tagihan bulanan baru ke semua siswa aktif berdasarkan paket terdaftar.',
+                        'Sistem akan membuat tagihan bulanan baru ke semua siswa aktif berdasarkan paket yang terdaftar. Duplikasi periode yang sama akan dihindari.',
                         'Ya, jalankan'
                     );
 
@@ -986,17 +1109,17 @@
                         rincianTeks += `* Potongan Diskon : - Rp ${new Intl.NumberFormat('id-ID').format(item.nominal_diskon)} (${item.keterangan_diskon})\n`;
                     }
                 
-                    const text = `Reminder:\n` +
-                        `TAGIHAN BIMBEL "E-LING COURSE"\n\n` +
-                        `Anggota Keluarga Siswa : ${nama}\n` +
-                        `No HP : ${noHp}\n` +
+                    const text = `Pemberitahuan Administrasi Pembayaran\n` +
+                        `E-LING COURSE\n\n` +
+                        `Anggota keluarga siswa : ${nama}\n` +
+                        `Nomor HP : ${noHp}\n` +
                         `Periode : ${bulan}\n\n` +
-                        `Rincian Tagihan:\n` +
+                        `Rincian tagihan:\n` +
                         `${rincianTeks}\n` +
-                        `Total Tagihan Bersih : Rp ${total},--\n\n` +
-                        `Pembayaran paling lambat : 10 ${namaBulan} ${tahun}\n\n` +
-                        `Silakan konfirmasi jika sudah melakukan pembayaran.\n\n` +
-                        `Terima kasih.\n` +
+                        `Total kewajiban bersih : Rp ${total},--\n\n` +
+                        `Mohon penyelesaian pembayaran paling lambat 10 ${namaBulan} ${tahun}.\n` +
+                        `Silakan konfirmasi kepada admin apabila pembayaran sudah dilakukan.\n\n` +
+                        `Terima kasih atas perhatian dan kerja samanya.\n` +
                         `E-Ling Course`;
                 
                     const waTarget = String(noHp).replace(/\D/g, '');
@@ -1022,25 +1145,28 @@
 
                 async prosesBayarSiswa(item) {
                     const sisaTagihan = item.total_akhir - item.total_sudah_dibayar;
+                    if (sisaTagihan <= 0) {
+                        return AppSwal.error('Tagihan ini sudah tidak memiliki sisa kewajiban.');
+                    }
                     const isDark = document.documentElement.classList.contains('dark');
 
                     const {
                         value: formValues
                     } = await Swal.fire({
-                        title: 'Form Pencatatan Kas Masuk',
+                        title: 'Pencatatan Penerimaan Pembayaran',
                         html: `
                             <div style="text-align: left; font-family: inherit;" class="space-y-4">
                                 <div style="background-color: ${isDark ? '#374151' : '#f3f4f6'}; border: 1px solid ${isDark ? '#4b5563' : '#e5e7eb'};" class="p-3.5 rounded-xl">
-                                    <p style="font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Sisa Kekurangan</p>
+                                    <p style="font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Sisa Kewajiban</p>
                                     <p style="font-size: 18px; font-weight: 900; color: #10b981; margin-top: 2px;">Rp ${new Intl.NumberFormat('id-ID').format(sisaTagihan)}</p>
                                 </div>
                                 <div>
-                                    <label style="display: block; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Nominal Uang Setoran (Rp)</label>
+                                    <label style="display: block; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Nominal Pembayaran Diterima (Rp)</label>
                                     <input id="swal-nominal" type="number" style="width: 100%; border-radius: 12px; padding: 10px 14px; font-size: 14px; background-color: ${isDark ? '#1f2937' : '#fff'}; border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'}; color: ${isDark ? '#fff' : '#000'}; focus:outline-none;" value="${sisaTagihan > 0 ? sisaTagihan : ''}">
                                 </div>
                                 <div>
                                     <label style="display: block; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Keterangan Transaksi</label>
-                                    <input id="swal-keterangan" type="text" style="width: 100%; border-radius: 12px; padding: 10px 14px; font-size: 14px; background-color: ${isDark ? '#1f2937' : '#fff'}; border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'}; color: ${isDark ? '#fff' : '#000'}; focus:outline-none;" value="Bayar Angsuran / Cicilan">
+                                    <input id="swal-keterangan" type="text" style="width: 100%; border-radius: 12px; padding: 10px 14px; font-size: 14px; background-color: ${isDark ? '#1f2937' : '#fff'}; border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'}; color: ${isDark ? '#fff' : '#000'}; focus:outline-none;" value="Pembayaran cicilan / pelunasan">
                                 </div>
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
@@ -1058,7 +1184,7 @@
                             </div>
                         `,
                         showCancelButton: true,
-                        confirmButtonText: '<i class="fas fa-save mr-1.5"></i> Simpan Setoran',
+                        confirmButtonText: '<i class="fas fa-save mr-1.5"></i> Simpan Penerimaan',
                         cancelButtonText: 'Batal',
                         confirmButtonColor: '#2563eb',
                         cancelButtonColor: '#4b5563',
@@ -1111,7 +1237,7 @@
                 async ubahKeLunas(item) {
                     const result = await AppSwal.confirm(
                         'Ubah ke lunas?',
-                        'Seluruh row status komponen tagihan dari keluarga ini akan langsung diselesaikan menjadi lunas penuh.',
+                        'Seluruh komponen tagihan dari keluarga ini akan ditutup menjadi lunas penuh. Jika masih ada sisa, sistem akan menambahkan pelunasan otomatis dengan keterangan "Selesai sistem".',
                         'Ya, set lunas'
                     );
 
@@ -1221,7 +1347,7 @@
                 async lunaskanSemua() {
                     const result = await AppSwal.confirm(
                         'Selesaikan semua tunggakan?',
-                        'Seluruh data tagihan tanpa terkecuali akan diselesaikan penuh dan berstatus lunas.',
+                        'Seluruh data tagihan aktif akan ditutup menjadi lunas penuh. Jika masih ada sisa, sistem akan menambahkan pelunasan otomatis dengan keterangan "Selesai sistem".',
                         'Ya, selesaikan'
                     );
 

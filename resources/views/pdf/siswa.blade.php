@@ -19,6 +19,45 @@
             background: #fff;
         }
 
+        .brand-header {
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 14px;
+            background: #ffffff;
+        }
+
+        .brand-strip {
+            height: 10px;
+            background: #1d4ed8;
+            border-bottom: 4px solid #f97316;
+        }
+
+        .brand-body {
+            padding: 12px 14px 10px;
+        }
+
+        .brand-kicker {
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #f97316;
+            margin-bottom: 4px;
+        }
+
+        .brand-name {
+            font-size: 17px;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        .brand-subtitle {
+            font-size: 9px;
+            color: #64748b;
+            margin-top: 3px;
+        }
+
         .page-header {
             border-bottom: 2px solid #2563eb;
             padding-bottom: 10px;
@@ -78,10 +117,6 @@
 
         tbody tr:nth-child(even) {
             background: #f8fafc;
-        }
-
-        tbody tr:nth-child(odd) {
-            background: #ffffff;
         }
 
         tbody td {
@@ -189,6 +224,15 @@
 
 <body>
 
+    <div class="brand-header">
+        <div class="brand-strip"></div>
+        <div class="brand-body">
+            <div class="brand-kicker">Brand Report</div>
+            <div class="brand-name">E-Ling Course</div>
+            <div class="brand-subtitle">Dokumen master untuk data siswa, filter, dan relasi jadwal aktif.</div>
+        </div>
+    </div>
+
     <div class="page-header">
         <h1>Data Master Siswa</h1>
         <div class="meta">Diekspor pada: {{ $exportedAt }}</div>
@@ -214,18 +258,14 @@
                 @foreach ($siswas as $i => $siswa)
                     <tr>
                         <td class="no-col">{{ $i + 1 }}</td>
-
                         <td class="nama-col">
                             <div class="nama-main">{{ $siswa->name }}</div>
                             @if ($siswa->panggilan)
                                 <div class="nama-panggilan">({{ $siswa->panggilan }})</div>
                             @endif
                         </td>
-
                         <td class="kelas-col">{{ $siswa->kelas ?: '-' }}</td>
-
                         <td class="hp-col">{{ $siswa->no_hp ?: '-' }}</td>
-
                         <td class="paket-col">
                             @if ($siswa->paket)
                                 <span class="paket-badge">{{ $siswa->paket->nama_paket }}</span>
@@ -238,22 +278,19 @@
                                 <span style="color:#d1d5db;">-</span>
                             @endif
                         </td>
-
                         <td class="jadwal-col">
                             @forelse($siswa->jadwals as $jadwal)
                                 <div class="jadwal-item">
-                                    <div class="jadwal-mapel">
-                                        {{ $jadwal->mataPelajaran?->name ?? 'N/A' }}
-                                    </div>
+                                    <div class="jadwal-mapel">{{ $jadwal->mataPelajaran?->name ?? 'N/A' }}</div>
                                     <div class="jadwal-detail">
                                         {{ ucfirst($jadwal->hari?->name ?? ($jadwal->hari?->nama ?? '-')) }}
-                                        •
+                                        -
                                         {{ $jadwal->sesi?->name ?? ($jadwal->sesi?->nama_sesi ?? '-') }}
                                         @if ($jadwal->sesi?->start_time && $jadwal->sesi?->end_time)
-                                            ({{ \Carbon\Carbon::parse($jadwal->sesi->start_time)->format('H:i') }}–{{ \Carbon\Carbon::parse($jadwal->sesi->end_time)->format('H:i') }})
+                                            ({{ \Carbon\Carbon::parse($jadwal->sesi->start_time)->format('H:i') }}-{{ \Carbon\Carbon::parse($jadwal->sesi->end_time)->format('H:i') }})
                                         @endif
-                                        • {{ $jadwal->guru?->name ?? '-' }}
-                                        • {{ $jadwal->ruang?->name ?? '-' }}
+                                        - {{ $jadwal->guru?->name ?? '-' }}
+                                        - {{ $jadwal->ruang?->name ?? '-' }}
                                     </div>
                                 </div>
                             @empty
@@ -267,7 +304,7 @@
     @endif
 
     <div class="page-footer">
-        <span>Sistem Manajemen Kelas — PT. Muliaoffset Packindo</span>
+        <span>Sistem Manajemen Kelas - E-Ling Course</span>
         <span>{{ $exportedAt }}</span>
     </div>
 

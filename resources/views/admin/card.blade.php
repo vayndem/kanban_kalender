@@ -182,7 +182,7 @@
                 Pilih Semua yang Tampil
             </label>
             <button type="button" @click="exportPdf()"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm">
+                class="btn-export text-sm">
                 <i class="fas fa-file-pdf"></i> Export PDF <span x-show="hasActiveFilter"
                     class="text-[10px] bg-red-500 px-1.5 py-0.5 rounded"
                     x-text="'(' + filteredSiswa.length + ')'"></span>
@@ -300,12 +300,12 @@
                                     <template x-if="viewMode === 'aktif'">
                                         <div class="flex gap-1">
                                             <button type="button" @click.stop="openEdit(siswa)"
-                                                class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                                                class="icon-action-primary"
                                                 title="Edit">
                                                 <i class="fas fa-pen-to-square"></i>
                                             </button>
                                             <button type="button" @click.stop="hapusSiswa(siswa.id)"
-                                                class="p-2 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg transition-colors"
+                                                class="icon-action-warning"
                                                 title="Arsipkan">
                                                 <i class="fas fa-box-archive"></i>
                                             </button>
@@ -314,12 +314,12 @@
                                     <template x-if="viewMode === 'arsip'">
                                         <div class="flex gap-1">
                                             <button type="button" @click.stop="restoreSiswa(siswa.id)"
-                                                class="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors"
+                                                class="icon-action-success"
                                                 title="Pulihkan">
                                                 <i class="fas fa-rotate-left"></i>
                                             </button>
                                             <button type="button" @click.stop="hapusPermanen(siswa.id)"
-                                                class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                                class="icon-action-danger"
                                                 title="Hapus Permanen">
                                                 <i class="fas fa-trash-can"></i>
                                             </button>
@@ -404,9 +404,9 @@
                         <div
                             class="pt-4 flex justify-end gap-2 border-t border-gray-100 dark:border-gray-700 md:hidden">
                             <button type="button" @click="showSiswaModal = false"
-                                class="px-4 py-2 text-sm border rounded-lg dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
+                                class="btn-neutral text-sm">Batal</button>
                             <button type="submit"
-                                class="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-sm">Simpan</button>
+                                class="btn-primary text-sm">Simpan</button>
                         </div>
                     </div>
 
@@ -467,9 +467,9 @@
             <div
                 class="p-4 border-t dark:border-gray-700 justify-end gap-2 bg-gray-50 dark:bg-gray-900 shrink-0 hidden md:flex">
                 <button type="button" @click="showSiswaModal = false"
-                    class="px-4 py-2 text-sm border rounded-lg dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
+                    class="btn-neutral text-sm">Batal</button>
                 <button type="submit"
-                    class="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-sm">Simpan</button>
+                    class="btn-primary text-sm">Simpan</button>
             </div>
         </form>
     </div>

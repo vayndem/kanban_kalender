@@ -279,11 +279,11 @@
     <div
         class="px-6 py-5 bg-gray-50 dark:bg-gray-900/40 flex justify-end gap-3 mt-auto border-t border-gray-100 dark:border-gray-700 rounded-b-2xl">
         <button type="button" @click="currentForm = ''; formData = {}"
-            class="flex-1 sm:flex-none px-6 py-2.5 text-xs md:text-sm font-bold text-gray-600 bg-white border border-gray-300 rounded-xl shadow-sm hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 active:scale-95 transition-all">
+            class="btn-neutral flex-1 sm:flex-none text-xs md:text-sm">
             Batal
         </button>
         <button x-show="activeFormTab === 'input'" type="submit" id="saveNewDataButton"
-            class="flex-1 sm:flex-none px-7 py-2.5 text-xs md:text-sm font-bold text-white bg-green-600 border border-transparent rounded-xl shadow-md hover:bg-green-700 active:scale-95 transition-all flex items-center justify-center gap-2">
+            class="btn-success flex-1 sm:flex-none px-7 text-xs md:text-sm">
             <i class="fas fa-circle-check text-sm"></i>
             <span x-text="formData.id ? 'Simpan Perubahan' : 'Simpan Data Baru'"></span>
         </button>

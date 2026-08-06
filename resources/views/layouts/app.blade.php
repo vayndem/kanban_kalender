@@ -38,6 +38,8 @@
         <main>
             {{ $slot }}
         </main>
+
+        @include('layouts.admin-help')
     </div>
 
     <!-- TAMBAHKAN BARIS INI -->

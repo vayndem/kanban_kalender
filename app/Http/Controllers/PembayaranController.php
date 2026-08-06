@@ -21,12 +21,12 @@ class PembayaranController extends Controller
             'id_siswa' => 'required|exists:siswas,id',
             'harga' => 'required|integer',
             'keterangan' => 'nullable|string|max:255',
-            'status' => 'required|integer|in:0,1,2',
         ]);
 
         try {
             $siswa = Siswa::find($request->id_siswa);
             $validated['no_hp'] = $siswa->no_hp;
+            $validated['status'] = 0;
             $validated['total_sudah_dibayar'] = 0;
 
             $pembayaran = Pembayaran::create($validated);
@@ -57,7 +57,7 @@ class PembayaranController extends Controller
             'id_siswa' => 'required|exists:siswas,id',
             'harga' => 'required|integer',
             'keterangan' => 'nullable|string|max:255',
-            'status' => 'nullable|integer|in:0,1,2',
+            'status' => 'nullable|integer|in:0,1',
         ]);
 
         try {
@@ -263,11 +263,22 @@ class PembayaranController extends Controller
                 foreach ($columns as $col) {
                     if ($siswa->$col && isset($allPakets[$siswa->$col])) {
                         $pkt = $allPakets[$siswa->$col];
+                        $keterangan = "Tagihan Paket {$pkt->nama_paket} - {$bulanTahun}";
+
+                        $alreadyExists = Pembayaran::where('id_siswa', $siswa->id)
+                            ->where('no_hp', $siswa->no_hp)
+                            ->where('keterangan', $keterangan)
+                            ->exists();
+
+                        if ($alreadyExists) {
+                            continue;
+                        }
+
                         Pembayaran::create([
                             'id_siswa' => $siswa->id,
                             'no_hp' => $siswa->no_hp,
                             'harga' => $pkt->harga,
-                            'keterangan' => "Tagihan Paket {$pkt->nama_paket} - {$bulanTahun}",
+                            'keterangan' => $keterangan,
                             'status' => 0,
                             'total_sudah_dibayar' => 0
                         ]);
@@ -289,13 +300,43 @@ class PembayaranController extends Controller
 
     public function printStruk($no_hp)
     {
-        $pembayarans = Pembayaran::with(['siswa', 'details'])->where('no_hp', $no_hp)->where('status', 2)->get();
+        $query = Pembayaran::with(['siswa', 'details'])
+            ->where('no_hp', $no_hp)
+            ->where('status', 2);
+
+        $selectedIds = collect(explode(',', (string) request('ids')))
+            ->filter(fn ($id) => ctype_digit(trim($id)))
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        if ($selectedIds->isNotEmpty()) {
+            $query->whereIn('id', $selectedIds->all());
+        } else {
+            if (request()->filled('bulan') && request('bulan') !== 'all') {
+                $query->whereMonth('created_at', request('bulan'));
+            }
+
+            if (request()->filled('search')) {
+                $search = request('search');
+                $query->where(function ($q) use ($search) {
+                    $q->whereHas('siswa', function ($s) use ($search) {
+                        $s->where('name', 'like', "%$search%");
+                    })->orWhere('keterangan', 'like', "%$search%")
+                        ->orWhere('no_hp', 'like', "%$search%");
+                });
+            }
+        }
+
+        $pembayarans = $query->orderBy('created_at')->get();
         if ($pembayarans->isEmpty()) {
             abort(404, 'Data lunas tidak ditemukan.');
         }
 
         $diskon = Diskon::where('no_hp', $no_hp)->first();
+        $diskonUniversal = Diskon::whereNull('no_hp')->first();
         $nominalDiskon = $diskon ? (int) $diskon->diskon : 0;
+        $nominalDiskonUniversal = $diskonUniversal ? (int) $diskonUniversal->diskon : 0;
+        $totalNominalDiskon = $nominalDiskon + $nominalDiskonUniversal;
         $logoPath = storage_path('app/public/Logo.png');
         $logoDataUri = null;
 
@@ -311,12 +352,129 @@ class PembayaranController extends Controller
         }
 
         try {
-            return $this->renderStrukPdfResponse($pembayarans, $no_hp, $diskon, $nominalDiskon, $logoDataUri);
+            return $this->renderStrukPdfResponse(
+                $pembayarans,
+                $no_hp,
+                $diskon,
+                $diskonUniversal,
+                $totalNominalDiskon,
+                $logoDataUri
+            );
         } catch (\Throwable $e) {
             report($e);
 
-            return $this->renderStrukPdfResponse($pembayarans, $no_hp, $diskon, $nominalDiskon, null);
+            return $this->renderStrukPdfResponse(
+                $pembayarans,
+                $no_hp,
+                $diskon,
+                $diskonUniversal,
+                $totalNominalDiskon,
+                null
+            );
         }
+    }
+
+    public function detailKeluarga(Request $request, $no_hp)
+    {
+        $selectedIds = collect(explode(',', (string) $request->query('ids')))
+            ->filter(fn ($id) => ctype_digit(trim($id)))
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        $query = Pembayaran::select([
+            'id',
+            'id_siswa',
+            'harga',
+            'status',
+            'keterangan',
+            'tanggal_pembayaran',
+            'pembayaran_via',
+            'no_hp',
+            'total_sudah_dibayar',
+            'created_at',
+        ])->with([
+            'siswa:id,name,panggilan,kelas,no_hp',
+            'details:id,id_pembayaran,pembayaran,keterangan,created_at',
+        ])->where('no_hp', $no_hp);
+
+        if ($selectedIds->isNotEmpty()) {
+            $query->whereIn('id', $selectedIds->all());
+        }
+
+        $pembayarans = $query->orderBy('created_at')->get();
+
+        if ($pembayarans->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Detail keluarga tidak ditemukan.',
+            ], 404);
+        }
+
+        $rawItems = $pembayarans->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'id_siswa' => $item->id_siswa,
+                'siswa' => $item->siswa,
+                'harga' => (int) $item->harga,
+                'status' => (int) $item->status,
+                'keterangan' => $item->keterangan,
+                'tanggal_pembayaran' => $item->tanggal_pembayaran
+                    ? Carbon::parse($item->tanggal_pembayaran)->translatedFormat('d F Y')
+                    : '-',
+                'pembayaran_via' => $item->pembayaran_via,
+                'no_hp' => $item->no_hp,
+                'total_sudah_dibayar' => (int) $item->total_sudah_dibayar,
+                'bulan' => $item->created_at?->format('m'),
+                'tanggal_format' => $item->created_at?->translatedFormat('d F Y'),
+            ];
+        })->values();
+
+        $paymentDetails = $pembayarans
+            ->flatMap(fn ($item) => $item->details->map(function ($detail) {
+                return [
+                    'id' => $detail->id,
+                    'id_pembayaran' => $detail->id_pembayaran,
+                    'pembayaran' => (int) $detail->pembayaran,
+                    'keterangan' => $detail->keterangan,
+                    'created_at' => $detail->created_at?->toISOString(),
+                ];
+            }))
+            ->sortBy('created_at')
+            ->values();
+
+        $diskon = Diskon::where('no_hp', $no_hp)->first();
+        $diskonUniversal = Diskon::whereNull('no_hp')->first();
+        $nominalDiskonSpesifik = $diskon ? (int) $diskon->diskon : 0;
+        $nominalDiskonUniversal = $diskonUniversal ? (int) $diskonUniversal->diskon : 0;
+        $totalNominalDiskon = $nominalDiskonSpesifik + $nominalDiskonUniversal;
+
+        $gabunganKetDiskon = collect([
+            $diskon?->keterangan,
+            $diskonUniversal?->keterangan ? $diskonUniversal->keterangan . ' (Massal)' : null,
+        ])->filter()->implode(' + ');
+
+        $totalHarga = (int) $pembayarans->sum('harga');
+        $totalSudahDibayar = (int) $pembayarans->sum('total_sudah_dibayar');
+        $totalAkhir = max(0, $totalHarga - $totalNominalDiskon);
+        $statuses = $pembayarans->pluck('status')->map(fn ($status) => (int) $status);
+        $status = $statuses->every(fn ($value) => $value === 2)
+            ? 2
+            : ($statuses->contains(fn ($value) => in_array($value, [1, 2], true)) ? 1 : 0);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'no_hp' => $no_hp,
+                'raw_items' => $rawItems,
+                'payment_details' => $paymentDetails,
+                'total_harga' => $totalHarga,
+                'total_sudah_dibayar' => $totalSudahDibayar,
+                'nominal_diskon' => $totalNominalDiskon,
+                'keterangan_diskon' => $gabunganKetDiskon ?: 'Tanpa Potongan',
+                'total_akhir' => $totalAkhir,
+                'status' => $status,
+            ],
+        ]);
     }
 
     private function settlePembayarans($pembayarans, string $keterangan): int
@@ -353,12 +511,20 @@ class PembayaranController extends Controller
         return $updatedCount;
     }
 
-    private function renderStrukPdfResponse($pembayarans, string $no_hp, ?Diskon $diskon, int $nominalDiskon, ?string $logoDataUri)
+    private function renderStrukPdfResponse(
+        $pembayarans,
+        string $no_hp,
+        ?Diskon $diskon,
+        ?Diskon $diskonUniversal,
+        int $nominalDiskon,
+        ?string $logoDataUri
+    )
     {
         $pdf = Pdf::loadView('pdf.struk', [
             'pembayarans' => $pembayarans,
             'no_hp' => $no_hp,
             'diskon' => $diskon,
+            'diskonUniversal' => $diskonUniversal,
             'nominalDiskon' => $nominalDiskon,
             'logoDataUri' => $logoDataUri,
         ])
@@ -416,10 +582,31 @@ class PembayaranController extends Controller
             2 => 'Lunas'
         ];
 
+        $requestedStatus = $request->filled('status') && $request->status !== 'all'
+            ? (int) $request->status
+            : null;
+
         $allData = [];
         $diskons = Diskon::all()->keyBy('no_hp');
+        $filterSummary = [];
+
+        if ($request->filled('search')) {
+            $filterSummary[] = 'Pencarian: "' . $request->search . '"';
+        }
+
+        if ($request->filled('bulan') && $request->bulan !== 'all') {
+            $filterSummary[] = 'Bulan: ' . Carbon::create()->month((int) $request->bulan)->translatedFormat('F');
+        }
+
+        if ($requestedStatus !== null && isset($statuses[$requestedStatus])) {
+            $filterSummary[] = 'Status: ' . $statuses[$requestedStatus];
+        }
 
         foreach ($statuses as $code => $name) {
+            if ($requestedStatus !== null && $code !== $requestedStatus) {
+                continue;
+            }
+
             $query = Pembayaran::with(['siswa', 'details'])->where('status', $code);
 
             if ($request->search) {
@@ -438,14 +625,16 @@ class PembayaranController extends Controller
 
             $allData[$name] = [
                 'code' => $code,
-                'groups' => $query->orderBy('no_hp')->get()->groupBy('no_hp')
+                'groups' => $query->orderBy('no_hp')->get()->groupBy('no_hp'),
             ];
         }
 
         $pdf = Pdf::loadView('pdf.pembayaran', [
             'allData' => $allData,
             'bulan' => $request->bulan,
-            'diskons' => $diskons
+            'diskons' => $diskons,
+            'exportedAt' => now()->translatedFormat('d F Y, H:i'),
+            'filterSummary' => $filterSummary ?: ['Semua data pembayaran sesuai status yang dipilih.'],
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download('Laporan-Pembayaran-' . now()->format('YmdHis') . '.pdf');

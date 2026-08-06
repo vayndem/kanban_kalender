@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 
 <head>
-    <title>Jadwal Pelajaran & Catatan</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Laporan Jadwal & Catatan Operasional</title>
     <style>
         @page {
             size: a4 landscape;
@@ -10,12 +12,51 @@
         }
 
         body {
-            font-family: sans-serif;
-            font-size: 9pt; /* Font diperkecil agar muat */
+            font-family: 'DejaVu Sans', sans-serif;
+            font-size: 9pt;
             color: #333;
         }
 
-        /* --- HALAMAN 1: JADWAL COMPACT --- */
+        .brand-header {
+            margin-bottom: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .brand-strip {
+            height: 10px;
+            background: #1d4ed8;
+            border-bottom: 4px solid #f97316;
+        }
+
+        .brand-body {
+            padding: 12px 14px 10px;
+            text-align: left;
+        }
+
+        .brand-kicker {
+            font-size: 8pt;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #f97316;
+            margin-bottom: 3px;
+        }
+
+        .brand-name {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        .brand-subtitle {
+            margin-top: 3px;
+            color: #64748b;
+            font-size: 8pt;
+        }
+
         .header-container {
             text-align: center;
             margin-bottom: 10px;
@@ -33,15 +74,21 @@
             font-style: italic;
         }
 
+        .export-info {
+            font-size: 8pt;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed; /* Penting agar kolom rata */
+            table-layout: fixed;
         }
 
         th, td {
             border: 1px solid #666;
-            padding: 3px; /* Padding diperkecil */
+            padding: 3px;
             vertical-align: top;
             word-wrap: break-word;
         }
@@ -51,19 +98,18 @@
             text-align: center;
             font-weight: bold;
             font-size: 9pt;
-            height: 35px; /* Tinggi ditambah sedikit untuk tanggal */
+            height: 35px;
             vertical-align: middle;
         }
 
         .sesi-col {
-            width: 60px; /* Dipersempit */
+            width: 60px;
             text-align: center;
             background-color: #f8f8f8;
             font-weight: bold;
             font-size: 8pt;
         }
 
-        /* Card Jadwal Compact */
         .card {
             border: 1px solid #ddd;
             padding: 2px 4px;
@@ -75,7 +121,7 @@
 
         .mapel {
             font-weight: bold;
-            font-size: 8pt; /* Font isi diperkecil */
+            font-size: 8pt;
             color: #000;
             margin-bottom: 1px;
         }
@@ -96,17 +142,15 @@
         }
 
         .tanda-indicator {
-            color: #d97706; /* Warna oranye */
+            color: #d97706;
             font-weight: bold;
             text-decoration: underline;
         }
 
-        /* --- PEMISAH HALAMAN --- */
         .page-break {
             page-break-before: always;
         }
 
-        /* --- HALAMAN 2: CATATAN SISWA --- */
         .notes-container {
             width: 100%;
         }
@@ -132,8 +176,8 @@
             display: inline-block;
             width: 30px;
             height: 30px;
-            background-color: #dbeafe; /* Blue 100 */
-            color: #1e40af; /* Blue 800 */
+            background-color: #dbeafe;
+            color: #1e40af;
             border-radius: 50%;
             text-align: center;
             line-height: 30px;
@@ -154,8 +198,8 @@
         }
 
         .note-item {
-            background-color: #fffbeb; /* Yellow 50 (mirip gambar) */
-            border-left: 4px solid #f59e0b; /* Yellow 500 */
+            background-color: #fffbeb;
+            border-left: 4px solid #f59e0b;
             padding: 8px;
             margin-bottom: 5px;
             font-size: 9pt;
@@ -184,17 +228,27 @@
 
 <body>
 
-    {{-- HALAMAN 1: MATRIX JADWAL --}}
+    <div class="brand-header">
+        <div class="brand-strip"></div>
+        <div class="brand-body">
+            <div class="brand-kicker">Brand Report</div>
+            <div class="brand-name">E-Ling Course</div>
+            <div class="brand-subtitle">Ringkasan jadwal pelajaran dan catatan operasional siswa.</div>
+        </div>
+    </div>
+
     <div class="header-container">
-        <h2>Jadwal Pelajaran</h2>
+        <h2>Laporan Jadwal Pelajaran</h2>
         @if($searchQuery)
             <div class="search-info">Filter: "{{ $searchQuery }}"</div>
+        @else
+            <div class="search-info">Menampilkan seluruh jadwal aktif sesuai data sistem.</div>
         @endif
+        <div class="export-info">Diekspor pada {{ now()->translatedFormat('d F Y, H:i') }}</div>
     </div>
 
     <table>
         <thead>
-            {{-- LOGIKA TANGGAL: Mulai --}}
             @php
                 $startOfWeek = \Carbon\Carbon::now()->startOfWeek();
                 $dayOffsets = [
@@ -206,15 +260,12 @@
                     'Sabtu'  => 5,
                 ];
             @endphp
-            {{-- LOGIKA TANGGAL: Selesai --}}
 
             <tr>
                 <th style="width: 60px;">Waktu</th>
                 @foreach ($haris as $hari)
                     <th>
                         {{ $hari->name }}
-
-                        {{-- Hitung Tanggal --}}
                         @php
                             $offset = $dayOffsets[$hari->name] ?? 0;
                             $date = $startOfWeek->copy()->addDays($offset);
@@ -264,12 +315,21 @@
         </tbody>
     </table>
 
-    {{-- HALAMAN 2: DETAIL CATATAN --}}
     <div class="page-break"></div>
 
+    <div class="brand-header">
+        <div class="brand-strip"></div>
+        <div class="brand-body">
+            <div class="brand-kicker">Brand Report</div>
+            <div class="brand-name">E-Ling Course</div>
+            <div class="brand-subtitle">Dokumen lanjutan untuk catatan operasional siswa.</div>
+        </div>
+    </div>
+
     <div class="header-container">
-        <h2>Detail Catatan Siswa</h2>
-        <div class="search-info">Daftar siswa yang memiliki tanda/catatan khusus</div>
+        <h2>Catatan Operasional Siswa</h2>
+        <div class="search-info">Daftar siswa yang memiliki tanda atau catatan khusus pada sistem.</div>
+        <div class="export-info">Diekspor pada {{ now()->translatedFormat('d F Y, H:i') }}</div>
     </div>
 
     <div class="notes-container">

@@ -96,7 +96,18 @@ class DashboardController extends Controller
             $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey]['siswa_list']->push($jadwal->siswa);
         }
 
-        $pembayaranSummaries = $activeTab === 'pembayaran' ? Pembayaran::with(['siswa:id,name,panggilan,kelas,no_hp', 'details:id,id_pembayaran,pembayaran,keterangan,created_at'])
+        $pembayaranSummaries = $activeTab === 'pembayaran' ? Pembayaran::select([
+                'id',
+                'id_siswa',
+                'harga',
+                'status',
+                'keterangan',
+                'tanggal_pembayaran',
+                'pembayaran_via',
+                'no_hp',
+                'total_sudah_dibayar',
+                'created_at',
+            ])->with(['siswa:id,name,panggilan,kelas,no_hp'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($item) {
@@ -119,7 +130,6 @@ class DashboardController extends Controller
                     'pembayaran_via' => $item->pembayaran_via,
                     'no_hp' => $item->no_hp,
                     'total_sudah_dibayar' => (int) $item->total_sudah_dibayar,
-                    'details' => $item->details,
                     'bulan' => $item->created_at->format('m'),
                     'tanggal_format' => $item->created_at->translatedFormat('d F Y'),
                 ];

@@ -70,18 +70,18 @@
 
                             <div class="flex space-x-3">
                                 <button @click.prevent="openExportOptions()" type="button"
-                                    class="inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:ring-offset-gray-800 transition-colors">
+                                    class="btn-export text-base">
                                     <i class="fas fa-file-export mr-2"></i> Export / Copy
                                 </button>
 
                                 <button @click.prevent="openStashOptions()" type="button"
-                                    class="inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-emerald-600 text-base font-medium text-white hover:bg-emerald-700 transition-colors">
+                                    class="btn-success text-base">
                                     <i class="fas fa-database mr-2"></i> Stash
                                 </button>
 
                                 <div class="relative inline-block text-left">
                                     <button @click="showAddMenu = !showAddMenu" type="button"
-                                        class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:ring-offset-gray-800">
+                                        class="btn-primary w-full text-base">
                                         Tambah Data Baru
                                         <i class="fas fa-caret-down ml-2 -mr-1"></i>
                                     </button>

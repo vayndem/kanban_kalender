@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Struk Pembayaran</title>
+    <title>Bukti Pelunasan Pembayaran</title>
     <style>
         body {
             font-family: monospace;
@@ -10,6 +10,45 @@
             width: 100%;
             margin: 0;
             padding: 5px;
+        }
+
+        .brand-header {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            background: #fff;
+        }
+
+        .brand-strip {
+            height: 8px;
+            background: #1d4ed8;
+            border-bottom: 3px solid #f97316;
+        }
+
+        .brand-body {
+            padding: 8px 10px;
+        }
+
+        .brand-kicker {
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #f97316;
+            margin-bottom: 2px;
+        }
+
+        .brand-name {
+            font-size: 15px;
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        .brand-subtitle {
+            font-size: 8px;
+            color: #64748b;
+            margin-top: 2px;
         }
 
         .line {
@@ -47,6 +86,15 @@
 </head>
 
 <body>
+    <div class="brand-header">
+        <div class="brand-strip"></div>
+        <div class="brand-body">
+            <div class="brand-kicker">Brand Receipt</div>
+            <div class="brand-name">E-Ling Course</div>
+            <div class="brand-subtitle">Bukti pelunasan pembayaran resmi</div>
+        </div>
+    </div>
+
     @if (!empty($logoDataUri))
         <div class="logo-container">
             <img src="{{ $logoDataUri }}" class="logo-img">
@@ -54,27 +102,26 @@
     @endif
 
     <div class="text-center bold">
-        E-LING COURSE BIMBEL<br>
-        NOTA PELUNASAN RESMI
+        BUKTI PELUNASAN PEMBAYARAN
     </div>
     <div class="line"></div>
     <table>
         <tr>
-            <td>No HP:</td>
+            <td>No HP Keluarga:</td>
             <td class="text-right">{{ $no_hp }}</td>
         </tr>
         <tr>
-            <td>Siswa:</td>
+            <td>Nama Siswa:</td>
             <td class="text-right font-bold">
                 {{ $pembayarans->map(fn($p) => $p->siswa->name ?? '')->unique()->implode(', ') }}</td>
         </tr>
         <tr>
-            <td>Tanggal:</td>
+            <td>Tanggal Cetak:</td>
             <td class="text-right">{{ now()->translatedFormat('d M Y H:i') }}</td>
         </tr>
     </table>
     <div class="line"></div>
-    <div class="bold">RINCIAN ITEM TAGIHAN:</div>
+    <div class="bold">RINCIAN KOMPONEN TAGIHAN:</div>
     <table>
         @foreach ($pembayarans as $p)
             <tr>
@@ -82,6 +129,33 @@
                 <td class="text-right">Rp {{ number_format($p->harga, 0, ',', '.') }}</td>
             </tr>
         @endforeach
+    </table>
+    <div class="line"></div>
+    <div class="bold">RINCIAN PENERIMAAN PEMBAYARAN:</div>
+    <table>
+        @php
+            $allDetails = $pembayarans
+                ->flatMap(fn($p) => $p->details->map(fn($detail) => [
+                    'tanggal' => optional($detail->created_at)->translatedFormat('d M Y'),
+                    'keterangan' => $detail->keterangan ?: 'Tanpa keterangan',
+                    'nominal' => (int) $detail->pembayaran,
+                ]))
+                ->values();
+        @endphp
+        @forelse ($allDetails as $detail)
+            <tr>
+                <td>
+                    {{ $detail['tanggal'] }}<br>
+                    {{ $detail['keterangan'] }}
+                </td>
+                <td class="text-right">Rp {{ number_format($detail['nominal'], 0, ',', '.') }}</td>
+            </tr>
+        @empty
+            <tr>
+                <td>Tidak ada detail penerimaan pembayaran.</td>
+                <td class="text-right">-</td>
+            </tr>
+        @endforelse
     </table>
     <div class="line"></div>
     @php
@@ -93,24 +167,34 @@
     @endphp
     <table>
         <tr>
-            <td>Total Tagihan:</td>
+            <td>Total Tagihan Kotor:</td>
             <td class="text-right">Rp {{ number_format($totalKotor, 0, ',', '.') }}</td>
         </tr>
-        @if ($nominalDiskon > 0)
+        @if ($diskon)
             <tr>
-                <td>Diskon ({{ $diskon->keterangan }}):</td>
-                <td class="text-right">-Rp {{ number_format($nominalDiskon, 0, ',', '.') }}</td>
+                <td>Potongan Keluarga ({{ $diskon->keterangan }}):</td>
+                <td class="text-right">-Rp {{ number_format((int) $diskon->diskon, 0, ',', '.') }}</td>
             </tr>
         @endif
+        @if (!empty($diskonUniversal))
+            <tr>
+                <td>Potongan Universal ({{ $diskonUniversal->keterangan }}):</td>
+                <td class="text-right">-Rp {{ number_format((int) $diskonUniversal->diskon, 0, ',', '.') }}</td>
+            </tr>
+        @endif
+        <tr>
+            <td>Total Sudah Dibayar:</td>
+            <td class="text-right">Rp {{ number_format($pembayarans->sum('total_sudah_dibayar'), 0, ',', '.') }}</td>
+        </tr>
         <tr class="bold">
-            <td>TOTAL BERSIH:</td>
+            <td>TOTAL KEWAJIBAN BERSIH:</td>
             <td class="text-right">Rp {{ number_format($totalAkhir, 0, ',', '.') }}</td>
         </tr>
     </table>
     <div class="line"></div>
     <div class="text-center bold" style="font-size: 11px; margin-top: 5px;">
-        STATUS: LUNAS<br>
-        TERIMA KASIH
+        STATUS ADMINISTRASI: LUNAS<br>
+        DOKUMEN INI MENUNJUKKAN BUKTI PELUNASAN YANG TERCATAT
     </div>
 </body>
 
