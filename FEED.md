@@ -1,478 +1,674 @@
 # FEED.md
 
-Dokumen ini adalah ringkasan memori sistem untuk project `kanban_kalender`. Tujuannya supaya saat project ini dibuka lagi setelah lama, konteks bisa dipulihkan cepat tanpa audit ulang dari nol.
+Dokumen ini adalah memori teknis project `kanban_kalender`.
 
-## 1. Identitas Project
+Tujuannya bukan untuk promosi, tapi untuk:
 
-- Nama sistem: Kanban Kalender / E-Ling Course Admin
+- refresh context dengan cepat saat project lama tidak disentuh
+- tahu controller mana mengakses apa
+- tahu view mana menerima data dari mana
+- tahu test mana memverifikasi flow penting
+- tahu area fragile sebelum melakukan perubahan
+
+---
+
+## 1. Identitas Sistem
+
+- Nama: `Kanban Kalender`
+- Domain bisnis: operasional bimbel / tutoring admin
+- Organisasi: `E-Ling Course`
 - Framework: Laravel 12
-- UI: Blade + Alpine.js + Tailwind CSS + SweetAlert2
-- Fokus bisnis:
-  - jadwal kelas
-  - data siswa
-  - pembayaran bimbel
-  - arsip siswa
-  - kalender publik
+- Runtime target lokal: PHP 8.3
+- Frontend: Blade + Tailwind CSS + Alpine.js
+- Interaction layer: SweetAlert2
+- Export engine: DomPDF
 
-## 2. Struktur Fitur Besar
+Fungsi besar sistem:
 
-### A. Tab Jadwal
+- kelola jadwal
+- kelola siswa aktif dan arsip
+- kelola paket dan tagihan
+- catat pembayaran
+- cetak dan export PDF
+- tampilkan kalender publik
 
-Fungsi:
+---
 
-- membuat kelas per slot hari + sesi
-- mengelola mapel, guru, ruang, sesi
-- memindahkan kelas antar slot
-- edit isi kelas
-- export PDF jadwal
-- copy teks jadwal WhatsApp
-- backup / restore stash jadwal
+## 2. Gambaran Arsitektur
 
-Entitas yang terlibat:
+Secara kasar sistem dibagi jadi 3 domain admin:
 
+1. Jadwal
+2. Data Siswa
+3. Pembayaran
+
+Lalu ada 1 area publik:
+
+4. Kalender publik
+
+Pola umum:
+
+- `routes/web.php` mengarah ke controller
+- controller mengumpulkan data Eloquent
+- Blade admin merender dashboard/tab/modal
+- beberapa aksi AJAX/JSON dipakai untuk detail yang lazy-load
+- PDF memakai Blade khusus di `resources/views/pdf`
+
+---
+
+## 3. Domain Model yang Paling Sering Terlibat
+
+Entitas utama yang sering muncul:
+
+- `Siswa`
+- `Jadwal`
 - `Hari`
 - `Sesi`
-- `Jadwal`
 - `Guru`
 - `Ruang`
 - `MataPelajaran`
-- `Siswa`
-- `Tanda`
-
-Catatan penting:
-
-- jadwal dikelompokkan per kombinasi:
-  - hari
-  - sesi
-  - mapel
-  - guru
-  - ruang
-- 1 kelas = beberapa row `jadwals`, masing-masing untuk 1 siswa
-
-Proteksi:
-
-- bentrok guru dicegah
-- bentrok ruang dicegah
-- bentrok siswa dicegah
-- penyimpanan jadwal sudah memakai transaksi
-
-Controller utama:
-
-- `app/Http/Controllers/JadwalController.php`
-- `app/Http/Controllers/DashboardController.php`
-
-View utama:
-
-- `resources/views/admin/dashboard.blade.php`
-- `resources/views/jadwal_kalender.blade.php`
-- `resources/views/pdf/jadwal.blade.php`
-
-### B. Tab Data Siswa
-
-Fungsi:
-
-- tambah siswa
-- edit siswa
-- arsipkan siswa
-- pulihkan dari arsip
-- hapus permanen arsip
-- filter siswa
-- lihat jadwal siswa
-- export PDF data siswa
-
-Entitas yang terlibat:
-
-- `Siswa`
-- `Arsip`
-- `Jadwal`
 - `Paket`
-
-Catatan penting:
-
-- siswa aktif dan arsip dipisah di tampilan
-- jadwal siswa bisa dilihat saat edit
-- nomor HP disimpan dalam format `+62...`
-
-Controller utama:
-
-- `app/Http/Controllers/SiswaController.php`
-- `app/Http/Controllers/ArsipController.php`
-
-View utama:
-
-- `resources/views/admin/card.blade.php`
-- `resources/views/pdf/siswa.blade.php`
-
-### C. Tab Pembayaran
-
-Fungsi:
-
-- buat tagihan manual
-- penagihan massal
-- kelola diskon
-- kelola paket
-- catat pembayaran cicilan
-- ubah ke lunas
-- selesaikan seluruh status
-- cetak bukti pelunasan
-- export PDF pembayaran
-
-Entitas yang terlibat:
-
 - `Pembayaran`
 - `PembayaranDetail`
 - `Diskon`
-- `Paket`
-- `Siswa`
+- `Tanda`
+- `Arsip`
 
-Controller utama:
+Catatan relasi penting:
 
-- `app/Http/Controllers/PembayaranController.php`
-- `app/Http/Controllers/DashboardController.php`
+- satu grup kelas secara logika tampil sebagai satu card, tapi di DB bisa tersimpan sebagai banyak row `jadwals` per siswa
+- `Pembayaran` adalah header invoice / komponen tagihan per siswa
+- `PembayaranDetail` adalah log setoran / cicilan / pelunasan
+- diskon keluarga dan diskon universal dihitung di level agregasi pembayaran, bukan dengan mengubah nominal master DB lama
 
-View utama:
+---
 
-- `resources/views/admin/pembayaran.blade.php`
-- `resources/views/pdf/pembayaran.blade.php`
-- `resources/views/pdf/struk.blade.php`
+## 4. Routing dan Entry Point Penting
 
-## 3. Cara Kerja Modul Pembayaran
+File utama routing:
 
-### Data inti
+- `routes/web.php`
 
-`Pembayaran` menyimpan:
+Yang perlu diingat:
 
-- siswa target
-- nomor HP keluarga
-- nominal tagihan
-- keterangan tagihan
-- status
-- total sudah dibayar
-- tanggal pembayaran terakhir
-- metode pembayaran terakhir
+- dashboard admin jangan lagi memuat semua payload sekaligus
+- pembayaran detail keluarga sekarang diload melalui endpoint terpisah
+- export PDF punya route sendiri dan bergantung pada filter aktif
 
-`PembayaranDetail` menyimpan:
+Endpoint yang wajib diingat:
 
-- detail setoran / pelunasan
-- nominal pembayaran
-- keterangan detail
-- timestamp
+- dashboard admin
+- aksi CRUD jadwal
+- aksi CRUD siswa
+- aksi pembayaran
+- export PDF
+- `GET /admin/pembayaran/keluarga/{no_hp}/detail`
 
-### Status pembayaran saat ini
+Kalau nanti ada refactor route, cek dulu:
 
-Masih memakai status integer lama, tanpa ubah DB:
+- semua tombol Blade
+- semua fetch / AJAX
+- semua export link
+- semua action form
 
-- `0` = Belum Bayar
-- `1` = Tertagih / sedang proses
-- `2` = Lunas
+---
 
-Di UI terbaru, status ditampilkan dengan wording yang lebih formal.
+## 5. Controller Map
 
-### Penagihan massal
+### 5.1 `DashboardController.php`
 
-Logika:
+Peran:
 
-- sistem baca seluruh siswa aktif yang punya paket
-- buat tagihan bulanan dari paket tersebut
-- jika periode yang sama sudah pernah dibuat untuk siswa + no_hp + keterangan itu, tagihan tidak diduplikasi
+- entry point dashboard admin
+- membagi data berdasarkan tab aktif
+- mencegah payload terlalu besar
 
-### Pembayaran cicilan
+Kenapa penting:
 
-Logika:
+- dulu dashboard pernah memicu `FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE` di Vercel
+- sekarang controller ini harus tetap hemat payload
 
-- input nominal pembayaran
-- sistem cari semua tagihan aktif pada nomor HP keluarga
-- nominal dialokasikan dari tagihan paling lama ke paling baru
-- tidak boleh melebihi total sisa tagihan
+Akses data yang biasanya disentuh:
 
-### Ubah ke lunas / Selesaikan seluruh status
+- jadwal summary
+- siswa summary / filter payload
+- pembayaran summary
 
-Logika:
+Fragile:
 
-- sistem mencari sisa nominal pada tagihan aktif
-- jika masih ada sisa, sistem menambahkan `PembayaranDetail`
-- keterangan detail otomatis: `Selesai sistem`
-- total dibayar disamakan dengan nominal tagihan
-- status jadi `2`
+- kalau kembali memuat semua relasi berat sekaligus, deploy serverless bisa jebol lagi
+- universal search di dashboard bisa menjadi mahal kalau query relasi ditambah tanpa pembatasan
 
-### Diskon
+Harus dicek saat ubah:
 
-Ada 2 jenis:
+- response size
+- eager loading yang dipakai
+- tab conditional loading
 
-- diskon spesifik keluarga (`no_hp` tertentu)
-- diskon universal (`no_hp = null`)
+---
 
-Keduanya dijumlahkan pada ringkasan dan struk.
+### 5.2 `JadwalController.php`
 
-### Struk
+Peran:
 
-Struk:
+- create / update / move / delete jadwal
+- validasi bentrok guru, ruang, siswa
+- grouping data untuk tampil sebagai card
+- export PDF jadwal
 
-- hanya untuk tagihan status lunas
-- bisa difilter berdasarkan item yang tampil
-- menampilkan:
-  - identitas keluarga
-  - nama siswa
-  - rincian komponen tagihan
-  - rincian penerimaan pembayaran
-  - potongan keluarga
-  - potongan universal
-  - total kewajiban bersih
+Akses DB:
 
-Fallback logo:
+- baca `Hari`, `Sesi`, `Guru`, `Ruang`, `MataPelajaran`, `Siswa`
+- tulis ke `Jadwal`
+- baca `Tanda` untuk catatan siswa
 
-- kalau logo ada, dipakai
-- kalau gagal, render tanpa logo tetap harus jalan
+Flow teknis penting:
 
-Logo saat ini diharapkan berada di:
+- 1 tampilan kelas bisa mewakili banyak row `jadwals`
+- proteksi bentrok harus melihat kombinasi:
+  - hari
+  - sesi
+  - guru
+  - ruang
+  - siswa
 
-- `storage/app/public/Logo.png` atau fallback lain yang tersedia
+Sudah diverifikasi oleh test:
 
-## 4. Optimasi Penting yang Sudah Pernah Dilakukan
+- bentrok guru ditolak
+- bentrok ruang ditolak
+- bentrok siswa ditolak
+- penyimpanan atomik / transactional
 
-### A. Ringankan dashboard pembayaran
+Fragile:
 
-Masalah lama:
+- edit partial kelas bisa meninggalkan ketidaksinkronan antar row kalau grouping logic diubah sembarangan
+- drag-and-drop antar slot sangat rawan kalau validasi hanya cek sebagian row
+- export jadwal rawan mismatch bila query tampilan dan query export berbeda
 
-- summary pembayaran terlalu berat saat invoice makin banyak
-- detail invoice ikut diproses penuh di frontend
+---
 
-Solusi:
+### 5.3 `SiswaController.php`
 
-- payload summary diperingan
-- detail keluarga diambil lewat endpoint terpisah saat modal dibuka
+Peran:
 
-Endpoint detail keluarga:
+- tambah dan edit siswa
+- filter siswa aktif
+- bawa relasi jadwal ke modal edit
+- export PDF data siswa
+
+Akses DB:
+
+- baca / tulis `Siswa`
+- baca relasi `jadwals`, `paket`, `guru`, `ruang`, `sesi`, `hari`
+
+Catatan data:
+
+- nomor HP sekarang diasumsikan sudah benar dalam format `+62...`
+- jangan lagi memaksa normalisasi `08...` -> `+62...` di layer yang bisa merusak data existing
+
+Fragile:
+
+- modal edit siswa sangat mudah menampilkan `N/A` kalau eager loading relasi jadwal tidak lengkap
+- filter siswa bisa tampak benar di tabel tapi salah di export kalau parameter filter tidak diteruskan penuh
+- dropdown guru/ruang/sesi rentan kosong kalau source data filter tidak diload saat render
+
+Sudah pernah jadi masalah:
+
+- jadwal di modal edit muncul `N/A`
+- dropdown filter tampil jelek / tidak searchable
+
+---
+
+### 5.4 `ArsipController.php`
+
+Peran:
+
+- mengarsipkan siswa
+- memulihkan siswa
+- menghapus permanen arsip
+
+Fragile:
+
+- aksi arsip dan restore jangan sampai memutus relasi yang masih dipakai pembayaran lama
+- hapus permanen harus dianggap aksi sakral
+
+Catatan UX:
+
+- tombol destructive sebaiknya pakai warna/konfirmasi sakral
+- notifikasi sebaiknya lewat SweetAlert, bukan alert browser biasa
+
+---
+
+### 5.5 `PembayaranController.php`
+
+Peran:
+
+- buat tagihan manual
+- penagihan massal
+- catat pembayaran cicilan
+- set lunas
+- selesaikan seluruh status
+- render detail keluarga
+- export PDF pembayaran
+- render struk
+
+Ini adalah controller paling fragile saat ini.
+
+#### Akses DB utama
+
+- baca / tulis `Pembayaran`
+- baca / tulis `PembayaranDetail`
+- baca `Diskon`
+- baca `Paket`
+- baca `Siswa`
+
+#### Flow penting
+
+1. Tagihan dibuat per siswa
+2. Summary dikelompokkan per `no_hp`
+3. Detail setoran masuk ke `PembayaranDetail`
+4. Status invoice tetap integer lama:
+   - `0` = belum bayar
+   - `1` = tertagih / proses
+   - `2` = lunas
+5. UI menampilkan wording yang lebih manusiawi tanpa ubah tipe DB
+
+#### Logika pembayaran cicilan
+
+- nominal masuk tidak boleh melebihi total sisa
+- distribusi pembayaran dialokasikan ke tagihan yang relevan
+- detail pembayaran harus tercatat
+- pembulatan nominal harus aman
+
+#### Logika "set lunas"
+
+- sistem mencari sisa tagihan
+- bila ada kekurangan, dibuat `PembayaranDetail`
+- keterangan default: `Selesai sistem`
+- `total_sudah_dibayar` disamakan dengan kewajiban final
+
+#### Logika "selesaikan seluruh status"
+
+- berlaku ke seluruh komponen tagihan keluarga terkait
+- harus mengisi sisa kekurangan, bukan nilai sembarang
+- harus tetap meninggalkan jejak detail pembayaran
+
+#### Endpoint lazy detail
 
 - `GET /admin/pembayaran/keluarga/{no_hp}/detail`
 
-### B. Vercel payload terlalu besar
+Fungsi:
 
-Masalah:
+- menghindari frontend mengangkut seluruh detail invoice sekaligus
+- modal detail keluarga mengambil data saat dibuka
 
-- dashboard pernah error `FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE`
+#### Struk
 
-Solusi besar:
+View:
 
-- `DashboardController` hanya memuat data sesuai tab aktif
-- tab `jadwal`, `data_siswa`, dan `pembayaran` tidak lagi me-load seluruh data sekaligus
+- `resources/views/pdf/struk.blade.php`
 
-### C. Konflik jadwal
+Aturan:
 
-Masalah:
+- struk harus mengikuti item invoice terpilih
+- struk tidak boleh mengambil invoice di luar konteks filter klik
+- jika logo gagal, fallback tanpa logo tetap harus render
 
-- guru / ruang / siswa bisa bentrok
+#### Export pembayaran
 
-Solusi:
+View:
 
-- validasi bentrok di controller jadwal
-- transaksi pada penyimpanan
+- `resources/views/pdf/pembayaran.blade.php`
 
-### D. Konsistensi WhatsApp
+Aturan:
 
-Masalah lama:
+- export harus mengikuti filter aktif
+- status filter harus terbawa
+- bulan filter harus terbawa
+- pencarian harus terbawa
+- diskon yang relevan harus tampil
 
-- nomor pernah dinormalisasi dengan asumsi `08...`
+Fragile paling tinggi:
 
-Kondisi terbaru:
+- duplikasi tagihan massal
+- mismatch antara nominal bersih vs detail pembayaran
+- detail pelunasan tidak tercatat saat auto-complete
+- export membawa data lebih luas dari filter aktif
+- render struk gagal karena path logo / encoding / no_hp URL encoded
+- query summary terlalu berat kalau invoice membesar
 
-- DB sekarang dianggap sudah benar dalam format `+62...`
-- proses tagih WA harus memakai data itu apa adanya
+Sudah diverifikasi oleh test:
 
-## 5. Dokumentasi Export
+- anti-duplicate mass billing
+- overpayment rejection
+- alokasi pembayaran valid
+- `lunasSemua` membuat detail `Selesai sistem`
+- struk tetap bisa dirender
+- endpoint detail keluarga tersedia
 
-### Export Jadwal
+---
 
-Tujuan:
+## 6. View Map
 
-- laporan jadwal + catatan operasional
-
-Output:
-
-- halaman 1: matriks jadwal
-- halaman 2: catatan siswa yang punya tanda
-
-Filter:
-
-- pencarian universal bisa ikut memengaruhi hasil export
-
-### Export Siswa
-
-Tujuan:
-
-- laporan data siswa sesuai filter aktif
-
-Filter yang bisa terbawa:
-
-- pencarian
-- kelas
-- paket
-- sesi
-- guru
-- ruang
-
-### Export Pembayaran
-
-Tujuan:
-
-- laporan administrasi pembayaran sesuai status / filter aktif
-
-Perilaku terbaru:
-
-- mengikuti status filter bila ada
-- mengikuti bulan dan pencarian
-- menampilkan ringkasan total per kategori status
-
-### Export Struk
-
-Tujuan:
-
-- bukti pelunasan keluarga tertentu
-
-Perilaku:
-
-- mengikuti item invoice yang sedang dipilih di UI
-- tidak boleh menarik data di luar konteks filter klik
-
-## 6. Sistem Warna Tombol
-
-Sudah mulai dibuat konsisten lewat kelas reusable di:
-
-- `resources/css/app.css`
-
-Makna warna:
-
-- `btn-neutral`
-  - batal / kembali / aksi normal netral
-- `btn-primary`
-  - simpan / tambah / catat / aksi kerja standar
-- `btn-success`
-  - aksi berhasil / restore / WhatsApp / backup aman
-- `btn-warning`
-  - aksi proses / penagihan / butuh perhatian
-- `btn-export`
-  - export / generate dokumen
-- `btn-accent`
-  - fitur pendukung seperti paket / diskon / cetak bukti
-- `btn-sacred`
-  - aksi sakral / berdampak besar / harus ekstra hati-hati
-  - contoh:
-    - set lunas
-    - selesaikan seluruh status
-    - nanti cocok juga untuk replace stash / hapus permanen
-
-## 7. File Penting
-
-### Controller
-
-- `app/Http/Controllers/DashboardController.php`
-- `app/Http/Controllers/JadwalController.php`
-- `app/Http/Controllers/SiswaController.php`
-- `app/Http/Controllers/PembayaranController.php`
-
-### View admin
+### Admin
 
 - `resources/views/admin/dashboard.blade.php`
-- `resources/views/admin/card.blade.php`
-- `resources/views/admin/form.blade.php`
-- `resources/views/admin/pembayaran.blade.php`
+  - shell utama admin
+  - routing tab dan universal search
 
-### View PDF
+- `resources/views/admin/card.blade.php`
+  - area data siswa
+  - tabel, filter, aksi, export
+
+- `resources/views/admin/form.blade.php`
+  - banyak form/modal untuk entitas operasional
+
+- `resources/views/admin/pembayaran.blade.php`
+  - area pembayaran
+  - filter bulan/status
+  - summary keluarga
+  - modal detail
+  - tombol cetak struk / export / pelunasan
+
+### PDF
 
 - `resources/views/pdf/jadwal.blade.php`
 - `resources/views/pdf/siswa.blade.php`
 - `resources/views/pdf/pembayaran.blade.php`
 - `resources/views/pdf/struk.blade.php`
 
-### Layout / bantuan
+Catatan:
 
-- `resources/views/layouts/app.blade.php`
-- `resources/views/layouts/admin-help.blade.php`
+- semua PDF sekarang punya header brand seragam tema biru-oranye
+- perubahan styling PDF harus dijaga tetap kompatibel dengan DomPDF
 
-### Styling
+Fragile:
+
+- CSS terlalu modern bisa gagal di DomPDF
+- gambar/logo pada PDF bisa gagal di environment serverless
+- karakter unicode tertentu kadang rusak kalau encoding tidak konsisten
+
+---
+
+## 7. Export Matrix
+
+### Export Jadwal
+
+Source:
+
+- `JadwalController`
+- view `resources/views/pdf/jadwal.blade.php`
+
+Harus berisi:
+
+- matriks jadwal
+- catatan / tanda siswa
+- hasil sesuai search aktif jika ada
+
+Risk:
+
+- tampilan dan hasil export bisa beda jika query divergen
+
+### Export Siswa
+
+Source:
+
+- `SiswaController`
+- view `resources/views/pdf/siswa.blade.php`
+
+Harus berisi:
+
+- data siswa sesuai filter aktif
+- jadwal yang melekat pada siswa
+
+Risk:
+
+- filter UI belum tentu otomatis terbawa ke export jika parameter tidak sinkron
+
+### Export Pembayaran
+
+Source:
+
+- `PembayaranController`
+- view `resources/views/pdf/pembayaran.blade.php`
+
+Harus berisi:
+
+- data sesuai status/bulan/search aktif
+- ringkasan administrasi
+- kelompok keluarga
+- nilai pembayaran yang konsisten
+
+Risk:
+
+- dataset besar
+- salah total
+- filter tidak sinkron
+
+### Export Struk
+
+Source:
+
+- `PembayaranController`
+- view `resources/views/pdf/struk.blade.php`
+
+Harus berisi:
+
+- item lunas yang dipilih
+- detail penerimaan pembayaran
+- diskon keluarga
+- diskon universal
+
+Risk:
+
+- URL encoded `+62...`
+- fallback logo
+- item yang tercetak tidak sama dengan item yang dipilih user
+
+---
+
+## 8. Frontend / UX Convention
+
+### Sistem warna tombol
+
+File:
 
 - `resources/css/app.css`
 
-### Routing
+Kelas penting:
 
-- `routes/web.php`
+- `btn-neutral`
+- `btn-primary`
+- `btn-success`
+- `btn-warning`
+- `btn-export`
+- `btn-accent`
+- `btn-sacred`
 
-## 8. Setup Lokal Khusus Project
+Makna:
 
-Pernah ada kebutuhan memakai PHP 8.3 khusus project ini tanpa mengganggu project lain.
+- neutral = batal / kembali
+- primary = aksi default kerja
+- success = aksi aman / berhasil / restore / copy WA
+- warning = proses yang perlu perhatian
+- export = generate dokumen
+- accent = fitur pendukung
+- sacred = aksi sensitif / sakral
 
-File lokal terkait:
+### Notifikasi
+
+Target standar:
+
+- gunakan SweetAlert
+- hindari alert/confirm browser default
+
+### Dropdown
+
+Ekspektasi UX saat ini:
+
+- dropdown penting harus searchable
+- idealnya menampilkan preview item, bukan sekadar value mentah
+
+Fragile:
+
+- ada beberapa dropdown yang historically pernah tampil jelek / tanpa search
+- area modal terang vs input gelap pernah bentrok tema
+
+---
+
+## 9. Database Assumption yang Tidak Boleh Dilanggar Sembarangan
+
+1. Status pembayaran tetap integer lama
+   - jangan migrasi tipe tanpa keputusan eksplisit
+
+2. Nomor HP keluarga sekarang diperlakukan sudah benar dalam format `+62...`
+   - jangan auto-normalize ke format lain
+
+3. Data lama tidak boleh berubah diam-diam hanya karena enhancement UI
+
+4. Diskon dan pelunasan otomatis harus menambah jejak transaksi, bukan overwrite buta
+
+---
+
+## 10. Setup Lokal Khusus Project
+
+Project ini pernah disiapkan agar bisa memakai PHP 8.3 khusus untuk project ini saja.
+
+File lokal:
 
 - `php83.ini`
 - `project-terminal.cmd`
 
 Status:
 
-- file ini untuk lokal
-- sudah disiapkan agar aman di-ignore
+- ini file lokal
+- aman untuk di-ignore
+- tidak boleh dianggap bagian wajib deploy
 
-Kalau test di Windows bermasalah, jalankan langsung dengan PHP 8.3 + config project, contoh:
+Command test yang pernah dipakai:
 
 ```powershell
 & 'C:\PHP 8.3\php.exe' -c 'D:\Backlash\PRIBADI\kanban_kalender\php83.ini' vendor\bin\phpunit tests\Feature\ScheduleAndPaymentTest.php
 ```
 
-## 9. Testing yang Sudah Ada
+Build frontend di Windows PowerShell bisa terkendala execution policy.
+
+Fallback yang pernah berhasil:
+
+```powershell
+cmd /c npm run build
+```
+
+---
+
+## 11. Testing Reference
 
 File test utama:
 
 - `tests/Feature/ScheduleAndPaymentTest.php`
 
-Sudah mencakup:
+Coverage yang sudah ada:
 
 - pembuatan jadwal atomik
-- penolakan bentrok guru/ruang/siswa
-- nomor `+62` tetap dipertahankan
-- alokasi pembayaran tanpa pembulatan salah
+- penolakan bentrok guru
+- penolakan bentrok ruang
+- penolakan bentrok siswa
+- format nomor `+62` tidak dirusak
+- alokasi pembayaran tidak salah hitung
 - overpayment ditolak
-- `lunasSemua` membuat detail `Selesai sistem`
-- struk tetap bisa dirender
+- `lunasSemua` mencatat `Selesai sistem`
+- struk bisa dirender
 - penagihan massal tidak duplikat
-- store tagihan paksa status awal belum dibayar
-- dashboard payload per tab
+- store tagihan memaksa status awal benar
+- dashboard hemat payload per tab
 - grouping teks jadwal WhatsApp
 - endpoint detail keluarga pembayaran
 
-## 10. Prinsip Aman Saat Lanjut Develop
+Kalau menambah fitur di pembayaran, minimal cek lagi:
 
-Kalau mau lanjut kerja di project ini, pegang prinsip ini:
+- total sisa
+- total dibayar
+- detail pembayaran
+- export PDF
+- struk
+- filter bulan/status
 
-- jangan ubah struktur DB kalau belum benar-benar perlu
-- jangan ubah histori pembayaran lama sembarangan
-- prioritaskan perubahan di:
-  - view
-  - validasi
-  - wording
-  - report/export
-  - safety guard
-- kalau ada koreksi transaksi, lebih aman tambah jejak baru daripada overwrite histori
+---
 
-## 11. TODO / Arah Lanjutan yang Masih Bagus
+## 12. Fragile Area Priority List
 
-Kalau mau lanjut lagi, ini kandidat berikutnya:
+Urutan area yang paling rawan kalau diubah:
 
-- rapikan seluruh tombol di semua halaman admin ke sistem warna baru
-- bikin export pembayaran landscape bila data sangat lebar
-- tambah nomor dokumen / nomor kuitansi tanpa merusak histori lama
-- tambah audit log tanpa mengubah transaksi lama
-- tambah closing bulanan versi ringan
-- tambah FEED section changelog per revisi
+### Prioritas 1 — Pembayaran
 
-## 12. Ringkasan Super Singkat
+- summary berat
+- filter mismatch
+- auto-pelunasan salah nominal
+- struk salah item
+- diskon tidak sinkron
 
-Kalau nanti aku dibuka lagi dan cuma baca 1 menit, inti project ini:
+### Prioritas 2 — Jadwal
 
-- ini sistem admin bimbel E-Ling
-- inti besar ada 3: jadwal, siswa, pembayaran
-- pembayaran sudah dioptimasi supaya summary ringan
-- detail pembayaran sekarang lazy-load
-- jadwal sudah anti bentrok
-- no HP pakai `+62`
-- status pembayaran masih integer lama, tapi tampilan sudah dibuat lebih formal
-- export sedang diarahkan jadi sesuai fungsi masing-masing
+- bentrok tidak terdeteksi
+- drag/drop salah slot
+- grouping card dan row DB tidak sinkron
 
+### Prioritas 3 — Data siswa
+
+- relasi jadwal tidak kebawa ke modal edit
+- export tidak sesuai filter
+- dropdown filter kehilangan source
+
+### Prioritas 4 — PDF / Export
+
+- DomPDF styling pecah
+- logo/path asset gagal
+- encoding karakter aneh
+
+---
+
+## 13. Checklist Sebelum Menyentuh Fitur Besar
+
+Sebelum ubah controller penting:
+
+- cek route yang memanggilnya
+- cek Blade yang tergantung padanya
+- cek export PDF yang memakai dataset serupa
+- cek test feature yang relevan
+
+Sebelum ubah pembayaran:
+
+- hitung ulang skenario cicilan
+- hitung diskon
+- cek `set lunas`
+- cek `selesaikan seluruh status`
+- cek struk
+
+Sebelum ubah jadwal:
+
+- cek validasi bentrok
+- cek transactional store
+- cek grouping card
+- cek export jadwal
+
+---
+
+## 14. Jika Nanti Project Ini Dibuka Lagi
+
+Urutan baca paling cepat untuk refresh:
+
+1. `README.md`
+2. `FEED.md`
+3. `routes/web.php`
+4. `DashboardController.php`
+5. `PembayaranController.php`
+6. `JadwalController.php`
+7. `tests/Feature/ScheduleAndPaymentTest.php`
+
+Kalau bug ada di pembayaran, langsung audit:
+
+- filter aktif
+- summary grouping by `no_hp`
+- detail endpoint keluarga
+- detail `PembayaranDetail`
+- export PDF / struk path
