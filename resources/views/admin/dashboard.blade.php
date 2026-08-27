@@ -115,9 +115,8 @@
                                         </div>
                                     </div>
 
-                                    <div x-show="currentForm" x-transition
-                                        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm"
-                                        style="display: none;">
+                                    <template x-if="currentForm">
+                                    <div x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm">
                                         <div @click="currentForm = ''; formData = {}; activeFormTab = 'input'; formSearch = ''"
                                             class="absolute inset-0"></div>
                                         <div @click.stop
@@ -125,6 +124,7 @@
                                             @include('admin.form', ['type' => 'currentForm'])
                                         </div>
                                     </div>
+                                    </template>
                                 </div>
                             </div>
 
@@ -258,7 +258,10 @@
                                                                     old_sesi_id: parseInt(card.dataset.sesiId)
                                                                 };
                                                                 selectedStudentDetail = null;
-                                                                $nextTick(() => { showModal = true; });
+                                                                $nextTick(() => {
+                                                                    showModal = true;
+                                                                    refreshStudentSelections();
+                                                                });
                                                             "
                                                                 class="absolute top-1 right-1 p-1.5 rounded-full bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-white hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-500 dark:hover:text-white transition-all duration-200 opacity-0 group-hover:opacity-100">
                                                                 <i class="fas fa-pencil-alt fa-xs"></i>
@@ -319,18 +322,19 @@
                 </div>
                 @endif
 
-                <div x-show="showModal" x-transition:enter="ease-out duration-300"
+                <template x-if="showModal">
+                <div x-transition:enter="ease-out duration-300"
                     x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                     x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
                     x-transition:leave-end="opacity-0"
                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm"
-                    style="display: none;">
+                    >
 
                     <div @click="showModal = false" class="absolute inset-0"></div>
 
                     <div @click.stop
                         class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden relative border dark:border-gray-700"
-                        x-show="showModal" x-transition:enter="ease-out duration-300"
+                        x-transition:enter="ease-out duration-300"
                         x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
                         x-transition:leave="ease-in duration-200"
@@ -401,10 +405,10 @@
                                                 @keydown.escape.prevent="searchModalSiswa = ''"
                                                 placeholder="Ketik nama siswa terdaftar untuk ditambahkan ke kelas ini..."
                                                 class="pl-10 w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none">
-                                            <div x-show="filteredAvailableSiswas().length > 0" x-transition
+                                            <div x-show="availableStudentResults.length > 0" x-transition
                                                 @click.away="searchModalSiswa = ''"
                                                 class="absolute z-30 w-full mt-1 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-600">
-                                                <template x-for="siswa in filteredAvailableSiswas()"
+                                                <template x-for="siswa in availableStudentResults"
                                                     :key="siswa.id">
                                                     <button @click.prevent="addSiswa(siswa.id)" type="button"
                                                         class="block w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-white hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors font-medium">
@@ -420,10 +424,10 @@
                                         <label
                                             class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Daftar
                                             Siswa Terpilih Di Kelas Ini (<span
-                                                x-text="selectedSiswas().length"></span>)</label>
+                                                x-text="selectedStudentResults.length"></span>)</label>
                                         <div
                                             class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[35vh] overflow-y-auto p-1 custom-scrollbar">
-                                            <template x-for="siswa in selectedSiswas()" :key="siswa.id">
+                                            <template x-for="siswa in selectedStudentResults" :key="siswa.id">
                                                 <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
                                                     @click="viewStudentDetail(siswa)"
                                                     :class="{
@@ -540,19 +544,21 @@
                         </form>
                     </div>
                 </div>
+                </template>
 
-                <div x-show="showAddJadwalModal" x-transition:enter="ease-out duration-300"
+                <template x-if="showAddJadwalModal">
+                <div x-transition:enter="ease-out duration-300"
                     x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
                     x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
                     x-transition:leave-end="opacity-0"
                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm"
-                    style="display: none;">
+                    >
 
                     <div @click="showAddJadwalModal = false" class="absolute inset-0"></div>
 
                     <div @click.stop
                         class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700"
-                        x-show="showAddJadwalModal" x-transition:enter="ease-out duration-300"
+                        x-transition:enter="ease-out duration-300"
                         x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
                         x-transition:leave="ease-in duration-200"
@@ -584,11 +590,11 @@
                                                 Mengajar Terpilih</p>
                                             <p class="text-base font-bold">
                                                 <span
-                                                    x-text="allHaris.find(h => h.id === newJadwal.hari_id)?.name || '...'"></span>,
+                                                    x-text="hariIndex[newJadwal.hari_id]?.name || '...'"></span>,
                                                 <span
-                                                    x-text="allSesis.find(s => s.id === newJadwal.sesi_id)?.name || '...'"></span>
+                                                    x-text="sesiIndex[newJadwal.sesi_id]?.name || '...'"></span>
                                                 <span class="text-xs font-normal opacity-80"
-                                                    x-text="allSesis.find(s => s.id === newJadwal.sesi_id)?.start_time ? '(' + allSesis.find(s => s.id === newJadwal.sesi_id).start_time.substring(0,5) + ' - ' + allSesis.find(s => s.id === newJadwal.sesi_id).end_time.substring(0,5) + ')' : ''"></span>
+                                                    x-text="formatSessionTime(newJadwal.sesi_id)"></span>
                                             </p>
                                         </div>
                                     </div>
@@ -642,10 +648,10 @@
                                                 @keydown.escape.prevent="searchModalSiswa = ''"
                                                 placeholder="Ketik nama lengkap atau panggilan siswa untuk dimasukkan..."
                                                 class="pl-10 w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none">
-                                            <div x-show="filteredAvailableSiswas().length > 0" x-transition
+                                            <div x-show="availableStudentResults.length > 0" x-transition
                                                 @click.away="searchModalSiswa = ''"
                                                 class="absolute z-30 w-full mt-1 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-600">
-                                                <template x-for="siswa in filteredAvailableSiswas()"
+                                                <template x-for="siswa in availableStudentResults"
                                                     :key="siswa.id">
                                                     <button @click.prevent="addSiswa(siswa.id)" type="button"
                                                         class="block w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-white hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors font-medium">
@@ -661,10 +667,10 @@
                                         <label
                                             class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Anggota
                                             Siswa Terpilih Kelas Baru (<span
-                                                x-text="selectedSiswas().length"></span>)</label>
+                                                x-text="selectedStudentResults.length"></span>)</label>
                                         <div
                                             class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[30vh] overflow-y-auto p-1 custom-scrollbar">
-                                            <template x-for="siswa in selectedSiswas()" :key="siswa.id">
+                                            <template x-for="siswa in selectedStudentResults" :key="siswa.id">
                                                 <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 hover:ring-2 hover:ring-green-500 transition-all cursor-pointer"
                                                     @click="viewStudentDetail(siswa)"
                                                     :class="{
@@ -684,7 +690,7 @@
                                                     </button>
                                                 </div>
                                             </template>
-                                            <div x-show="selectedSiswas().length === 0"
+                                            <div x-show="selectedStudentResults.length === 0"
                                                 class="col-span-full text-sm text-gray-400 text-center py-10 border-2 border-dashed border-gray-200 dark:border-gray-600 bg-gray-50/50 dark:bg-gray-900/20 rounded-xl">
                                                 <i class="fas fa-users-slash mb-2 text-3xl"></i><br> Belum melampirkan
                                                 siswa, silakan cari di kolom atas
@@ -776,6 +782,7 @@
                         </form>
                     </div>
                 </div>
+                </template>
             </div>
         </div>
     </div>
@@ -816,6 +823,36 @@
                     formData: {},
                     activeFormTab: 'input',
                     formSearch: '',
+                    filteredFormList: [],
+                    availableStudentResults: [],
+                    selectedStudentResults: [],
+                    occupancyIndex: {},
+                    studentIndex: {},
+                    hariIndex: {},
+                    sesiIndex: {},
+                    scheduledStudentIds: new Set(),
+                    formSources: {},
+
+                    init() {
+                        this.studentIndex = AppDomain.indexById(this.allSiswas);
+                        this.hariIndex = AppDomain.indexById(this.allHaris);
+                        this.sesiIndex = AppDomain.indexById(this.allSesis);
+                        this.scheduledStudentIds = new Set(this.allJadwals.map(schedule => Number(schedule.siswa_id)));
+                        this.occupancyIndex = AppDomain.buildOccupancyIndex(this.occupancy);
+                        this.formSources = AppDomain.buildFormSources({
+                            subjects: this.allMapels,
+                            teachers: this.allGurus,
+                            rooms: this.allRuangs,
+                            sessions: this.allSesis,
+                            students: this.allSiswas
+                        });
+                        this.$watch('activeFormTab', tab => {
+                            if (tab === 'list') this.refreshFormList();
+                        });
+                        this.$watch('formSearch', () => this.refreshFormList());
+                        this.$watch('currentForm', () => this.refreshFormList());
+                        this.$watch('searchModalSiswa', () => this.refreshAvailableStudents());
+                    },
 
                     refreshPage() {
                         const url = new URL(window.location.href);
@@ -838,8 +875,8 @@
 
                     occupancyFor(target) {
                         if (!target?.hari_id || !target?.sesi_id) return [];
-                        return this.occupancy.filter(item => {
-                            if (Number(item.hari_id) !== Number(target.hari_id) || Number(item.sesi_id) !== Number(target.sesi_id)) return false;
+                        const key = `${Number(target.hari_id)}:${Number(target.sesi_id)}`;
+                        return (this.occupancyIndex[key] || []).filter(item => {
                             const isOwnClass = target.old_hari_id &&
                                 Number(item.hari_id) === Number(target.old_hari_id) &&
                                 Number(item.sesi_id) === Number(target.old_sesi_id) &&
@@ -863,52 +900,21 @@
                     },
 
                     sudahPunyaJadwal(siswaId) {
-                        if (!this.allJadwals || this.allJadwals.length === 0) return false;
-                        return this.allJadwals.some(j => Number(j.siswa_id) === Number(siswaId));
+                        return this.scheduledStudentIds.has(Number(siswaId));
                     },
 
-                    getFilteredList() {
+                    refreshFormList() {
                         const search = this.formSearch.toLowerCase();
-                        let source = [];
-                        switch (this.currentForm) {
-                            case 'mapel':
-                                source = this.allMapels;
-                                break;
-                            case 'guru':
-                                source = this.allGurus;
-                                break;
-                            case 'ruang':
-                                source = this.allRuangs;
-                                break;
-                            case 'sesi':
-                                source = this.allSesis;
-                                break;
-                            case 'siswa':
-                                source = this.allSiswas.map(s => ({
-                                    ...s,
-                                    name: (s.panggilan || s.name) + ' - ' + (s.kelas || '-')
-                                }));
-                                break;
-                            case 'tanda':
-                                this.allSiswas.forEach(siswa => {
-                                    if (siswa.tandas) {
-                                        siswa.tandas.forEach(tanda => {
-                                            source.push({
-                                                id: tanda.id,
-                                                name: (siswa.panggilan || siswa
-                                                        .name) + ' - ' + (siswa
-                                                        .kelas || '-') + ' : ' +
-                                                    tanda.keterangan,
-                                                siswa_id: siswa.id,
-                                                keterangan: tanda.keterangan
-                                            });
-                                        });
-                                    }
-                                });
-                                break;
-                        }
-                        return search === '' ? source : source.filter(item => item.name.toLowerCase()
-                            .includes(search));
+                        const source = this.formSources[this.currentForm] || [];
+                        this.filteredFormList = search === '' ? source : source.filter(item => item.name
+                            .toLowerCase().includes(search));
+                    },
+
+                    formatSessionTime(sessionId) {
+                        const session = this.sesiIndex[Number(sessionId)];
+                        return session?.start_time
+                            ? `(${session.start_time.substring(0, 5)} - ${session.end_time.substring(0, 5)})`
+                            : '';
                     },
 
                     editDataItem(item) {
@@ -964,9 +970,6 @@
                     },
 
                     saveNewData() {
-                        const saveButton = document.getElementById('saveNewDataButton');
-                        saveButton.disabled = true;
-                        saveButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Menyimpan...';
                         const isEdit = this.formData.id ? true : false;
                         let endpoint = isEdit ? this.routes[this.currentForm].update.replace(':id', this
                             .formData.id) : this.routes[this.currentForm].store;
@@ -1012,29 +1015,31 @@
                                     html: (error.message || 'Terjadi kesalahan') + errorList,
                                     confirmButtonColor: '#3b82f6'
                                 });
-                            })
-                            .finally(() => {
-                                saveButton.disabled = false;
-                                saveButton.innerHTML = 'Simpan Data';
                             });
                     },
 
-                    selectedSiswas() {
+                    refreshStudentSelections() {
                         const target = this.showModal ? this.editingJadwal : this.newJadwal;
-                        if (!target.siswa_ids) return [];
-                        return this.allSiswas.filter(s => target.siswa_ids.includes(s.id)).sort((a, b) => a
-                            .name.localeCompare(b.name));
+                        this.selectedStudentResults = (target.siswa_ids || [])
+                            .map(id => this.studentIndex[Number(id)])
+                            .filter(Boolean)
+                            .sort((a, b) => a.name.localeCompare(b.name));
+                        this.refreshAvailableStudents();
                     },
 
-                    filteredAvailableSiswas() {
+                    refreshAvailableStudents() {
                         const search = this.searchModalSiswa.toLowerCase().trim();
                         const selectedIds = this.showModal ? this.editingJadwal.siswa_ids : this.newJadwal
                             .siswa_ids;
-                        if (search === '') return [];
+                        if (search === '') {
+                            this.availableStudentResults = [];
+                            return;
+                        }
                         const target = this.showModal ? this.editingJadwal : this.newJadwal;
                         const occupiedStudentIds = new Set(this.occupancyFor(target).map(item => Number(item.siswa_id)));
-                        return this.allSiswas.filter(s => {
-                            const isSelected = selectedIds && selectedIds.includes(s.id);
+                        const selectedStudentIds = new Set((selectedIds || []).map(Number));
+                        this.availableStudentResults = this.allSiswas.filter(s => {
+                            const isSelected = selectedStudentIds.has(Number(s.id));
                             const matchesSearch = s.name.toLowerCase().includes(search) || (s
                                 .panggilan && s.panggilan.toLowerCase().includes(search));
                             return !isSelected && !occupiedStudentIds.has(Number(s.id)) && matchesSearch;
@@ -1045,6 +1050,7 @@
                         const target = this.showModal ? this.editingJadwal : this.newJadwal;
                         if (!target.siswa_ids.includes(id)) target.siswa_ids.push(id);
                         this.searchModalSiswa = '';
+                        this.refreshStudentSelections();
                     },
 
                     removeSiswa(id) {
@@ -1052,6 +1058,7 @@
                         target.siswa_ids = target.siswa_ids.filter(sid => sid !== id);
                         if (this.selectedStudentDetail && this.selectedStudentDetail.id === id) this
                             .selectedStudentDetail = null;
+                        this.refreshStudentSelections();
                     },
 
                     hasTanda(siswa) {
@@ -1076,9 +1083,6 @@
                     },
 
                     saveJadwal() {
-                        const saveButton = document.getElementById('saveJadwalButton');
-                        saveButton.disabled = true;
-                        saveButton.innerHTML = 'Menyimpan...';
                         const payload = {
                             ...this.editingJadwal,
                             deleted_tanda_ids: this.deletedTandaIds
@@ -1106,10 +1110,6 @@
                             })
                             .catch(error => {
                                 Swal.fire('Gagal!', error.message || 'Gagal menyimpan.', 'error');
-                            })
-                            .finally(() => {
-                                saveButton.disabled = false;
-                                saveButton.innerHTML = 'Simpan Perubahan';
                             });
                     },
 
@@ -1127,12 +1127,10 @@
                         this.searchModalSiswa = '';
                         this.showAddJadwalModal = true;
                         this.selectedStudentDetail = null;
+                        this.refreshStudentSelections();
                     },
 
                     saveNewJadwal() {
-                        const btn = document.getElementById('saveNewJadwalButton');
-                        btn.disabled = true;
-                        btn.innerHTML = 'Menyimpan...';
                         fetch(this.routes.jadwal.store, {
                                 method: 'POST',
                                 headers: {
@@ -1152,10 +1150,6 @@
                             })
                             .catch(error => {
                                 Swal.fire('Gagal!', error.message || 'Gagal menyimpan.', 'error');
-                            })
-                            .finally(() => {
-                                btn.disabled = false;
-                                btn.innerHTML = 'Simpan Jadwal Baru';
                             });
                     },
 
@@ -1184,6 +1178,7 @@
                     },
 
                     downloadStash() {
+                        ButtonLoading.pulseCurrent();
                         window.location.href = "{{ route('admin.jadwal.downloadStash') }}";
                     },
 
@@ -1250,6 +1245,7 @@
                             const params = new URLSearchParams();
                             if (searchTerm) params.append('search', searchTerm);
                             if (result.isConfirmed) {
+                                ButtonLoading.pulseCurrent();
                                 window.open(this.routes.jadwal.export+'?' + params.toString(),
                                     '_blank');
                             } else if (result.isDenied) {

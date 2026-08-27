@@ -35,7 +35,8 @@
 <form @submit.prevent="saveNewData" id="formTambahData"
     class="flex flex-col h-full bg-white dark:bg-gray-800 rounded-b-2xl">
     <div class="px-6 py-4 space-y-6 max-h-[65vh] overflow-y-auto custom-scrollbar">
-        <div x-show="activeFormTab === 'input'" class="space-y-5">
+        <template x-if="activeFormTab === 'input'">
+        <div class="space-y-5">
             <template x-if="currentForm === 'mapel'">
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     <div class="sm:col-span-2">
@@ -211,8 +212,10 @@
                 </div>
             </template>
         </div>
+        </template>
 
-        <div x-show="activeFormTab === 'list'" class="space-y-4">
+        <template x-if="activeFormTab === 'list'">
+        <div class="space-y-4">
             <div class="relative group">
                 <input type="text" x-model="formSearch"
                     placeholder="Ketik kata kunci untuk mencari data referensi..."
@@ -231,12 +234,12 @@
                         Terdata</span>
                     <span
                         class="bg-blue-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full font-mono text-xs shadow-inner">
-                        Total: <span class="font-bold" x-text="getFilteredList().length"></span>
+                        Total: <span class="font-bold" x-text="filteredFormList.length"></span>
                     </span>
                 </div>
                 <ul
                     class="divide-y divide-gray-100 dark:divide-gray-700/60 max-h-[35vh] overflow-y-auto bg-white dark:bg-gray-800 custom-scrollbar">
-                    <template x-for="item in getFilteredList()" :key="item.id">
+                    <template x-for="item in filteredFormList" :key="item.id">
                         <li
                             class="px-5 py-3.5 hover:bg-gray-50/70 dark:hover:bg-gray-700/30 flex justify-between items-center transition-all group/item">
                             <div class="flex flex-col min-w-0 flex-1 pr-4">
@@ -264,7 +267,7 @@
                             </div>
                         </li>
                     </template>
-                    <template x-if="getFilteredList().length === 0">
+                    <template x-if="filteredFormList.length === 0">
                         <li
                             class="px-5 py-14 text-center text-sm text-gray-400 dark:text-gray-500 italic font-medium bg-gray-50/10 dark:bg-transparent flex flex-col items-center justify-center gap-2">
                             <i class="fas fa-folder-open text-4xl text-gray-300 dark:text-gray-600"></i>
@@ -274,6 +277,7 @@
                 </ul>
             </div>
         </div>
+        </template>
     </div>
 
     <div

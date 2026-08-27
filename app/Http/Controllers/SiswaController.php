@@ -107,37 +107,46 @@ class SiswaController extends Controller
     public function destroy(Request $request, $id)
     {
         try {
-            $ids = explode(',', $id);
-            $siswas = Siswa::whereIn('id', $ids)->get();
+            $ids = collect(explode(',', (string) $id))
+                ->filter(fn ($studentId) => ctype_digit(trim($studentId)))
+                ->map(fn ($studentId) => (int) $studentId)
+                ->unique()
+                ->values();
+            $siswas = Siswa::query()->whereKey($ids)->get();
 
             if ($siswas->isEmpty()) {
                 return $this->handleNotFound($request, 'Siswa');
             }
 
             DB::transaction(function () use ($siswas) {
-                foreach ($siswas as $siswa) {
-                    Arsip::create([
+                $now = now();
+                $archiveRows = $siswas
+                    ->map(fn (Siswa $siswa) => [
                         'name' => $siswa->name,
                         'panggilan' => $siswa->panggilan,
                         'kelas' => $siswa->kelas,
                         'no_hp' => $siswa->no_hp,
                         'paket_pembayaran' => $siswa->paket_pembayaran,
-                    ]);
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ])
+                    ->all();
+                $studentIds = $siswas->pluck('id');
 
-                    Jadwal::where('siswa_id', $siswa->id)->delete();
-                    $siswa->tandas()->delete();
-                    $siswa->delete();
-                }
+                Arsip::query()->insert($archiveRows);
+                Jadwal::query()->whereIn('siswa_id', $studentIds)->delete();
+                DB::table('tandas')->whereIn('siswa_id', $studentIds)->delete();
+                Siswa::query()->whereIn('id', $studentIds)->delete();
             });
 
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => count($ids) . ' siswa berhasil diarsipkan dan jadwal telah dibersihkan.',
+                    'message' => $siswas->count() . ' siswa berhasil diarsipkan dan jadwal telah dibersihkan.',
                 ]);
             }
 
-            return redirect()->back()->with('success', count($ids) . ' siswa berhasil diarsipkan.');
+            return redirect()->back()->with('success', $siswas->count() . ' siswa berhasil diarsipkan.');
         } catch (\Exception $e) {
             return $this->handleException($request, 'Gagal memproses', $e);
         }

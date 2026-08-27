@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="mx-auto w-full max-w-7xl px-3 py-5 sm:px-6 lg:px-8 lg:py-8"
-    x-data="calendarApp()" x-init="init()">
+    x-data="calendarApp(@js(route('jadwal.kalender.export')))" x-init="init()">
     <div class="mb-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 p-5 text-white shadow-lg sm:p-7">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -33,7 +33,8 @@
     </div>
 
     {{-- Mobile: daftar per hari agar tidak memaksa tabel horizontal. --}}
-    <div class="space-y-5 md:hidden">
+    <template x-if="!isDesktop">
+    <div class="space-y-5">
         @foreach ($haris as $hari)
             <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
                 <header class="flex items-center justify-between bg-gray-50 px-4 py-3 dark:bg-gray-900/60"
@@ -71,9 +72,11 @@
             </section>
         @endforeach
     </div>
+    </template>
 
     {{-- Desktop/tablet: kalender matriks. --}}
-    <div class="hidden overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 md:block">
+    <template x-if="isDesktop">
+    <div class="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <table class="min-w-[980px] w-full table-fixed border-collapse">
             <thead><tr class="bg-gray-50 dark:bg-gray-900/60">
                 <th class="w-28 border-b border-r border-gray-200 p-3 text-sm dark:border-gray-700">Sesi</th>
@@ -106,29 +109,7 @@
             </tbody>
         </table>
     </div>
+    </template>
 </div>
 
-<script>
-function calendarApp() {
-    return {
-        query: '',
-        todayLabel: '',
-        exportBase: @js(route('jadwal.kalender.export')),
-        init() {
-            this.todayLabel = new Intl.DateTimeFormat('id-ID', { dateStyle: 'full' }).format(new Date());
-        },
-        matches(text) {
-            return !this.query.trim() || text.includes(this.query.toLocaleLowerCase('id-ID').trim());
-        },
-        isCurrentDay(dayName) {
-            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-            return days[new Date().getDay()] === dayName;
-        },
-        get exportUrl() {
-            const search = this.query.trim();
-            return search ? `${this.exportBase}?search=${encodeURIComponent(search)}` : this.exportBase;
-        }
-    };
-}
-</script>
 @endsection

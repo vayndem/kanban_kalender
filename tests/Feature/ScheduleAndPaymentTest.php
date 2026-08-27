@@ -12,7 +12,9 @@ use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Services\PaymentBatchService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ScheduleAndPaymentTest extends TestCase
@@ -25,9 +27,12 @@ class ScheduleAndPaymentTest extends TestCase
         $students = Siswa::factory()->count(2)->create();
 
         $response = $this->actingAs($user)->postJson(route('admin.jadwal.store'), [
-            'hari_id' => $hari->id, 'sesi_id' => $sesi->id,
-            'mata_pelajaran_id' => $mapel->id, 'guru_id' => $guru->id,
-            'ruang_id' => $ruang->id, 'siswa_ids' => $students->pluck('id')->all(),
+            'hari_id' => $hari->id,
+            'sesi_id' => $sesi->id,
+            'mata_pelajaran_id' => $mapel->id,
+            'guru_id' => $guru->id,
+            'ruang_id' => $ruang->id,
+            'siswa_ids' => $students->pluck('id')->all(),
         ]);
 
         $response->assertOk()->assertJsonPath('status', 'success');
@@ -39,16 +44,23 @@ class ScheduleAndPaymentTest extends TestCase
         [$user, $hari, $sesi, $mapel, $guru, $ruang] = $this->scheduleMasters();
         $student = Siswa::factory()->create();
         Jadwal::create([
-            'hari_id' => $hari->id, 'sesi_id' => $sesi->id, 'mata_pelajaran_id' => $mapel->id,
-            'guru_id' => $guru->id, 'ruang_id' => $ruang->id, 'siswa_id' => $student->id,
+            'hari_id' => $hari->id,
+            'sesi_id' => $sesi->id,
+            'mata_pelajaran_id' => $mapel->id,
+            'guru_id' => $guru->id,
+            'ruang_id' => $ruang->id,
+            'siswa_id' => $student->id,
         ]);
 
         $otherMapel = MataPelajaran::factory()->create(['name' => 'Matematika']);
         $otherStudent = Siswa::factory()->create();
         $response = $this->actingAs($user)->postJson(route('admin.jadwal.store'), [
-            'hari_id' => $hari->id, 'sesi_id' => $sesi->id,
-            'mata_pelajaran_id' => $otherMapel->id, 'guru_id' => $guru->id,
-            'ruang_id' => $ruang->id, 'siswa_ids' => [$otherStudent->id],
+            'hari_id' => $hari->id,
+            'sesi_id' => $sesi->id,
+            'mata_pelajaran_id' => $otherMapel->id,
+            'guru_id' => $guru->id,
+            'ruang_id' => $ruang->id,
+            'siswa_ids' => [$otherStudent->id],
         ]);
 
         $response->assertStatus(422)->assertJsonPath('status', 'error');
@@ -65,8 +77,10 @@ class ScheduleAndPaymentTest extends TestCase
         $second = Pembayaran::create(['id_siswa' => $student->id, 'no_hp' => $student->no_hp, 'harga' => 100000, 'status' => 0, 'total_sudah_dibayar' => 0]);
 
         $response = $this->actingAs($user)->postJson(route('admin.pembayaran.bayarSiswa', $student->id), [
-            'nominal' => 150001, 'pembayaran_via' => 1,
-            'tanggal_pembayaran' => now()->toDateString(), 'keterangan_detail' => 'Tes bayar',
+            'nominal' => 150001,
+            'pembayaran_via' => 1,
+            'tanggal_pembayaran' => now()->toDateString(),
+            'keterangan_detail' => 'Tes bayar',
         ]);
 
         $response->assertOk()->assertJsonPath('status', 'success');
@@ -85,12 +99,16 @@ class ScheduleAndPaymentTest extends TestCase
         $user = User::factory()->create();
         $student = Siswa::factory()->create(['no_hp' => '+628111111111']);
         $invoice = Pembayaran::create([
-            'id_siswa' => $student->id, 'no_hp' => $student->no_hp,
-            'harga' => 50000, 'status' => 0, 'total_sudah_dibayar' => 0,
+            'id_siswa' => $student->id,
+            'no_hp' => $student->no_hp,
+            'harga' => 50000,
+            'status' => 0,
+            'total_sudah_dibayar' => 0,
         ]);
 
         $this->actingAs($user)->postJson(route('admin.pembayaran.bayarSiswa', $student->id), [
-            'nominal' => 50001, 'pembayaran_via' => 0,
+            'nominal' => 50001,
+            'pembayaran_via' => 0,
             'tanggal_pembayaran' => now()->toDateString(),
         ])->assertStatus(422);
 
@@ -233,6 +251,43 @@ class ScheduleAndPaymentTest extends TestCase
             ->count());
     }
 
+    public function test_mass_billing_uses_bounded_queries_for_many_students(): void
+    {
+        $package = \App\Models\Paket::create([
+            'nama_paket' => 'Paket Batch',
+            'harga' => 175000,
+            'pertemuan' => 4,
+        ]);
+        Siswa::factory()->count(30)->create(['paket_pembayaran' => $package->id]);
+
+        DB::enableQueryLog();
+        $created = app(PaymentBatchService::class)->createMonthlyInvoices();
+        $queryCount = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        $this->assertSame(30, $created);
+        $this->assertDatabaseCount('pembayarans', 30);
+        $this->assertLessThanOrEqual(10, $queryCount);
+    }
+
+    public function test_bulk_student_archive_uses_bounded_queries(): void
+    {
+        $user = User::factory()->create();
+        $students = Siswa::factory()->count(20)->create();
+
+        DB::enableQueryLog();
+        $this->actingAs($user)
+            ->deleteJson(route('admin.siswa.destroy', $students->pluck('id')->join(',')))
+            ->assertOk()
+            ->assertJsonPath('status', 'success');
+        $queryCount = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        $this->assertDatabaseCount('siswas', 0);
+        $this->assertDatabaseCount('arsips', 20);
+        $this->assertLessThanOrEqual(12, $queryCount);
+    }
+
     public function test_store_payment_invoice_forces_unpaid_status(): void
     {
         $user = User::factory()->create();
@@ -276,9 +331,12 @@ class ScheduleAndPaymentTest extends TestCase
 
         foreach ([$monday, $tuesday] as $day) {
             Jadwal::create([
-                'hari_id' => $day->id, 'sesi_id' => $session->id,
-                'mata_pelajaran_id' => $subject->id, 'guru_id' => $teacher->id,
-                'ruang_id' => $room->id, 'siswa_id' => $student->id,
+                'hari_id' => $day->id,
+                'sesi_id' => $session->id,
+                'mata_pelajaran_id' => $subject->id,
+                'guru_id' => $teacher->id,
+                'ruang_id' => $room->id,
+                'siswa_id' => $student->id,
             ]);
         }
 

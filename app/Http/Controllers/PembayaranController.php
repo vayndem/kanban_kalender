@@ -7,6 +7,7 @@ use App\Models\Pembayaran;
 use App\Models\PembayaranDetail;
 use App\Models\Siswa;
 use App\Models\Diskon;
+use App\Services\PaymentBatchService;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,10 @@ use Illuminate\Validation\ValidationException;
 
 class PembayaranController extends Controller
 {
+    public function __construct(private readonly PaymentBatchService $paymentBatchService)
+    {
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -101,14 +106,7 @@ class PembayaranController extends Controller
     public function lunasSemua(Request $request)
     {
         try {
-            $updatedCount = DB::transaction(function () {
-                $pembayarans = Pembayaran::whereIn('status', [0, 1])
-                    ->orderBy('created_at')
-                    ->lockForUpdate()
-                    ->get();
-
-                return $this->settlePembayarans($pembayarans, 'Selesai sistem');
-            });
+            $updatedCount = $this->paymentBatchService->settleActive();
 
             if ($request->wantsJson()) {
                 return response()->json(['status' => 'success', 'message' => $updatedCount . ' tagihan telah diselesaikan.']);
@@ -222,15 +220,7 @@ class PembayaranController extends Controller
                 return $this->handleNotFound($request, "Siswa");
             }
 
-            $updatedCount = DB::transaction(function () use ($siswa) {
-                $pembayarans = Pembayaran::where('no_hp', $siswa->no_hp)
-                    ->whereIn('status', [0, 1])
-                    ->orderBy('created_at')
-                    ->lockForUpdate()
-                    ->get();
-
-                return $this->settlePembayarans($pembayarans, 'Selesai sistem');
-            });
+            $updatedCount = $this->paymentBatchService->settleActive($siswa->no_hp);
 
             if ($request->wantsJson()) {
                 return response()->json(['status' => 'success', 'message' => $updatedCount . ' tagihan berhasil diubah menjadi lunas.']);
@@ -245,47 +235,7 @@ class PembayaranController extends Controller
     public function penagihanMassal(Request $request)
     {
         try {
-            $siswas = Siswa::where(function ($q) {
-                $q->whereNotNull('paket_pembayaran')
-                    ->orWhereNotNull('paket_pembayaran_2')
-                    ->orWhereNotNull('paket_pembayaran_3')
-                    ->orWhereNotNull('paket_pembayaran_4')
-                    ->orWhereNotNull('paket_pembayaran_5');
-            })->get();
-
-            $allPakets = \App\Models\Paket::all()->keyBy('id');
-            $count = 0;
-            $now = Carbon::now();
-            $bulanTahun = $now->translatedFormat('F Y');
-
-            foreach ($siswas as $siswa) {
-                $columns = ['paket_pembayaran', 'paket_pembayaran_2', 'paket_pembayaran_3', 'paket_pembayaran_4', 'paket_pembayaran_5'];
-                foreach ($columns as $col) {
-                    if ($siswa->$col && isset($allPakets[$siswa->$col])) {
-                        $pkt = $allPakets[$siswa->$col];
-                        $keterangan = "Tagihan Paket {$pkt->nama_paket} - {$bulanTahun}";
-
-                        $alreadyExists = Pembayaran::where('id_siswa', $siswa->id)
-                            ->where('no_hp', $siswa->no_hp)
-                            ->where('keterangan', $keterangan)
-                            ->exists();
-
-                        if ($alreadyExists) {
-                            continue;
-                        }
-
-                        Pembayaran::create([
-                            'id_siswa' => $siswa->id,
-                            'no_hp' => $siswa->no_hp,
-                            'harga' => $pkt->harga,
-                            'keterangan' => $keterangan,
-                            'status' => 0,
-                            'total_sudah_dibayar' => 0
-                        ]);
-                        $count++;
-                    }
-                }
-            }
+            $count = $this->paymentBatchService->createMonthlyInvoices();
 
             $message = "{$count} Tagihan massal berhasil dibuat.";
             if ($request->wantsJson()) {
@@ -475,40 +425,6 @@ class PembayaranController extends Controller
                 'status' => $status,
             ],
         ]);
-    }
-
-    private function settlePembayarans($pembayarans, string $keterangan): int
-    {
-        $settledAt = Carbon::now();
-        $updatedCount = 0;
-
-        foreach ($pembayarans as $pembayaran) {
-            $harga = (int) $pembayaran->harga;
-            $sudahDibayar = (int) $pembayaran->total_sudah_dibayar;
-            $sisa = max(0, $harga - $sudahDibayar);
-
-            if ($sisa > 0) {
-                $detail = PembayaranDetail::create([
-                    'id_pembayaran' => $pembayaran->id,
-                    'pembayaran' => $sisa,
-                    'keterangan' => $keterangan,
-                ]);
-                $detail->created_at = $settledAt;
-                $detail->updated_at = $settledAt;
-                $detail->save();
-            }
-
-            $pembayaran->update([
-                'total_sudah_dibayar' => $harga,
-                'status' => 2,
-                'tanggal_pembayaran' => $settledAt,
-                'pembayaran_via' => 0,
-            ]);
-
-            $updatedCount++;
-        }
-
-        return $updatedCount;
     }
 
     private function renderStrukPdfResponse(

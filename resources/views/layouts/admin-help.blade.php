@@ -125,11 +125,10 @@
         <span class="text-2xl font-black">?</span>
     </button>
 
+    <template x-if="open">
     <div
-        x-show="open"
         x-transition.opacity
         class="fixed inset-0 z-[121] flex items-end justify-end bg-slate-950/45 p-4 backdrop-blur-sm sm:items-center sm:justify-center"
-        style="display: none;"
     >
         <div @click="open = false" class="absolute inset-0"></div>
 
@@ -177,4 +176,5 @@
             </div>
         </div>
     </div>
+    </template>
 </div>

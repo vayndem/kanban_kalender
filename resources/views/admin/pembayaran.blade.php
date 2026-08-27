@@ -13,30 +13,30 @@
             </p>
         </div>
         <div class="flex flex-wrap gap-2 w-full lg:w-auto">
-            <button @click="exportPdf()" :disabled="isLoading"
+            <button @click="exportPdf()"
                 class="btn-export flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-file-pdf"></i> <span class="hidden sm:inline">Export</span> PDF
             </button>
-            <button @click="openDiskonManagerModal()" :disabled="isLoading"
+            <button @click="openDiskonManagerModal()"
                 class="btn-accent flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-tags"></i> Kelola Diskon
             </button>
-            <button @click="prosesPenagihanMassal()" :disabled="isLoading"
+            <button @click="prosesPenagihanMassal()"
                 class="btn-warning flex-1 lg:flex-none text-xs md:text-sm">
-                <i class="fas" :class="isLoading ? 'fa-spinner fa-spin' : 'fa-file-invoice-dollar'"></i>
+                <i class="fas fa-file-invoice-dollar"></i>
                 <span>Penagihan Massal</span>
             </button>
-            <button @click="openPaketModal()" :disabled="isLoading"
+            <button @click="openPaketModal()"
                 class="btn-accent flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-box"></i> <span class="hidden sm:inline">Kelola</span> Paket
             </button>
-            <button @click="openAddPembayaran()" :disabled="isLoading"
+            <button @click="openAddPembayaran()"
                 class="btn-primary flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-plus"></i> Tagihan
             </button>
-            <button @click="lunaskanSemua()" :disabled="isLoading"
+            <button @click="lunaskanSemua()"
                 class="btn-sacred w-full lg:w-auto text-xs md:text-sm">
-                <i class="fas" :class="isLoading ? 'fa-spinner fa-spin' : 'fa-check-double'"></i>
+                <i class="fas fa-check-double"></i>
                 <span>Selesaikan Seluruh Status</span>
             </button>
         </div>
@@ -80,7 +80,7 @@
                 class="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Cari
                 Nama / No HP / Keterangan</label>
             <div class="relative">
-                <input type="text" x-model="filterSearch" placeholder="Ketik kata kunci..."
+                <input type="text" x-model.debounce.200ms="filterSearch" placeholder="Ketik kata kunci..."
                     class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 pl-9 transition-all">
                 <i class="fas fa-search absolute left-3 top-3 text-gray-400 text-xs"></i>
             </div>
@@ -134,12 +134,8 @@
         </div>
     </div>
 
-    <div class="hidden md:block overflow-x-auto border border-gray-100 dark:border-gray-700 rounded-xl relative">
-        <div x-show="isLoading"
-            class="absolute inset-0 bg-white/50 dark:bg-gray-800/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
-            <i class="fas fa-circle-notch fa-spin fa-2x text-emerald-500"></i>
-        </div>
-
+    <template x-if="isDesktop">
+    <div class="overflow-x-auto border border-gray-100 dark:border-gray-700 rounded-xl relative">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-900/50 text-left">
                 <tr>
@@ -155,7 +151,7 @@
                 </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
-                <template x-for="item in filteredSummaries" :key="item.no_hp">
+                <template x-for="item in displayedSummaries" :key="item.no_hp">
                     <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/20 transition-colors">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="text-sm font-bold text-gray-900 dark:text-white font-mono"
@@ -214,18 +210,18 @@
                             <button @click="openDetailModal(item)"
                                 class="text-blue-500 hover:text-blue-600 hover:underline text-xs font-bold uppercase tracking-wider mr-2 transition-all">Lihat Detail</button>
                             <template x-if="item.status == 0">
-                                <button @click="chatWhatsApp(item)" :disabled="isLoading"
+                                <button @click="chatWhatsApp(item)"
                                     class="btn-success px-3 py-1.5 text-[11px] rounded-md">
                                     <i class="fab fa-whatsapp"></i> Kirim WA
                                 </button>
                             </template>
                             <template x-if="item.status == 0 || item.status == 1">
                                 <div class="inline-flex gap-1">
-                                    <button @click="prosesBayarSiswa(item)" :disabled="isLoading"
+                                    <button @click="prosesBayarSiswa(item)"
                                         class="btn-primary px-3 py-1.5 text-[11px] rounded-md">
                                         <i class="fas fa-hand-holding-usd"></i> Catat Bayar
                                     </button>
-                                    <button @click="ubahKeLunas(item)" :disabled="isLoading"
+                                    <button @click="ubahKeLunas(item)"
                                         class="btn-sacred px-3 py-1.5 text-[11px] rounded-md">
                                         <i class="fas fa-check"></i> Set Lunas
                                     </button>
@@ -240,7 +236,7 @@
                         </td>
                     </tr>
                 </template>
-                <tr x-show="filteredSummaries.length === 0">
+                <tr x-show="displayedSummaries.length === 0">
                     <td colspan="4"
                         class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic font-medium">Data tidak
                         ditemukan!</td>
@@ -248,13 +244,11 @@
             </tbody>
         </table>
     </div>
+    </template>
 
-    <div class="block md:hidden space-y-4 relative">
-        <div x-show="isLoading"
-            class="absolute inset-0 bg-white/50 dark:bg-gray-800/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
-            <i class="fas fa-circle-notch fa-spin fa-2x text-emerald-500"></i>
-        </div>
-        <template x-for="item in filteredSummaries" :key="item.no_hp">
+    <template x-if="!isDesktop">
+    <div class="space-y-4 relative">
+        <template x-for="item in displayedSummaries" :key="item.no_hp">
             <div
                 class="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-xl border border-gray-100 dark:border-gray-700/70 space-y-3">
                 <div class="flex justify-between items-start">
@@ -315,13 +309,13 @@
                 </div>
             </div>
         </template>
-        <div x-show="filteredSummaries.length === 0"
+        <div x-show="displayedSummaries.length === 0"
             class="text-center text-xs text-gray-400 dark:text-gray-500 italic py-8">Data tidak ditemukan!</div>
     </div>
+    </template>
 
-    <div x-show="showDetailModal"
-        class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition
-        style="display: none;">
+    <template x-if="showDetailModal">
+    <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition>
         <div @click="showDetailModal = false" class="absolute inset-0"></div>
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
             @click.stop>
@@ -438,10 +432,10 @@
             </div>
         </div>
     </div>
+    </template>
 
-    <div x-show="showDiskonModal"
-        class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition
-        style="display: none;">
+    <template x-if="showDiskonModal">
+    <div class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition>
         <div @click="showDiskonModal = false" class="absolute inset-0"></div>
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
             @click.stop>
@@ -517,9 +511,8 @@
                                 placeholder="Contoh: Diskon Ramadhan / Kakak Beradik">
                         </div>
                         <div class="flex gap-2 pt-2">
-                            <button type="submit" :disabled="isLoading"
+                            <button type="submit"
                                 class="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                <i x-show="isLoading" class="fas fa-spinner fa-spin"></i>
                                 <span x-text="diskonForm.id ? 'Update Aturan' : 'Terapkan Aturan'"></span>
                             </button>
                             <button type="button" x-show="diskonForm.id" @click="resetDiskonForm"
@@ -555,13 +548,12 @@
                                     </div>
                                 </div>
                                 <div class="flex gap-0.5 shrink-0">
-                                    <button @click="editDiskon(d)" :disabled="isLoading"
+                                    <button @click="editDiskon(d)"
                                         class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"><i
                                             class="fas fa-edit text-xs"></i></button>
-                                    <button @click="hapusDiskon(d.id)" :disabled="isLoading"
+                                    <button @click="hapusDiskon(d.id)"
                                         class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"><i
-                                            class="fas text-xs"
-                                            :class="isLoading ? 'fa-spinner fa-spin' : 'fa-trash'"></i></button>
+                                            class="fas fa-trash text-xs"></i></button>
                                 </div>
                             </div>
                         </template>
@@ -574,10 +566,10 @@
             </div>
         </div>
     </div>
+    </template>
 
-    <div x-show="showAddModal"
-        class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition
-        style="display: none;">
+    <template x-if="showAddModal">
+    <div class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition>
         <div @click="showAddModal = false" class="absolute inset-0"></div>
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
             @click.stop>
@@ -647,21 +639,20 @@
                         placeholder="Tuliskan alasan atau keterangan perihal pembuatan tagihan manual ini..."></textarea>
                 </div>
                 <div class="pt-3 flex justify-end gap-2.5 border-t dark:border-gray-700">
-                    <button type="button" @click="showAddModal = false" :disabled="isLoading"
+                    <button type="button" @click="showAddModal = false"
                         class="px-5 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-xl dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">Batal</button>
-                    <button type="submit" :disabled="isLoading"
+                    <button type="submit"
                         class="px-6 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 font-bold transition-all flex items-center gap-2 shadow-md active:scale-95">
-                        <i x-show="isLoading" class="fas fa-spinner fa-spin"></i>
-                        <span x-text="isLoading ? 'Memproses...' : 'Simpan Tagihan Baru'"></span>
+                        <span>Simpan Tagihan Baru</span>
                     </button>
                 </div>
             </form>
         </div>
     </div>
+    </template>
 
-    <div x-show="showPaketModal"
-        class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition
-        style="display: none;">
+    <template x-if="showPaketModal">
+    <div class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition>
         <div @click="showPaketModal = false" class="absolute inset-0"></div>
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
             @click.stop>
@@ -698,9 +689,8 @@
                                 class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none">
                         </div>
                         <div class="flex gap-2 pt-2">
-                            <button type="submit" :disabled="isLoading"
+                            <button type="submit"
                                 class="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                <i x-show="isLoading" class="fas fa-spinner fa-spin"></i>
                                 <span x-text="paketForm.id ? 'Update Aturan Paket' : 'Simpan Paket Baru'"></span>
                             </button>
                             <button type="button" x-show="paketForm.id" @click="resetPaketForm"
@@ -728,13 +718,12 @@
                                     </div>
                                 </div>
                                 <div class="flex gap-0.5 shrink-0">
-                                    <button @click="editPaket(p)" :disabled="isLoading"
+                                    <button @click="editPaket(p)"
                                         class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"><i
                                             class="fas fa-edit text-xs"></i></button>
-                                    <button @click="deletePaket(p.id)" :disabled="isLoading"
+                                    <button @click="deletePaket(p.id)"
                                         class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"><i
-                                            class="fas text-xs"
-                                            :class="isLoading ? 'fa-spinner fa-spin' : 'fa-trash'"></i></button>
+                                            class="fas fa-trash text-xs"></i></button>
                                 </div>
                             </div>
                         </template>
@@ -743,6 +732,7 @@
             </div>
         </div>
     </div>
+    </template>
 </div>
 
 @push('scripts')
@@ -754,7 +744,7 @@
                 pakets: initialPakets || [],
                 diskons: initialDiskons || [],
                 filterSearch: '',
-                filterBulan: 'all',
+                filterBulan: String(new Date().getMonth() + 1).padStart(2, '0'),
                 filterStatus: '0',
                 showAddModal: false,
                 showPaketModal: false,
@@ -765,6 +755,16 @@
                 isLoading: false,
                 isLoadingDetail: false,
                 activeDetail: {},
+                displayedSummaries: [],
+                summaryStats: {
+                    totalFamilies: 0,
+                    totalNet: 0,
+                    totalPaid: 0,
+                    totalRemaining: 0
+                },
+                familyOptions: [],
+                familyNamesByPhone: {},
+                isDesktop: window.matchMedia('(min-width: 768px)').matches,
                 form: {
                     id_siswa: '',
                     harga: '',
@@ -785,117 +785,49 @@
                     is_universal: false
                 },
 
+                init() {
+                    const mediaQuery = window.matchMedia('(min-width: 768px)');
+                    mediaQuery.addEventListener('change', event => this.isDesktop = event.matches);
+                    this.buildFamilyIndex();
+                    this.rebuildSummaries();
+                    this.$watch('filterSearch', () => this.rebuildSummaries());
+                    this.$watch('filterBulan', () => this.rebuildSummaries());
+                    this.$watch('filterStatus', () => this.rebuildSummaries());
+                },
+
                 refreshToTab() {
                     const url = new URL(window.location.href);
                     url.searchParams.set('tab', 'pembayaran');
                     window.location.href = url.toString();
                 },
 
-                get filteredSummaries() {
-                    let rawFiltered = this.summaries.filter(item => {
-                        const matchesSearch = this.filterSearch === '' ||
-                            (item.siswa && item.siswa.name.toLowerCase().includes(this
-                                .filterSearch.toLowerCase())) ||
-                            (item.no_hp && item.no_hp.includes(this.filterSearch)) ||
-                            (item.keterangan && item.keterangan.toLowerCase().includes(this
-                                .filterSearch.toLowerCase()));
-                        const matchesBulan = this.filterBulan === 'all' || item.bulan ===
-                            this.filterBulan;
-                        const matchesStatus = item.status.toString() === this.filterStatus;
-                        return matchesSearch && matchesBulan && matchesStatus;
+                rebuildSummaries() {
+                    const result = AppDomain.buildPaymentSummary(this.summaries, this.diskons, {
+                        search: this.filterSearch,
+                        month: this.filterBulan,
+                        status: this.filterStatus
                     });
 
-                    let grouped = {};
-                    rawFiltered.forEach(item => {
-                        let hpKey = item.no_hp || (item.siswa ? item.siswa.no_hp : 'N/A');
-                        if (!hpKey) hpKey = 'N/A';
-
-                        if (!grouped[hpKey]) {
-                            grouped[hpKey] = {
-                                no_hp: hpKey,
-                                siswa_names_arr: [],
-                                total_harga: 0,
-                                total_sudah_dibayar: 0,
-                                gabungan_keterangan: [],
-                                raw_items: [],
-                                payment_details: [],
-                                status: item.status,
-                                tanggal_pembayaran: item.tanggal_pembayaran,
-                                pembayaran_via: item.pembayaran_via,
-                                tanggal_format: item.tanggal_format,
-                                id_siswa_trigger: item.id_siswa
-                            };
-                        }
-
-                        if (item.siswa && !grouped[hpKey].siswa_names_arr.includes(item
-                                .siswa.name)) {
-                            grouped[hpKey].siswa_names_arr.push(item.siswa.name);
-                        }
-
-                        grouped[hpKey].total_harga += parseInt(item.harga || 0);
-                        grouped[hpKey].total_sudah_dibayar += parseInt(item
-                            .total_sudah_dibayar || 0);
-                        grouped[hpKey].gabungan_keterangan.push(item.keterangan);
-                        grouped[hpKey].raw_items.push(item);
-                    });
-
-                    const universalDiskonObj = this.diskons.find(d => d.no_hp === null);
-                    const nominalUniversal = universalDiskonObj ? parseInt(universalDiskonObj
-                        .diskon || 0) : 0;
-                    const keteranganUniversal = universalDiskonObj ? universalDiskonObj.keterangan :
-                        '';
-
-                    return Object.values(grouped).map(g => {
-                        const statuses = g.raw_items.map(item => Number(item.status));
-                        g.status = statuses.every(status => status === 2) ? 2 :
-                            (statuses.some(status => status === 1 || status === 2) ? 1 : 0);
-                        g.status_label = ['Belum Bayar', 'Tertagih', 'Lunas'][g.status];
-                        const diskonObj = this.diskons.find(d => d.no_hp === g.no_hp);
-                        const nominalDiskonSpesifik = diskonObj ? parseInt(diskonObj
-                            .diskon || 0) : 0;
-                        const keteranganDiskonSpesifik = diskonObj ? diskonObj.keterangan :
-                            '';
-
-                        const totalNominalDiskon = nominalDiskonSpesifik + nominalUniversal;
-
-                        let gabunganKetDiskon = [];
-                        if (keteranganDiskonSpesifik) gabunganKetDiskon.push(
-                            keteranganDiskonSpesifik);
-                        if (keteranganUniversal) gabunganKetDiskon.push(
-                            `${keteranganUniversal} (Massal)`);
-
-                        let totalAkhir = g.total_harga - totalNominalDiskon;
-                        if (totalAkhir < 0) totalAkhir = 0;
-                        const remainingAmount = Math.max(totalAkhir - g.total_sudah_dibayar, 0);
-
-                        return {
-                            ...g,
-                            id_diskon: diskonObj ? diskonObj.id : null,
-                            siswa_names: g.siswa_names_arr.join(', '),
-                            gabungan_keterangan: g.gabungan_keterangan.filter(k => k).join(
-                                ', '),
-                            nominal_diskon: totalNominalDiskon,
-                            keterangan_diskon: gabunganKetDiskon.join(' + ') ||
-                                'Tanpa Potongan',
-                            total_akhir: totalAkhir,
-                            remaining_amount: remainingAmount
-                        };
-                    });
+                    this.displayedSummaries = result.items;
+                    this.summaryStats = result.stats;
                 },
 
-                get summaryStats() {
-                    return this.filteredSummaries.reduce((carry, item) => {
-                        carry.totalFamilies += 1;
-                        carry.totalNet += Number(item.total_akhir || 0);
-                        carry.totalPaid += Number(item.total_sudah_dibayar || 0);
-                        carry.totalRemaining += Number(item.remaining_amount || 0);
-                        return carry;
-                    }, {
-                        totalFamilies: 0,
-                        totalNet: 0,
-                        totalPaid: 0,
-                        totalRemaining: 0
+                buildFamilyIndex() {
+                    const families = {};
+                    this.summaries.forEach(item => {
+                        const phone = item.no_hp || item.siswa?.no_hp;
+                        if (!phone || phone === 'N/A') return;
+                        if (!families[phone]) families[phone] = new Set();
+                        if (item.siswa?.name) families[phone].add(item.siswa.name);
                     });
+
+                    this.familyNamesByPhone = Object.fromEntries(
+                        Object.entries(families).map(([phone, names]) => [phone, [...names].join(', ')])
+                    );
+                    this.familyOptions = Object.entries(this.familyNamesByPhone).map(([no_hp, siswa_names]) => ({
+                        no_hp,
+                        siswa_names
+                    }));
                 },
 
                 formatCurrency(amount) {
@@ -909,30 +841,8 @@
                 },
 
                 get filteredFamiliesForModal() {
-                    let families = {};
-                    this.summaries.forEach(item => {
-                        let hpKey = item.no_hp || (item.siswa ? item.siswa.no_hp : null);
-                        if (hpKey && hpKey !== 'N/A') {
-                            if (!families[hpKey]) {
-                                families[hpKey] = {
-                                    no_hp: hpKey,
-                                    names: []
-                                };
-                            }
-                            if (item.siswa && !families[hpKey].names.includes(item.siswa
-                                    .name)) {
-                                families[hpKey].names.push(item.siswa.name);
-                            }
-                        }
-                    });
-
-                    let mappedFamilies = Object.values(families).map(f => ({
-                        no_hp: f.no_hp,
-                        siswa_names: f.names.join(', ')
-                    }));
-
-                    if (!this.hpSearchModal) return mappedFamilies;
-                    return mappedFamilies.filter(f =>
+                    if (!this.hpSearchModal) return this.familyOptions;
+                    return this.familyOptions.filter(f =>
                         f.no_hp.includes(this.hpSearchModal) ||
                         f.siswa_names.toLowerCase().includes(this.hpSearchModal.toLowerCase())
                     );
@@ -940,16 +850,7 @@
 
                 getKeluargaLabelByHp(hp) {
                     if (hp === null) return 'Seluruh Siswa Terdaftar (Universal)';
-                    let families = {};
-                    this.summaries.forEach(item => {
-                        let hpKey = item.no_hp || (item.siswa ? item.siswa.no_hp : null);
-                        if (hpKey === hp && item.siswa) {
-                            if (!families[hpKey]) families[hpKey] = [];
-                            if (!families[hpKey].includes(item.siswa.name)) families[hpKey]
-                                .push(item.siswa.name);
-                        }
-                    });
-                    return families[hp] ? families[hp].join(', ') : 'Anggota tidak terdeteksi';
+                    return this.familyNamesByPhone[hp] || 'Anggota tidak terdeteksi';
                 },
 
                 async openDetailModal(item) {
@@ -1372,6 +1273,7 @@
                 },
 
                 exportPdf() {
+                    ButtonLoading.pulseCurrent();
                     const params = new URLSearchParams({
                         search: this.filterSearch,
                         bulan: this.filterBulan,

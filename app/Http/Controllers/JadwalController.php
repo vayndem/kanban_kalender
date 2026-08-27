@@ -18,10 +18,18 @@ class JadwalController extends Controller
 {
     public function tampilKalender()
     {
-        $haris = Hari::orderBy('id')->get();
-        $sesis = Sesi::orderBy('start_time')->get();
+        $haris = Hari::query()->select(['id', 'name'])->orderBy('id')->get();
+        $sesis = Sesi::query()->select(['id', 'name', 'start_time', 'end_time'])->orderBy('start_time')->get();
 
-        $jadwalsData = Jadwal::with(['siswa', 'mataPelajaran', 'guru', 'ruang'])->get();
+        $jadwalsData = Jadwal::query()
+            ->select(['id', 'hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id', 'siswa_id'])
+            ->with([
+                'siswa:id,name,panggilan,kelas',
+                'mataPelajaran:id,name',
+                'guru:id,name',
+                'ruang:id,name',
+            ])
+            ->get();
 
         $finalJadwals = [];
         foreach ($jadwalsData as $jadwal) {
@@ -196,10 +204,18 @@ class JadwalController extends Controller
             );
 
             $createdCount = DB::transaction(function () use ($jadwalDataUtama, $validated) {
-                foreach ($validated['siswa_ids'] as $siswaId) {
-                    Jadwal::create(array_merge($jadwalDataUtama, ['siswa_id' => $siswaId]));
-                }
-                return count($validated['siswa_ids']);
+                $now = now();
+                $rows = collect($validated['siswa_ids'])
+                    ->map(fn ($studentId) => array_merge($jadwalDataUtama, [
+                        'siswa_id' => $studentId,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]))
+                    ->all();
+
+                Jadwal::query()->insert($rows);
+
+                return count($rows);
             });
 
             return response()->json([
@@ -240,14 +256,26 @@ class JadwalController extends Controller
             });
         }
 
+        $studentIds = array_map('intval', $studentIds);
+        $occupied = $query
+            ->where(function ($conflictQuery) use ($guruId, $ruangId, $studentIds) {
+                $conflictQuery->where('guru_id', $guruId)
+                    ->orWhere('ruang_id', $ruangId);
+
+                if ($studentIds !== []) {
+                    $conflictQuery->orWhereIn('siswa_id', $studentIds);
+                }
+            })
+            ->get(['guru_id', 'ruang_id', 'siswa_id']);
+
         $conflicts = [];
-        if ((clone $query)->where('guru_id', $guruId)->exists()) {
+        if ($occupied->contains('guru_id', $guruId)) {
             $conflicts[] = 'Guru sudah mengajar pada hari dan sesi tersebut.';
         }
-        if ((clone $query)->where('ruang_id', $ruangId)->exists()) {
+        if ($occupied->contains('ruang_id', $ruangId)) {
             $conflicts[] = 'Ruang sudah digunakan pada hari dan sesi tersebut.';
         }
-        if ($studentIds !== [] && (clone $query)->whereIn('siswa_id', $studentIds)->exists()) {
+        if ($studentIds !== [] && $occupied->pluck('siswa_id')->intersect($studentIds)->isNotEmpty()) {
             $conflicts[] = 'Satu atau lebih siswa sudah memiliki jadwal pada waktu tersebut.';
         }
 
@@ -489,7 +517,7 @@ class JadwalController extends Controller
     public function uploadStash(Request $request)
     {
         $request->validate([
-            'file_stash' => 'required|file'
+            'file_stash' => 'required|file|max:10240'
         ]);
 
         try {

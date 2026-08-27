@@ -1,4 +1,4 @@
-<div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-xl shadow-inner" x-data="siswaHandler(@js($allSiswas), @js($allArsips), @js($pakets), @js($jadwalsData), @js($haris), @js($sesis), @js($allGurus), @js($allRuangs))">
+<div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-xl shadow-inner" x-data="siswaHandler(@js($allSiswas), @js($allArsips), @js($pakets), @js($studentScheduleMeta), @js($haris), @js($sesis), @js($allGurus), @js($allRuangs))">
 
     <div class="flex flex-col gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -100,7 +100,8 @@
                     <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200"
                         :class="openSesi ? 'rotate-180' : ''"></i>
                 </button>
-                <div x-show="openSesi" @click.outside="openSesi = false" x-transition
+                <template x-if="openSesi">
+                <div @click.outside="openSesi = false"
                     class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
                     <div class="sticky top-0 z-10 border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
                         <input type="search" x-model="searchSesi" placeholder="Cari sesi atau jam..." class="w-full rounded-lg border px-3 py-2 text-xs">
@@ -120,6 +121,7 @@
                         </label>
                     </template>
                 </div>
+                </template>
             </div>
 
             <div x-data="{ openGuru: false, searchGuru: '' }" class="relative">
@@ -131,7 +133,8 @@
                     <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200"
                         :class="openGuru ? 'rotate-180' : ''"></i>
                 </button>
-                <div x-show="openGuru" @click.outside="openGuru = false" x-transition
+                <template x-if="openGuru">
+                <div @click.outside="openGuru = false"
                     class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
                     <div class="sticky top-0 z-10 border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
                         <input type="search" x-model="searchGuru" placeholder="Cari nama guru..." class="w-full rounded-lg border px-3 py-2 text-xs">
@@ -145,6 +148,7 @@
                         </label>
                     </template>
                 </div>
+                </template>
             </div>
 
             <div x-data="{ openRuang: false, searchRuang: '' }" class="relative">
@@ -157,7 +161,8 @@
                     <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200"
                         :class="openRuang ? 'rotate-180' : ''"></i>
                 </button>
-                <div x-show="openRuang" @click.outside="openRuang = false" x-transition
+                <template x-if="openRuang">
+                <div @click.outside="openRuang = false"
                     class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
                     <div class="sticky top-0 z-10 border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
                         <input type="search" x-model="searchRuang" placeholder="Cari ruang..." class="w-full rounded-lg border px-3 py-2 text-xs">
@@ -171,6 +176,7 @@
                         </label>
                     </template>
                 </div>
+                </template>
             </div>
         </div>
 
@@ -342,9 +348,8 @@
         </div>
     </div>
 
-    <div x-show="showSiswaModal"
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-        style="display: none;" x-transition>
+    <template x-if="showSiswaModal">
+    <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition>
         <div @click="showSiswaModal = false" class="absolute inset-0"></div>
 
         <form @submit.prevent="simpanSiswa"
@@ -473,17 +478,21 @@
             </div>
         </form>
     </div>
+    </template>
 </div>
 
 @push('scripts')
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('siswaHandler', (initialSiswa, initialArsip, paketData, jadwalData, hariData, sesiData, guruData, ruangData) =>
+            Alpine.data('siswaHandler', (initialSiswa, initialArsip, paketData, scheduleMetaData, hariData, sesiData, guruData, ruangData) =>
                 ({
                     allSiswas: initialSiswa || [],
                     allArsips: initialArsip || [],
                     pakets: paketData || [],
-                    allJadwals: jadwalData || [],
+                    scheduleMeta: scheduleMetaData || {},
+                    activeStudentSchedules: [],
+                    packageIndex: {},
+                    studentStatusIndex: {},
                     allHaris: hariData || [],
                     allSesis: sesiData || [],
                     allGurus: guruData || [],
@@ -510,6 +519,15 @@
                     filterGurus: [],
                     filterRuangs: [],
 
+                    init() {
+                        this.packageIndex = AppDomain.indexById(this.pakets);
+                        this.studentStatusIndex = AppDomain.buildStudentStatusIndex(
+                            this.allSiswas,
+                            this.scheduleMeta,
+                            this.packageIndex
+                        );
+                    },
+
                     get kelasList() {
                         return [...new Set(
                             this.allSiswas
@@ -533,71 +551,22 @@
                     },
 
                     get filteredSiswa() {
-                        let data = this.viewMode === 'aktif' ? this.allSiswas : this.allArsips;
-
-                        if (this.siswaSearch) {
-                            const search = this.siswaSearch.toLowerCase();
-                            data = data.filter(s =>
-                                (s.name && s.name.toLowerCase().includes(search)) ||
-                                (s.kelas && s.kelas.toLowerCase().includes(search))
-                            );
-                        }
-
-                        if (this.viewMode === 'aktif') {
-                            if (this.filterKelas) {
-                                data = data.filter(s => s.kelas === this.filterKelas);
-                            }
-
-                            if (this.filterPaket) {
-                                data = data.filter(s => Number(s.paket_pembayaran) === Number(this
-                                    .filterPaket));
-                            }
-
-                            if (this.filterSesis.length > 0) {
-                                const sesiIds = this.filterSesis.map(Number);
-                                const siswaIdsDenganSesi = new Set(
-                                    this.allJadwals
-                                    .filter(j => sesiIds.includes(Number(j.sesi_id)))
-                                    .map(j => Number(j.siswa_id))
-                                );
-                                data = data.filter(s => siswaIdsDenganSesi.has(Number(s.id)));
-                            }
-
-                            if (this.filterGurus.length > 0) {
-                                const guruIds = this.filterGurus.map(Number);
-                                const siswaIdsDenganGuru = new Set(
-                                    this.allJadwals
-                                    .filter(j => guruIds.includes(Number(j.guru_id || j.guru?.id)))
-                                    .map(j => Number(j.siswa_id))
-                                );
-                                data = data.filter(s => siswaIdsDenganGuru.has(Number(s.id)));
-                            }
-
-                            if (this.filterRuangs.length > 0) {
-                                const ruangIds = this.filterRuangs.map(Number);
-                                const siswaIdsDenganRuang = new Set(
-                                    this.allJadwals
-                                    .filter(j => ruangIds.includes(Number(j.ruang_id || j.ruang?.id)))
-                                    .map(j => Number(j.siswa_id))
-                                );
-                                data = data.filter(s => siswaIdsDenganRuang.has(Number(s.id)));
-                            }
-                        }
-
-                        data.sort((a, b) => {
-                            let valA = a[this.sortField] || '';
-                            let valB = b[this.sortField] || '';
-
-                            if (typeof valA === 'string') {
-                                return this.sortOrder === 'asc' ?
-                                    valA.localeCompare(valB) :
-                                    valB.localeCompare(valA);
-                            }
-
-                            return this.sortOrder === 'asc' ? valA - valB : valB - valA;
+                        return AppDomain.filterStudents({
+                            students: this.allSiswas,
+                            archives: this.allArsips,
+                            mode: this.viewMode,
+                            search: this.siswaSearch,
+                            filters: {
+                                kelas: this.filterKelas,
+                                paket: this.filterPaket,
+                                sesiIds: this.filterSesis,
+                                guruIds: this.filterGurus,
+                                ruangIds: this.filterRuangs
+                            },
+                            scheduleMeta: this.scheduleMeta,
+                            sortField: this.sortField,
+                            sortOrder: this.sortOrder
                         });
-
-                        return data;
                     },
 
                     toggleSort(field) {
@@ -640,86 +609,33 @@
                     },
 
                     getPaketName(id) {
-                        const p = this.pakets.find(x => x.id == id);
+                        const p = this.packageIndex[Number(id)];
                         return p ? p.nama_paket : 'N/A';
                     },
 
+                    calculateScheduleStatus(siswa) {
+                        return AppDomain.calculateScheduleStatus(
+                            siswa,
+                            this.scheduleMeta,
+                            this.packageIndex
+                        );
+                    },
+
                     getStatusJadwal(siswa) {
-                        const totalJadwal = this.allJadwals.filter(j => Number(j.siswa_id) === Number(siswa
-                            .id)).length;
-                        let kuota = 0;
-                        const kolomPaket = ['paket_pembayaran', 'paket_pembayaran_2', 'paket_pembayaran_3',
-                            'paket_pembayaran_4', 'paket_pembayaran_5'
-                        ];
-
-                        kolomPaket.forEach(kolom => {
-                            if (siswa[kolom]) {
-                                const pObj = this.pakets.find(p => p.id == siswa[kolom]);
-                                if (pObj && pObj.pertemuan) {
-                                    kuota += Number(pObj.pertemuan);
-                                }
-                            }
-                        });
-
-                        return {
-                            total: totalJadwal,
-                            kuota: kuota,
-                            isKurang: totalJadwal < kuota,
-                            isComplete: totalJadwal >= kuota && kuota > 0
-                        };
+                        return this.studentStatusIndex[Number(siswa.id)] || this.calculateScheduleStatus(siswa);
                     },
 
                     getSiswaJadwalList(siswaId) {
-                        if (!siswaId) return [];
-                        return this.allJadwals
-                            .filter(j => Number(j.siswa_id) === Number(siswaId))
-                            .map(j => {
-                                const mapelObj = j.mata_pelajaran || j.mataPelajaran;
-                                const hariObj = j.hari || this.allHaris.find(h => Number(h.id) ===
-                                    Number(j.hari_id));
-                                const sesiObj = j.sesi || this.allSesis.find(s => Number(s.id) ===
-                                    Number(j.sesi_id));
-
-                                let startT = '';
-                                let endT = '';
-                                let sName = `Sesi ${j.sesi_id}`;
-
-                                if (sesiObj) {
-                                    sName = sesiObj.name || sesiObj.nama_sesi || sName;
-                                    if (sesiObj.start_time) startT = sesiObj.start_time.substring(0, 5);
-                                    if (sesiObj.end_time) endT = sesiObj.end_time.substring(0, 5);
-                                }
-
-                                let hName = 'N/A';
-                                if (hariObj) {
-                                    hName = hariObj.name || hariObj.nama || hName;
-                                }
-
-                                return {
-                                    id: j.id,
-                                    mapel_name: mapelObj ? mapelObj.name : 'N/A',
-                                    guru_name: j.guru ? j.guru.name : 'N/A',
-                                    ruang_name: j.ruang ? j.ruang.name : 'N/A',
-                                    hari_name: hName,
-                                    sesi_name: sName,
-                                    sesi_time: (startT && endT) ? `${startT} - ${endT}` : ''
-                                };
-                            });
+                        if (!siswaId || Number(this.siswaForm.id) !== Number(siswaId)) return [];
+                        return this.activeStudentSchedules;
                     },
 
-                    mergeSiswaJadwal(siswaId, jadwalBaru) {
-                        const targetId = Number(siswaId);
-                        const merged = this.allJadwals
-                            .filter(j => Number(j.siswa_id) !== targetId)
-                            .concat(jadwalBaru || []);
-                        const seen = new Set();
-
-                        this.allJadwals = merged.filter(item => {
-                            const key = Number(item.id || 0);
-                            if (!key || seen.has(key)) return false;
-                            seen.add(key);
-                            return true;
-                        });
+                    normalizeSchedules(schedules) {
+                        return AppDomain.normalizeStudentSchedules(
+                            schedules,
+                            this.allHaris,
+                            this.allSesis
+                        );
                     },
 
                     formatPhone() {
@@ -741,6 +657,7 @@
                             paket_pembayaran: ''
                         };
                         this.showSiswaModal = true;
+                        this.activeStudentSchedules = [];
                     },
 
                     async openEdit(siswa) {
@@ -760,9 +677,6 @@
                             );
                         });
                         this.isLoadingJadwal = true;
-                        const previousJadwals = this.allJadwals
-                            .filter(j => Number(j.siswa_id) === Number(siswa.id));
-                        this.mergeSiswaJadwal(siswa.id, []);
 
                         try {
                             const response = await fetch(`{{ url('admin/siswa') }}/${siswa.id}/jadwal`, {
@@ -772,10 +686,9 @@
 
                             const result = await response.json();
                             if (requestKey !== this.editJadwalRequestKey) return;
-                            this.mergeSiswaJadwal(siswa.id, result.data || []);
+                            this.activeStudentSchedules = this.normalizeSchedules(result.data);
                         } catch (error) {
                             if (requestKey !== this.editJadwalRequestKey) return;
-                            this.mergeSiswaJadwal(siswa.id, previousJadwals);
                             await AppSwal.error(error.message || 'Jadwal siswa gagal dimuat.');
                         } finally {
                             if (requestKey === this.editJadwalRequestKey) {
@@ -883,6 +796,7 @@
                     },
 
                     exportPdf() {
+                        ButtonLoading.pulseCurrent();
                         const params = new URLSearchParams();
                         if (this.filterKelas) params.set('kelas', this.filterKelas);
                         if (this.filterPaket) params.set('paket_id', this.filterPaket);

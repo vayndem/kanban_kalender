@@ -161,9 +161,8 @@
             </div>
         </div>
 
-        <div x-show="showSiswaModal"
-            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-            style="display: none;" x-transition>
+        <template x-if="showSiswaModal">
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition>
             <div @click="showSiswaModal = false" class="absolute inset-0"></div>
             <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative border dark:border-gray-700 m-2"
                 @click.stop>
@@ -206,5 +205,6 @@
                 </div>
             </div>
         </div>
+        </template>
     </div>
 @endsection
