@@ -247,7 +247,7 @@ Internal / private project workflow.
 <br/>
 
 <p align="center">
-  Made by <strong>Vayndem</strong> with love
+  Made by <strong>Vayndem</strong> with ❤️
 </p>
 
 <p align="center">
