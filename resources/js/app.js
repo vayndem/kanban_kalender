@@ -2,6 +2,9 @@ import './bootstrap';
 
 import Alpine from 'alpinejs';
 import Sortable from 'sortablejs';
+import { installJadwalDragDrop, jadwalHandler } from './admin/jadwal';
+import { pembayaranHandler } from './admin/pembayaran';
+import { siswaHandler } from './admin/siswa';
 import { calendarApp } from './components/calendar';
 import { installAlerts } from './core/alerts';
 import { buildPaymentSummary } from './domain/payment-summary';
@@ -36,6 +39,10 @@ installAlerts();
 installButtonLoading();
 
 Alpine.data('calendarApp', calendarApp);
+Alpine.data('jadwalHandler', jadwalHandler);
+Alpine.data('siswaHandler', siswaHandler);
+Alpine.data('pembayaranHandler', pembayaranHandler);
 Alpine.start();
 
+installJadwalDragDrop();
 installSearchableSelects();

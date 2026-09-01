@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <title>{{ config('app.name', 'Penjadwalan E-ling') }}</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+
+<body class="font-sans antialiased">
+    <div class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+        @include('layouts.navigation')
+
+        @isset($header)
+            <header class="border-b border-slate-200/80 bg-white/80 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/80">
+                <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+                    {{ $header }}
+                </div>
+            </header>
+        @endisset
+
+        <main class="py-5 sm:py-8">
+            <div class="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8">
+                @include('admin.partials.tabs', ['activeTab' => $activeTab])
+
+                {{ $slot }}
+            </div>
+        </main>
+
+        @include('layouts.admin-help')
+    </div>
+
+    @stack('scripts')
+
+    @if (session('success') || session('error') || session('status'))
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const success = @js(session('success'));
+                const error = @js(session('error'));
+                const status = @js(session('status'));
+                const statusMessages = {
+                    'profile-updated': 'Profil berhasil diperbarui.',
+                    'password-updated': 'Password berhasil diperbarui.',
+                    'verification-link-sent': 'Tautan verifikasi telah dikirim.',
+                };
+
+                if (error) AppSwal.error(error);
+                else if (success) AppSwal.toast(success);
+                else if (status) AppSwal.toast(statusMessages[status] || status, 'info');
+            });
+        </script>
+    @endif
+</body>
+
+</html>

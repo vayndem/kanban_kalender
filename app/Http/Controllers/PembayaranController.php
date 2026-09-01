@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Exports\PembayaranExport;
 use App\Models\Pembayaran;
 use App\Models\PembayaranDetail;
 use App\Models\Siswa;
@@ -13,6 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\ValidationException;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PembayaranController extends Controller
 {
@@ -490,7 +492,7 @@ class PembayaranController extends Controller
         return redirect()->back()->withInput()->with('error', $msg);
     }
 
-    public function exportPdf(Request $request)
+    public function exportExcel(Request $request)
     {
         $statuses = [
             0 => 'Belum Bayar',
@@ -502,57 +504,43 @@ class PembayaranController extends Controller
             ? (int) $request->status
             : null;
 
-        $allData = [];
-        $diskons = Diskon::all()->keyBy('no_hp');
-        $filterSummary = [];
+        $query = Pembayaran::with(['siswa', 'details'])->orderBy('no_hp')->orderBy('created_at');
+
+        if ($requestedStatus !== null) {
+            $query->where('status', $requestedStatus);
+        }
 
         if ($request->filled('search')) {
-            $filterSummary[] = 'Pencarian: "' . $request->search . '"';
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('siswa', function ($s) use ($search) {
+                    $s->where('name', 'like', "%$search%");
+                })->orWhere('keterangan', 'like', "%$search%")
+                    ->orWhere('no_hp', 'like', "%$search%");
+            });
         }
 
         if ($request->filled('bulan') && $request->bulan !== 'all') {
-            $filterSummary[] = 'Bulan: ' . Carbon::create()->month((int) $request->bulan)->translatedFormat('F');
+            $query->whereMonth('created_at', $request->bulan);
         }
 
+        $pembayarans = $query->get();
+        $diskons = Diskon::all();
+
+        $filterSummary = [];
+        if ($request->filled('search')) {
+            $filterSummary[] = 'Pencarian: "' . $request->search . '"';
+        }
+        if ($request->filled('bulan') && $request->bulan !== 'all') {
+            $filterSummary[] = 'Bulan: ' . Carbon::create()->month((int) $request->bulan)->translatedFormat('F');
+        }
         if ($requestedStatus !== null && isset($statuses[$requestedStatus])) {
             $filterSummary[] = 'Status: ' . $statuses[$requestedStatus];
         }
 
-        foreach ($statuses as $code => $name) {
-            if ($requestedStatus !== null && $code !== $requestedStatus) {
-                continue;
-            }
-
-            $query = Pembayaran::with(['siswa', 'details'])->where('status', $code);
-
-            if ($request->search) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->whereHas('siswa', function ($s) use ($search) {
-                        $s->where('name', 'like', "%$search%");
-                    })->orWhere('keterangan', 'like', "%$search%")
-                        ->orWhere('no_hp', 'like', "%$search%");
-                });
-            }
-
-            if ($request->bulan && $request->bulan !== 'all') {
-                $query->whereMonth('created_at', $request->bulan);
-            }
-
-            $allData[$name] = [
-                'code' => $code,
-                'groups' => $query->orderBy('no_hp')->get()->groupBy('no_hp'),
-            ];
-        }
-
-        $pdf = Pdf::loadView('pdf.pembayaran', [
-            'allData' => $allData,
-            'bulan' => $request->bulan,
-            'diskons' => $diskons,
-            'exportedAt' => now()->translatedFormat('d F Y, H:i'),
-            'filterSummary' => $filterSummary ?: ['Semua data pembayaran sesuai status yang dipilih.'],
-        ])->setPaper('a4', 'portrait');
-
-        return $pdf->download('Laporan-Pembayaran-' . now()->format('YmdHis') . '.pdf');
+        return Excel::download(
+            new PembayaranExport($pembayarans, $diskons, $filterSummary ?: ['Semua data pembayaran sesuai status yang dipilih.']),
+            'Laporan-Pembayaran-' . now()->format('YmdHis') . '.xlsx'
+        );
     }
 }

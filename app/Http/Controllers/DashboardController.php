@@ -14,14 +14,22 @@ use App\Models\Diskon;
 use App\Models\Pembayaran;
 use App\Models\Paket;
 use App\Models\Arsip;
+use App\Services\PaymentBatchService;
+use App\Services\RingkasanService;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private readonly RingkasanService $ringkasanService,
+        private readonly PaymentBatchService $paymentBatchService,
+    ) {
+    }
+
     public function index()
     {
         $activeTab = request()->string('tab')->toString();
-        if (!in_array($activeTab, ['jadwal', 'data_siswa', 'pembayaran'], true)) {
-            $activeTab = 'jadwal';
+        if (!in_array($activeTab, ['jadwal', 'data_siswa', 'pembayaran', 'ringkasan'], true)) {
+            $activeTab = 'ringkasan';
         }
 
         $haris = collect();
@@ -38,6 +46,7 @@ class DashboardController extends Controller
         $jadwalsWithRelations = collect();
         $scheduleSearchIndex = ['days' => [], 'sessions' => []];
         $scheduleOccupancy = collect();
+        $ringkasanData = [];
 
         if ($activeTab === 'jadwal') {
             $haris = Hari::query()->select(['id', 'name'])->orderBy('id')->get();
@@ -94,10 +103,21 @@ class DashboardController extends Controller
                     'guru_ids' => $schedules->pluck('guru_id')->unique()->values(),
                     'ruang_ids' => $schedules->pluck('ruang_id')->unique()->values(),
                 ]);
-        } else {
+        } elseif ($activeTab === 'pembayaran') {
             $allSiswas = Siswa::select(['id', 'name', 'panggilan', 'kelas', 'no_hp', 'paket_pembayaran', 'paket_pembayaran_2', 'paket_pembayaran_3', 'paket_pembayaran_4', 'paket_pembayaran_5'])->orderBy('name')->get();
             $pakets = Paket::query()->select(['id', 'nama_paket', 'harga', 'pertemuan'])->orderBy('nama_paket')->get();
             $diskons = Diskon::query()->select(['id', 'no_hp', 'diskon', 'keterangan'])->orderBy('id', 'desc')->get();
+        } elseif ($activeTab === 'ringkasan') {
+            $piutangBulan = max(1, (int) request()->integer('piutang_bulan', 2));
+
+            $ringkasanData = [
+                'hari_ini' => $this->ringkasanService->ringkasanHariIni(),
+                'okupansi_ruang' => $this->ringkasanService->okupansiRuang(),
+                'beban_guru' => $this->ringkasanService->bebanGuru(),
+                'finansial' => $this->ringkasanService->pengingatFinansial($this->paymentBatchService, $piutangBulan),
+                'kebersihan_data' => $this->ringkasanService->kebersihanData(3),
+                'bentrok_tersembunyi' => $this->ringkasanService->bentrokTersembunyi(),
+            ];
         }
 
         $finalJadwals = [];
@@ -171,6 +191,7 @@ class DashboardController extends Controller
             'activeTab' => $activeTab,
             'scheduleSearchIndex' => $scheduleSearchIndex,
             'scheduleOccupancy' => $scheduleOccupancy,
+            'ringkasanData' => $ringkasanData,
         ]);
     }
 

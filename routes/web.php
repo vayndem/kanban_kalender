@@ -31,7 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/admin/jadwal/update-posisi', [JadwalController::class, 'updatePosisi'])->name('admin.jadwal.updatePosisi');
     Route::post('/admin/jadwal/update-kelas', [JadwalController::class, 'updateKelas'])->name('admin.jadwal.updateKelas');
     Route::post('/admin/jadwal/store', [JadwalController::class, 'store'])->name('admin.jadwal.store');
-    Route::get('/admin/jadwal/export', [JadwalController::class, 'exportPdf'])->name('admin.jadwal.export');
+    Route::get('/admin/jadwal/export', [JadwalController::class, 'exportExcel'])->name('admin.jadwal.export');
     Route::get('/admin/jadwal/generate-text', [JadwalController::class, 'generateTextJadwal'])->name('admin.jadwal.generateText');
     Route::get('/admin/jadwal/download-stash', [JadwalController::class, 'downloadStash'])->name('admin.jadwal.downloadStash');
     Route::post('/admin/jadwal/upload-stash', [JadwalController::class, 'uploadStash'])->name('admin.jadwal.uploadStash');
@@ -58,7 +58,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/admin/sesi/{id}', [SesiController::class, 'destroy'])->name('admin.sesi.destroy');
 
     // 5. Siswa
-    Route::get('/admin/siswa/export-pdf', [SiswaController::class, 'exportPdf'])->name('admin.siswa.exportPdf');
+    Route::get('/admin/siswa/export-excel', [SiswaController::class, 'exportExcel'])->name('admin.siswa.exportExcel');
     Route::get('/admin/siswa/{siswa}/jadwal', [SiswaController::class, 'jadwal'])->name('admin.siswa.jadwal');
     Route::post('/admin/siswa', [SiswaController::class, 'store'])->name('admin.siswa.store');
     Route::put('/admin/siswa/{id}', [SiswaController::class, 'update'])->name('admin.siswa.update');
@@ -80,7 +80,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/admin/pembayaran/ke-lunas-massal/{id_siswa}', [PembayaranController::class, 'keLunasMassal'])->name('admin.pembayaran.keLunasMassal');
     Route::get('/admin/pembayaran/keluarga/{no_hp}/detail', [PembayaranController::class, 'detailKeluarga'])->name('admin.pembayaran.detailKeluarga');
     Route::get('/admin/pembayaran/struk/{no_hp}', [PembayaranController::class, 'printStruk'])->name('admin.pembayaran.struk');
-    Route::get('/admin/pembayaran/export', [PembayaranController::class, 'exportPdf'])->name('admin.pembayaran.export');
+    Route::get('/admin/pembayaran/export', [PembayaranController::class, 'exportExcel'])->name('admin.pembayaran.export');
 
     // 8. Paket
     Route::post('/admin/paket', [PaketController::class, 'store'])->name('admin.paket.store');

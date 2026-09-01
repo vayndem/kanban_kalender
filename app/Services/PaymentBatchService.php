@@ -96,6 +96,70 @@ class PaymentBatchService
         return $createdCount;
     }
 
+    public function previewMissingInvoices(): \Illuminate\Support\Collection
+    {
+        $packages = Paket::query()
+            ->select(['id', 'nama_paket', 'harga'])
+            ->get()
+            ->keyBy('id');
+
+        if ($packages->isEmpty()) {
+            return collect();
+        }
+
+        $period = Carbon::now()->translatedFormat('F Y');
+        $descriptions = $packages
+            ->map(fn (Paket $package) => "Tagihan Paket {$package->nama_paket} - {$period}")
+            ->unique()
+            ->values();
+
+        $students = Siswa::query()
+            ->select(array_merge(['id', 'name', 'no_hp'], self::PACKAGE_COLUMNS))
+            ->where(function ($query) {
+                foreach (self::PACKAGE_COLUMNS as $index => $column) {
+                    $index === 0
+                        ? $query->whereNotNull($column)
+                        : $query->orWhereNotNull($column);
+                }
+            })
+            ->get();
+
+        $existingKeys = Pembayaran::query()
+            ->select(['id_siswa', 'no_hp', 'keterangan'])
+            ->whereIn('id_siswa', $students->pluck('id'))
+            ->whereIn('keterangan', $descriptions)
+            ->get()
+            ->mapWithKeys(fn (Pembayaran $payment) => [
+                $this->invoiceKey($payment->id_siswa, $payment->no_hp, $payment->keterangan) => true,
+            ]);
+
+        $missing = collect();
+        foreach ($students as $student) {
+            foreach (self::PACKAGE_COLUMNS as $column) {
+                $package = $packages->get($student->{$column});
+                if (! $package) {
+                    continue;
+                }
+
+                $description = "Tagihan Paket {$package->nama_paket} - {$period}";
+                $key = $this->invoiceKey($student->id, $student->no_hp, $description);
+                if ($existingKeys->has($key)) {
+                    continue;
+                }
+
+                $missing->push([
+                    'siswa_id' => $student->id,
+                    'siswa_name' => $student->name,
+                    'no_hp' => $student->no_hp,
+                    'paket' => $package->nama_paket,
+                    'harga' => $package->harga,
+                ]);
+            }
+        }
+
+        return $missing->values();
+    }
+
     public function settleActive(?string $phone = null, string $description = 'Selesai sistem'): int
     {
         return DB::transaction(function () use ($phone, $description) {

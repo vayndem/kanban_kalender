@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\SiswaExport;
 use App\Models\Arsip;
 use App\Models\Jadwal;
 use App\Models\Siswa;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SiswaController extends Controller
 {
@@ -173,7 +174,7 @@ class SiswaController extends Controller
         return redirect()->back()->withInput()->with('error', $prefix . ': ' . $e->getMessage());
     }
 
-    public function exportPdf(Request $request)
+    public function exportExcel(Request $request)
     {
         $query = Siswa::with([
             'paket',
@@ -222,16 +223,9 @@ class SiswaController extends Controller
         }
 
         $siswas = $query->get();
-
         $filterLabel = $this->buildFilterLabel($request);
 
-        $pdf = Pdf::loadView('pdf.siswa', [
-            'siswas' => $siswas,
-            'filterLabel' => $filterLabel,
-            'exportedAt' => now()->translatedFormat('d F Y, H:i'),
-        ])->setPaper('a4', 'portrait');
-
-        return $pdf->download('Data-Siswa-' . now()->format('YmdHis') . '.pdf');
+        return Excel::download(new SiswaExport($siswas, $filterLabel), 'Data-Siswa-' . now()->format('YmdHis') . '.xlsx');
     }
 
     private function buildFilterLabel(Request $request): string

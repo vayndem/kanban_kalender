@@ -8,11 +8,13 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\JadwalExport;
 use App\Models\Hari;
 use App\Models\Jadwal;
 use App\Models\Sesi;
 use App\Models\Tanda;
 use Illuminate\Support\Facades\Response;
+use Maatwebsite\Excel\Facades\Excel;
 
 class JadwalController extends Controller
 {
@@ -363,6 +365,44 @@ class JadwalController extends Controller
         }
 
         return $pdf->download($filename . '.pdf');
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $query = Jadwal::with(['siswa.tandas', 'mataPelajaran', 'guru', 'ruang', 'hari', 'sesi']);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('hari', function ($h) use ($search) {
+                    $h->where('name', 'like', "%{$search}%");
+                })
+                    ->orWhereHas('sesi', function ($s) use ($search) {
+                        $s->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('mataPelajaran', function ($m) use ($search) {
+                        $m->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('guru', function ($g) use ($search) {
+                        $g->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('ruang', function ($r) use ($search) {
+                        $r->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('siswa', function ($st) use ($search) {
+                        $st->where('name', 'like', "%{$search}%")->orWhere('panggilan', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $jadwals = $query->get();
+
+        $filename = 'jadwal-pelajaran';
+        if ($request->filled('search')) {
+            $filename .= '-search-' . Str::slug($request->search);
+        }
+
+        return Excel::download(new JadwalExport($jadwals, $request->search), $filename . '.xlsx');
     }
 
     public function generateTextJadwal(Request $request)
