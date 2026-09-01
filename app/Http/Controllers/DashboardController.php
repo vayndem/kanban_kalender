@@ -109,11 +109,17 @@ class DashboardController extends Controller
             $diskons = Diskon::query()->select(['id', 'no_hp', 'diskon', 'keterangan'])->orderBy('id', 'desc')->get();
         } elseif ($activeTab === 'ringkasan') {
             $piutangBulan = max(1, (int) request()->integer('piutang_bulan', 2));
+            $periode = request()->string('periode')->toString();
+            if (!in_array($periode, ['harian', 'mingguan'], true)) {
+                $periode = 'mingguan';
+            }
 
             $ringkasanData = [
                 'hari_ini' => $this->ringkasanService->ringkasanHariIni(),
-                'okupansi_ruang' => $this->ringkasanService->okupansiRuang(),
-                'beban_guru' => $this->ringkasanService->bebanGuru(),
+                'kelas_hari_ini' => $this->ringkasanService->kelasHariIni(),
+                'okupansi_ruang' => $this->ringkasanService->okupansiRuang($periode),
+                'beban_guru' => $this->ringkasanService->bebanGuru($periode),
+                'periode' => $periode,
                 'finansial' => $this->ringkasanService->pengingatFinansial($this->paymentBatchService, $piutangBulan),
                 'kebersihan_data' => $this->ringkasanService->kebersihanData(3),
                 'bentrok_tersembunyi' => $this->ringkasanService->bentrokTersembunyi(),

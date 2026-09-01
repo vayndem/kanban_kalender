@@ -39,11 +39,57 @@ class RingkasanService
         ];
     }
 
-    public function okupansiRuang(): array
+    public function kelasHariIni(): Collection
     {
-        $totalSlot = Hari::count() * Sesi::count();
+        $dayOfWeek = Carbon::now()->isoFormat('E');
 
-        $jadwals = Jadwal::query()->select(['ruang_id', 'hari_id', 'sesi_id'])->get();
+        $jadwals = Jadwal::query()
+            ->select(['id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id', 'siswa_id'])
+            ->where('hari_id', $dayOfWeek)
+            ->with([
+                'sesi:id,name,start_time,end_time',
+                'mataPelajaran:id,name',
+                'guru:id,name',
+                'ruang:id,name',
+                'siswa:id,name,panggilan,kelas',
+            ])
+            ->get();
+
+        return $jadwals
+            ->groupBy(fn (Jadwal $j) => "{$j->sesi_id}_{$j->mata_pelajaran_id}_{$j->guru_id}_{$j->ruang_id}")
+            ->map(function (Collection $rows) {
+                $first = $rows->first();
+
+                return [
+                    'sesi_id' => $first->sesi_id,
+                    'sesi_name' => $first->sesi?->name ?? 'N/A',
+                    'sesi_start' => $first->sesi?->start_time,
+                    'sesi_end' => $first->sesi?->end_time,
+                    'mapel_name' => $first->mataPelajaran?->name ?? 'N/A',
+                    'guru_name' => $first->guru?->name ?? 'N/A',
+                    'ruang_name' => $first->ruang?->name ?? 'N/A',
+                    'siswa_list' => $rows->pluck('siswa')->filter()->map(fn (Siswa $s) => [
+                        'name' => $s->name,
+                        'panggilan' => $s->panggilan,
+                        'kelas' => $s->kelas,
+                    ])->values(),
+                ];
+            })
+            ->sortBy(fn ($card) => $card['sesi_start'] ?? '')
+            ->values();
+    }
+
+    public function okupansiRuang(string $periode = 'mingguan'): array
+    {
+        $isHarian = $periode === 'harian';
+        $totalSlot = $isHarian ? Sesi::count() : Hari::count() * Sesi::count();
+
+        $query = Jadwal::query()->select(['ruang_id', 'hari_id', 'sesi_id']);
+        if ($isHarian) {
+            $query->where('hari_id', Carbon::now()->isoFormat('E'));
+        }
+
+        $jadwals = $query->get();
         $terpakaiByRuang = $jadwals->groupBy('ruang_id')->map(
             fn (Collection $rows) => $rows->unique(fn (Jadwal $r) => "{$r->hari_id}_{$r->sesi_id}")->count()
         );
@@ -72,20 +118,26 @@ class RingkasanService
             'rata_rata' => $rataRata,
             'ramai' => $ramai,
             'sepi' => $sepi,
+            'periode' => $periode,
         ];
     }
 
-    public function bebanGuru(): array
+    public function bebanGuru(string $periode = 'mingguan'): array
     {
+        $isHarian = $periode === 'harian';
+
         $sesis = Sesi::orderBy('start_time')->get(['id', 'name', 'start_time', 'end_time']);
         $urutanSesi = $sesis->values()->mapWithKeys(fn (Sesi $s, int $i) => [$s->id => $i]);
         $durasiSesi = $sesis->mapWithKeys(
             fn (Sesi $s) => [$s->id => Carbon::parse($s->end_time)->diffInMinutes(Carbon::parse($s->start_time))]
         );
 
-        $jadwals = Jadwal::query()
-            ->select(['hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id'])
-            ->get()
+        $query = Jadwal::query()->select(['hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id']);
+        if ($isHarian) {
+            $query->where('hari_id', Carbon::now()->isoFormat('E'));
+        }
+
+        $jadwals = $query->get()
             ->unique(fn (Jadwal $j) => "{$j->hari_id}_{$j->sesi_id}_{$j->mata_pelajaran_id}_{$j->guru_id}_{$j->ruang_id}");
 
         $namaGuru = Guru::pluck('name', 'id');
@@ -134,6 +186,7 @@ class RingkasanService
             'beban' => $bebanPerGuru,
             'back_to_back' => $backToBack->sortByDesc('jumlah_beruntun')->values(),
             'ambang_beruntun' => self::BACK_TO_BACK_THRESHOLD,
+            'periode' => $periode,
         ];
     }
 

@@ -18,9 +18,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         config([
-            'excel.temporary_files_path' => '/tmp',
-            'excel.local_path' => '/tmp',
-            'excel.exports.temp_path' => '/tmp'
+            'excel.temporary_files.local_path' => rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'laravel-excel',
         ]);
     }
 }

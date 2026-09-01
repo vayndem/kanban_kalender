@@ -106,10 +106,10 @@ class RingkasanDashboardTest extends TestCase
         $pembayaran->save();
 
         $sensitif = $this->actingAs($user)->get(route('dashboard', ['tab' => 'ringkasan', 'piutang_bulan' => 2]));
-        $sensitif->assertOk()->assertSee('Rangga Piutang &mdash; Rp 200.000', false);
+        $sensitif->assertOk()->assertSee('Rangga Piutang')->assertSee('Rp 200.000');
 
         $longgar = $this->actingAs($user)->get(route('dashboard', ['tab' => 'ringkasan', 'piutang_bulan' => 6]));
-        $longgar->assertOk()->assertDontSee('Rangga Piutang &mdash; Rp 200.000', false);
+        $longgar->assertOk()->assertDontSee('Rp 200.000');
     }
 
     public function test_belum_ditagih_lists_students_missing_this_months_invoice(): void
@@ -164,6 +164,63 @@ class RingkasanDashboardTest extends TestCase
         $response = $this->actingAs($user)->get(route('dashboard', ['tab' => 'ringkasan']));
 
         $response->assertOk()->assertSee('Bentrok Tersembunyi')->assertSee('Pak Bentrok');
+    }
+
+    public function test_kelas_hari_ini_shows_full_class_detail_with_students_teacher_and_subject(): void
+    {
+        $user = User::factory()->create();
+        $hari = $this->hariHariIni();
+        $sesi = Sesi::factory()->create(['name' => 'Sesi Pagi', 'start_time' => '08:00', 'end_time' => '09:00']);
+        $mapel = MataPelajaran::factory()->create(['name' => 'Aljabar Dasar']);
+        $guru = Guru::factory()->create(['name' => 'Pak Rudi']);
+        $ruang = Ruang::factory()->create(['name' => 'Ruang Cendana']);
+        $siswa = Siswa::factory()->create(['name' => 'Kanaya Putri', 'panggilan' => 'Kanaya', 'kelas' => '7B']);
+
+        Jadwal::create([
+            'hari_id' => $hari->id,
+            'sesi_id' => $sesi->id,
+            'mata_pelajaran_id' => $mapel->id,
+            'guru_id' => $guru->id,
+            'ruang_id' => $ruang->id,
+            'siswa_id' => $siswa->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('dashboard', ['tab' => 'ringkasan']));
+
+        $response->assertOk()
+            ->assertSee('Jadwal Hari Ini')
+            ->assertSee('Sesi Pagi')
+            ->assertSee('Aljabar Dasar')
+            ->assertSee('Pak Rudi')
+            ->assertSee('Ruang Cendana')
+            ->assertSee('Kanaya Putri')
+            ->assertSee('7B');
+    }
+
+    public function test_periode_filter_separates_harian_and_mingguan_room_occupancy(): void
+    {
+        $user = User::factory()->create();
+        $hariIni = $this->hariHariIni();
+        $hariLain = Hari::create(['name' => 'Hari Lain']);
+        $mapel = MataPelajaran::factory()->create();
+        $guru = Guru::factory()->create();
+        $ruangHariIni = Ruang::factory()->create(['name' => 'Ruang Hari Ini Saja']);
+        $sesi = Sesi::factory()->create();
+
+        Jadwal::create([
+            'hari_id' => $hariLain->id,
+            'sesi_id' => $sesi->id,
+            'mata_pelajaran_id' => $mapel->id,
+            'guru_id' => $guru->id,
+            'ruang_id' => $ruangHariIni->id,
+            'siswa_id' => Siswa::factory()->create()->id,
+        ]);
+
+        $harian = $this->actingAs($user)->get(route('dashboard', ['tab' => 'ringkasan', 'periode' => 'harian']));
+        $harian->assertOk()->assertSee('Okupansi Ruang (Hari Ini)')->assertSee('0/');
+
+        $mingguan = $this->actingAs($user)->get(route('dashboard', ['tab' => 'ringkasan', 'periode' => 'mingguan']));
+        $mingguan->assertOk()->assertSee('Okupansi Ruang (Mingguan)')->assertSee('1/');
     }
 
     private function hariHariIni(string $name = 'Hari Ini'): Hari
