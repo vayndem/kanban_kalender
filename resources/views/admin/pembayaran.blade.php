@@ -20,6 +20,20 @@
         },
     })">
 
+    {{-- Penghalang klik selama permintaan berjalan. Dulu tombol tetap bisa
+         diklik saat server lambat merespons, sehingga admin menekan dua kali
+         dan pembayaran tercatat ganda. --}}
+    <div x-show="isLoading" x-cloak
+        class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-[2px] cursor-wait">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl px-6 py-5 flex items-center gap-3 border dark:border-gray-700">
+            <i class="fas fa-circle-notch fa-spin text-emerald-500 text-xl"></i>
+            <div>
+                <p class="text-sm font-bold text-gray-900 dark:text-white">Sedang diproses...</p>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400">Mohon tunggu, jangan menutup atau menekan tombol lagi.</p>
+            </div>
+        </div>
+    </div>
+
     <div
         class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4 border-b border-gray-50 dark:border-gray-700/50 pb-4">
         <div>
@@ -40,8 +54,8 @@
                 class="btn-accent flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-tags"></i> Kelola Diskon
             </button>
-            <button @click="prosesPenagihanMassal()"
-                class="btn-warning flex-1 lg:flex-none text-xs md:text-sm">
+            <button @click="prosesPenagihanMassal()" :disabled="isLoading"
+                class="disabled:opacity-50 disabled:cursor-not-allowed btn-warning flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-file-invoice-dollar"></i>
                 <span>Penagihan Massal</span>
             </button>
@@ -53,8 +67,8 @@
                 class="btn-primary flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-plus"></i> Tagihan
             </button>
-            <button @click="lunaskanSemua()"
-                class="btn-sacred w-full lg:w-auto text-xs md:text-sm">
+            <button @click="lunaskanSemua()" :disabled="isLoading"
+                class="disabled:opacity-50 disabled:cursor-not-allowed btn-sacred w-full lg:w-auto text-xs md:text-sm">
                 <i class="fas fa-check-double"></i>
                 <span>Selesaikan Seluruh Status</span>
             </button>
@@ -311,19 +325,19 @@
                             <button @click="openDetailModal(item)"
                                 class="text-blue-500 hover:text-blue-600 hover:underline text-xs font-bold uppercase tracking-wider mr-2 transition-all">Lihat Detail</button>
                             <template x-if="item.status == 0">
-                                <button @click="chatWhatsApp(item)"
-                                    class="btn-success px-3 py-1.5 text-[11px] rounded-md">
+                                <button @click="chatWhatsApp(item)" :disabled="isLoading"
+                                    class="disabled:opacity-50 disabled:cursor-not-allowed btn-success px-3 py-1.5 text-[11px] rounded-md">
                                     <i class="fab fa-whatsapp"></i> Kirim WA
                                 </button>
                             </template>
                             <template x-if="item.status == 0 || item.status == 1">
                                 <div class="inline-flex gap-1">
-                                    <button @click="prosesBayarSiswa(item)"
-                                        class="btn-primary px-3 py-1.5 text-[11px] rounded-md">
+                                    <button @click="prosesBayarSiswa(item)" :disabled="isLoading"
+                                        class="disabled:opacity-50 disabled:cursor-not-allowed btn-primary px-3 py-1.5 text-[11px] rounded-md">
                                         <i class="fas fa-hand-holding-usd"></i> Catat Bayar
                                     </button>
-                                    <button @click="ubahKeLunas(item)"
-                                        class="btn-sacred px-3 py-1.5 text-[11px] rounded-md">
+                                    <button @click="ubahKeLunas(item)" :disabled="isLoading"
+                                        class="disabled:opacity-50 disabled:cursor-not-allowed btn-sacred px-3 py-1.5 text-[11px] rounded-md">
                                         <i class="fas fa-check"></i> Set Lunas
                                     </button>
                                 </div>
@@ -411,15 +425,15 @@
                     <button @click="openDetailModal(item)"
                         class="flex-1 bg-gray-200 dark:bg-gray-700 dark:text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95">Detail</button>
                     <template x-if="item.status == 0">
-                        <button @click="chatWhatsApp(item)"
-                            class="flex-1 bg-green-500 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95"><i
+                        <button @click="chatWhatsApp(item)" :disabled="isLoading"
+                            class="disabled:opacity-50 flex-1 bg-green-500 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95"><i
                                 class="fab fa-whatsapp mr-1"></i>WA</button>
                     </template>
                     <template x-if="item.status == 0 || item.status == 1">
-                        <button @click="prosesBayarSiswa(item)"
-                            class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95">Bayar</button>
-                        <button @click="ubahKeLunas(item)"
-                            class="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95">Ke
+                        <button @click="prosesBayarSiswa(item)" :disabled="isLoading"
+                            class="disabled:opacity-50 flex-1 bg-blue-600 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95">Bayar</button>
+                        <button @click="ubahKeLunas(item)" :disabled="isLoading"
+                            class="disabled:opacity-50 flex-1 bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95">Ke
                             Lunas</button>
                     </template>
                     <template x-if="item.status == 2">
@@ -801,8 +815,8 @@
                 <div class="pt-3 flex justify-end gap-2.5 border-t dark:border-gray-700">
                     <button type="button" @click="showAddModal = false"
                         class="px-5 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-xl dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">Batal</button>
-                    <button type="submit"
-                        class="px-6 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 font-bold transition-all flex items-center gap-2 shadow-md active:scale-95">
+                    <button type="submit" :disabled="isLoading"
+                        class="px-6 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition-all flex items-center gap-2 shadow-md active:scale-95">
                         <span>Simpan Tagihan Baru</span>
                     </button>
                 </div>

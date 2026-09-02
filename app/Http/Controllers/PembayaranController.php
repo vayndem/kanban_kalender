@@ -19,6 +19,13 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class PembayaranController extends Controller
 {
+    /**
+     * Rentang waktu (detik) yang dianggap "klik ganda" untuk pencatatan
+     * identik. Cukup lebar menutupi server lambat, cukup sempit agar setoran
+     * kedua yang sah beberapa menit kemudian tetap bisa dicatat.
+     */
+    private const JEDA_ANTI_GANDA = 180;
+
     public function __construct(private readonly PaymentBatchService $paymentBatchService)
     {
     }
@@ -63,6 +70,26 @@ class PembayaranController extends Controller
                             . 'atau kosongkan pilihan paket bila ini memang tagihan tambahan di luar paket.',
                     ]);
                 }
+            }
+
+            // Tagihan bebas boleh berulang (buku, denda, kegiatan), jadi tidak
+            // bisa dikunci lewat anchor paket. Yang dijaga di sini khusus pola
+            // klik ganda: tagihan identik yang dibuat dalam hitungan menit.
+            $kembar = Pembayaran::query()
+                ->where('id_siswa', $validated['id_siswa'])
+                ->where('harga', $validated['harga'])
+                ->where('keterangan', $validated['keterangan'] ?? null)
+                ->where('created_at', '>=', Carbon::now()->subSeconds(self::JEDA_ANTI_GANDA))
+                ->latest('created_at')
+                ->first();
+
+            if ($kembar) {
+                throw ValidationException::withMessages([
+                    'harga' => 'Tagihan dengan nominal dan keterangan yang sama persis baru saja dibuat '
+                        . $kembar->created_at?->diffForHumans() . ' untuk siswa ini. '
+                        . 'Pembuatan ganda dicegah otomatis. Bila ini memang tagihan kedua yang berbeda, '
+                        . 'bedakan keterangannya terlebih dahulu.',
+                ]);
             }
 
             $pembayaran = Pembayaran::create($validated);
@@ -204,6 +231,8 @@ class PembayaranController extends Controller
                 if ($pembayarans->isEmpty()) {
                     throw ValidationException::withMessages(['nominal' => 'Tidak ada tagihan aktif untuk nomor HP ini.']);
                 }
+
+                $this->tolakBilaPencatatanGanda($request, $siswa);
 
                 $remaining = (int) $request->nominal;
                 $totalOutstanding = $pembayarans->sum(fn ($item) => max(0, (int) $item->harga - (int) $item->total_sudah_dibayar));
@@ -515,6 +544,46 @@ class PembayaranController extends Controller
             'isRemoteEnabled' => false,
             'chroot' => [realpath(base_path()), realpath(storage_path('app'))],
         ];
+    }
+
+    /**
+     * Menolak pencatatan pembayaran yang identik dan berdekatan waktunya.
+     *
+     * Server lama (region Amerika) sering lambat merespons, sehingga admin
+     * menekan "Catat Bayar" dua kali dan satu setoran tercatat ganda. Overlay
+     * di layar sudah mencegah klik kedua, tapi refresh, tombol back, atau
+     * pengulangan permintaan oleh jaringan masih bisa lolos -- penjaga inilah
+     * yang menutup celah itu.
+     *
+     * Perbandingan memakai updated_at, bukan created_at, karena created_at pada
+     * detail pembayaran sengaja diisi tanggal bayar yang bisa dimundurkan.
+     */
+    private function tolakBilaPencatatanGanda(Request $request, Siswa $siswa): void
+    {
+        $nominal = (int) $request->nominal;
+        $keterangan = $request->keterangan_detail ?? 'Pembayaran cicilan / bertahap';
+        $tanggal = Carbon::parse($request->tanggal_pembayaran)->toDateString();
+
+        $kembar = PembayaranDetail::query()
+            ->whereHas('pembayaran', fn ($q) => $q->where('no_hp', $siswa->no_hp))
+            ->where('pembayaran', $nominal)
+            ->where('keterangan', $keterangan)
+            ->whereDate('created_at', $tanggal)
+            ->where('updated_at', '>=', Carbon::now()->subSeconds(self::JEDA_ANTI_GANDA))
+            ->latest('updated_at')
+            ->first();
+
+        if (! $kembar) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'nominal' => 'Pembayaran dengan nominal, tanggal, dan keterangan yang sama persis baru saja dicatat '
+                . $kembar->updated_at?->diffForHumans()
+                . ' untuk keluarga ini. Pencatatan ganda dicegah otomatis. '
+                . 'Periksa dulu "Lihat Detail" untuk memastikan; bila ini memang setoran kedua yang berbeda, '
+                . 'ubah keterangannya agar tidak identik.',
+        ]);
     }
 
     private function handleNotFound($request, $item)
