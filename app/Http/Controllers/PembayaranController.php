@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Exceptions\BatchSudahDijalankanException;
 use App\Exports\PembayaranExport;
 use App\Models\Pembayaran;
 use App\Models\PembayaranDetail;
@@ -26,6 +27,7 @@ class PembayaranController extends Controller
     {
         $validated = $request->validate([
             'id_siswa' => 'required|exists:siswas,id',
+            'id_paket' => 'nullable|exists:pakets,id',
             'harga' => 'required|integer',
             'keterangan' => 'nullable|string|max:255',
         ]);
@@ -35,6 +37,33 @@ class PembayaranController extends Controller
             $validated['no_hp'] = $siswa->no_hp;
             $validated['status'] = 0;
             $validated['total_sudah_dibayar'] = 0;
+
+            // Tagihan yang merujuk paket ikut menanam anchor periode, supaya
+            // penagihan massal bulan ini mengenalinya dan tidak menagih ulang.
+            $validated['periode'] = ! empty($validated['id_paket'])
+                ? Carbon::now()->format('Y-m')
+                : null;
+
+            if (! empty($validated['id_paket'])) {
+                $duplikat = Pembayaran::query()
+                    ->where('id_siswa', $validated['id_siswa'])
+                    ->where('id_paket', $validated['id_paket'])
+                    ->where('periode', $validated['periode'])
+                    ->with('paket:id,nama_paket')
+                    ->first();
+
+                if ($duplikat) {
+                    $namaPaket = $duplikat->paket?->nama_paket ?? 'ini';
+                    $periodeLabel = Carbon::createFromFormat('Y-m', $validated['periode'])->translatedFormat('F Y');
+
+                    throw ValidationException::withMessages([
+                        'id_paket' => "Siswa {$siswa->name} sudah punya tagihan paket {$namaPaket} untuk periode {$periodeLabel} "
+                            . '(dibuat ' . $duplikat->created_at?->translatedFormat('d F Y') . '). '
+                            . 'Tagihan ganda dicegah otomatis. Gunakan "Catat Bayar" pada tagihan yang sudah ada, '
+                            . 'atau kosongkan pilihan paket bila ini memang tagihan tambahan di luar paket.',
+                    ]);
+                }
+            }
 
             $pembayaran = Pembayaran::create($validated);
 
@@ -47,6 +76,8 @@ class PembayaranController extends Controller
             }
 
             return redirect()->back()->with('success', 'Data pembayaran berhasil dicatat.');
+        } catch (ValidationException $e) {
+            return $this->handleValidationException($request, $e);
         } catch (\Exception $e) {
             return $this->handleException($request, 'Gagal menyimpan', $e);
         }
@@ -110,11 +141,17 @@ class PembayaranController extends Controller
         try {
             $updatedCount = $this->paymentBatchService->settleActive();
 
+            $message = $updatedCount === 0
+                ? 'Tidak ada tagihan aktif yang perlu diselesaikan.'
+                : $updatedCount . ' tagihan telah diselesaikan.';
+
             if ($request->wantsJson()) {
-                return response()->json(['status' => 'success', 'message' => $updatedCount . ' tagihan telah diselesaikan.']);
+                return response()->json(['status' => 'success', 'message' => $message]);
             }
 
-            return redirect()->back()->with('success', $updatedCount . ' tagihan telah diselesaikan.');
+            return redirect()->back()->with('success', $message);
+        } catch (BatchSudahDijalankanException $e) {
+            return $this->handleBatchLocked($request, $e);
         } catch (\Exception $e) {
             return $this->handleException($request, 'Gagal memproses pelunasan massal', $e);
         }
@@ -239,12 +276,17 @@ class PembayaranController extends Controller
         try {
             $count = $this->paymentBatchService->createMonthlyInvoices();
 
-            $message = "{$count} Tagihan massal berhasil dibuat.";
+            $message = $count === 0
+                ? 'Tidak ada tagihan baru yang perlu dibuat. Semua siswa berpaket sudah tertagih untuk periode ini.'
+                : "{$count} Tagihan massal berhasil dibuat.";
+
             if ($request->wantsJson()) {
                 return response()->json(['status' => 'success', 'message' => $message]);
             }
 
             return redirect()->back()->with('success', $message);
+        } catch (BatchSudahDijalankanException $e) {
+            return $this->handleBatchLocked($request, $e);
         } catch (\Exception $e) {
             return $this->handleException($request, 'Gagal membuat tagihan massal', $e);
         }
@@ -490,6 +532,26 @@ class PembayaranController extends Controller
             return response()->json(['status' => 'error', 'message' => $msg], 500);
         }
         return redirect()->back()->withInput()->with('error', $msg);
+    }
+
+    private function handleValidationException($request, ValidationException $e)
+    {
+        $msg = implode(' ', $e->validator->errors()->all());
+
+        if ($request->wantsJson()) {
+            return response()->json(['status' => 'error', 'message' => $msg], 422);
+        }
+
+        return redirect()->back()->withInput()->with('error', $msg);
+    }
+
+    private function handleBatchLocked($request, BatchSudahDijalankanException $e)
+    {
+        if ($request->wantsJson()) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 409);
+        }
+
+        return redirect()->back()->with('error', $e->getMessage());
     }
 
     public function exportExcel(Request $request)

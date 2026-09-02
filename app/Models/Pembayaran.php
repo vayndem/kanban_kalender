@@ -13,6 +13,8 @@ class Pembayaran extends Model
 
     protected $fillable = [
         'id_siswa',
+        'id_paket',
+        'periode',
         'harga',
         'keterangan',
         'tanggal_pembayaran',
@@ -56,6 +58,11 @@ class Pembayaran extends Model
     public function siswa(): BelongsTo
     {
         return $this->belongsTo(Siswa::class, 'id_siswa');
+    }
+
+    public function paket(): BelongsTo
+    {
+        return $this->belongsTo(Paket::class, 'id_paket');
     }
 
     public function details(): HasMany

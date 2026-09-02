@@ -4,6 +4,7 @@
         initialSiswas: @js($allSiswas),
         initialPakets: @js($pakets),
         initialDiskons: @js($diskons),
+        initialBatchStatus: @js($batchStatus),
         routes: {
             pembayaranStore: @js(route('admin.pembayaran.store')),
             penagihanMassal: @js(route('admin.pembayaran.penagihanMassal')),
@@ -83,12 +84,72 @@
         </div>
     </div>
 
-    <div class="mb-6 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 px-4 py-3 text-xs md:text-sm text-slate-600 dark:text-slate-300 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-        <div class="flex items-start gap-2">
-            <i class="fas fa-shield-alt text-emerald-500 mt-0.5"></i>
-            <span>Mode minimum formal aktif: tampilan dan validasi diperketat tanpa mengubah struktur database maupun histori lama.</span>
+    <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="rounded-xl border px-4 py-3.5"
+            :class="batchStatus?.penagihan_massal
+                ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/20'
+                : 'border-amber-300 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/20'">
+            <div class="flex items-start gap-2.5">
+                <i class="fas mt-0.5 text-base"
+                    :class="batchStatus?.penagihan_massal ? 'fa-circle-check text-emerald-500' : 'fa-circle-exclamation text-amber-500'"></i>
+                <div class="min-w-0">
+                    <p class="text-xs font-black uppercase tracking-wider"
+                        :class="batchStatus?.penagihan_massal ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'">
+                        Penagihan Massal <span x-text="periodeLabel"></span>
+                    </p>
+                    <template x-if="batchStatus?.penagihan_massal">
+                        <p class="text-[11px] mt-1 font-semibold text-emerald-800 dark:text-emerald-200 leading-relaxed">
+                            Sudah dijalankan
+                            <span x-text="batchStatus.penagihan_massal.dijalankan_pada"></span>
+                            <template x-if="batchStatus.penagihan_massal.oleh">
+                                <span>oleh <span class="font-black" x-text="batchStatus.penagihan_massal.oleh"></span></span>
+                            </template>
+                            &mdash; <span x-text="batchStatus.penagihan_massal.jumlah_diproses"></span> tagihan dibuat.
+                            <span class="block mt-1 text-emerald-700/80 dark:text-emerald-300/80 font-medium">Tidak bisa dijalankan lagi bulan ini, supaya tidak ada tagihan ganda.</span>
+                        </p>
+                    </template>
+                    <template x-if="!batchStatus?.penagihan_massal">
+                        <p class="text-[11px] mt-1 font-semibold text-amber-800 dark:text-amber-200 leading-relaxed">
+                            Belum dijalankan bulan ini. Tombol <span class="font-black">Penagihan Massal</span> akan membuat tagihan
+                            untuk semua siswa yang punya paket, dan hanya bisa sekali dalam sebulan.
+                        </p>
+                    </template>
+                </div>
+            </div>
         </div>
-        <span class="font-semibold text-slate-500 dark:text-slate-400">Status default menampilkan tagihan yang masih perlu ditindaklanjuti.</span>
+
+        <div class="rounded-xl border px-4 py-3.5"
+            :class="batchStatus?.pelunasan_massal
+                ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/20'
+                : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60'">
+            <div class="flex items-start gap-2.5">
+                <i class="fas mt-0.5 text-base"
+                    :class="batchStatus?.pelunasan_massal ? 'fa-circle-check text-emerald-500' : 'fa-shield-halved text-slate-400'"></i>
+                <div class="min-w-0">
+                    <p class="text-xs font-black uppercase tracking-wider"
+                        :class="batchStatus?.pelunasan_massal ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-600 dark:text-slate-300'">
+                        Selesaikan Seluruh Status <span x-text="periodeLabel"></span>
+                    </p>
+                    <template x-if="batchStatus?.pelunasan_massal">
+                        <p class="text-[11px] mt-1 font-semibold text-emerald-800 dark:text-emerald-200 leading-relaxed">
+                            Sudah dijalankan
+                            <span x-text="batchStatus.pelunasan_massal.dijalankan_pada"></span>
+                            <template x-if="batchStatus.pelunasan_massal.oleh">
+                                <span>oleh <span class="font-black" x-text="batchStatus.pelunasan_massal.oleh"></span></span>
+                            </template>
+                            &mdash; <span x-text="batchStatus.pelunasan_massal.jumlah_diproses"></span> tagihan ditutup.
+                            <span class="block mt-1 text-emerald-700/80 dark:text-emerald-300/80 font-medium">Terkunci sampai bulan depan, supaya tagihan baru tidak ikut tersapu jadi lunas.</span>
+                        </p>
+                    </template>
+                    <template x-if="!batchStatus?.pelunasan_massal">
+                        <p class="text-[11px] mt-1 font-semibold text-slate-600 dark:text-slate-300 leading-relaxed">
+                            Belum dijalankan bulan ini. Tombol ini menutup <span class="font-black">seluruh</span> tagihan aktif
+                            menjadi lunas tanpa uang masuk, jadi pakai hanya saat tutup buku bulanan.
+                        </p>
+                    </template>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div
@@ -194,10 +255,32 @@
                                             x-text="'Potongan aktif: ' + formatCurrency(item.nominal_diskon)"></span>
                                     </div>
                                 </template>
-                                <span class="text-[10px] text-gray-400 mt-1 font-medium"
-                                    x-text="'Sudah diterima: ' + formatCurrency(item.total_sudah_dibayar)"></span>
-                                <span class="text-[10px] text-gray-400 mt-1 font-medium"
-                                    x-text="'Sisa kewajiban: ' + formatCurrency(item.remaining_amount)"></span>
+                                <div class="mt-2 w-full max-w-[240px]">
+                                    <div class="flex items-center justify-between text-[10px] font-black mb-1"
+                                        :class="{
+                                            'text-red-500': item.status == 0,
+                                            'text-amber-600 dark:text-amber-400': item.status == 1,
+                                            'text-emerald-600 dark:text-emerald-400': item.status == 2
+                                        }">
+                                        <span><i class="fas fa-chart-simple mr-1"></i>Progres Bayar</span>
+                                        <span x-text="item.paid_percent + '%'"></span>
+                                    </div>
+                                    <div class="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                        <div class="h-full rounded-full transition-all duration-500"
+                                            :class="{
+                                                'bg-red-400': item.status == 0,
+                                                'bg-amber-500': item.status == 1,
+                                                'bg-emerald-500': item.status == 2
+                                            }"
+                                            :style="'width: ' + item.paid_percent + '%'"></div>
+                                    </div>
+                                    <div class="flex items-center justify-between mt-1.5 gap-2">
+                                        <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 truncate"
+                                            x-text="'Sudah Masuk: ' + formatCurrency(item.total_sudah_dibayar)"></span>
+                                        <span class="text-[10px] font-bold text-red-500 dark:text-red-400 truncate"
+                                            x-text="'Sisa: ' + formatCurrency(item.remaining_amount)"></span>
+                                    </div>
+                                </div>
                             </div>
                         </td>
                         <td class="px-6 py-4 max-w-xs">
@@ -295,12 +378,32 @@
                         <p class="text-red-500 font-bold text-[11px] pt-1">Potongan Aktif: <span
                                 x-text="formatCurrency(item.nominal_diskon)"></span></p>
                     </template>
-                    <div class="pt-1 border-t dark:border-gray-700 mt-1 space-y-1 text-[10px]">
-                        <span class="block"
-                            x-text="'Sudah diterima: ' + formatCurrency(item.total_sudah_dibayar)"></span>
-                        <span class="block"
-                            x-text="'Sisa kewajiban: ' + formatCurrency(item.remaining_amount)"></span>
-                        <span
+                    <div class="pt-2 border-t dark:border-gray-700 mt-1">
+                        <div class="flex items-center justify-between text-[10px] font-black mb-1"
+                            :class="{
+                                'text-red-500': item.status == 0,
+                                'text-amber-600 dark:text-amber-400': item.status == 1,
+                                'text-emerald-600 dark:text-emerald-400': item.status == 2
+                            }">
+                            <span><i class="fas fa-chart-simple mr-1"></i>Progres Bayar</span>
+                            <span x-text="item.paid_percent + '%'"></span>
+                        </div>
+                        <div class="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full transition-all duration-500"
+                                :class="{
+                                    'bg-red-400': item.status == 0,
+                                    'bg-amber-500': item.status == 1,
+                                    'bg-emerald-500': item.status == 2
+                                }"
+                                :style="'width: ' + item.paid_percent + '%'"></div>
+                        </div>
+                        <div class="flex items-center justify-between mt-1.5 gap-2">
+                            <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 truncate"
+                                x-text="'Masuk: ' + formatCurrency(item.total_sudah_dibayar)"></span>
+                            <span class="text-[10px] font-bold text-red-500 dark:text-red-400 truncate"
+                                x-text="'Sisa: ' + formatCurrency(item.remaining_amount)"></span>
+                        </div>
+                        <span class="block text-[9px] text-gray-400 mt-1.5"
                             x-text="item.status == 2 ? 'Pelunasan: ' + item.tanggal_pembayaran : 'Periode input: ' + item.tanggal_format"></span>
                     </div>
                 </div>
@@ -393,8 +496,18 @@
                     </div>
                     <div class="flex justify-between items-center text-xs md:text-sm font-semibold">
                         <span>Total Sudah Diterima:</span>
-                        <span class="font-mono text-gray-900 dark:text-white"
+                        <span class="font-mono text-emerald-600 dark:text-emerald-400"
                             x-text="formatCurrency(activeDetail.total_sudah_dibayar || 0)"></span>
+                    </div>
+                    <div>
+                        <div class="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div class="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                                :style="'width: ' + (activeDetail.total_akhir > 0 ? Math.min(100, Math.round((activeDetail.total_sudah_dibayar || 0) / activeDetail.total_akhir * 100)) : 0) + '%'">
+                            </div>
+                        </div>
+                        <p class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-1 text-right"
+                            x-text="(activeDetail.total_akhir > 0 ? Math.min(100, Math.round((activeDetail.total_sudah_dibayar || 0) / activeDetail.total_akhir * 100)) : 0) + '% dari total sudah masuk'">
+                        </p>
                     </div>
                     <template x-if="activeDetail.nominal_diskon > 0">
                         <div
@@ -629,14 +742,14 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Gunakan
-                            Paket Referensi (Opsional)</label>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Jenis
+                            Tagihan</label>
                         <select @change="applyPaket($event.target.value)"
                             class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all focus:outline-none">
-                            <option value="">-- Silakan Pilih Paket (Bila Ada) --</option>
+                            <option value="">-- Tanpa paket: buku, denda, kegiatan (boleh berulang) --</option>
                             <template x-for="p in pakets" :key="p.id">
                                 <option :value="p.id"
-                                    x-text="p.nama_paket + ' (Rp ' + new Intl.NumberFormat('id-ID').format(p.harga) + ')'">
+                                    x-text="'Paket: ' + p.nama_paket + ' (Rp ' + new Intl.NumberFormat('id-ID').format(p.harga) + ')'">
                                 </option>
                             </template>
                         </select>
@@ -649,6 +762,35 @@
                             placeholder="Masukkan angka tarif tagihan...">
                     </div>
                 </div>
+                <template x-if="peringatanDuplikat">
+                    <div class="rounded-xl border-2 border-red-400 dark:border-red-700 bg-red-50 dark:bg-red-950/30 p-4">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-triangle-exclamation text-red-500 text-xl mt-0.5"></i>
+                            <div class="min-w-0 text-xs leading-relaxed">
+                                <p class="font-black text-red-700 dark:text-red-300 uppercase tracking-wider mb-1">
+                                    Stop — Ini Akan Jadi Tagihan Ganda
+                                </p>
+                                <p class="text-red-800 dark:text-red-200 font-semibold" x-text="peringatanDuplikat"></p>
+                                <p class="text-red-700/90 dark:text-red-300/90 mt-2 font-medium">
+                                    Kalau uangnya sudah diterima, jangan buat tagihan baru — tutup modal ini,
+                                    lalu tekan <span class="font-black">Catat Bayar</span> pada tagihan yang sudah ada.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <template x-if="!form.id_paket && form.id_siswa">
+                    <div class="rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/70 dark:bg-blue-950/20 p-3.5 text-xs text-blue-800 dark:text-blue-200 flex items-start gap-2.5 leading-relaxed">
+                        <i class="fas fa-circle-info text-blue-500 mt-0.5"></i>
+                        <span>
+                            <span class="font-black">Tagihan bebas (tanpa paket).</span>
+                            Cocok untuk buku, denda, atau kegiatan. Jenis ini boleh dibuat berkali-kali untuk siswa yang sama
+                            dan tidak akan pernah diduplikat oleh Penagihan Massal.
+                        </span>
+                    </div>
+                </template>
+
                 <div>
                     <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Keterangan
                         Catatan Tagihan</label>

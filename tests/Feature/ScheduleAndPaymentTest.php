@@ -243,12 +243,168 @@ class ScheduleAndPaymentTest extends TestCase
         $student->update(['paket_pembayaran' => $paket->id]);
 
         $this->actingAs($user)->postJson(route('admin.pembayaran.penagihanMassal'))->assertOk();
-        $this->actingAs($user)->postJson(route('admin.pembayaran.penagihanMassal'))->assertOk();
+
+        // Penagihan massal kedua di bulan yang sama ditolak oleh kunci periode.
+        $this->actingAs($user)->postJson(route('admin.pembayaran.penagihanMassal'))
+            ->assertStatus(409)
+            ->assertJsonPath('status', 'error');
 
         $bulanTahun = now()->translatedFormat('F Y');
         $this->assertSame(1, Pembayaran::where('id_siswa', $student->id)
             ->where('keterangan', "Tagihan Paket {$paket->nama_paket} - {$bulanTahun}")
             ->count());
+    }
+
+    public function test_manual_invoice_with_package_blocks_duplicate_from_mass_billing(): void
+    {
+        // Regresi untuk bug tagihan ganda: admin membuat tagihan manual untuk
+        // sebuah paket, lalu menjalankan penagihan massal. Sebelum perbaikan,
+        // keduanya lolos karena teks keterangannya berbeda ("Pembayaran Paket X
+        // (3 Pertemuan)" vs "Tagihan Paket X - September 2026"), sehingga siswa
+        // tertagih dua kali untuk paket dan bulan yang sama.
+        $user = User::factory()->create();
+        $paket = \App\Models\Paket::create([
+            'nama_paket' => 'TKA SD/SMP 3X/Minggu',
+            'harga' => 350000,
+            'pertemuan' => 3,
+        ]);
+        $student = Siswa::factory()->create([
+            'no_hp' => '+6285602140827',
+            'paket_pembayaran' => $paket->id,
+        ]);
+
+        $this->actingAs($user)->postJson(route('admin.pembayaran.store'), [
+            'id_siswa' => $student->id,
+            'id_paket' => $paket->id,
+            'harga' => $paket->harga,
+            'keterangan' => "Pembayaran Paket {$paket->nama_paket} ({$paket->pertemuan} Pertemuan)",
+        ])->assertOk();
+
+        $this->actingAs($user)->postJson(route('admin.pembayaran.penagihanMassal'))->assertOk();
+
+        $this->assertSame(1, Pembayaran::where('id_siswa', $student->id)->count());
+        $this->assertSame(350000, (int) Pembayaran::where('id_siswa', $student->id)->sum('harga'));
+    }
+
+    public function test_manual_invoice_rejects_duplicate_package_in_same_period(): void
+    {
+        $user = User::factory()->create();
+        $paket = \App\Models\Paket::create([
+            'nama_paket' => 'Paket Duplikat',
+            'harga' => 200000,
+            'pertemuan' => 4,
+        ]);
+        $student = Siswa::factory()->create(['no_hp' => '+6281230000009']);
+
+        $payload = [
+            'id_siswa' => $student->id,
+            'id_paket' => $paket->id,
+            'harga' => $paket->harga,
+            'keterangan' => 'Tagihan pertama',
+        ];
+
+        $this->actingAs($user)->postJson(route('admin.pembayaran.store'), $payload)->assertOk();
+        $this->actingAs($user)->postJson(route('admin.pembayaran.store'), $payload)
+            ->assertStatus(422)
+            ->assertJsonPath('status', 'error');
+
+        $this->assertSame(1, Pembayaran::where('id_siswa', $student->id)->count());
+    }
+
+    public function test_manual_invoice_without_package_stays_unrestricted(): void
+    {
+        // Tagihan bebas (tanpa paket) tidak ikut aturan anti-ganda, karena
+        // memang bisa sah dibuat berkali-kali: denda, buku, kegiatan, dll.
+        $user = User::factory()->create();
+        $student = Siswa::factory()->create(['no_hp' => '+6281230000010']);
+
+        foreach (['Buku modul', 'Biaya kegiatan'] as $keterangan) {
+            $this->actingAs($user)->postJson(route('admin.pembayaran.store'), [
+                'id_siswa' => $student->id,
+                'harga' => 50000,
+                'keterangan' => $keterangan,
+            ])->assertOk();
+        }
+
+        $this->assertSame(2, Pembayaran::where('id_siswa', $student->id)->count());
+    }
+
+    public function test_global_settlement_is_locked_once_per_month(): void
+    {
+        $user = User::factory()->create();
+        $student = Siswa::factory()->create(['no_hp' => '+6281230000011']);
+        Pembayaran::create([
+            'id_siswa' => $student->id,
+            'no_hp' => $student->no_hp,
+            'harga' => 100000,
+            'status' => 0,
+            'total_sudah_dibayar' => 0,
+        ]);
+
+        $this->actingAs($user)->postJson(route('admin.pembayaran.lunasSemua'))->assertOk();
+
+        Pembayaran::create([
+            'id_siswa' => $student->id,
+            'no_hp' => $student->no_hp,
+            'harga' => 250000,
+            'status' => 0,
+            'total_sudah_dibayar' => 0,
+        ]);
+
+        // Klik kedua di bulan yang sama ditolak, sehingga tagihan baru yang
+        // belum dibayar tidak ikut tersapu jadi "lunas" tanpa uang masuk.
+        $this->actingAs($user)->postJson(route('admin.pembayaran.lunasSemua'))
+            ->assertStatus(409)
+            ->assertJsonPath('status', 'error');
+
+        $this->assertSame(0, Pembayaran::where('harga', 250000)->first()->status);
+    }
+
+    public function test_per_family_settlement_is_not_locked_by_monthly_rule(): void
+    {
+        // Pelunasan per keluarga adalah aksi harian, bukan tutup buku bulanan,
+        // jadi tidak boleh ikut terkunci.
+        $user = User::factory()->create();
+        $student = Siswa::factory()->create(['no_hp' => '+6281230000012']);
+
+        foreach ([100000, 150000] as $harga) {
+            Pembayaran::create([
+                'id_siswa' => $student->id,
+                'no_hp' => $student->no_hp,
+                'harga' => $harga,
+                'status' => 0,
+                'total_sudah_dibayar' => 0,
+            ]);
+
+            $this->actingAs($user)
+                ->postJson(route('admin.pembayaran.keLunasMassal', $student->id))
+                ->assertOk();
+        }
+
+        $this->assertSame(0, Pembayaran::whereIn('status', [0, 1])->count());
+    }
+
+    public function test_period_lock_is_released_when_batch_produces_nothing(): void
+    {
+        // Kalau penagihan massal tidak menghasilkan tagihan apa pun (mis. paket
+        // belum dipasang ke siswa), periode tidak boleh ikut terkunci -- admin
+        // harus tetap bisa mengulang setelah membenahi data paket.
+        $user = User::factory()->create();
+        $this->actingAs($user)->postJson(route('admin.pembayaran.penagihanMassal'))->assertOk();
+
+        $paket = \App\Models\Paket::create([
+            'nama_paket' => 'Paket Menyusul',
+            'harga' => 120000,
+            'pertemuan' => 4,
+        ]);
+        Siswa::factory()->create([
+            'no_hp' => '+6281230000013',
+            'paket_pembayaran' => $paket->id,
+        ]);
+
+        $this->actingAs($user)->postJson(route('admin.pembayaran.penagihanMassal'))->assertOk();
+
+        $this->assertDatabaseCount('pembayarans', 1);
     }
 
     public function test_mass_billing_uses_bounded_queries_for_many_students(): void

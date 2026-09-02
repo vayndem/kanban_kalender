@@ -67,6 +67,9 @@ function applyDiscount(family, discountsByPhone) {
     ].filter(Boolean);
     const total = Math.max(family.total_harga - discount, 0);
     const status = resolveStatus(family.raw_items);
+    const paidPercent = total > 0
+        ? Math.min(100, Math.round((family.total_sudah_dibayar / total) * 100))
+        : (status === 2 ? 100 : 0);
 
     return {
         ...family,
@@ -79,6 +82,7 @@ function applyDiscount(family, discountsByPhone) {
         keterangan_diskon: discountNotes.join(' + ') || 'Tanpa Potongan',
         total_akhir: total,
         remaining_amount: Math.max(total - family.total_sudah_dibayar, 0),
+        paid_percent: paidPercent,
     };
 }
 

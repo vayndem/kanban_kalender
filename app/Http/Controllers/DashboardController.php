@@ -144,6 +144,8 @@ class DashboardController extends Controller
         $pembayaranSummaries = $activeTab === 'pembayaran' ? Pembayaran::select([
                 'id',
                 'id_siswa',
+                'id_paket',
+                'periode',
                 'harga',
                 'status',
                 'keterangan',
@@ -152,25 +154,34 @@ class DashboardController extends Controller
                 'no_hp',
                 'total_sudah_dibayar',
                 'created_at',
-            ])->with(['siswa:id,name,panggilan,kelas,no_hp'])
+            ])->with(['siswa:id,name,panggilan,kelas,no_hp', 'paket:id,nama_paket'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($item) {
-                $namaPaket = '-';
-                if (preg_match('/Pembayaran Paket (.*?) \(/', $item->keterangan, $matches)) {
-                    $namaPaket = $matches[1];
-                } elseif (preg_match('/Pembayaran Paket (.*)/', $item->keterangan, $matches)) {
-                    $namaPaket = $matches[1];
+                // Nama paket kini diambil dari relasi, bukan ditebak dari teks.
+                // Regex lama hanya cocok untuk format tagihan manual, sehingga
+                // tagihan hasil penagihan massal selalu tampil "-".
+                $namaPaket = $item->paket?->nama_paket;
+
+                if (! $namaPaket) {
+                    // Cadangan untuk baris lama yang belum sempat di-backfill.
+                    if (preg_match('/(?:Pembayaran|Tagihan) Paket (.*?) \(/', $item->keterangan, $matches)) {
+                        $namaPaket = $matches[1];
+                    } elseif (preg_match('/(?:Pembayaran|Tagihan) Paket (.*?)(?: - |$)/', $item->keterangan, $matches)) {
+                        $namaPaket = $matches[1];
+                    }
                 }
 
                 return [
                     'id' => $item->id,
                     'id_siswa' => $item->id_siswa,
+                    'id_paket' => $item->id_paket,
+                    'periode' => $item->periode,
                     'siswa' => $item->siswa,
                     'harga' => (int) $item->harga,
                     'status' => (int) $item->status,
                     'keterangan' => $item->keterangan,
-                    'nama_paket' => $namaPaket,
+                    'nama_paket' => $namaPaket ?: '-',
                     'tanggal_pembayaran' => $item->tanggal_pembayaran ? \Carbon\Carbon::parse($item->tanggal_pembayaran)->translatedFormat('d F Y') : '-',
                     'pembayaran_via' => $item->pembayaran_via,
                     'no_hp' => $item->no_hp,
@@ -179,6 +190,10 @@ class DashboardController extends Controller
                     'tanggal_format' => $item->created_at->translatedFormat('d F Y'),
                 ];
             }) : collect();
+
+        $batchStatus = $activeTab === 'pembayaran'
+            ? app(\App\Services\PaymentBatchService::class)->currentPeriodStatus()
+            : null;
 
         return view('admin.dashboard', [
             'haris' => $haris,
@@ -190,6 +205,7 @@ class DashboardController extends Controller
             'allSiswas' => $allSiswas,
             'allArsips' => $allArsips,
             'pembayaranSummaries' => $pembayaranSummaries,
+            'batchStatus' => $batchStatus,
             'pakets' => $pakets,
             'jadwalsData' => $jadwalsData,
             'studentScheduleMeta' => $studentScheduleMeta,

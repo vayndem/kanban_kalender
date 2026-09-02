@@ -5,6 +5,7 @@ export const pembayaranHandler = ({
     initialSiswas,
     initialPakets,
     initialDiskons,
+    initialBatchStatus,
     routes,
 }) => ({
     routes,
@@ -12,6 +13,7 @@ export const pembayaranHandler = ({
     siswas: initialSiswas || [],
     pakets: initialPakets || [],
     diskons: initialDiskons || [],
+    batchStatus: initialBatchStatus || null,
     filterSearch: '',
     filterBulan: String(new Date().getMonth() + 1).padStart(2, '0'),
     filterStatus: '0',
@@ -36,6 +38,7 @@ export const pembayaranHandler = ({
     isDesktop: window.matchMedia('(min-width: 768px)').matches,
     form: {
         id_siswa: '',
+        id_paket: null,
         harga: '',
         keterangan: '',
         status: 0
@@ -101,6 +104,38 @@ export const pembayaranHandler = ({
 
     formatCurrency(amount) {
         return 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(amount || 0));
+    },
+
+    get periodeLabel() {
+        return new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+    },
+
+    /**
+     * Peringatan dini tagihan ganda: dicek saat admin masih mengisi form,
+     * bukan setelah tombol simpan ditolak server. Anchor yang dipakai sama
+     * persis dengan yang dipakai penagihan massal (siswa + paket + periode).
+     */
+    get peringatanDuplikat() {
+        if (!this.form.id_siswa || !this.form.id_paket) return null;
+
+        const now = new Date();
+        const periode = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+        const existing = this.summaries.find(item =>
+            String(item.id_siswa) === String(this.form.id_siswa)
+            && String(item.id_paket) === String(this.form.id_paket)
+            && item.periode === periode
+        );
+
+        if (!existing) return null;
+
+        const siswa = this.siswas.find(s => String(s.id) === String(this.form.id_siswa));
+        const paket = this.pakets.find(p => String(p.id) === String(this.form.id_paket));
+        const statusLabel = ['belum dibayar', 'sebagian sudah dibayar', 'sudah lunas'][existing.status] || '-';
+
+        return `${siswa?.name || 'Siswa ini'} sudah punya tagihan paket ${paket?.nama_paket || 'ini'} `
+            + `untuk periode ${this.periodeLabel}, dibuat ${existing.tanggal_format} `
+            + `sebesar ${this.formatCurrency(existing.harga)} (status: ${statusLabel}).`;
     },
 
     get filteredSiswasForModal() {
@@ -176,6 +211,7 @@ export const pembayaranHandler = ({
     openAddPembayaran() {
         this.form = {
             id_siswa: '',
+            id_paket: null,
             harga: '',
             keterangan: '',
             status: 0
@@ -185,9 +221,16 @@ export const pembayaranHandler = ({
     },
 
     applyPaket(paketId) {
-        if (!paketId) return;
+        // id_paket adalah anchor anti-tagihan-ganda: dengan ini penagihan massal
+        // tahu siswa ini sudah tertagih paket tsb bulan ini, walau teks
+        // keterangannya berbeda. Dikosongkan bila admin memilih "tanpa paket".
+        if (!paketId) {
+            this.form.id_paket = null;
+            return;
+        }
         const p = this.pakets.find(x => x.id == paketId);
         if (p) {
+            this.form.id_paket = p.id;
             this.form.harga = p.harga;
             this.form.keterangan =
                 `Pembayaran Paket ${p.nama_paket} (${p.pertemuan} Pertemuan)`;
@@ -198,6 +241,16 @@ export const pembayaranHandler = ({
         if (!this.form.id_siswa) return AppSwal.error('Pilih target siswa terlebih dahulu.');
         if (!this.form.harga || Number(this.form.harga) <= 0) {
             return AppSwal.error('Nominal tagihan wajib lebih besar dari Rp 0.');
+        }
+
+        if (this.peringatanDuplikat) {
+            const lanjut = await AppSwal.confirm(
+                'Tagihan ini kemungkinan ganda!',
+                `${this.peringatanDuplikat} Membuat tagihan lagi berarti siswa ini ditagih dua kali untuk hal yang sama. `
+                + 'Kalau uangnya sudah masuk, tutup form ini dan gunakan "Catat Bayar" pada tagihan yang sudah ada.',
+                'Saya mengerti, tetap lanjut'
+            );
+            if (!lanjut.isConfirmed) return;
         }
 
         const confirmation = await AppSwal.confirm(
@@ -218,7 +271,12 @@ export const pembayaranHandler = ({
                 },
                 body: JSON.stringify(this.form)
             });
-            if ((await response.json()).status === 'success') this.refreshToTab();
+            const payload = await response.json();
+            if (payload.status === 'success') {
+                this.refreshToTab();
+            } else {
+                AppSwal.error(payload.message || 'Gagal menyimpan komponen tagihan.');
+            }
         } catch (e) {
             AppSwal.error('Gagal menyimpan komponen tagihan.');
         } finally {
@@ -227,10 +285,23 @@ export const pembayaranHandler = ({
     },
 
     async prosesPenagihanMassal() {
+        if (this.batchStatus?.penagihan_massal) {
+            return AppSwal.error(
+                `Penagihan massal periode ${this.periodeLabel} sudah dijalankan pada `
+                + `${this.batchStatus.penagihan_massal.dijalankan_pada}`
+                + `${this.batchStatus.penagihan_massal.oleh ? ' oleh ' + this.batchStatus.penagihan_massal.oleh : ''}, `
+                + `menghasilkan ${this.batchStatus.penagihan_massal.jumlah_diproses} tagihan. `
+                + 'Hanya boleh sekali per bulan supaya tidak ada tagihan ganda. '
+                + 'Untuk siswa baru di tengah bulan, buat tagihan satu per satu lewat tombol "Tagihan".'
+            );
+        }
+
         const result = await AppSwal.confirm(
-            'Jalankan penagihan massal?',
-            'Sistem akan membuat tagihan bulanan baru ke semua siswa aktif berdasarkan paket yang terdaftar. Duplikasi periode yang sama akan dihindari.',
-            'Ya, jalankan'
+            `Jalankan penagihan massal ${this.periodeLabel}?`,
+            'Sistem akan membuat tagihan bulanan untuk semua siswa yang punya paket terdaftar. '
+            + 'Aksi ini hanya bisa dijalankan SEKALI dalam bulan ini — setelah dijalankan, tombolnya terkunci sampai bulan depan. '
+            + 'Siswa yang sudah punya tagihan paket yang sama bulan ini otomatis dilewati.',
+            'Ya, jalankan sekarang'
         );
 
         if (result.isConfirmed) {
@@ -244,7 +315,12 @@ export const pembayaranHandler = ({
                             'Accept': 'application/json'
                         }
                     });
-                if ((await response.json()).status === 'success') this.refreshToTab();
+                const payload = await response.json();
+                if (payload.status === 'success') {
+                    this.refreshToTab();
+                } else {
+                    AppSwal.error(payload.message || 'Gagal memproses pembuatan otomatis.');
+                }
             } catch (e) {
                 AppSwal.error('Gagal memproses pembuatan otomatis.');
             } finally {
@@ -314,11 +390,14 @@ export const pembayaranHandler = ({
     },
 
     async prosesBayarSiswa(item) {
-        const sisaTagihan = item.total_akhir - item.total_sudah_dibayar;
+        const totalTagihan = item.total_akhir;
+        const sudahDibayar = item.total_sudah_dibayar;
+        const sisaTagihan = totalTagihan - sudahDibayar;
         if (sisaTagihan <= 0) {
             return AppSwal.error('Tagihan ini sudah tidak memiliki sisa kewajiban.');
         }
         const isDark = document.documentElement.classList.contains('dark');
+        const paidPercent = totalTagihan > 0 ? Math.min(100, Math.round((sudahDibayar / totalTagihan) * 100)) : 0;
 
         const {
             value: formValues
@@ -326,9 +405,22 @@ export const pembayaranHandler = ({
             title: 'Pencatatan Penerimaan Pembayaran',
             html: `
                 <div style="text-align: left; font-family: inherit;" class="space-y-4">
-                    <div style="background-color: ${isDark ? '#374151' : '#f3f4f6'}; border: 1px solid ${isDark ? '#4b5563' : '#e5e7eb'};" class="p-3.5 rounded-xl">
-                        <p style="font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Sisa Kewajiban</p>
-                        <p style="font-size: 18px; font-weight: 900; color: #10b981; margin-top: 2px;">Rp ${new Intl.NumberFormat('id-ID').format(sisaTagihan)}</p>
+                    <div style="background-color: ${isDark ? '#374151' : '#f3f4f6'}; border: 1px solid ${isDark ? '#4b5563' : '#e5e7eb'};" class="p-3.5 rounded-xl space-y-2.5">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Total Tagihan Bersih</span>
+                            <span style="font-size: 13px; font-weight: 800; color: ${isDark ? '#e5e7eb' : '#111827'};">Rp ${new Intl.NumberFormat('id-ID').format(totalTagihan)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Sudah Dibayar Sebelumnya</span>
+                            <span style="font-size: 13px; font-weight: 800; color: #10b981;">Rp ${new Intl.NumberFormat('id-ID').format(sudahDibayar)} (${paidPercent}%)</span>
+                        </div>
+                        <div style="width: 100%; height: 8px; background-color: ${isDark ? '#1f2937' : '#e5e7eb'}; border-radius: 999px; overflow: hidden;">
+                            <div style="height: 100%; width: ${paidPercent}%; background-color: #10b981; border-radius: 999px;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: baseline; border-top: 1px dashed ${isDark ? '#4b5563' : '#d1d5db'}; padding-top: 8px;">
+                            <span style="font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">Sisa Kewajiban Saat Ini</span>
+                            <span style="font-size: 18px; font-weight: 900; color: #f59e0b;">Rp ${new Intl.NumberFormat('id-ID').format(sisaTagihan)}</span>
+                        </div>
                     </div>
                     <div>
                         <label style="display: block; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Nominal Pembayaran Diterima (Rp)</label>
@@ -515,10 +607,24 @@ export const pembayaranHandler = ({
     },
 
     async lunaskanSemua() {
+        if (this.batchStatus?.pelunasan_massal) {
+            return AppSwal.error(
+                `Penyelesaian seluruh status periode ${this.periodeLabel} sudah dijalankan pada `
+                + `${this.batchStatus.pelunasan_massal.dijalankan_pada}`
+                + `${this.batchStatus.pelunasan_massal.oleh ? ' oleh ' + this.batchStatus.pelunasan_massal.oleh : ''}, `
+                + `menutup ${this.batchStatus.pelunasan_massal.jumlah_diproses} tagihan. `
+                + 'Terkunci sampai bulan depan supaya tagihan baru tidak ikut tersapu jadi lunas tanpa uang masuk. '
+                + 'Untuk melunasi satu keluarga, pakai tombol "Set Lunas" pada barisnya.'
+            );
+        }
+
+        const totalSisa = this.formatCurrency(this.summaryStats.totalRemaining);
         const result = await AppSwal.confirm(
-            'Selesaikan semua tunggakan?',
-            'Seluruh data tagihan aktif akan ditutup menjadi lunas penuh. Jika masih ada sisa, sistem akan menambahkan pelunasan otomatis dengan keterangan "Selesai sistem".',
-            'Ya, selesaikan'
+            'Tutup buku: selesaikan SEMUA tunggakan?',
+            `Seluruh tagihan aktif akan ditutup menjadi lunas penuh TANPA uang benar-benar masuk — sisa ${totalSisa} `
+            + 'akan dicatat sebagai pelunasan otomatis berketerangan "Selesai sistem". '
+            + 'Gunakan hanya saat tutup buku bulanan. Aksi ini hanya bisa sekali dalam bulan ini dan tidak bisa dibatalkan.',
+            'Ya, tutup buku sekarang'
         );
 
         if (result.isConfirmed) {
@@ -532,7 +638,12 @@ export const pembayaranHandler = ({
                             'Accept': 'application/json'
                         }
                     });
-                if ((await response.json()).status === 'success') this.refreshToTab();
+                const payload = await response.json();
+                if (payload.status === 'success') {
+                    this.refreshToTab();
+                } else {
+                    AppSwal.error(payload.message || 'Gagal memproses penyelesaian massal data.');
+                }
             } catch (e) {
                 AppSwal.error('Gagal memproses penyelesaian massal data.');
             } finally {

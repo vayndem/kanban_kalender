@@ -2,10 +2,15 @@
 
 namespace App\Services;
 
+use App\Exceptions\BatchSudahDijalankanException;
+use App\Models\BatchPembayaranLog;
 use App\Models\Paket;
 use App\Models\Pembayaran;
 use App\Models\Siswa;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class PaymentBatchService
@@ -18,6 +23,14 @@ class PaymentBatchService
         'paket_pembayaran_5',
     ];
 
+    /**
+     * Membuat tagihan bulanan untuk seluruh siswa yang punya paket aktif.
+     *
+     * Duplikat dicegah lewat anchor (id_siswa, id_paket, periode) -- bukan lagi
+     * kecocokan teks keterangan. Ini yang dulu bikin tagihan manual dan tagihan
+     * massal untuk paket yang sama tidak saling terdeteksi, sehingga satu siswa
+     * bisa tertagih dua kali dalam satu bulan.
+     */
     public function createMonthlyInvoices(): int
     {
         $packages = Paket::query()
@@ -30,73 +43,73 @@ class PaymentBatchService
         }
 
         $now = Carbon::now();
-        $period = $now->translatedFormat('F Y');
-        $createdCount = 0;
+        $periode = $now->format('Y-m');
+        $label = $now->translatedFormat('F Y');
 
-        Siswa::query()
-            ->select(array_merge(['id', 'no_hp'], self::PACKAGE_COLUMNS))
-            ->where(function ($query) {
-                foreach (self::PACKAGE_COLUMNS as $index => $column) {
-                    $index === 0
-                        ? $query->whereNotNull($column)
-                        : $query->orWhereNotNull($column);
-                }
-            })
-            ->chunkById(500, function ($students) use ($packages, $period, $now, &$createdCount) {
-                DB::transaction(function () use ($students, $packages, $period, $now, &$createdCount) {
-                    $descriptions = $packages
-                        ->map(fn (Paket $package) => "Tagihan Paket {$package->nama_paket} - {$period}")
-                        ->unique()
-                        ->values();
+        return $this->runOncePerPeriod(
+            BatchPembayaranLog::JENIS_PENAGIHAN,
+            $periode,
+            function () use ($packages, $periode, $label, $now) {
+                $createdCount = 0;
 
-                    $existingKeys = Pembayaran::query()
-                        ->select(['id_siswa', 'no_hp', 'keterangan'])
-                        ->whereIn('id_siswa', $students->pluck('id'))
-                        ->whereIn('keterangan', $descriptions)
-                        ->get()
-                        ->mapWithKeys(fn (Pembayaran $payment) => [
-                            $this->invoiceKey($payment->id_siswa, $payment->no_hp, $payment->keterangan) => true,
-                        ]);
-
-                    $rows = [];
-                    foreach ($students as $student) {
-                        foreach (self::PACKAGE_COLUMNS as $column) {
-                            $package = $packages->get($student->{$column});
-                            if (! $package) {
-                                continue;
-                            }
-
-                            $description = "Tagihan Paket {$package->nama_paket} - {$period}";
-                            $key = $this->invoiceKey($student->id, $student->no_hp, $description);
-                            if ($existingKeys->has($key)) {
-                                continue;
-                            }
-
-                            $rows[] = [
-                                'id_siswa' => $student->id,
-                                'no_hp' => $student->no_hp,
-                                'harga' => $package->harga,
-                                'keterangan' => $description,
-                                'status' => 0,
-                                'total_sudah_dibayar' => 0,
-                                'created_at' => $now,
-                                'updated_at' => $now,
-                            ];
-                            $existingKeys->put($key, true);
+                Siswa::query()
+                    ->select(array_merge(['id', 'no_hp'], self::PACKAGE_COLUMNS))
+                    ->where(function ($query) {
+                        foreach (self::PACKAGE_COLUMNS as $index => $column) {
+                            $index === 0
+                                ? $query->whereNotNull($column)
+                                : $query->orWhereNotNull($column);
                         }
-                    }
+                    })
+                    ->chunkById(500, function ($students) use ($packages, $periode, $label, $now, &$createdCount) {
+                        $existingKeys = $this->existingAnchorKeys($students->pluck('id'), $periode);
 
-                    if ($rows !== []) {
-                        Pembayaran::query()->insert($rows);
-                        $createdCount += count($rows);
-                    }
-                });
-            });
+                        $rows = [];
+                        foreach ($students as $student) {
+                            foreach (self::PACKAGE_COLUMNS as $column) {
+                                $package = $packages->get($student->{$column});
+                                if (! $package) {
+                                    continue;
+                                }
 
-        return $createdCount;
+                                $key = $this->anchorKey($student->id, $package->id, $periode);
+                                if ($existingKeys->has($key)) {
+                                    continue;
+                                }
+
+                                $rows[] = [
+                                    'id_siswa' => $student->id,
+                                    'id_paket' => $package->id,
+                                    'periode' => $periode,
+                                    'no_hp' => $student->no_hp,
+                                    'harga' => $package->harga,
+                                    'keterangan' => "Tagihan Paket {$package->nama_paket} - {$label}",
+                                    'status' => 0,
+                                    'total_sudah_dibayar' => 0,
+                                    'created_at' => $now,
+                                    'updated_at' => $now,
+                                ];
+                                $existingKeys->put($key, true);
+                            }
+                        }
+
+                        if ($rows !== []) {
+                            Pembayaran::query()->insert($rows);
+                            $createdCount += count($rows);
+                        }
+                    });
+
+                return $createdCount;
+            }
+        );
     }
 
-    public function previewMissingInvoices(): \Illuminate\Support\Collection
+    /**
+     * Daftar tagihan paket yang belum dibuat untuk periode berjalan.
+     * Memakai anchor yang sama dengan createMonthlyInvoices supaya preview dan
+     * eksekusi tidak pernah berbeda hasil.
+     */
+    public function previewMissingInvoices(): Collection
     {
         $packages = Paket::query()
             ->select(['id', 'nama_paket', 'harga'])
@@ -107,11 +120,7 @@ class PaymentBatchService
             return collect();
         }
 
-        $period = Carbon::now()->translatedFormat('F Y');
-        $descriptions = $packages
-            ->map(fn (Paket $package) => "Tagihan Paket {$package->nama_paket} - {$period}")
-            ->unique()
-            ->values();
+        $periode = Carbon::now()->format('Y-m');
 
         $students = Siswa::query()
             ->select(array_merge(['id', 'name', 'no_hp'], self::PACKAGE_COLUMNS))
@@ -124,14 +133,7 @@ class PaymentBatchService
             })
             ->get();
 
-        $existingKeys = Pembayaran::query()
-            ->select(['id_siswa', 'no_hp', 'keterangan'])
-            ->whereIn('id_siswa', $students->pluck('id'))
-            ->whereIn('keterangan', $descriptions)
-            ->get()
-            ->mapWithKeys(fn (Pembayaran $payment) => [
-                $this->invoiceKey($payment->id_siswa, $payment->no_hp, $payment->keterangan) => true,
-            ]);
+        $existingKeys = $this->existingAnchorKeys($students->pluck('id'), $periode);
 
         $missing = collect();
         foreach ($students as $student) {
@@ -141,9 +143,7 @@ class PaymentBatchService
                     continue;
                 }
 
-                $description = "Tagihan Paket {$package->nama_paket} - {$period}";
-                $key = $this->invoiceKey($student->id, $student->no_hp, $description);
-                if ($existingKeys->has($key)) {
+                if ($existingKeys->has($this->anchorKey($student->id, $package->id, $periode))) {
                     continue;
                 }
 
@@ -160,7 +160,62 @@ class PaymentBatchService
         return $missing->values();
     }
 
+    /**
+     * Menutup tagihan aktif menjadi lunas, sambil tetap meninggalkan jejak
+     * PembayaranDetail untuk sisa yang ditutup sistem.
+     *
+     * Tanpa $phone berarti "tutup buku" seluruh sistem -- dikunci sekali per
+     * bulan. Dengan $phone berarti pelunasan satu keluarga, yang memang aksi
+     * harian dan tidak dikunci.
+     */
     public function settleActive(?string $phone = null, string $description = 'Selesai sistem'): int
+    {
+        if ($phone !== null) {
+            return $this->performSettlement($phone, $description);
+        }
+
+        return $this->runOncePerPeriod(
+            BatchPembayaranLog::JENIS_PELUNASAN,
+            Carbon::now()->format('Y-m'),
+            fn () => $this->performSettlement(null, $description)
+        );
+    }
+
+    /**
+     * Log eksekusi massal terakhir per jenis, untuk ditampilkan di UI supaya
+     * admin tahu status periode berjalan sebelum menekan tombol.
+     */
+    public function currentPeriodStatus(): array
+    {
+        $periode = Carbon::now()->format('Y-m');
+
+        $logs = BatchPembayaranLog::query()
+            ->with('user:id,name')
+            ->where('periode', $periode)
+            ->get()
+            ->keyBy('jenis');
+
+        return [
+            'periode' => $periode,
+            'penagihan_massal' => $this->describeLog($logs->get(BatchPembayaranLog::JENIS_PENAGIHAN)),
+            'pelunasan_massal' => $this->describeLog($logs->get(BatchPembayaranLog::JENIS_PELUNASAN)),
+        ];
+    }
+
+    private function describeLog(?BatchPembayaranLog $log): ?array
+    {
+        if (! $log) {
+            return null;
+        }
+
+        return [
+            'dijalankan_pada' => $log->created_at?->translatedFormat('d F Y, H:i'),
+            'oleh' => $log->user?->name,
+            'jumlah_diproses' => $log->jumlah_diproses,
+        ];
+    }
+
+    private function performSettlement(?string $phone, string $description): int
     {
         return DB::transaction(function () use ($phone, $description) {
             $query = Pembayaran::query()
@@ -214,8 +269,86 @@ class PaymentBatchService
         });
     }
 
-    private function invoiceKey(int $studentId, ?string $phone, string $description): string
+    /**
+     * Menjalankan aksi massal maksimal sekali per periode.
+     *
+     * Kunci diambil dengan menulis baris log lebih dulu; UNIQUE(jenis, periode)
+     * di database yang menjadi penjaminnya, sehingga dua klik bersamaan tidak
+     * bisa dua-duanya lolos. Kalau aksinya ternyata tidak memproses apa pun,
+     * kunci dilepas kembali supaya admin masih bisa mengulang setelah
+     * memperbaiki data paket.
+     */
+    private function runOncePerPeriod(string $jenis, string $periode, callable $action): int
     {
-        return $studentId.'|'.$phone.'|'.$description;
+        $log = $this->acquirePeriodLock($jenis, $periode);
+
+        try {
+            $count = $action();
+        } catch (\Throwable $e) {
+            $log->delete();
+            throw $e;
+        }
+
+        if ($count === 0) {
+            $log->delete();
+
+            return 0;
+        }
+
+        $log->update(['jumlah_diproses' => $count]);
+
+        return $count;
+    }
+
+    private function acquirePeriodLock(string $jenis, string $periode): BatchPembayaranLog
+    {
+        try {
+            return BatchPembayaranLog::create([
+                'jenis' => $jenis,
+                'periode' => $periode,
+                'jumlah_diproses' => 0,
+                'user_id' => Auth::id(),
+            ]);
+        } catch (QueryException $e) {
+            if (! $this->isUniqueViolation($e)) {
+                throw $e;
+            }
+
+            $existing = BatchPembayaranLog::query()
+                ->with('user:id,name')
+                ->where('jenis', $jenis)
+                ->where('periode', $periode)
+                ->firstOrFail();
+
+            throw new BatchSudahDijalankanException($existing);
+        }
+    }
+
+    private function isUniqueViolation(QueryException $e): bool
+    {
+        return (string) $e->getCode() === '23000'
+            || str_contains(strtolower($e->getMessage()), 'unique');
+    }
+
+    /**
+     * @param  Collection<int, int>  $studentIds
+     * @return Collection<string, bool>
+     */
+    private function existingAnchorKeys($studentIds, string $periode)
+    {
+        return Pembayaran::query()
+            ->select(['id_siswa', 'id_paket'])
+            ->whereIn('id_siswa', $studentIds)
+            ->whereNotNull('id_paket')
+            ->where('periode', $periode)
+            ->get()
+            ->mapWithKeys(fn (Pembayaran $payment) => [
+                $this->anchorKey($payment->id_siswa, $payment->id_paket, $periode) => true,
+            ]);
+    }
+
+    private function anchorKey(int $studentId, int $packageId, string $periode): string
+    {
+        return $studentId.'|'.$packageId.'|'.$periode;
     }
 }
