@@ -2,25 +2,20 @@
 
 namespace Database\Factories;
 
+use App\Models\Guru;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
     protected static ?string $password;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
@@ -32,9 +27,28 @@ class UserFactory extends Factory
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            Role::findOrCreate(User::ROLE_ADMIN, 'web');
+            $user->syncRoles([User::ROLE_ADMIN]);
+        });
+    }
+
+    public function guru(?Guru $guru = null): static
+    {
+        return $this->state(fn () => ['guru_id' => $guru?->id])
+            ->afterCreating(function (User $user) {
+                Role::findOrCreate(User::ROLE_GURU, 'web');
+                $user->syncRoles([User::ROLE_GURU]);
+            });
+    }
+
+    public function tanpaPeran(): static
+    {
+        return $this->afterCreating(fn (User $user) => $user->syncRoles([]));
+    }
+
     public function unverified(): static
     {
         return $this->state(fn (array $attributes) => [

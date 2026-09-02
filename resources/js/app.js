@@ -3,6 +3,7 @@ import './bootstrap';
 import Alpine from 'alpinejs';
 import Sortable from 'sortablejs';
 import { installJadwalDragDrop, jadwalHandler } from './admin/jadwal';
+import { masterDataHandler } from './admin/master-data';
 import { pembayaranHandler } from './admin/pembayaran';
 import { siswaHandler } from './admin/siswa';
 import { calendarApp } from './components/calendar';
@@ -42,6 +43,7 @@ Alpine.data('calendarApp', calendarApp);
 Alpine.data('jadwalHandler', jadwalHandler);
 Alpine.data('siswaHandler', siswaHandler);
 Alpine.data('pembayaranHandler', pembayaranHandler);
+Alpine.data('masterDataHandler', masterDataHandler);
 Alpine.start();
 
 installJadwalDragDrop();

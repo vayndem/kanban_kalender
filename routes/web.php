@@ -14,18 +14,29 @@ use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\PaketController;
 use App\Http\Controllers\ArsipController;
 use App\Http\Controllers\DiskonController;
+use App\Http\Controllers\GuruPortalController;
+use App\Http\Controllers\MasterDataController;
 
 Route::get('/', [DashboardController::class, 'guestIndex'])->name('welcome');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'role:admin'])
     ->name('dashboard');
 
+Route::middleware(['auth', 'role:guru'])->group(function () {
+    Route::get('/guru', [GuruPortalController::class, 'index'])->name('guru.jadwal');
+});
+
 Route::middleware('auth')->group(function () {
-    // --- Profile ---
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/admin/master-data', [MasterDataController::class, 'index'])->name('admin.masterData.index');
+    Route::post('/admin/master-data/guru/{id}/akun', [MasterDataController::class, 'buatAkunGuru'])->name('admin.masterData.buatAkunGuru');
+    Route::put('/admin/master-data/guru/{id}/email', [MasterDataController::class, 'ubahEmailGuru'])->name('admin.masterData.ubahEmailGuru');
 
     // --- Jadwal Transaksi / Operasional ---
     Route::post('/admin/jadwal/update-posisi', [JadwalController::class, 'updatePosisi'])->name('admin.jadwal.updatePosisi');

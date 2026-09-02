@@ -47,5 +47,10 @@ class DatabaseSeeder extends Seeder
             'end_time' => '20:00',
         ]);
 
+        // Data demo hanya untuk lingkungan kerja lokal. Dikunci agar tidak
+        // pernah ikut terisi bila seeder tidak sengaja dijalankan di produksi.
+        if (! app()->isProduction()) {
+            $this->call(DemoSeeder::class);
+        }
     }
 }

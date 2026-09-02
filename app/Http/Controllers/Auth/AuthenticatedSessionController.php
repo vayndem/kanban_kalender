@@ -28,7 +28,18 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended($this->tujuanSetelahLogin());
+    }
+
+    private function tujuanSetelahLogin(): string
+    {
+        $user = Auth::user();
+
+        if ($user?->isGuru() && ! $user->isAdmin()) {
+            return route('guru.jadwal', absolute: false);
+        }
+
+        return route('dashboard', absolute: false);
     }
 
     /**
