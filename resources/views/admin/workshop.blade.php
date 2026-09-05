@@ -5,6 +5,8 @@
         initialRuangs: @js($ruangs),
         initialSesis: @js($sesis),
         initialPakets: @js($pakets),
+        initialKemampuans: @js($kemampuans),
+        initialKetersediaan: @js($ketersediaan),
         initialSiswas: @js($siswas),
         petaKelas: @js($petaKelas),
         editSiswaId: @js($editSiswaId),
@@ -17,6 +19,8 @@
             ruangStore: @js(route('admin.ruang.store')),
             sesiBase: @js(url('admin/sesi')),
             sesiStore: @js(route('admin.sesi.store')),
+            kemampuanBase: @js(url('admin/kemampuan')),
+            kemampuanStore: @js(route('admin.kemampuan.store')),
             siswaBase: @js(url('admin/siswa')),
             siswaStore: @js(route('admin.siswa.store')),
             siswaImportTemplate: @js(route('admin.siswa.importTemplate')),
@@ -73,7 +77,7 @@
 
             <div
                 class="mb-6 flex flex-wrap gap-1.5 bg-gray-50 dark:bg-gray-900/50 p-1.5 rounded-xl border border-gray-100 dark:border-gray-700">
-                @foreach ([['key' => 'siswa', 'label' => 'Siswa', 'icon' => 'fa-user-graduate'], ['key' => 'guru', 'label' => 'Guru', 'icon' => 'fa-chalkboard-user'], ['key' => 'ruang', 'label' => 'Ruang', 'icon' => 'fa-door-open'], ['key' => 'sesi', 'label' => 'Sesi', 'icon' => 'fa-clock'], ['key' => 'mapel', 'label' => 'Mata Pelajaran', 'icon' => 'fa-book'], ['key' => 'paket', 'label' => 'Paket', 'icon' => 'fa-box'], ['key' => 'ketersediaan', 'label' => 'Slot Kosong', 'icon' => 'fa-calendar-check']] as $tab)
+                @foreach ([['key' => 'siswa', 'label' => 'Siswa', 'icon' => 'fa-user-graduate'], ['key' => 'guru', 'label' => 'Guru', 'icon' => 'fa-chalkboard-user'], ['key' => 'ruang', 'label' => 'Ruang', 'icon' => 'fa-door-open'], ['key' => 'sesi', 'label' => 'Sesi', 'icon' => 'fa-clock'], ['key' => 'mapel', 'label' => 'Mata Pelajaran', 'icon' => 'fa-book'], ['key' => 'paket', 'label' => 'Paket', 'icon' => 'fa-box'], ['key' => 'kemampuan', 'label' => 'Kemampuan', 'icon' => 'fa-star'], ['key' => 'ketersediaan', 'label' => 'Slot Kosong', 'icon' => 'fa-calendar-check']] as $tab)
                     <button type="button" @click="activeSection = '{{ $tab['key'] }}'"
                         :class="activeSection === '{{ $tab['key'] }}' ? 'bg-emerald-600 text-white shadow-sm' :
                             'text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-800'"
@@ -160,9 +164,23 @@
                                 class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                                 <option value="">-- Pilih Paket --</option>
                                 <template x-for="p in pakets" :key="p.id">
-                                    <option :value="String(p.id)" x-text="p.nama_paket"></option>
+                                    <option :value="String(p.id)" x-text="formatPaketLabel(p)"></option>
                                 </template>
                             </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400">Kemampuan</label>
+                            <select x-model="siswaForm.tingkat_kemampuan_id"
+                                class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                <option value="">-- Pilih Kemampuan --</option>
+                                <template x-for="k in kemampuans" :key="k.id">
+                                    <option :value="String(k.id)" x-text="'Level ' + k.level + ' — ' + k.keterangan"></option>
+                                </template>
+                            </select>
+                            <p class="mt-1 text-[11px] text-gray-400" x-show="kemampuans.length === 0">
+                                Belum ada level kemampuan — tambahkan dulu di tab <span class="font-bold">Kemampuan</span>.
+                            </p>
                         </div>
 
                         <div class="flex gap-2 pt-2">
@@ -493,7 +511,6 @@
                 </div>
             </div>
 
-            {{-- ===================== SLOT KOSONG ===================== --}}
             {{-- ===================== PAKET ===================== --}}
             <div x-show="activeSection === 'paket'" x-cloak>
                 <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Paket Pembayaran</h4>
@@ -518,6 +535,67 @@
                 </div>
             </div>
 
+            {{-- ===================== KEMAMPUAN ===================== --}}
+            <div x-show="activeSection === 'kemampuan'" x-cloak>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <form @submit.prevent="simpanKemampuan" class="space-y-3">
+                        <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider"
+                            x-text="kemampuanForm.id ? 'Ubah Keterangan' : 'Tambah Level Baru (Level ' + (kemampuans.length + 1) + ')'"></h4>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400">Keterangan</label>
+                            <input type="text" x-model="kemampuanForm.keterangan" required
+                                placeholder="Contoh: Pemula, belum lancar membaca"
+                                class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                        <p class="text-[11px] text-gray-400" x-show="!kemampuanForm.id">
+                            <i class="fas fa-circle-info"></i> Nomor level otomatis lanjut dari yang tertinggi — tidak
+                            bisa diloncat atau dipilih manual.
+                        </p>
+                        <div class="flex gap-2 pt-2">
+                            <button type="submit" class="btn-primary text-sm flex-1" :disabled="isLoading">
+                                <span x-text="kemampuanForm.id ? 'Simpan Perubahan' : 'Tambah Level'"></span>
+                            </button>
+                            <button type="button" x-show="kemampuanForm.id" @click="resetKemampuanForm()"
+                                class="btn-neutral text-sm">Batal</button>
+                        </div>
+                    </form>
+
+                    <div>
+                        <div class="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
+                            <template x-for="k in kemampuans" :key="k.id">
+                                <div
+                                    class="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-gray-100 dark:border-gray-700">
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold text-gray-800 dark:text-gray-100 truncate">
+                                            Level <span x-text="k.level"></span> — <span x-text="k.keterangan"></span>
+                                        </p>
+                                        <p class="text-[10px]"
+                                            :class="k.jumlah_siswa === 0 ? 'text-gray-400' : 'text-blue-500 font-semibold'"
+                                            x-text="k.jumlah_siswa + ' siswa memakai'">
+                                        </p>
+                                    </div>
+                                    <div class="flex gap-1 shrink-0">
+                                        <button type="button" @click="editKemampuan(k)"
+                                            class="btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
+                                                class="fas fa-pen-to-square"></i></button>
+                                        <button type="button" @click="hapusKemampuan(k)" :disabled="!bisaHapusKemampuan(k)"
+                                            :class="bisaHapusKemampuan(k) ? '' : 'opacity-40 cursor-not-allowed'"
+                                            :title="bisaHapusKemampuan(k) ? '' : 'Hapus level tertinggi dulu, baru turun satu-satu'"
+                                            class="btn-sacred px-2.5 py-1 text-[11px] rounded-md"><i
+                                                class="fas fa-trash-can"></i></button>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="kemampuans.length === 0">
+                                <p class="text-xs text-gray-400 italic text-center py-6">Belum ada level kemampuan.
+                                </p>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- ===================== SLOT KOSONG ===================== --}}
             <div x-show="activeSection === 'ketersediaan'" x-cloak>
                 <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Slot Kosong per Hari &amp;
                     Sesi</h4>
@@ -525,42 +603,59 @@
                     Sebelum menambah kelas di tab Jadwal Pelajaran, lihat dulu ruang dan guru mana yang masih bebas di
                     sini.
                 </p>
+                <input type="text" x-model="searchKetersediaan" placeholder="Cari nama guru atau ruang yang masih bebas..."
+                    class="w-full mb-3 rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                    @foreach ($ketersediaan as $slot)
+                    <template x-for="slot in filteredKetersediaan" :key="slot.hari + '_' + slot.sesi">
                         <div
                             class="rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/40 p-3.5">
-                            <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center justify-between mb-2.5">
                                 <p class="text-xs font-black text-gray-800 dark:text-gray-100">
-                                    {{ $slot['hari'] }} · {{ $slot['sesi'] }}
+                                    <span x-text="slot.hari"></span> · <span x-text="slot.sesi"></span>
                                 </p>
-                                <span
-                                    class="text-[10px] font-bold px-1.5 py-0.5 rounded {{ $slot['kelas_berjalan'] > 0 ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-400' }}">
-                                    {{ $slot['kelas_berjalan'] }} kelas
+                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                                    :class="slot.kelas_berjalan > 0 ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'"
+                                    x-text="slot.kelas_berjalan + ' kelas'">
                                 </span>
                             </div>
-                            <div class="space-y-1.5">
+                            <div class="space-y-2">
                                 <div>
                                     <span class="text-[10px] font-bold text-gray-400 uppercase">Ruang kosong</span>
-                                    @if ($slot['ruang_kosong']->isEmpty())
-                                        <p class="text-[11px] font-bold text-red-500">Penuh — tidak ada ruang tersisa
-                                        </p>
-                                    @else
-                                        <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                                            {{ $slot['ruang_kosong']->implode(', ') }}</p>
-                                    @endif
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                        <template x-for="r in slot.ruang_kosong" :key="r.name">
+                                            <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold"
+                                                :class="r.match ? 'bg-amber-300 dark:bg-amber-700 text-amber-950 dark:text-amber-50 ring-2 ring-amber-500' : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'"
+                                                x-text="r.name"></span>
+                                        </template>
+                                        <template x-if="slot.ruang_kosong.length === 0">
+                                            <span
+                                                class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-red-50 dark:bg-red-950/30 text-red-500">Penuh</span>
+                                        </template>
+                                    </div>
                                 </div>
                                 <div>
                                     <span class="text-[10px] font-bold text-gray-400 uppercase">Guru bebas</span>
-                                    @if ($slot['guru_kosong']->isEmpty())
-                                        <p class="text-[11px] font-bold text-red-500">Semua guru terpakai</p>
-                                    @else
-                                        <p class="text-[11px] text-gray-600 dark:text-gray-300">
-                                            {{ $slot['guru_kosong']->implode(', ') }}</p>
-                                    @endif
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                        <template x-for="g in slot.guru_kosong" :key="g.name">
+                                            <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold"
+                                                :class="g.match ? 'bg-amber-300 dark:bg-amber-700 text-amber-950 dark:text-amber-50 ring-2 ring-amber-500' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'"
+                                                x-text="g.name"></span>
+                                        </template>
+                                        <template x-if="slot.guru_kosong.length === 0">
+                                            <span
+                                                class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-red-50 dark:bg-red-950/30 text-red-500">Semua
+                                                terpakai</span>
+                                        </template>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    @endforeach
+                    </template>
+                    <template x-if="filteredKetersediaan.length === 0">
+                        <p class="text-xs text-gray-400 italic text-center py-6 col-span-full">
+                            Tidak ada slot kosong yang cocok dengan pencarian "<span x-text="searchKetersediaan"></span>".
+                        </p>
+                    </template>
                 </div>
             </div>
 

@@ -15,13 +15,17 @@ export async function kirim(url, method, payload) {
 
     const data = await response.json();
 
-    // Laravel's default validation-exception response ({message, errors}) has no
-    // status field of its own -- surface the specific field messages instead of
-    // letting callers show a generic "gagal" toast.
     if (!response.ok && data.status !== 'error') {
         const pesan = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Terjadi kesalahan.');
         return { status: 'error', message: pesan };
     }
 
     return data;
+}
+
+export async function salinTeksJadwal(url) {
+    const res = await fetch(url, { headers: { Accept: 'application/json' } }).then(r => r.json());
+    if (res.status !== 'success') throw new Error(res.message || 'Gagal membuat teks jadwal.');
+    await navigator.clipboard.writeText(res.text);
+    return res;
 }

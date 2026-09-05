@@ -122,6 +122,7 @@ class DashboardController extends Controller
                 'finansial' => $this->ringkasanService->pengingatFinansial($this->paymentBatchService, $piutangBulan),
                 'kebersihan_data' => $this->ringkasanService->kebersihanData(3),
                 'bentrok_tersembunyi' => $this->ringkasanService->bentrokTersembunyi(),
+                'pengingat_wa' => $this->ringkasanService->pengingatJadwalWa(),
             ];
         }
 

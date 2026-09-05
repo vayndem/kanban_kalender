@@ -10,6 +10,7 @@ use App\Models\Paket;
 use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
+use App\Models\TingkatKemampuan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
@@ -40,6 +41,7 @@ class WorkshopController extends Controller
             'paket_pembayaran_3',
             'paket_pembayaran_4',
             'paket_pembayaran_5',
+            'tingkat_kemampuan_id',
         ]);
 
         return view('admin.workshop', [
@@ -48,6 +50,7 @@ class WorkshopController extends Controller
             'ruangs' => $this->entitasDenganKonteks(Ruang::orderBy('name')->get(['id', 'name']), $jadwals, 'ruang_id'),
             'sesis' => $this->entitasDenganKonteks(Sesi::orderBy('start_time')->get(['id', 'name', 'start_time', 'end_time']), $jadwals, 'sesi_id'),
             'pakets' => $this->paketsDenganKonteks($siswas),
+            'kemampuans' => $this->kemampuanDenganKonteks($siswas),
             'siswas' => $siswas,
             'ketersediaan' => $this->petaKetersediaan($jadwals),
             'petaKelas' => $this->petaKelas($jadwals),
@@ -63,12 +66,12 @@ class WorkshopController extends Controller
         ]);
     }
 
-    private function entitasDenganKonteks(Collection $items, Collection $jadwals, string $kolom): Collection
+    private function entitasDenganKonteks(Collection $items, Collection $jadwals, string $kolom, string $labelJumlah = 'jumlah_baris_jadwal'): Collection
     {
         $terpakai = $jadwals->countBy($kolom);
 
         return $items->map(fn ($item) => array_merge($item->toArray(), [
-            'jumlah_baris_jadwal' => (int) ($terpakai[$item->id] ?? 0),
+            $labelJumlah => (int) ($terpakai[$item->id] ?? 0),
             'bisa_dihapus' => (int) ($terpakai[$item->id] ?? 0) === 0,
         ]));
     }
@@ -86,6 +89,17 @@ class WorkshopController extends Controller
 
         return Paket::orderBy('nama_paket')->get(['id', 'nama_paket', 'harga', 'pertemuan'])
             ->map(fn (Paket $p) => array_merge($p->toArray(), ['jumlah_siswa' => $terpakai[$p->id] ?? 0]));
+    }
+
+    private function kemampuanDenganKonteks(Collection $siswas): Collection
+    {
+        $semua = TingkatKemampuan::orderBy('level')->get(['id', 'level', 'keterangan']);
+        $levelTertinggi = $semua->max('level');
+
+        return $this->entitasDenganKonteks($semua, $siswas, 'tingkat_kemampuan_id', 'jumlah_siswa')
+            ->map(fn (array $k) => array_merge($k, [
+                'bisa_dihapus' => $k['bisa_dihapus'] && $k['level'] === $levelTertinggi,
+            ]));
     }
 
     private function petaKetersediaan(Collection $jadwals): array

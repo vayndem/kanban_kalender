@@ -16,6 +16,7 @@ use App\Http\Controllers\RuangController;
 use App\Http\Controllers\SesiController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\TandaController;
+use App\Http\Controllers\TingkatKemampuanController;
 use App\Http\Controllers\WorkshopController;
 use Illuminate\Support\Facades\Route;
 
@@ -112,6 +113,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/admin/paket', [PaketController::class, 'store'])->name('admin.paket.store');
     Route::put('/admin/paket/{id}', [PaketController::class, 'update'])->name('admin.paket.update');
     Route::delete('/admin/paket/{id}', [PaketController::class, 'destroy'])->name('admin.paket.destroy');
+
+    // 8b. Tingkat Kemampuan
+    Route::post('/admin/kemampuan', [TingkatKemampuanController::class, 'store'])->name('admin.kemampuan.store');
+    Route::put('/admin/kemampuan/{id}', [TingkatKemampuanController::class, 'update'])->name('admin.kemampuan.update');
+    Route::delete('/admin/kemampuan/{id}', [TingkatKemampuanController::class, 'destroy'])->name('admin.kemampuan.destroy');
 
     // 9. Arsip Siswa
     Route::get('/admin/arsip', [ArsipController::class, 'index'])->name('admin.arsip.index');

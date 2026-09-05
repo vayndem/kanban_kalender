@@ -22,6 +22,7 @@ class Siswa extends Model
         'paket_pembayaran_3',
         'paket_pembayaran_4',
         'paket_pembayaran_5',
+        'tingkat_kemampuan_id',
     ];
 
     public function jadwals(): HasMany
@@ -37,5 +38,10 @@ class Siswa extends Model
     public function paket(): BelongsTo
     {
         return $this->belongsTo(Paket::class, 'paket_pembayaran');
+    }
+
+    public function tingkatKemampuan(): BelongsTo
+    {
+        return $this->belongsTo(TingkatKemampuan::class, 'tingkat_kemampuan_id');
     }
 }

@@ -7,6 +7,7 @@
     $finansial = $ringkasanData['finansial'];
     $kebersihan = $ringkasanData['kebersihan_data'];
     $bentrok = $ringkasanData['bentrok_tersembunyi'];
+    $pengingatWa = $ringkasanData['pengingat_wa'];
 
     $periodeUrl = function (string $target) {
         return route('dashboard', array_merge(request()->query(), ['tab' => 'ringkasan', 'periode' => $target]));
@@ -151,6 +152,65 @@
                 </div>
             </div>
         </template>
+    </div>
+
+    {{-- Pengingat copy jadwal WA harian --}}
+    <div x-data="{
+        isLoading: false,
+        sudahHariIni: @js($pengingatWa['sudah_hari_ini']),
+        terakhirJam: @js($pengingatWa['terakhir_jam']),
+        terakhirOleh: @js($pengingatWa['terakhir_oleh']),
+        async copySekarang() {
+            this.isLoading = true;
+            try {
+                await window.salinTeksJadwal(@js(route('admin.jadwal.generateText')));
+                this.sudahHariIni = true;
+                this.terakhirJam = new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit' }).format(new Date());
+                this.terakhirOleh = @js(auth()->user()->name);
+                AppSwal.toast('Teks jadwal disalin ke clipboard!');
+            } catch (e) {
+                AppSwal.error('Gagal menyalin teks jadwal.');
+            } finally {
+                this.isLoading = false;
+            }
+        },
+    }">
+        <div class="rounded-xl border p-4 sm:p-5"
+            :class="sudahHariIni ?
+                'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30' :
+                'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30'">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-start gap-3">
+                    <i class="mt-0.5 fas fa-lg"
+                        :class="sudahHariIni ? 'fa-circle-check text-emerald-600' : 'fa-triangle-exclamation text-amber-600'"></i>
+                    <div>
+                        <p class="text-sm font-black" :class="sudahHariIni ?
+                            'text-emerald-800 dark:text-emerald-300' :
+                            'text-amber-800 dark:text-amber-300'"
+                            x-text="sudahHariIni ? 'Jadwal WA untuk guru sudah di-copy hari ini' : 'Jadwal WA untuk guru belum di-copy hari ini'">
+                        </p>
+                        <p class="mt-0.5 text-xs" :class="sudahHariIni ?
+                            'text-emerald-700 dark:text-emerald-400' :
+                            'text-amber-700 dark:text-amber-400'">
+                            <template x-if="sudahHariIni">
+                                <span>Terakhir jam <span x-text="terakhirJam"></span><span
+                                        x-show="terakhirOleh"> oleh <span x-text="terakhirOleh"></span></span>.</span>
+                            </template>
+                            <template x-if="!sudahHariIni">
+                                <span>Supaya guru-guru dapat info jadwal mereka, salin dan kirim teks jadwal ke grup WA
+                                    setiap hari.</span>
+                            </template>
+                        </p>
+                    </div>
+                </div>
+                <button type="button" @click="copySekarang()" :disabled="isLoading"
+                    class="shrink-0 rounded-lg px-4 py-2 text-xs font-bold text-white shadow-sm transition-all"
+                    :class="sudahHariIni ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-600 hover:bg-amber-700'">
+                    <i class="fas fa-copy"></i>
+                    <span x-text="sudahHariIni ? 'Copy Ulang' : 'Copy Sekarang'"></span>
+                </button>
+            </div>
+        </div>
     </div>
 
     {{-- Toggle periode: harian / mingguan --}}

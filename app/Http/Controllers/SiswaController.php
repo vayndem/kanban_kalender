@@ -59,10 +59,12 @@ class SiswaController extends Controller
             'kelas' => 'nullable|string|max:50',
             'no_hp' => ['nullable', 'string', 'max:20', self::aturanNoHp()],
             'paket_pembayaran' => 'nullable|integer|exists:pakets,id',
+            'tingkat_kemampuan_id' => 'nullable|integer|exists:tingkat_kemampuans,id',
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
             'name.unique' => 'Nama siswa sudah terdaftar di sistem.',
             'paket_pembayaran.exists' => 'Paket pembayaran yang dipilih tidak valid.',
+            'tingkat_kemampuan_id.exists' => 'Tingkat kemampuan yang dipilih tidak valid.',
         ]);
 
         try {
@@ -96,10 +98,12 @@ class SiswaController extends Controller
             'kelas' => 'nullable|string|max:50',
             'no_hp' => ['nullable', 'string', 'max:20', self::aturanNoHp()],
             'paket_pembayaran' => 'nullable|integer|exists:pakets,id',
+            'tingkat_kemampuan_id' => 'nullable|integer|exists:tingkat_kemampuans,id',
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
             'name.unique' => 'Nama siswa sudah digunakan oleh data lain.',
             'paket_pembayaran.exists' => 'Paket pembayaran tidak ditemukan.',
+            'tingkat_kemampuan_id.exists' => 'Tingkat kemampuan yang dipilih tidak valid.',
         ]);
 
         try {

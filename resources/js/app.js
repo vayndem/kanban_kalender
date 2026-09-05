@@ -13,6 +13,7 @@ import { workshopHandler } from './admin/workshop';
 import { modulAjarHandler } from './admin/modul-ajar';
 import { calendarApp } from './components/calendar';
 import { installAlerts } from './core/alerts';
+import { salinTeksJadwal } from './core/http';
 import { buildPaymentSummary } from './domain/payment-summary';
 import {
     buildOccupancyIndex,
@@ -30,6 +31,7 @@ import { installSearchableSelects } from './ui/searchable-select';
 window.Alpine = Alpine;
 window.Sortable = Sortable;
 window.Swal = Swal;
+window.salinTeksJadwal = salinTeksJadwal;
 window.AppDomain = Object.freeze({
     buildPaymentSummary,
     buildOccupancyIndex,

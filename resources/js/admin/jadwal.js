@@ -1,6 +1,6 @@
 import Sortable from 'sortablejs';
 
-import { csrfToken } from '../core/http';
+import { csrfToken, salinTeksJadwal } from '../core/http';
 
 export const jadwalHandler = (data) => ({
     activeTab: data.activeTab || 'jadwal',
@@ -335,20 +335,17 @@ export const jadwalHandler = (data) => ({
                     '_blank');
             } else if (result.isDenied) {
                 Swal.showLoading();
-                fetch(this.routes.jadwal.generateText + '?' + params.toString())
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            navigator.clipboard.writeText(data.text).then(
-                                () => {
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'Disalin!',
-                                        timer: 1500,
-                                        showConfirmButton: false
-                                    });
-                                });
-                        }
+                salinTeksJadwal(this.routes.jadwal.generateText + '?' + params.toString())
+                    .then(() => {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Disalin!',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    })
+                    .catch(() => {
+                        Swal.fire('Error', 'Gagal menyalin teks jadwal.', 'error');
                     });
             }
         });

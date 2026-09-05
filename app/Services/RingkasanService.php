@@ -7,6 +7,7 @@ use App\Models\Diskon;
 use App\Models\Guru;
 use App\Models\Hari;
 use App\Models\Jadwal;
+use App\Models\JadwalTeksLog;
 use App\Models\MataPelajaran;
 use App\Models\Pembayaran;
 use App\Models\Ruang;
@@ -260,6 +261,20 @@ class RingkasanService
                 ->orderBy('created_at')
                 ->get(['id', 'siswa_id', 'keterangan', 'created_at']),
             'tanda_lama_hari' => self::TANDA_LAMA_HARI,
+        ];
+    }
+
+    public function pengingatJadwalWa(): array
+    {
+        $terakhir = JadwalTeksLog::whereDate('created_at', today())
+            ->with('user:id,name')
+            ->latest()
+            ->first();
+
+        return [
+            'sudah_hari_ini' => (bool) $terakhir,
+            'terakhir_jam' => $terakhir?->created_at?->format('H:i'),
+            'terakhir_oleh' => $terakhir?->user?->name,
         ];
     }
 

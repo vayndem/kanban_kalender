@@ -19,7 +19,7 @@
             </div>
         </div>
 
-        <div class="mb-6 grid gap-3 sm:grid-cols-[1fr_auto]">
+        <div class="mb-3 grid gap-3 sm:grid-cols-[1fr_auto]">
             <label class="relative block">
                 <span class="sr-only">Cari jadwal</span>
                 <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
@@ -32,6 +32,44 @@
                 class="flex min-h-12 items-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
                 <i class="far fa-calendar mr-2 text-emerald-500"></i><span x-text="todayLabel"></span>
             </div>
+        </div>
+
+        <div class="mb-6 grid gap-3 sm:grid-cols-4">
+            <select x-model="filterHari"
+                class="min-h-11 w-full rounded-xl border-gray-300 bg-white text-sm text-gray-900 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                <option value="">Semua Hari</option>
+                @foreach ($haris as $hari)
+                    <option value="{{ $hari->id }}">{{ $hari->name }}</option>
+                @endforeach
+            </select>
+            <select x-model="filterMapel"
+                class="min-h-11 w-full rounded-xl border-gray-300 bg-white text-sm text-gray-900 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                <option value="">Semua Mata Pelajaran</option>
+                @foreach ($mapels as $mapel)
+                    <option value="{{ $mapel->id }}">{{ $mapel->name }}</option>
+                @endforeach
+            </select>
+            <select x-model="filterGuru"
+                class="min-h-11 w-full rounded-xl border-gray-300 bg-white text-sm text-gray-900 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                <option value="">Semua Guru</option>
+                @foreach ($gurus as $guru)
+                    <option value="{{ $guru->id }}">{{ $guru->name }}</option>
+                @endforeach
+            </select>
+            <select x-model="filterRuang"
+                class="min-h-11 w-full rounded-xl border-gray-300 bg-white text-sm text-gray-900 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+                <option value="">Semua Ruang</option>
+                @foreach ($ruangs as $ruang)
+                    <option value="{{ $ruang->id }}">{{ $ruang->name }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div x-show="hasActiveFilters" class="mb-6 -mt-3">
+            <button type="button" @click="resetFilters()"
+                class="text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-400">
+                <i class="fas fa-rotate-left"></i> Reset pencarian & filter
+            </button>
         </div>
 
         {{-- Mobile: daftar per hari agar tidak memaksa tabel horizontal. --}}
@@ -51,7 +89,9 @@
                                 @if (isset($jadwals[$hari->id][$sesi->id]))
                                     @foreach ($jadwals[$hari->id][$sesi->id] as $groupedClass)
                                         @php($searchText = strtolower($hari->name . ' ' . $sesi->name . ' ' . $groupedClass['mapel']->name . ' ' . $groupedClass['guru']->name . ' ' . $groupedClass['ruang']->name . ' ' . $groupedClass['siswa_list']->pluck('name')->implode(' ')))
-                                        <article x-show="matches(@js($searchText))" x-transition class="p-4">
+                                        <article
+                                            x-show="matches(@js($searchText), { hari: {{ $hari->id }}, mapel: {{ $groupedClass['mapel']->id }}, guru: {{ $groupedClass['guru']->id }}, ruang: {{ $groupedClass['ruang']->id }} })"
+                                            x-transition class="p-4">
                                             <div class="mb-2 flex items-start justify-between gap-3">
                                                 <div>
                                                     <p class="font-black text-gray-900 dark:text-white">
@@ -115,7 +155,9 @@
                                     <td class="h-36 border-t border-gray-200 p-2 align-top dark:border-gray-700">
                                         @foreach ($jadwals[$hari->id][$sesi->id] ?? [] as $groupedClass)
                                             @php($searchText = strtolower($hari->name . ' ' . $sesi->name . ' ' . $groupedClass['mapel']->name . ' ' . $groupedClass['guru']->name . ' ' . $groupedClass['ruang']->name . ' ' . $groupedClass['siswa_list']->pluck('name')->implode(' ')))
-                                            <article x-show="matches(@js($searchText))" x-transition
+                                            <article
+                                                x-show="matches(@js($searchText), { hari: {{ $hari->id }}, mapel: {{ $groupedClass['mapel']->id }}, guru: {{ $groupedClass['guru']->id }}, ruang: {{ $groupedClass['ruang']->id }} })"
+                                                x-transition
                                                 class="mb-2 rounded-xl border-l-4 bg-gray-50 p-3 text-xs shadow-sm dark:bg-gray-700/70"
                                                 style="border-left-color: {{ $groupedClass['mapel']->border_color }}">
                                                 <strong

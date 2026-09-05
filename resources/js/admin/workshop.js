@@ -30,6 +30,8 @@ export const workshopHandler = ({
     initialRuangs,
     initialSesis,
     initialPakets,
+    initialKemampuans,
+    initialKetersediaan,
     initialSiswas,
     petaKelas,
     editSiswaId,
@@ -45,6 +47,8 @@ export const workshopHandler = ({
     ruangs: initialRuangs || [],
     sesis: initialSesis || [],
     pakets: initialPakets || [],
+    kemampuans: initialKemampuans || [],
+    ketersediaan: initialKetersediaan || [],
     siswas: initialSiswas || [],
 
     searchMapel: '',
@@ -52,12 +56,14 @@ export const workshopHandler = ({
     searchRuang: '',
     searchSesi: '',
     searchSiswa: '',
+    searchKetersediaan: '',
 
     mapelForm: { id: null, name: '' },
     guruForm: { id: null, name: '' },
     ruangForm: { id: null, name: '' },
     sesiForm: { id: null, name: '', start_time: '', end_time: '' },
-    siswaForm: { id: null, name: '', panggilan: '', kelas: '', no_hp: '', paket_pembayaran: '' },
+    kemampuanForm: { id: null, keterangan: '' },
+    siswaForm: { id: null, name: '', panggilan: '', kelas: '', no_hp: '', paket_pembayaran: '', tingkat_kemampuan_id: '' },
 
     init() {
         if (editSiswaId) {
@@ -179,9 +185,27 @@ export const workshopHandler = ({
         return this.filterList(this.siswas, this.searchSiswa, ['name', 'panggilan', 'kelas', 'no_hp']);
     },
 
+    get filteredKetersediaan() {
+        const q = this.searchKetersediaan.trim().toLowerCase();
+        const toChips = (names) => names.map(name => ({ name, match: q.length > 0 && name.toLowerCase().includes(q) }));
+
+        return this.ketersediaan
+            .map(slot => ({
+                ...slot,
+                ruang_kosong: toChips(slot.ruang_kosong),
+                guru_kosong: toChips(slot.guru_kosong),
+            }))
+            .filter(slot => !q || slot.ruang_kosong.some(r => r.match) || slot.guru_kosong.some(g => g.match));
+    },
+
     getPaketName(id) {
         const p = this.pakets.find(x => Number(x.id) === Number(id));
         return p ? p.nama_paket : '-';
+    },
+
+    formatPaketLabel(p) {
+        const harga = 'Rp ' + Number(p.harga || 0).toLocaleString('id-ID');
+        return `${p.nama_paket} — ${harga} · ${p.pertemuan}x pertemuan`;
     },
 
     resetMapelForm() {
@@ -377,8 +401,59 @@ export const workshopHandler = ({
         }
     },
 
+    resetKemampuanForm() {
+        this.kemampuanForm = { id: null, keterangan: '' };
+    },
+    editKemampuan(k) {
+        this.kemampuanForm = { id: k.id, keterangan: k.keterangan };
+    },
+    bisaHapusKemampuan(k) {
+        const levelTertinggi = Math.max(...this.kemampuans.map(x => x.level));
+        return k.jumlah_siswa === 0 && k.level === levelTertinggi;
+    },
+    async simpanKemampuan() {
+        this.isLoading = true;
+        try {
+            const isEdit = !!this.kemampuanForm.id;
+            const url = isEdit ? `${this.routes.kemampuanBase}/${this.kemampuanForm.id}` : this.routes.kemampuanStore;
+            const res = await kirim(url, isEdit ? 'PUT' : 'POST', { keterangan: this.kemampuanForm.keterangan });
+            if (res.status !== 'success') return AppSwal.error(res.message);
+
+            if (isEdit) {
+                const idx = this.kemampuans.findIndex(k => k.id === res.data.id);
+                if (idx !== -1) this.kemampuans[idx] = { ...this.kemampuans[idx], keterangan: res.data.keterangan };
+            } else {
+                this.kemampuans.push({ id: res.data.id, level: res.data.level, keterangan: res.data.keterangan, jumlah_siswa: 0 });
+            }
+            AppSwal.toast(res.message);
+            this.resetKemampuanForm();
+        } catch (e) {
+            AppSwal.error('Gagal menyimpan tingkat kemampuan.');
+        } finally {
+            this.isLoading = false;
+        }
+    },
+    async hapusKemampuan(k) {
+        const confirmation = await AppSwal.confirm('Hapus tingkat kemampuan?', `Level ${k.level} — "${k.keterangan}" akan dihapus permanen.`, 'Ya, hapus');
+        if (!confirmation.isConfirmed) return;
+        this.isLoading = true;
+        try {
+            const res = await fetch(`${this.routes.kemampuanBase}/${k.id}`, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': csrfToken(), Accept: 'application/json' },
+            }).then(r => r.json());
+            if (res.status !== 'success') return AppSwal.error(res.message);
+            this.kemampuans = this.kemampuans.filter(x => x.id !== k.id);
+            AppSwal.toast(res.message);
+        } catch (e) {
+            AppSwal.error('Gagal menghapus tingkat kemampuan.');
+        } finally {
+            this.isLoading = false;
+        }
+    },
+
     resetSiswaForm() {
-        this.siswaForm = { id: null, name: '', panggilan: '', kelas: '', no_hp: '', paket_pembayaran: '' };
+        this.siswaForm = { id: null, name: '', panggilan: '', kelas: '', no_hp: '', paket_pembayaran: '', tingkat_kemampuan_id: '' };
     },
     editSiswa(s) {
         this.siswaForm = {
@@ -388,6 +463,7 @@ export const workshopHandler = ({
             kelas: s.kelas || '',
             no_hp: s.no_hp || '',
             paket_pembayaran: s.paket_pembayaran == null ? '' : String(s.paket_pembayaran),
+            tingkat_kemampuan_id: s.tingkat_kemampuan_id == null ? '' : String(s.tingkat_kemampuan_id),
         };
     },
     async simpanSiswa() {

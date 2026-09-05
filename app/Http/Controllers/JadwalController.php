@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\JadwalExport;
 use App\Models\Hari;
 use App\Models\Jadwal;
+use App\Models\JadwalTeksLog;
 use App\Models\Sesi;
 use App\Models\Tanda;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -54,6 +55,9 @@ class JadwalController extends Controller
             'haris' => $haris,
             'sesis' => $sesis,
             'jadwals' => $finalJadwals,
+            'mapels' => $jadwalsData->pluck('mataPelajaran')->filter()->unique('id')->sortBy('name')->values(),
+            'gurus' => $jadwalsData->pluck('guru')->filter()->unique('id')->sortBy('name')->values(),
+            'ruangs' => $jadwalsData->pluck('ruang')->filter()->unique('id')->sortBy('name')->values(),
         ]);
     }
 
@@ -454,6 +458,8 @@ class JadwalController extends Controller
                     });
             });
         }
+
+        JadwalTeksLog::create(['user_id' => $request->user()?->id]);
 
         return response()->json([
             'status' => 'success',
