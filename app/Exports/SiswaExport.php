@@ -2,19 +2,25 @@
 
 namespace App\Exports;
 
+use App\Exports\Concerns\MemaksaTeksUntukAwalanPlus;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class SiswaExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithTitle
+class SiswaExport implements FromCollection, ShouldAutoSize, WithCustomValueBinder, WithHeadings, WithMapping, WithStyles, WithTitle
 {
+    use MemaksaTeksUntukAwalanPlus;
+
     protected Collection $siswas;
+
     protected string $filterLabel;
 
     public function __construct(Collection $siswas, string $filterLabel = 'Semua Siswa')
@@ -35,6 +41,7 @@ class SiswaExport implements FromCollection, WithHeadings, WithMapping, ShouldAu
         foreach ($this->siswas as $siswa) {
             if ($siswa->jadwals->isEmpty()) {
                 $rows->push(['siswa' => $siswa, 'jadwal' => null]);
+
                 continue;
             }
 
@@ -50,7 +57,7 @@ class SiswaExport implements FromCollection, WithHeadings, WithMapping, ShouldAu
     {
         return [
             ['DATA MASTER SISWA - E-LING COURSE'],
-            ['FILTER: ' . strtoupper($this->filterLabel)],
+            ['FILTER: '.strtoupper($this->filterLabel)],
             [''],
             [
                 'Nama Siswa',
@@ -84,8 +91,8 @@ class SiswaExport implements FromCollection, WithHeadings, WithMapping, ShouldAu
             $siswa->paket?->pertemuan ?? '-',
             $jadwal?->hari?->name ?? '-',
             $jadwal?->sesi?->name ?? '-',
-            $jadwal?->sesi?->start_time ? \Carbon\Carbon::parse($jadwal->sesi->start_time)->format('H:i') : '-',
-            $jadwal?->sesi?->end_time ? \Carbon\Carbon::parse($jadwal->sesi->end_time)->format('H:i') : '-',
+            $jadwal?->sesi?->start_time ? Carbon::parse($jadwal->sesi->start_time)->format('H:i') : '-',
+            $jadwal?->sesi?->end_time ? Carbon::parse($jadwal->sesi->end_time)->format('H:i') : '-',
             $jadwal?->mataPelajaran?->name ?? '-',
             $jadwal?->guru?->name ?? '-',
             $jadwal?->ruang?->name ?? '-',

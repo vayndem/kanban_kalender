@@ -1,6 +1,6 @@
-import { csrfToken } from '../core/http';
+import { kirim } from '../core/http';
 
-export const masterDataHandler = ({ routes }) => ({
+export const akunGuruHandler = ({ routes }) => ({
     routes,
     isLoading: false,
 
@@ -52,18 +52,9 @@ export const masterDataHandler = ({ routes }) => ({
 
         this.isLoading = true;
         try {
-            const response = await fetch(`${this.routes.buatAkunBase}/${id}/akun`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken(),
-                    Accept: 'application/json',
-                },
-                body: JSON.stringify(form),
-            });
-            const payload = await response.json();
+            const payload = await kirim(`${this.routes.buatAkunBase}/${id}/akun`, 'POST', form);
             if (payload.status === 'success') {
-                await AppSwal.success(payload.message);
+                await AppSwal.toast(payload.message);
                 window.location.reload();
             } else {
                 AppSwal.error(payload.message || 'Gagal membuat akun.');
@@ -94,17 +85,9 @@ export const masterDataHandler = ({ routes }) => ({
 
         this.isLoading = true;
         try {
-            const response = await fetch(`${this.routes.buatAkunBase}/${id}/email`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken(),
-                    Accept: 'application/json',
-                },
-                body: JSON.stringify({ email: baru }),
-            });
-            const payload = await response.json();
+            const payload = await kirim(`${this.routes.buatAkunBase}/${id}/email`, 'PUT', { email: baru });
             if (payload.status === 'success') {
+                await AppSwal.toast(payload.message);
                 window.location.reload();
             } else {
                 AppSwal.error(payload.message || 'Gagal memperbarui email.');

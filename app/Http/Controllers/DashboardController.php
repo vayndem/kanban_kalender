@@ -22,8 +22,7 @@ class DashboardController extends Controller
     public function __construct(
         private readonly RingkasanService $ringkasanService,
         private readonly PaymentBatchService $paymentBatchService,
-    ) {
-    }
+    ) {}
 
     public function index()
     {
@@ -59,10 +58,10 @@ class DashboardController extends Controller
                 ->with(['siswa:id,name,panggilan,kelas', 'siswa.tandas:id,siswa_id,keterangan,created_at', 'mataPelajaran:id,name', 'guru:id,name', 'ruang:id,name', 'hari:id,name', 'sesi:id,name,start_time,end_time'])
                 ->get();
             $jadwalsData = $jadwalsWithRelations
-                ->map(fn (Jadwal $jadwal) => ['siswa_id' => $jadwal->siswa_id])
+                ->map(fn(Jadwal $jadwal) => ['siswa_id' => $jadwal->siswa_id])
                 ->unique('siswa_id')
                 ->values();
-            $scheduleOccupancy = $jadwalsWithRelations->map(fn (Jadwal $jadwal) => [
+            $scheduleOccupancy = $jadwalsWithRelations->map(fn(Jadwal $jadwal) => [
                 'hari_id' => $jadwal->hari_id,
                 'sesi_id' => $jadwal->sesi_id,
                 'mapel_id' => $jadwal->mata_pelajaran_id,
@@ -97,7 +96,7 @@ class DashboardController extends Controller
                 ->select(['siswa_id', 'sesi_id', 'guru_id', 'ruang_id'])
                 ->get()
                 ->groupBy('siswa_id')
-                ->map(fn ($schedules) => [
+                ->map(fn($schedules) => [
                     'total' => $schedules->count(),
                     'sesi_ids' => $schedules->pluck('sesi_id')->unique()->values(),
                     'guru_ids' => $schedules->pluck('guru_id')->unique()->values(),
@@ -142,19 +141,19 @@ class DashboardController extends Controller
         }
 
         $pembayaranSummaries = $activeTab === 'pembayaran' ? Pembayaran::select([
-                'id',
-                'id_siswa',
-                'id_paket',
-                'periode',
-                'harga',
-                'status',
-                'keterangan',
-                'tanggal_pembayaran',
-                'pembayaran_via',
-                'no_hp',
-                'total_sudah_dibayar',
-                'created_at',
-            ])->with(['siswa:id,name,panggilan,kelas,no_hp', 'paket:id,nama_paket'])
+            'id',
+            'id_siswa',
+            'id_paket',
+            'periode',
+            'harga',
+            'status',
+            'keterangan',
+            'tanggal_pembayaran',
+            'pembayaran_via',
+            'no_hp',
+            'total_sudah_dibayar',
+            'created_at',
+        ])->with(['siswa:id,name,panggilan,kelas,no_hp', 'paket:id,nama_paket'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($item) {
@@ -244,8 +243,8 @@ class DashboardController extends Controller
         })->map(function ($items) {
             $kelas = $items->first();
             $kelas->slot_students = $items
-                ->filter(fn ($jadwal) => $jadwal->siswa !== null)
-                ->map(fn ($jadwal) => [
+                ->filter(fn($jadwal) => $jadwal->siswa !== null)
+                ->map(fn($jadwal) => [
                     'name' => $jadwal->siswa->name,
                     'kelas' => $jadwal->siswa->kelas ?? 'N/A',
                 ])

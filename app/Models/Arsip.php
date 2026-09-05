@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\MenormalisasiNoHp;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Arsip extends Model
 {
-    use HasFactory;
+    use HasFactory, MenormalisasiNoHp;
 
     protected $table = 'arsips';
 

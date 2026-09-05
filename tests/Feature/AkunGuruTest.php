@@ -8,7 +8,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class MasterDataTest extends TestCase
+class AkunGuruTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -32,7 +32,7 @@ class MasterDataTest extends TestCase
         $this->assertFalse($guru->punyaAkun());
         $this->assertFalse($guru->siapDibuatkanAkun());
 
-        $this->actingAs($this->admin())->get(route('admin.masterData.index'))
+        $this->actingAs($this->admin())->get(route('admin.akunGuru.index'))
             ->assertOk()
             ->assertSee('Bu Sekar');
     }
@@ -42,13 +42,13 @@ class MasterDataTest extends TestCase
         $guru = Guru::create(['name' => 'Bu Sekar']);
         $admin = $this->admin();
 
-        $this->actingAs($admin)->putJson(route('admin.masterData.ubahEmailGuru', $guru->id), [
+        $this->actingAs($admin)->putJson(route('admin.akunGuru.ubahEmailGuru', $guru->id), [
             'email' => 'sekar@eling.test',
         ])->assertOk()->assertJsonPath('status', 'success');
 
         $this->assertTrue($guru->fresh()->siapDibuatkanAkun());
 
-        $this->actingAs($admin)->postJson(route('admin.masterData.buatAkunGuru', $guru->id), [
+        $this->actingAs($admin)->postJson(route('admin.akunGuru.buatAkunGuru', $guru->id), [
             'email' => 'sekar@eling.test',
             'password' => 'rahasia123',
         ])->assertOk()->assertJsonPath('status', 'success');
@@ -65,12 +65,12 @@ class MasterDataTest extends TestCase
         $guru = Guru::create(['name' => 'Pak Anwar', 'email' => 'anwar@eling.test']);
         $admin = $this->admin();
 
-        $this->actingAs($admin)->postJson(route('admin.masterData.buatAkunGuru', $guru->id), [
+        $this->actingAs($admin)->postJson(route('admin.akunGuru.buatAkunGuru', $guru->id), [
             'email' => 'anwar@eling.test',
             'password' => 'rahasia123',
         ])->assertOk();
 
-        $this->actingAs($admin)->postJson(route('admin.masterData.buatAkunGuru', $guru->id), [
+        $this->actingAs($admin)->postJson(route('admin.akunGuru.buatAkunGuru', $guru->id), [
             'email' => 'anwar2@eling.test',
             'password' => 'rahasia123',
         ])->assertStatus(422);
@@ -84,10 +84,25 @@ class MasterDataTest extends TestCase
         $lain = Guru::create(['name' => 'Bu Melati']);
 
         $this->actingAs($this->admin())
-            ->putJson(route('admin.masterData.ubahEmailGuru', $lain->id), ['email' => 'sama@eling.test'])
+            ->putJson(route('admin.akunGuru.ubahEmailGuru', $lain->id), ['email' => 'sama@eling.test'])
             ->assertStatus(422);
 
         $this->assertNull($lain->fresh()->email);
+    }
+
+    public function test_email_already_used_by_another_login_account_is_rejected(): void
+    {
+        // Beda dari test di atas: di sini yang bentrok bukan gurus.email milik guru
+        // lain, tapi email login akun lain (mis. admin) yang tidak pernah muncul
+        // di tabel gurus sama sekali.
+        User::factory()->create(['email' => 'admin.lain@eling.test']);
+        $guru = Guru::create(['name' => 'Bu Melati']);
+
+        $this->actingAs($this->admin())
+            ->putJson(route('admin.akunGuru.ubahEmailGuru', $guru->id), ['email' => 'admin.lain@eling.test'])
+            ->assertStatus(422);
+
+        $this->assertNull($guru->fresh()->email);
     }
 
     public function test_changing_email_keeps_the_login_account_in_sync(): void
@@ -95,12 +110,12 @@ class MasterDataTest extends TestCase
         $guru = Guru::create(['name' => 'Bu Kirana', 'email' => 'kirana@eling.test']);
         $admin = $this->admin();
 
-        $this->actingAs($admin)->postJson(route('admin.masterData.buatAkunGuru', $guru->id), [
+        $this->actingAs($admin)->postJson(route('admin.akunGuru.buatAkunGuru', $guru->id), [
             'email' => 'kirana@eling.test',
             'password' => 'rahasia123',
         ])->assertOk();
 
-        $this->actingAs($admin)->putJson(route('admin.masterData.ubahEmailGuru', $guru->id), [
+        $this->actingAs($admin)->putJson(route('admin.akunGuru.ubahEmailGuru', $guru->id), [
             'email' => 'kirana.baru@eling.test',
         ])->assertOk();
 
@@ -113,25 +128,25 @@ class MasterDataTest extends TestCase
         $guru = Guru::create(['name' => 'Pak Bagas', 'email' => 'bagas@eling.test']);
         $admin = $this->admin();
 
-        $this->actingAs($admin)->postJson(route('admin.masterData.buatAkunGuru', $guru->id), [
+        $this->actingAs($admin)->postJson(route('admin.akunGuru.buatAkunGuru', $guru->id), [
             'email' => 'bagas@eling.test',
             'password' => 'rahasia123',
         ])->assertOk();
 
-        $this->actingAs($admin)->putJson(route('admin.masterData.ubahEmailGuru', $guru->id), [
+        $this->actingAs($admin)->putJson(route('admin.akunGuru.ubahEmailGuru', $guru->id), [
             'email' => null,
         ])->assertStatus(422);
 
         $this->assertSame('bagas@eling.test', $guru->fresh()->email);
     }
 
-    public function test_page_shows_which_slots_are_still_free(): void
+    public function test_page_does_not_expose_general_reference_data_crud(): void
     {
-        $this->seed(\Database\Seeders\DemoSeeder::class);
+        Guru::create(['name' => 'Bu Sekar']);
 
-        $this->actingAs($this->admin())->get(route('admin.masterData.index'))
+        $this->actingAs($this->admin())->get(route('admin.akunGuru.index'))
             ->assertOk()
-            ->assertSee('Slot Kosong per Hari')
-            ->assertSee('Ruang kosong');
+            ->assertDontSee('Slot Kosong per Hari')
+            ->assertDontSee('Tambah Mata Pelajaran');
     }
 }

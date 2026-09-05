@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\MataPelajaran;
+use Illuminate\Http\Request;
 
 class MapelController extends Controller
 {
@@ -81,6 +81,17 @@ class MapelController extends Controller
     {
         try {
             $mapel = MataPelajaran::findOrFail($id);
+
+            $jumlahJadwal = $mapel->jadwals()->count();
+            if ($jumlahJadwal > 0) {
+                $msg = "Mata pelajaran {$mapel->name} tidak bisa dihapus: masih dipakai {$jumlahJadwal} baris jadwal. "
+                    . 'Hapus atau pindahkan jadwalnya dulu di tab Jadwal Pelajaran, baru mata pelajaran ini bisa dihapus.';
+
+                return $request->wantsJson()
+                    ? response()->json(['status' => 'error', 'message' => $msg], 422)
+                    : redirect()->back()->with('error', $msg);
+            }
+
             $mapel->delete();
 
             if ($request->wantsJson()) {

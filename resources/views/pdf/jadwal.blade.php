@@ -86,7 +86,8 @@
             table-layout: fixed;
         }
 
-        th, td {
+        th,
+        td {
             border: 1px solid #666;
             padding: 3px;
             vertical-align: top;
@@ -126,7 +127,8 @@
             margin-bottom: 1px;
         }
 
-        .guru, .ruang {
+        .guru,
+        .ruang {
             font-size: 7pt;
             color: #444;
             display: block;
@@ -239,7 +241,7 @@
 
     <div class="header-container">
         <h2>Laporan Jadwal Pelajaran</h2>
-        @if($searchQuery)
+        @if ($searchQuery)
             <div class="search-info">Filter: "{{ $searchQuery }}"</div>
         @else
             <div class="search-info">Menampilkan seluruh jadwal aktif sesuai data sistem.</div>
@@ -252,12 +254,12 @@
             @php
                 $startOfWeek = \Carbon\Carbon::now()->startOfWeek();
                 $dayOffsets = [
-                    'Senin'  => 0,
+                    'Senin' => 0,
                     'Selasa' => 1,
-                    'Rabu'   => 2,
-                    'Kamis'  => 3,
-                    'Jumat'  => 4,
-                    'Sabtu'  => 5,
+                    'Rabu' => 2,
+                    'Kamis' => 3,
+                    'Jumat' => 4,
+                    'Sabtu' => 5,
                 ];
             @endphp
 
@@ -293,14 +295,16 @@
                         <td>
                             @if (isset($jadwals[$hari->id][$sesi->id]))
                                 @foreach ($jadwals[$hari->id][$sesi->id] as $groupedClass)
-                                    <div class="card" style="border-left: 3px solid {{ $groupedClass['mapel']->border_color ?? '#000' }};">
+                                    <div class="card"
+                                        style="border-left: 3px solid {{ $groupedClass['mapel']->border_color ?? '#000' }};">
                                         <div class="mapel">{{ $groupedClass['mapel']->name }}</div>
                                         <span class="guru">{{ $groupedClass['guru']->name }}</span>
                                         <span class="ruang">R: {{ $groupedClass['ruang']->name }}</span>
 
                                         <ol class="siswa-list">
                                             @foreach ($groupedClass['siswa_list'] as $siswa)
-                                                <li class="{{ ($siswa->tandas && $siswa->tandas->count() > 0) ? 'tanda-indicator' : '' }}">
+                                                <li
+                                                    class="{{ $siswa->tandas && $siswa->tandas->count() > 0 ? 'tanda-indicator' : '' }}">
                                                     {{ $siswa->formatted_name_class }}
                                                 </li>
                                             @endforeach
@@ -351,7 +355,7 @@
                     </tr>
                 </table>
 
-                @foreach($siswa->tandas as $tanda)
+                @foreach ($siswa->tandas as $tanda)
                     <div class="note-item">
                         <span class="note-content">{{ $tanda->keterangan }}</span>
                         <span class="note-date">
@@ -368,4 +372,5 @@
     </div>
 
 </body>
+
 </html>

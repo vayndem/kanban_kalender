@@ -162,49 +162,49 @@
         </div>
 
         <template x-if="showSiswaModal">
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition>
-            <div @click="showSiswaModal = false" class="absolute inset-0"></div>
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative border dark:border-gray-700 m-2"
-                @click.stop>
-                <div
-                    class="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
-                    <div class="min-w-0 flex-1 pr-2">
-                        <h3 class="font-bold text-gray-900 dark:text-white text-base truncate" x-text="modalTitle"></h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Daftar Siswa Terjadwal</p>
+            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition>
+                <div @click="showSiswaModal = false" class="absolute inset-0"></div>
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative border dark:border-gray-700 m-2"
+                    @click.stop>
+                    <div
+                        class="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
+                        <div class="min-w-0 flex-1 pr-2">
+                            <h3 class="font-bold text-gray-900 dark:text-white text-base truncate" x-text="modalTitle"></h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Daftar Siswa Terjadwal</p>
+                        </div>
+                        <button @click="showSiswaModal = false"
+                            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0">
+                            <i class="fas fa-times fa-lg"></i>
+                        </button>
                     </div>
-                    <button @click="showSiswaModal = false"
-                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0">
-                        <i class="fas fa-times fa-lg"></i>
-                    </button>
-                </div>
-                <div class="p-4 sm:p-6 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto space-y-2">
-                    <template x-for="(siswa, index) in modalStudents" :key="index">
-                        <div
-                            class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl border border-gray-100 dark:border-gray-600 gap-2 min-w-0">
-                            <div class="flex items-center gap-3 min-w-0 flex-1">
-                                <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm flex-shrink-0"
-                                    x-text="siswa.name.charAt(0)"></div>
-                                <span class="text-sm font-semibold text-gray-800 dark:text-white truncate"
-                                    x-text="siswa.name"></span>
+                    <div class="p-4 sm:p-6 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto space-y-2">
+                        <template x-for="(siswa, index) in modalStudents" :key="index">
+                            <div
+                                class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl border border-gray-100 dark:border-gray-600 gap-2 min-w-0">
+                                <div class="flex items-center gap-3 min-w-0 flex-1">
+                                    <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm flex-shrink-0"
+                                        x-text="siswa.name.charAt(0)"></div>
+                                    <span class="text-sm font-semibold text-gray-800 dark:text-white truncate"
+                                        x-text="siswa.name"></span>
+                                </div>
+                                <span
+                                    class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30 whitespace-nowrap flex-shrink-0"
+                                    x-text="'Kelas ' + siswa.kelas"></span>
                             </div>
-                            <span
-                                class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30 whitespace-nowrap flex-shrink-0"
-                                x-text="'Kelas ' + siswa.kelas"></span>
-                        </div>
-                    </template>
-                    <template x-if="modalStudents.length === 0">
-                        <div class="text-center py-8">
-                            <i class="fas fa-users-slash text-gray-300 dark:text-gray-600 text-3xl mb-2"></i>
-                            <p class="text-xs text-gray-400 dark:text-gray-500">Belum ada siswa di kelas ini.</p>
-                        </div>
-                    </template>
-                </div>
-                <div class="p-4 border-t dark:border-gray-700 flex justify-end bg-gray-50 dark:bg-gray-900">
-                    <button @click="showSiswaModal = false"
-                        class="w-full sm:w-auto px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white rounded-xl text-sm font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Tutup</button>
+                        </template>
+                        <template x-if="modalStudents.length === 0">
+                            <div class="text-center py-8">
+                                <i class="fas fa-users-slash text-gray-300 dark:text-gray-600 text-3xl mb-2"></i>
+                                <p class="text-xs text-gray-400 dark:text-gray-500">Belum ada siswa di kelas ini.</p>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="p-4 border-t dark:border-gray-700 flex justify-end bg-gray-50 dark:bg-gray-900">
+                        <button @click="showSiswaModal = false"
+                            class="w-full sm:w-auto px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white rounded-xl text-sm font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Tutup</button>
+                    </div>
                 </div>
             </div>
-        </div>
         </template>
     </div>
 @endsection

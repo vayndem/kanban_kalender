@@ -29,13 +29,7 @@ export const jadwalHandler = (data) => ({
     routes: data.routes,
     csrfToken: data.csrfToken,
     searchModalSiswa: '',
-    showAddMenu: false,
-    currentForm: '',
     selectedStudentDetail: null,
-    formData: {},
-    activeFormTab: 'input',
-    formSearch: '',
-    filteredFormList: [],
     availableStudentResults: [],
     selectedStudentResults: [],
     occupancyIndex: {},
@@ -43,7 +37,6 @@ export const jadwalHandler = (data) => ({
     hariIndex: {},
     sesiIndex: {},
     scheduledStudentIds: new Set(),
-    formSources: {},
 
     init() {
         this.studentIndex = AppDomain.indexById(this.allSiswas);
@@ -51,18 +44,6 @@ export const jadwalHandler = (data) => ({
         this.sesiIndex = AppDomain.indexById(this.allSesis);
         this.scheduledStudentIds = new Set(this.allJadwals.map(schedule => Number(schedule.siswa_id)));
         this.occupancyIndex = AppDomain.buildOccupancyIndex(this.occupancy);
-        this.formSources = AppDomain.buildFormSources({
-            subjects: this.allMapels,
-            teachers: this.allGurus,
-            rooms: this.allRuangs,
-            sessions: this.allSesis,
-            students: this.allSiswas
-        });
-        this.$watch('activeFormTab', tab => {
-            if (tab === 'list') this.refreshFormList();
-        });
-        this.$watch('formSearch', () => this.refreshFormList());
-        this.$watch('currentForm', () => this.refreshFormList());
         this.$watch('searchModalSiswa', () => this.refreshAvailableStudents());
     },
 
@@ -115,119 +96,11 @@ export const jadwalHandler = (data) => ({
         return this.scheduledStudentIds.has(Number(siswaId));
     },
 
-    refreshFormList() {
-        const search = this.formSearch.toLowerCase();
-        const source = this.formSources[this.currentForm] || [];
-        this.filteredFormList = search === '' ? source : source.filter(item => item.name
-            .toLowerCase().includes(search));
-    },
-
     formatSessionTime(sessionId) {
         const session = this.sesiIndex[Number(sessionId)];
         return session?.start_time
             ? `(${session.start_time.substring(0, 5)} - ${session.end_time.substring(0, 5)})`
             : '';
-    },
-
-    editDataItem(item) {
-        this.activeFormTab = 'input';
-        this.formData = JSON.parse(JSON.stringify(item));
-        if (this.currentForm === 'tanda') {
-            this.formData.keterangan = item.keterangan || item.name.split(' : ')[1];
-        }
-    },
-
-    deleteDataItem(id) {
-        if (!this.currentForm) {
-            Swal.fire('Error', 'Tipe data tidak terdeteksi.', 'error');
-            return;
-        }
-        Swal.fire({
-            title: 'Hapus Data?',
-            text: 'Data yang dihapus tidak dapat dikembalikan!',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            confirmButtonText: 'Ya, Hapus!',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                let endpoint = this.routes[this.currentForm].destroy.replace(':id',
-                    id);
-                fetch(endpoint, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': this.csrfToken
-                        }
-                    })
-                    .then(async response => {
-                        const resData = await response.json();
-                        if (!response.ok) throw resData;
-                        return resData;
-                    })
-                    .then(data => {
-                        if (data.status === 'success') {
-                            Swal.fire('Terhapus!', data.message, 'success')
-                                .then(() => this.refreshPage());
-                        }
-                    })
-                    .catch(error => {
-                        Swal.fire('Gagal!', error.message ||
-                            'Gagal menghubungi server.', 'error');
-                    });
-            }
-        });
-    },
-
-    saveNewData() {
-        const isEdit = this.formData.id ? true : false;
-        let endpoint = isEdit ? this.routes[this.currentForm].update.replace(':id', this
-            .formData.id) : this.routes[this.currentForm].store;
-        let method = isEdit ? 'PUT' : 'POST';
-        fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': this.csrfToken
-                },
-                body: JSON.stringify({
-                    ...this.formData,
-                    _method: method
-                })
-            })
-            .then(async response => {
-                const result = await response.json();
-                if (!response.ok) throw result;
-                return result;
-            })
-            .then(data => {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil!',
-                    text: data.message,
-                    timer: 1500,
-                    showConfirmButton: false
-                }).then(() => this.refreshPage());
-            })
-            .catch(error => {
-                let errorList = '';
-                if (error.errors) {
-                    errorList = '<ul class="text-left mt-2 list-disc list-inside">';
-                    Object.values(error.errors).flat().forEach(msg => {
-                        errorList += `<li class="text-sm">${msg}</li>`;
-                    });
-                    errorList += '</ul>';
-                }
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal Menyimpan',
-                    html: (error.message || 'Terjadi kesalahan') + errorList,
-                    confirmButtonColor: '#3b82f6'
-                });
-            });
     },
 
     refreshStudentSelections() {

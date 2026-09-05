@@ -3,10 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Paket;
+use App\Models\Siswa;
 use Illuminate\Http\Request;
 
 class PaketController extends Controller
 {
+    public const KOLOM_PAKET_SISWA = [
+        'paket_pembayaran',
+        'paket_pembayaran_2',
+        'paket_pembayaran_3',
+        'paket_pembayaran_4',
+        'paket_pembayaran_5',
+    ];
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -25,7 +34,7 @@ class PaketController extends Controller
                 return response()->json([
                     'status' => 'success',
                     'message' => 'Paket berhasil ditambahkan',
-                    'data' => $paket
+                    'data' => $paket,
                 ]);
             }
 
@@ -39,7 +48,7 @@ class PaketController extends Controller
     {
         $paket = Paket::find($id);
 
-        if (!$paket) {
+        if (! $paket) {
             return $this->handleNotFound($request, "Paket (ID: $id)");
         }
 
@@ -58,7 +67,7 @@ class PaketController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'Paket berhasil diperbarui'
+                    'message' => 'Paket berhasil diperbarui',
                 ]);
             }
 
@@ -73,8 +82,23 @@ class PaketController extends Controller
         try {
             $paket = Paket::find($id);
 
-            if (!$paket) {
-                return $this->handleNotFound($request, "Paket");
+            if (! $paket) {
+                return $this->handleNotFound($request, 'Paket');
+            }
+
+            $jumlahSiswa = Siswa::where(function ($query) use ($paket) {
+                foreach (self::KOLOM_PAKET_SISWA as $kolom) {
+                    $query->orWhere($kolom, $paket->id);
+                }
+            })->count();
+
+            if ($jumlahSiswa > 0) {
+                $msg = "Paket {$paket->nama_paket} tidak bisa dihapus: masih dipakai {$jumlahSiswa} siswa. "
+                    .'Pindahkan siswa itu ke paket lain dulu lewat Workshop, baru paket ini bisa dihapus.';
+
+                return $request->wantsJson()
+                    ? response()->json(['status' => 'error', 'message' => $msg], 422)
+                    : redirect()->back()->with('error', $msg);
             }
 
             $paket->delete();
@@ -82,7 +106,7 @@ class PaketController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'Paket berhasil dihapus'
+                    'message' => 'Paket berhasil dihapus',
                 ]);
             }
 
@@ -98,15 +122,17 @@ class PaketController extends Controller
         if ($request->wantsJson()) {
             return response()->json(['status' => 'error', 'message' => $msg], 404);
         }
+
         return redirect()->back()->with('error', $msg);
     }
 
     private function handleException($request, $prefix, $e)
     {
-        $msg = $prefix . ': ' . $e->getMessage();
+        $msg = $prefix.': '.$e->getMessage();
         if ($request->wantsJson()) {
             return response()->json(['status' => 'error', 'message' => $msg], 500);
         }
+
         return redirect()->back()->withInput()->with('error', $msg);
     }
 }

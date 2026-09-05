@@ -25,11 +25,13 @@
          dan pembayaran tercatat ganda. --}}
     <div x-show="isLoading" x-cloak
         class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-[2px] cursor-wait">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl px-6 py-5 flex items-center gap-3 border dark:border-gray-700">
+        <div
+            class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl px-6 py-5 flex items-center gap-3 border dark:border-gray-700">
             <i class="fas fa-circle-notch fa-spin text-emerald-500 text-xl"></i>
             <div>
                 <p class="text-sm font-bold text-gray-900 dark:text-white">Sedang diproses...</p>
-                <p class="text-[11px] text-gray-500 dark:text-gray-400">Mohon tunggu, jangan menutup atau menekan tombol lagi.</p>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400">Mohon tunggu, jangan menutup atau menekan tombol
+                    lagi.</p>
             </div>
         </div>
     </div>
@@ -42,16 +44,15 @@
                 Administrasi Pembayaran Siswa
             </h3>
             <p class="text-gray-500 dark:text-gray-400 mt-0.5 text-xs md:text-sm">
-                Ringkasan keuangan ditampilkan per nomor HP keluarga untuk memudahkan penagihan, pelunasan, dan pencetakan bukti pembayaran.
+                Ringkasan keuangan ditampilkan per nomor HP keluarga untuk memudahkan penagihan, pelunasan, dan
+                pencetakan bukti pembayaran.
             </p>
         </div>
         <div class="flex flex-wrap gap-2 w-full lg:w-auto">
-            <button @click="exportExcel()"
-                class="btn-export flex-1 lg:flex-none text-xs md:text-sm">
+            <button @click="exportExcel()" class="btn-export flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-file-excel"></i> <span class="hidden sm:inline">Export</span> Excel
             </button>
-            <button @click="openDiskonManagerModal()"
-                class="btn-accent flex-1 lg:flex-none text-xs md:text-sm">
+            <button @click="openDiskonManagerModal()" class="btn-accent flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-tags"></i> Kelola Diskon
             </button>
             <button @click="prosesPenagihanMassal()" :disabled="isLoading"
@@ -59,12 +60,10 @@
                 <i class="fas fa-file-invoice-dollar"></i>
                 <span>Penagihan Massal</span>
             </button>
-            <button @click="openPaketModal()"
-                class="btn-accent flex-1 lg:flex-none text-xs md:text-sm">
+            <button @click="openPaketModal()" class="btn-accent flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-box"></i> <span class="hidden sm:inline">Kelola</span> Paket
             </button>
-            <button @click="openAddPembayaran()"
-                class="btn-primary flex-1 lg:flex-none text-xs md:text-sm">
+            <button @click="openAddPembayaran()" class="btn-primary flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-plus"></i> Tagihan
             </button>
             <button @click="lunaskanSemua()" :disabled="isLoading"
@@ -76,55 +75,71 @@
     </div>
 
     <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-        <div class="rounded-xl border border-emerald-200/70 dark:border-emerald-900/50 bg-emerald-50/70 dark:bg-emerald-950/20 p-4">
-            <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Keluarga Ditampilkan</p>
-            <p class="mt-2 text-2xl font-black text-emerald-800 dark:text-emerald-200" x-text="summaryStats.totalFamilies"></p>
+        <div
+            class="rounded-xl border border-emerald-200/70 dark:border-emerald-900/50 bg-emerald-50/70 dark:bg-emerald-950/20 p-4">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Keluarga
+                Ditampilkan</p>
+            <p class="mt-2 text-2xl font-black text-emerald-800 dark:text-emerald-200"
+                x-text="summaryStats.totalFamilies"></p>
             <p class="mt-1 text-[11px] text-emerald-700/80 dark:text-emerald-300/80">Sesuai filter aktif saat ini</p>
         </div>
         <div class="rounded-xl border border-red-200/70 dark:border-red-900/50 bg-red-50/70 dark:bg-red-950/20 p-4">
-            <p class="text-[10px] font-bold uppercase tracking-wider text-red-700 dark:text-red-300">Total Tagihan Bersih</p>
-            <p class="mt-2 text-lg font-black text-red-800 dark:text-red-200" x-text="formatCurrency(summaryStats.totalNet)"></p>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-red-700 dark:text-red-300">Total Tagihan
+                Bersih</p>
+            <p class="mt-2 text-lg font-black text-red-800 dark:text-red-200"
+                x-text="formatCurrency(summaryStats.totalNet)"></p>
             <p class="mt-1 text-[11px] text-red-700/80 dark:text-red-300/80">Akumulasi kewajiban setelah diskon</p>
         </div>
         <div class="rounded-xl border border-blue-200/70 dark:border-blue-900/50 bg-blue-50/70 dark:bg-blue-950/20 p-4">
-            <p class="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">Dana Sudah Tercatat</p>
-            <p class="mt-2 text-lg font-black text-blue-800 dark:text-blue-200" x-text="formatCurrency(summaryStats.totalPaid)"></p>
+            <p class="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">Dana Sudah
+                Tercatat</p>
+            <p class="mt-2 text-lg font-black text-blue-800 dark:text-blue-200"
+                x-text="formatCurrency(summaryStats.totalPaid)"></p>
             <p class="mt-1 text-[11px] text-blue-700/80 dark:text-blue-300/80">Nominal pembayaran yang sudah masuk</p>
         </div>
-        <div class="rounded-xl border border-amber-200/70 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-950/20 p-4">
-            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">Sisa Piutang Aktif</p>
-            <p class="mt-2 text-lg font-black text-amber-800 dark:text-amber-200" x-text="formatCurrency(summaryStats.totalRemaining)"></p>
+        <div
+            class="rounded-xl border border-amber-200/70 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-950/20 p-4">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">Sisa Piutang
+                Aktif</p>
+            <p class="mt-2 text-lg font-black text-amber-800 dark:text-amber-200"
+                x-text="formatCurrency(summaryStats.totalRemaining)"></p>
             <p class="mt-1 text-[11px] text-amber-700/80 dark:text-amber-300/80">Nilai yang belum terlunasi</p>
         </div>
     </div>
 
     <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
         <div class="rounded-xl border px-4 py-3.5"
-            :class="batchStatus?.penagihan_massal
-                ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/20'
-                : 'border-amber-300 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/20'">
+            :class="batchStatus?.penagihan_massal ?
+                'border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/20' :
+                'border-amber-300 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/20'">
             <div class="flex items-start gap-2.5">
                 <i class="fas mt-0.5 text-base"
-                    :class="batchStatus?.penagihan_massal ? 'fa-circle-check text-emerald-500' : 'fa-circle-exclamation text-amber-500'"></i>
+                    :class="batchStatus?.penagihan_massal ? 'fa-circle-check text-emerald-500' :
+                        'fa-circle-exclamation text-amber-500'"></i>
                 <div class="min-w-0">
                     <p class="text-xs font-black uppercase tracking-wider"
-                        :class="batchStatus?.penagihan_massal ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'">
+                        :class="batchStatus?.penagihan_massal ? 'text-emerald-700 dark:text-emerald-300' :
+                            'text-amber-700 dark:text-amber-300'">
                         Penagihan Massal <span x-text="periodeLabel"></span>
                     </p>
                     <template x-if="batchStatus?.penagihan_massal">
-                        <p class="text-[11px] mt-1 font-semibold text-emerald-800 dark:text-emerald-200 leading-relaxed">
+                        <p
+                            class="text-[11px] mt-1 font-semibold text-emerald-800 dark:text-emerald-200 leading-relaxed">
                             Sudah dijalankan
                             <span x-text="batchStatus.penagihan_massal.dijalankan_pada"></span>
                             <template x-if="batchStatus.penagihan_massal.oleh">
-                                <span>oleh <span class="font-black" x-text="batchStatus.penagihan_massal.oleh"></span></span>
+                                <span>oleh <span class="font-black"
+                                        x-text="batchStatus.penagihan_massal.oleh"></span></span>
                             </template>
                             &mdash; <span x-text="batchStatus.penagihan_massal.jumlah_diproses"></span> tagihan dibuat.
-                            <span class="block mt-1 text-emerald-700/80 dark:text-emerald-300/80 font-medium">Tidak bisa dijalankan lagi bulan ini, supaya tidak ada tagihan ganda.</span>
+                            <span class="block mt-1 text-emerald-700/80 dark:text-emerald-300/80 font-medium">Tidak bisa
+                                dijalankan lagi bulan ini, supaya tidak ada tagihan ganda.</span>
                         </p>
                     </template>
                     <template x-if="!batchStatus?.penagihan_massal">
                         <p class="text-[11px] mt-1 font-semibold text-amber-800 dark:text-amber-200 leading-relaxed">
-                            Belum dijalankan bulan ini. Tombol <span class="font-black">Penagihan Massal</span> akan membuat tagihan
+                            Belum dijalankan bulan ini. Tombol <span class="font-black">Penagihan Massal</span> akan
+                            membuat tagihan
                             untuk semua siswa yang punya paket, dan hanya bisa sekali dalam sebulan.
                         </p>
                     </template>
@@ -133,31 +148,37 @@
         </div>
 
         <div class="rounded-xl border px-4 py-3.5"
-            :class="batchStatus?.pelunasan_massal
-                ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/20'
-                : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60'">
+            :class="batchStatus?.pelunasan_massal ?
+                'border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/20' :
+                'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60'">
             <div class="flex items-start gap-2.5">
                 <i class="fas mt-0.5 text-base"
-                    :class="batchStatus?.pelunasan_massal ? 'fa-circle-check text-emerald-500' : 'fa-shield-halved text-slate-400'"></i>
+                    :class="batchStatus?.pelunasan_massal ? 'fa-circle-check text-emerald-500' :
+                        'fa-shield-halved text-slate-400'"></i>
                 <div class="min-w-0">
                     <p class="text-xs font-black uppercase tracking-wider"
-                        :class="batchStatus?.pelunasan_massal ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-600 dark:text-slate-300'">
+                        :class="batchStatus?.pelunasan_massal ? 'text-emerald-700 dark:text-emerald-300' :
+                            'text-slate-600 dark:text-slate-300'">
                         Selesaikan Seluruh Status <span x-text="periodeLabel"></span>
                     </p>
                     <template x-if="batchStatus?.pelunasan_massal">
-                        <p class="text-[11px] mt-1 font-semibold text-emerald-800 dark:text-emerald-200 leading-relaxed">
+                        <p
+                            class="text-[11px] mt-1 font-semibold text-emerald-800 dark:text-emerald-200 leading-relaxed">
                             Sudah dijalankan
                             <span x-text="batchStatus.pelunasan_massal.dijalankan_pada"></span>
                             <template x-if="batchStatus.pelunasan_massal.oleh">
-                                <span>oleh <span class="font-black" x-text="batchStatus.pelunasan_massal.oleh"></span></span>
+                                <span>oleh <span class="font-black"
+                                        x-text="batchStatus.pelunasan_massal.oleh"></span></span>
                             </template>
                             &mdash; <span x-text="batchStatus.pelunasan_massal.jumlah_diproses"></span> tagihan ditutup.
-                            <span class="block mt-1 text-emerald-700/80 dark:text-emerald-300/80 font-medium">Terkunci sampai bulan depan, supaya tagihan baru tidak ikut tersapu jadi lunas.</span>
+                            <span class="block mt-1 text-emerald-700/80 dark:text-emerald-300/80 font-medium">Terkunci
+                                sampai bulan depan, supaya tagihan baru tidak ikut tersapu jadi lunas.</span>
                         </p>
                     </template>
                     <template x-if="!batchStatus?.pelunasan_massal">
                         <p class="text-[11px] mt-1 font-semibold text-slate-600 dark:text-slate-300 leading-relaxed">
-                            Belum dijalankan bulan ini. Tombol ini menutup <span class="font-black">seluruh</span> tagihan aktif
+                            Belum dijalankan bulan ini. Tombol ini menutup <span class="font-black">seluruh</span>
+                            tagihan aktif
                             menjadi lunas tanpa uang masuk, jadi pakai hanya saat tutup buku bulanan.
                         </p>
                     </template>
@@ -228,683 +249,719 @@
     </div>
 
     <template x-if="isDesktop">
-    <div class="overflow-x-auto border border-gray-100 dark:border-gray-700 rounded-xl relative">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-900/50 text-left">
-                <tr>
-                    <th class="px-6 py-4 text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">No
-                        HP / Anggota Keluarga</th>
-                    <th class="px-6 py-4 text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
-                        Status & Posisi Pembayaran</th>
-                    <th class="px-6 py-4 text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
-                        Ringkasan Administratif</th>
-                    <th
-                        class="px-6 py-4 text-center text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
-                        Aksi</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
-                <template x-for="item in displayedSummaries" :key="item.no_hp">
-                    <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/20 transition-colors">
-                        <td class="px-6 py-4 whitespace-nowrap">
+        <div class="overflow-x-auto border border-gray-100 dark:border-gray-700 rounded-xl relative">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-900/50 text-left">
+                    <tr>
+                        <th
+                            class="px-6 py-4 text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
+                            No
+                            HP / Anggota Keluarga</th>
+                        <th
+                            class="px-6 py-4 text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
+                            Status & Posisi Pembayaran</th>
+                        <th
+                            class="px-6 py-4 text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
+                            Ringkasan Administratif</th>
+                        <th
+                            class="px-6 py-4 text-center text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
+                            Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
+                    <template x-for="item in displayedSummaries" :key="item.no_hp">
+                        <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/20 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm font-bold text-gray-900 dark:text-white font-mono"
+                                    x-text="item.no_hp"></span>
+                                <span class="block text-[11px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5"
+                                    x-text="item.siswa_names"></span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex flex-col">
+                                    <span class="px-2 py-1 rounded-md font-mono font-bold text-sm max-w-max"
+                                        :class="{
+                                            'bg-red-50 dark:bg-red-900/20 text-red-600': item.status == 0,
+                                            'bg-orange-50 dark:bg-orange-900/20 text-orange-600': item.status == 1,
+                                            'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600': item.status == 2
+                                        }">
+                                        <span x-text="item.status_label"></span> - Rp <span
+                                            x-text="new Intl.NumberFormat('id-ID').format(item.total_akhir)"></span>
+                                    </span>
+                                    <template x-if="item.nominal_diskon > 0">
+                                        <div class="flex items-center gap-1 mt-1 text-[10px] text-red-500 font-bold">
+                                            <i class="fas fa-percent text-[9px]"></i>
+                                            <span
+                                                x-text="'Potongan aktif: ' + formatCurrency(item.nominal_diskon)"></span>
+                                        </div>
+                                    </template>
+                                    <div class="mt-2 w-full max-w-[240px]">
+                                        <div class="flex items-center justify-between text-[10px] font-black mb-1"
+                                            :class="{
+                                                'text-red-500': item.status == 0,
+                                                'text-amber-600 dark:text-amber-400': item.status == 1,
+                                                'text-emerald-600 dark:text-emerald-400': item.status == 2
+                                            }">
+                                            <span><i class="fas fa-chart-simple mr-1"></i>Progres Bayar</span>
+                                            <span x-text="item.paid_percent + '%'"></span>
+                                        </div>
+                                        <div
+                                            class="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                            <div class="h-full rounded-full transition-all duration-500"
+                                                :class="{
+                                                    'bg-red-400': item.status == 0,
+                                                    'bg-amber-500': item.status == 1,
+                                                    'bg-emerald-500': item.status == 2
+                                                }"
+                                                :style="'width: ' + item.paid_percent + '%'"></div>
+                                        </div>
+                                        <div class="flex items-center justify-between mt-1.5 gap-2">
+                                            <span
+                                                class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 truncate"
+                                                x-text="'Sudah Masuk: ' + formatCurrency(item.total_sudah_dibayar)"></span>
+                                            <span class="text-[10px] font-bold text-red-500 dark:text-red-400 truncate"
+                                                x-text="'Sisa: ' + formatCurrency(item.remaining_amount)"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 max-w-xs">
+                                <p class="text-xs text-gray-600 dark:text-gray-400 truncate font-semibold"
+                                    x-text="item.gabungan_keterangan || 'Belum ada keterangan tagihan.'"></p>
+                                <template x-if="item.status != 2">
+                                    <div class="mt-1 space-y-0.5">
+                                        <span class="text-[9px] text-gray-400 font-medium block"
+                                            x-text="'Periode input: ' + item.tanggal_format"></span>
+                                        <span class="text-[9px] text-gray-400 font-medium block"
+                                            x-text="'Status administrasi: ' + item.status_label"></span>
+                                    </div>
+                                </template>
+                                <template x-if="item.status == 2">
+                                    <div class="mt-1 flex flex-col gap-0.5">
+                                        <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                                            <i class="fas fa-check-circle"></i> Pelunasan tercatat: <span
+                                                x-text="item.tanggal_pembayaran"></span>
+                                        </span>
+                                        <span class="text-[9px] text-gray-400 font-medium">
+                                            Metode penerimaan: <span
+                                                x-text="item.pembayaran_via == 1 ? 'Transfer Bank' : 'Cash/Tunai'"></span>
+                                        </span>
+                                    </div>
+                                </template>
+                            </td>
+                            <td class="px-6 py-4 text-center space-x-1 whitespace-nowrap">
+                                <button @click="openDetailModal(item)"
+                                    class="text-blue-500 hover:text-blue-600 hover:underline text-xs font-bold uppercase tracking-wider mr-2 transition-all">Lihat
+                                    Detail</button>
+                                <template x-if="item.status == 0">
+                                    <button @click="chatWhatsApp(item)" :disabled="isLoading"
+                                        class="disabled:opacity-50 disabled:cursor-not-allowed btn-success px-3 py-1.5 text-[11px] rounded-md">
+                                        <i class="fab fa-whatsapp"></i> Kirim WA
+                                    </button>
+                                </template>
+                                <template x-if="item.status == 0 || item.status == 1">
+                                    <div class="inline-flex gap-1">
+                                        <button @click="prosesBayarSiswa(item)" :disabled="isLoading"
+                                            class="disabled:opacity-50 disabled:cursor-not-allowed btn-primary px-3 py-1.5 text-[11px] rounded-md">
+                                            <i class="fas fa-hand-holding-usd"></i> Catat Bayar
+                                        </button>
+                                        <button @click="ubahKeLunas(item)" :disabled="isLoading"
+                                            class="disabled:opacity-50 disabled:cursor-not-allowed btn-sacred px-3 py-1.5 text-[11px] rounded-md">
+                                            <i class="fas fa-check"></i> Set Lunas
+                                        </button>
+                                    </div>
+                                </template>
+                                <template x-if="item.status == 2">
+                                    <a :href="buildStrukUrl(item)" target="_blank"
+                                        class="btn-accent px-3 py-1.5 text-[11px] rounded-md">
+                                        <i class="fas fa-print"></i> Cetak Bukti
+                                    </a>
+                                </template>
+                            </td>
+                        </tr>
+                    </template>
+                    <tr x-show="displayedSummaries.length === 0">
+                        <td colspan="4"
+                            class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic font-medium">Data
+                            tidak
+                            ditemukan!</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </template>
+
+    <template x-if="!isDesktop">
+        <div class="space-y-4 relative">
+            <template x-for="item in displayedSummaries" :key="item.no_hp">
+                <div
+                    class="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-xl border border-gray-100 dark:border-gray-700/70 space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
                             <span class="text-sm font-bold text-gray-900 dark:text-white font-mono"
                                 x-text="item.no_hp"></span>
                             <span class="block text-[11px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5"
                                 x-text="item.siswa_names"></span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex flex-col">
-                                <span class="px-2 py-1 rounded-md font-mono font-bold text-sm max-w-max"
-                                    :class="{
-                                        'bg-red-50 dark:bg-red-900/20 text-red-600': item.status == 0,
-                                        'bg-orange-50 dark:bg-orange-900/20 text-orange-600': item.status == 1,
-                                        'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600': item.status == 2
-                                    }">
-                                    <span x-text="item.status_label"></span> - Rp <span x-text="new Intl.NumberFormat('id-ID').format(item.total_akhir)"></span>
-                                </span>
-                                <template x-if="item.nominal_diskon > 0">
-                                    <div class="flex items-center gap-1 mt-1 text-[10px] text-red-500 font-bold">
-                                        <i class="fas fa-percent text-[9px]"></i>
-                                        <span
-                                            x-text="'Potongan aktif: ' + formatCurrency(item.nominal_diskon)"></span>
-                                    </div>
-                                </template>
-                                <div class="mt-2 w-full max-w-[240px]">
-                                    <div class="flex items-center justify-between text-[10px] font-black mb-1"
-                                        :class="{
-                                            'text-red-500': item.status == 0,
-                                            'text-amber-600 dark:text-amber-400': item.status == 1,
-                                            'text-emerald-600 dark:text-emerald-400': item.status == 2
-                                        }">
-                                        <span><i class="fas fa-chart-simple mr-1"></i>Progres Bayar</span>
-                                        <span x-text="item.paid_percent + '%'"></span>
-                                    </div>
-                                    <div class="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                                        <div class="h-full rounded-full transition-all duration-500"
-                                            :class="{
-                                                'bg-red-400': item.status == 0,
-                                                'bg-amber-500': item.status == 1,
-                                                'bg-emerald-500': item.status == 2
-                                            }"
-                                            :style="'width: ' + item.paid_percent + '%'"></div>
-                                    </div>
-                                    <div class="flex items-center justify-between mt-1.5 gap-2">
-                                        <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 truncate"
-                                            x-text="'Sudah Masuk: ' + formatCurrency(item.total_sudah_dibayar)"></span>
-                                        <span class="text-[10px] font-bold text-red-500 dark:text-red-400 truncate"
-                                            x-text="'Sisa: ' + formatCurrency(item.remaining_amount)"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 max-w-xs">
-                            <p class="text-xs text-gray-600 dark:text-gray-400 truncate font-semibold"
-                                x-text="item.gabungan_keterangan || 'Belum ada keterangan tagihan.'"></p>
-                            <template x-if="item.status != 2">
-                                <div class="mt-1 space-y-0.5">
-                                    <span class="text-[9px] text-gray-400 font-medium block"
-                                        x-text="'Periode input: ' + item.tanggal_format"></span>
-                                    <span class="text-[9px] text-gray-400 font-medium block"
-                                        x-text="'Status administrasi: ' + item.status_label"></span>
-                                </div>
-                            </template>
-                            <template x-if="item.status == 2">
-                                <div class="mt-1 flex flex-col gap-0.5">
-                                    <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-                                        <i class="fas fa-check-circle"></i> Pelunasan tercatat: <span
-                                            x-text="item.tanggal_pembayaran"></span>
-                                    </span>
-                                    <span class="text-[9px] text-gray-400 font-medium">
-                                        Metode penerimaan: <span
-                                            x-text="item.pembayaran_via == 1 ? 'Transfer Bank' : 'Cash/Tunai'"></span>
-                                    </span>
-                                </div>
-                            </template>
-                        </td>
-                        <td class="px-6 py-4 text-center space-x-1 whitespace-nowrap">
-                            <button @click="openDetailModal(item)"
-                                class="text-blue-500 hover:text-blue-600 hover:underline text-xs font-bold uppercase tracking-wider mr-2 transition-all">Lihat Detail</button>
-                            <template x-if="item.status == 0">
-                                <button @click="chatWhatsApp(item)" :disabled="isLoading"
-                                    class="disabled:opacity-50 disabled:cursor-not-allowed btn-success px-3 py-1.5 text-[11px] rounded-md">
-                                    <i class="fab fa-whatsapp"></i> Kirim WA
-                                </button>
-                            </template>
-                            <template x-if="item.status == 0 || item.status == 1">
-                                <div class="inline-flex gap-1">
-                                    <button @click="prosesBayarSiswa(item)" :disabled="isLoading"
-                                        class="disabled:opacity-50 disabled:cursor-not-allowed btn-primary px-3 py-1.5 text-[11px] rounded-md">
-                                        <i class="fas fa-hand-holding-usd"></i> Catat Bayar
-                                    </button>
-                                    <button @click="ubahKeLunas(item)" :disabled="isLoading"
-                                        class="disabled:opacity-50 disabled:cursor-not-allowed btn-sacred px-3 py-1.5 text-[11px] rounded-md">
-                                        <i class="fas fa-check"></i> Set Lunas
-                                    </button>
-                                </div>
-                            </template>
-                            <template x-if="item.status == 2">
-                                <a :href="buildStrukUrl(item)" target="_blank"
-                                    class="btn-accent px-3 py-1.5 text-[11px] rounded-md">
-                                    <i class="fas fa-print"></i> Cetak Bukti
-                                </a>
-                            </template>
-                        </td>
-                    </tr>
-                </template>
-                <tr x-show="displayedSummaries.length === 0">
-                    <td colspan="4"
-                        class="px-6 py-12 text-center text-gray-400 dark:text-gray-500 italic font-medium">Data tidak
-                        ditemukan!</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-    </template>
-
-    <template x-if="!isDesktop">
-    <div class="space-y-4 relative">
-        <template x-for="item in displayedSummaries" :key="item.no_hp">
-            <div
-                class="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-xl border border-gray-100 dark:border-gray-700/70 space-y-3">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <span class="text-sm font-bold text-gray-900 dark:text-white font-mono"
-                            x-text="item.no_hp"></span>
-                        <span class="block text-[11px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5"
-                            x-text="item.siswa_names"></span>
-                    </div>
-                    <span class="px-2 py-0.5 rounded font-mono font-bold text-xs"
-                        :class="{
-                            'bg-red-50 dark:bg-red-900/20 text-red-600': item.status == 0,
-                            'bg-orange-50 dark:bg-orange-900/20 text-orange-600': item.status == 1,
-                            'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600': item.status == 2
-                        }">
-                        Rp <span x-text="new Intl.NumberFormat('id-ID').format(item.total_akhir)"></span>
-                    </span>
-                </div>
-                <div
-                    class="text-xs space-y-1 bg-white dark:bg-gray-800 p-2.5 rounded-lg border dark:border-gray-700 font-medium text-gray-600 dark:text-gray-400">
-                    <p class="truncate"><span
-                            class="text-gray-400 dark:text-gray-500 font-bold text-[10px] uppercase block">Administrasi:</span>
-                        <span x-text="item.gabungan_keterangan || 'Belum ada keterangan tagihan.'"></span>
-                    </p>
-                    <template x-if="item.nominal_diskon > 0">
-                        <p class="text-red-500 font-bold text-[11px] pt-1">Potongan Aktif: <span
-                                x-text="formatCurrency(item.nominal_diskon)"></span></p>
-                    </template>
-                    <div class="pt-2 border-t dark:border-gray-700 mt-1">
-                        <div class="flex items-center justify-between text-[10px] font-black mb-1"
+                        </div>
+                        <span class="px-2 py-0.5 rounded font-mono font-bold text-xs"
                             :class="{
-                                'text-red-500': item.status == 0,
-                                'text-amber-600 dark:text-amber-400': item.status == 1,
-                                'text-emerald-600 dark:text-emerald-400': item.status == 2
+                                'bg-red-50 dark:bg-red-900/20 text-red-600': item.status == 0,
+                                'bg-orange-50 dark:bg-orange-900/20 text-orange-600': item.status == 1,
+                                'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600': item.status == 2
                             }">
-                            <span><i class="fas fa-chart-simple mr-1"></i>Progres Bayar</span>
-                            <span x-text="item.paid_percent + '%'"></span>
-                        </div>
-                        <div class="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                            <div class="h-full rounded-full transition-all duration-500"
+                            Rp <span x-text="new Intl.NumberFormat('id-ID').format(item.total_akhir)"></span>
+                        </span>
+                    </div>
+                    <div
+                        class="text-xs space-y-1 bg-white dark:bg-gray-800 p-2.5 rounded-lg border dark:border-gray-700 font-medium text-gray-600 dark:text-gray-400">
+                        <p class="truncate"><span
+                                class="text-gray-400 dark:text-gray-500 font-bold text-[10px] uppercase block">Administrasi:</span>
+                            <span x-text="item.gabungan_keterangan || 'Belum ada keterangan tagihan.'"></span>
+                        </p>
+                        <template x-if="item.nominal_diskon > 0">
+                            <p class="text-red-500 font-bold text-[11px] pt-1">Potongan Aktif: <span
+                                    x-text="formatCurrency(item.nominal_diskon)"></span></p>
+                        </template>
+                        <div class="pt-2 border-t dark:border-gray-700 mt-1">
+                            <div class="flex items-center justify-between text-[10px] font-black mb-1"
                                 :class="{
-                                    'bg-red-400': item.status == 0,
-                                    'bg-amber-500': item.status == 1,
-                                    'bg-emerald-500': item.status == 2
-                                }"
-                                :style="'width: ' + item.paid_percent + '%'"></div>
+                                    'text-red-500': item.status == 0,
+                                    'text-amber-600 dark:text-amber-400': item.status == 1,
+                                    'text-emerald-600 dark:text-emerald-400': item.status == 2
+                                }">
+                                <span><i class="fas fa-chart-simple mr-1"></i>Progres Bayar</span>
+                                <span x-text="item.paid_percent + '%'"></span>
+                            </div>
+                            <div class="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-500"
+                                    :class="{
+                                        'bg-red-400': item.status == 0,
+                                        'bg-amber-500': item.status == 1,
+                                        'bg-emerald-500': item.status == 2
+                                    }"
+                                    :style="'width: ' + item.paid_percent + '%'"></div>
+                            </div>
+                            <div class="flex items-center justify-between mt-1.5 gap-2">
+                                <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 truncate"
+                                    x-text="'Masuk: ' + formatCurrency(item.total_sudah_dibayar)"></span>
+                                <span class="text-[10px] font-bold text-red-500 dark:text-red-400 truncate"
+                                    x-text="'Sisa: ' + formatCurrency(item.remaining_amount)"></span>
+                            </div>
+                            <span class="block text-[9px] text-gray-400 mt-1.5"
+                                x-text="item.status == 2 ? 'Pelunasan: ' + item.tanggal_pembayaran : 'Periode input: ' + item.tanggal_format"></span>
                         </div>
-                        <div class="flex items-center justify-between mt-1.5 gap-2">
-                            <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 truncate"
-                                x-text="'Masuk: ' + formatCurrency(item.total_sudah_dibayar)"></span>
-                            <span class="text-[10px] font-bold text-red-500 dark:text-red-400 truncate"
-                                x-text="'Sisa: ' + formatCurrency(item.remaining_amount)"></span>
-                        </div>
-                        <span class="block text-[9px] text-gray-400 mt-1.5"
-                            x-text="item.status == 2 ? 'Pelunasan: ' + item.tanggal_pembayaran : 'Periode input: ' + item.tanggal_format"></span>
+                    </div>
+                    <div class="flex gap-1.5 pt-1">
+                        <button @click="openDetailModal(item)"
+                            class="flex-1 bg-gray-200 dark:bg-gray-700 dark:text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95">Detail</button>
+                        <template x-if="item.status == 0">
+                            <button @click="chatWhatsApp(item)" :disabled="isLoading"
+                                class="disabled:opacity-50 flex-1 bg-green-500 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95"><i
+                                    class="fab fa-whatsapp mr-1"></i>WA</button>
+                        </template>
+                        <template x-if="item.status == 0 || item.status == 1">
+                            <button @click="prosesBayarSiswa(item)" :disabled="isLoading"
+                                class="disabled:opacity-50 flex-1 bg-blue-600 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95">Bayar</button>
+                            <button @click="ubahKeLunas(item)" :disabled="isLoading"
+                                class="disabled:opacity-50 flex-1 bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95">Ke
+                                Lunas</button>
+                        </template>
+                        <template x-if="item.status == 2">
+                            <a :href="buildStrukUrl(item)" target="_blank"
+                                class="flex-1 text-center bg-purple-600 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95"><i
+                                    class="fas fa-print mr-1"></i>Struk</a>
+                        </template>
                     </div>
                 </div>
-                <div class="flex gap-1.5 pt-1">
-                    <button @click="openDetailModal(item)"
-                        class="flex-1 bg-gray-200 dark:bg-gray-700 dark:text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95">Detail</button>
-                    <template x-if="item.status == 0">
-                        <button @click="chatWhatsApp(item)" :disabled="isLoading"
-                            class="disabled:opacity-50 flex-1 bg-green-500 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95"><i
-                                class="fab fa-whatsapp mr-1"></i>WA</button>
-                    </template>
-                    <template x-if="item.status == 0 || item.status == 1">
-                        <button @click="prosesBayarSiswa(item)" :disabled="isLoading"
-                            class="disabled:opacity-50 flex-1 bg-blue-600 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95">Bayar</button>
-                        <button @click="ubahKeLunas(item)" :disabled="isLoading"
-                            class="disabled:opacity-50 flex-1 bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95">Ke
-                            Lunas</button>
-                    </template>
-                    <template x-if="item.status == 2">
-                        <a :href="buildStrukUrl(item)" target="_blank"
-                            class="flex-1 text-center bg-purple-600 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95"><i
-                                class="fas fa-print mr-1"></i>Struk</a>
-                    </template>
-                </div>
-            </div>
-        </template>
-        <div x-show="displayedSummaries.length === 0"
-            class="text-center text-xs text-gray-400 dark:text-gray-500 italic py-8">Data tidak ditemukan!</div>
-    </div>
+            </template>
+            <div x-show="displayedSummaries.length === 0"
+                class="text-center text-xs text-gray-400 dark:text-gray-500 italic py-8">Data tidak ditemukan!</div>
+        </div>
     </template>
 
     <template x-if="showDetailModal">
-    <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition>
-        <div @click="showDetailModal = false" class="absolute inset-0"></div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
-            @click.stop>
-            <div
-                class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
-                <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg">
-                    <i class="fas fa-info-circle text-blue-500"></i> Rincian Tagihan Anggota Keluarga
-                </h3>
-                <button @click="showDetailModal = false"
-                    class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
-                        class="fas fa-times fa-lg"></i></button>
-            </div>
-            <div
-                class="p-6 space-y-5 text-sm text-gray-800 dark:text-gray-200 overflow-y-auto max-h-[70vh] custom-scrollbar">
-                <div x-show="isLoadingDetail"
-                    class="rounded-xl border border-dashed border-emerald-300 dark:border-emerald-700 bg-emerald-50/70 dark:bg-emerald-950/20 px-4 py-5 text-center">
-                    <i class="fas fa-circle-notch fa-spin text-emerald-500 text-lg"></i>
-                    <p class="mt-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300">Memuat rincian pembayaran keluarga...</p>
+        <div class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            x-transition>
+            <div @click="showDetailModal = false" class="absolute inset-0"></div>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
+                @click.stop>
+                <div
+                    class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
+                    <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg">
+                        <i class="fas fa-info-circle text-blue-500"></i> Rincian Tagihan Anggota Keluarga
+                    </h3>
+                    <button @click="showDetailModal = false"
+                        class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
+                            class="fas fa-times fa-lg"></i></button>
                 </div>
-                <div class="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border dark:border-gray-700">
-                    <span class="text-xs text-gray-400 font-bold uppercase block tracking-wider">Grup Nomor HP
-                        Utama</span>
-                    <p class="text-lg font-mono font-bold text-gray-900 dark:text-white mt-0.5"
-                        x-text="activeDetail.no_hp"></p>
-                </div>
-                <div>
-                    <span class="text-xs text-gray-400 font-bold uppercase block tracking-wider mb-2">Rincian Siswa &
-                        Item Komponen Tagihan</span>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <template x-for="raw in activeDetail.raw_items" :key="raw.id">
-                            <div
-                                class="p-3.5 bg-white dark:bg-gray-700/50 rounded-xl border dark:border-gray-600 shadow-sm flex justify-between items-center gap-4">
-                                <div class="min-w-0 flex-1">
-                                    <p class="font-bold text-gray-900 dark:text-white truncate"
-                                        x-text="raw.siswa ? raw.siswa.name : 'N/A'"></p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5"
-                                        x-text="'Kelas: ' + (raw.siswa ? raw.siswa.kelas : '-') + ' | ' + raw.keterangan">
-                                    </p>
-                                </div>
-                                <span class="font-mono font-bold text-sm text-gray-900 dark:text-white shrink-0"
-                                    x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(raw.harga)"></span>
-                            </div>
-                        </template>
-                        <template x-if="!isLoadingDetail && (!activeDetail.raw_items || activeDetail.raw_items.length === 0)">
-                            <div
-                                class="col-span-full text-xs text-gray-400 italic text-center py-6 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
-                                Belum ada item tagihan yang bisa ditampilkan.
-                            </div>
-                        </template>
+                <div
+                    class="p-6 space-y-5 text-sm text-gray-800 dark:text-gray-200 overflow-y-auto max-h-[70vh] custom-scrollbar">
+                    <div x-show="isLoadingDetail"
+                        class="rounded-xl border border-dashed border-emerald-300 dark:border-emerald-700 bg-emerald-50/70 dark:bg-emerald-950/20 px-4 py-5 text-center">
+                        <i class="fas fa-circle-notch fa-spin text-emerald-500 text-lg"></i>
+                        <p class="mt-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300">Memuat rincian
+                            pembayaran keluarga...</p>
                     </div>
-                </div>
-                <div class="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-xl space-y-2 border dark:border-gray-700">
-                    <div class="flex justify-between items-center text-xs md:text-sm font-semibold">
-                        <span>Total Tagihan Kotor:</span>
-                        <span class="font-mono text-gray-900 dark:text-white"
-                            x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(activeDetail.total_harga)"></span>
-                    </div>
-                    <div class="flex justify-between items-center text-xs md:text-sm font-semibold">
-                        <span>Total Sudah Diterima:</span>
-                        <span class="font-mono text-emerald-600 dark:text-emerald-400"
-                            x-text="formatCurrency(activeDetail.total_sudah_dibayar || 0)"></span>
+                    <div class="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border dark:border-gray-700">
+                        <span class="text-xs text-gray-400 font-bold uppercase block tracking-wider">Grup Nomor HP
+                            Utama</span>
+                        <p class="text-lg font-mono font-bold text-gray-900 dark:text-white mt-0.5"
+                            x-text="activeDetail.no_hp"></p>
                     </div>
                     <div>
-                        <div class="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                            <div class="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                                :style="'width: ' + (activeDetail.total_akhir > 0 ? Math.min(100, Math.round((activeDetail.total_sudah_dibayar || 0) / activeDetail.total_akhir * 100)) : 0) + '%'">
-                            </div>
-                        </div>
-                        <p class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-1 text-right"
-                            x-text="(activeDetail.total_akhir > 0 ? Math.min(100, Math.round((activeDetail.total_sudah_dibayar || 0) / activeDetail.total_akhir * 100)) : 0) + '% dari total sudah masuk'">
-                        </p>
-                    </div>
-                    <template x-if="activeDetail.nominal_diskon > 0">
-                        <div
-                            class="flex justify-between items-center text-red-500 font-bold text-xs border-t dark:border-gray-700 pt-2">
-                            <span
-                                x-text="'Potongan berlaku (' + activeDetail.keterangan_diskon + '):'"></span>
-                            <span class="font-mono"
-                                x-text="'- Rp ' + new Intl.NumberFormat('id-ID').format(activeDetail.nominal_diskon)"></span>
-                        </div>
-                    </template>
-                    <div class="flex justify-between items-center text-xs md:text-sm font-semibold">
-                        <span>Sisa Kewajiban:</span>
-                        <span class="font-mono text-amber-600 dark:text-amber-400"
-                            x-text="formatCurrency(Math.max((activeDetail.total_akhir || 0) - (activeDetail.total_sudah_dibayar || 0), 0))"></span>
-                    </div>
-                    <div
-                        class="border-t-2 border-dashed dark:border-gray-600 pt-2 flex justify-between items-center font-black text-sm md:text-base text-blue-600 dark:text-blue-400">
-                        <span>Total Bersih Wajib Bayar:</span>
-                        <span class="font-mono"
-                            x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(activeDetail.total_akhir)"></span>
-                    </div>
-                </div>
-                <div class="border-t dark:border-gray-700 pt-4">
-                    <span class="text-xs text-gray-400 font-bold uppercase block tracking-wider mb-2">Riwayat
-                        Pembayaran Angsuran Masuk</span>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <template x-for="det in activeDetail.payment_details" :key="det.id">
-                            <div
-                                class="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl flex justify-between items-center text-xs border border-emerald-100/40 dark:border-emerald-900/30">
-                                <div class="min-w-0 flex-1 pr-2">
-                                    <p class="font-bold text-emerald-800 dark:text-emerald-400 truncate"
-                                        x-text="det.keterangan"></p>
-                                    <p class="text-[10px] text-gray-400 mt-0.5"
-                                        x-text="new Date(det.created_at).toLocaleDateString('id-ID', {day: '2-digit', month: 'long', year: 'numeric'})">
-                                    </p>
+                        <span class="text-xs text-gray-400 font-bold uppercase block tracking-wider mb-2">Rincian Siswa
+                            &
+                            Item Komponen Tagihan</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <template x-for="raw in activeDetail.raw_items" :key="raw.id">
+                                <div
+                                    class="p-3.5 bg-white dark:bg-gray-700/50 rounded-xl border dark:border-gray-600 shadow-sm flex justify-between items-center gap-4">
+                                    <div class="min-w-0 flex-1">
+                                        <p class="font-bold text-gray-900 dark:text-white truncate"
+                                            x-text="raw.siswa ? raw.siswa.name : 'N/A'"></p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5"
+                                            x-text="'Kelas: ' + (raw.siswa ? raw.siswa.kelas : '-') + ' | ' + raw.keterangan">
+                                        </p>
+                                    </div>
+                                    <span class="font-mono font-bold text-sm text-gray-900 dark:text-white shrink-0"
+                                        x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(raw.harga)"></span>
                                 </div>
-                                <span class="font-mono font-bold text-emerald-700 dark:text-emerald-400 shrink-0"
-                                    x-text="'+ Rp ' + new Intl.NumberFormat('id-ID').format(det.pembayaran)"></span>
+                            </template>
+                            <template
+                                x-if="!isLoadingDetail && (!activeDetail.raw_items || activeDetail.raw_items.length === 0)">
+                                <div
+                                    class="col-span-full text-xs text-gray-400 italic text-center py-6 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                                    Belum ada item tagihan yang bisa ditampilkan.
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-xl space-y-2 border dark:border-gray-700">
+                        <div class="flex justify-between items-center text-xs md:text-sm font-semibold">
+                            <span>Total Tagihan Kotor:</span>
+                            <span class="font-mono text-gray-900 dark:text-white"
+                                x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(activeDetail.total_harga)"></span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs md:text-sm font-semibold">
+                            <span>Total Sudah Diterima:</span>
+                            <span class="font-mono text-emerald-600 dark:text-emerald-400"
+                                x-text="formatCurrency(activeDetail.total_sudah_dibayar || 0)"></span>
+                        </div>
+                        <div>
+                            <div class="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                                    :style="'width: ' + (activeDetail.total_akhir > 0 ? Math.min(100, Math.round((activeDetail
+                                        .total_sudah_dibayar || 0) / activeDetail.total_akhir * 100)) : 0) + '%'">
+                                </div>
+                            </div>
+                            <p class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-1 text-right"
+                                x-text="(activeDetail.total_akhir > 0 ? Math.min(100, Math.round((activeDetail.total_sudah_dibayar || 0) / activeDetail.total_akhir * 100)) : 0) + '% dari total sudah masuk'">
+                            </p>
+                        </div>
+                        <template x-if="activeDetail.nominal_diskon > 0">
+                            <div
+                                class="flex justify-between items-center text-red-500 font-bold text-xs border-t dark:border-gray-700 pt-2">
+                                <span x-text="'Potongan berlaku (' + activeDetail.keterangan_diskon + '):'"></span>
+                                <span class="font-mono"
+                                    x-text="'- Rp ' + new Intl.NumberFormat('id-ID').format(activeDetail.nominal_diskon)"></span>
                             </div>
                         </template>
-                        <template x-if="activeDetail.payment_details && activeDetail.payment_details.length === 0">
-                            <div
-                                class="col-span-full text-xs text-gray-400 italic text-center py-6 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
-                                Belum ada cicilan atau setoran dana masuk.</div>
-                        </template>
+                        <div class="flex justify-between items-center text-xs md:text-sm font-semibold">
+                            <span>Sisa Kewajiban:</span>
+                            <span class="font-mono text-amber-600 dark:text-amber-400"
+                                x-text="formatCurrency(Math.max((activeDetail.total_akhir || 0) - (activeDetail.total_sudah_dibayar || 0), 0))"></span>
+                        </div>
+                        <div
+                            class="border-t-2 border-dashed dark:border-gray-600 pt-2 flex justify-between items-center font-black text-sm md:text-base text-blue-600 dark:text-blue-400">
+                            <span>Total Bersih Wajib Bayar:</span>
+                            <span class="font-mono"
+                                x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(activeDetail.total_akhir)"></span>
+                        </div>
+                    </div>
+                    <div class="border-t dark:border-gray-700 pt-4">
+                        <span class="text-xs text-gray-400 font-bold uppercase block tracking-wider mb-2">Riwayat
+                            Pembayaran Angsuran Masuk</span>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <template x-for="det in activeDetail.payment_details" :key="det.id">
+                                <div
+                                    class="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl flex justify-between items-center text-xs border border-emerald-100/40 dark:border-emerald-900/30">
+                                    <div class="min-w-0 flex-1 pr-2">
+                                        <p class="font-bold text-emerald-800 dark:text-emerald-400 truncate"
+                                            x-text="det.keterangan"></p>
+                                        <p class="text-[10px] text-gray-400 mt-0.5"
+                                            x-text="new Date(det.created_at).toLocaleDateString('id-ID', {day: '2-digit', month: 'long', year: 'numeric'})">
+                                        </p>
+                                    </div>
+                                    <span class="font-mono font-bold text-emerald-700 dark:text-emerald-400 shrink-0"
+                                        x-text="'+ Rp ' + new Intl.NumberFormat('id-ID').format(det.pembayaran)"></span>
+                                </div>
+                            </template>
+                            <template x-if="activeDetail.payment_details && activeDetail.payment_details.length === 0">
+                                <div
+                                    class="col-span-full text-xs text-gray-400 italic text-center py-6 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                                    Belum ada cicilan atau setoran dana masuk.</div>
+                            </template>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="p-4 border-t dark:border-gray-700 flex justify-end bg-gray-50 dark:bg-gray-900">
-                <button type="button" @click="showDetailModal = false"
-                    class="px-5 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 font-bold rounded-xl dark:text-white transition-all">Tutup
-                    Rincian</button>
+                <div class="p-4 border-t dark:border-gray-700 flex justify-end bg-gray-50 dark:bg-gray-900">
+                    <button type="button" @click="showDetailModal = false"
+                        class="px-5 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 font-bold rounded-xl dark:text-white transition-all">Tutup
+                        Rincian</button>
+                </div>
             </div>
         </div>
-    </div>
     </template>
 
     <template x-if="showDiskonModal">
-    <div class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition>
-        <div @click="showDiskonModal = false" class="absolute inset-0"></div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
-            @click.stop>
-            <div
-                class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
-                <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg">
-                    <i class="fas fa-tags text-purple-500"></i> Kelola Potongan Diskon (Spesifik & Universal)
-                </h3>
-                <button @click="showDiskonModal = false"
-                    class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
-                        class="fas fa-times fa-lg"></i></button>
-            </div>
-            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto max-h-[80vh] custom-scrollbar">
-                <div class="space-y-4">
-                    <h4 class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider border-b dark:border-gray-700 pb-1"
-                        x-text="diskonForm.id ? 'Edit Aturan Diskon' : 'Tambah Diskon Baru'"></h4>
-                    <form @submit.prevent="simpanDiskon" class="space-y-4">
-                        <div
-                            class="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-xl border dark:border-gray-700 flex items-center justify-between">
-                            <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Jadikan Diskon Universal
-                                (Semua Siswa)</span>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" x-model="diskonForm.is_universal"
-                                    :disabled="diskonForm.id !== null" class="sr-only peer">
-                                <div
-                                    class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600">
-                                </div>
-                            </label>
-                        </div>
-                        <div class="relative" x-data="{ openHpSearch: false }" x-show="!diskonForm.is_universal">
-                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Pilih Keluarga
-                                Terdaftar (No HP)</label>
-                            <div class="relative mt-1">
-                                <input type="text" x-model="hpSearchModal" @focus="openHpSearch = true"
-                                    @click.away="openHpSearch = false" :readonly="diskonForm.id !== null"
-                                    placeholder="Ketik No HP / Nama Anak untuk mencari..."
-                                    class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm font-mono focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all pl-8 py-2.5 focus:outline-none">
-                                <i class="fas fa-search absolute left-3 top-3.5 text-gray-400 text-xs"></i>
-                            </div>
-                            <div x-show="openHpSearch && filteredFamiliesForModal.length > 0 && !diskonForm.id"
-                                class="absolute z-[120] w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-xl max-h-40 overflow-y-auto divide-y dark:divide-gray-700"
-                                x-transition>
-                                <template x-for="fam in filteredFamiliesForModal" :key="fam.no_hp">
-                                    <button type="button"
-                                        @click="diskonForm.no_hp = fam.no_hp; hpSearchModal = fam.no_hp + ' - (' + fam.siswa_names + ')'; openHpSearch = false"
-                                        class="w-full text-left px-4 py-2.5 text-xs hover:bg-purple-50 dark:hover:bg-purple-900/30 dark:text-white transition-colors flex flex-col font-medium">
-                                        <span x-text="fam.no_hp"
-                                            class="font-bold font-mono text-gray-900 dark:text-white"></span>
-                                        <span x-text="fam.siswa_names"
-                                            class="text-[10px] text-gray-400 dark:text-gray-500 truncate w-full mt-0.5"></span>
-                                    </button>
-                                </template>
-                            </div>
-                        </div>
-                        <div class="bg-purple-50 dark:bg-purple-950/20 p-3 rounded-xl border border-purple-200 dark:border-purple-900 text-xs text-purple-800 dark:text-purple-300 font-semibold flex items-center gap-2"
-                            x-show="diskonForm.is_universal">
-                            <i class="fas fa-bullhorn text-sm shrink-0"></i>
-                            <span>Diskon Universal aktif akan otomatis memotong tagihan akhir <strong>seluruh
-                                    siswa</strong> tanpa terkecuali.</span>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Nominal Diskon
-                                (Rp)</label>
-                            <input type="number" x-model.number="diskonForm.diskon" required
-                                class="block w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none"
-                                placeholder="Masukkan nilai rupiah potongan...">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Nama Potongan
-                                / Keterangan Event</label>
-                            <input type="text" x-model="diskonForm.keterangan" required
-                                class="block w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none"
-                                placeholder="Contoh: Diskon Ramadhan / Kakak Beradik">
-                        </div>
-                        <div class="flex gap-2 pt-2">
-                            <button type="submit"
-                                class="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                <span x-text="diskonForm.id ? 'Update Aturan' : 'Terapkan Aturan'"></span>
-                            </button>
-                            <button type="button" x-show="diskonForm.id" @click="resetDiskonForm"
-                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium dark:text-white transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
-                        </div>
-                    </form>
-                </div>
+        <div class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            x-transition>
+            <div @click="showDiskonModal = false" class="absolute inset-0"></div>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
+                @click.stop>
                 <div
-                    class="flex flex-col border-t md:border-t-0 md:border-l dark:border-gray-700 pt-4 md:pt-0 md:pl-6">
-                    <h4 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Daftar
-                        Aturan Diskon Terdata</h4>
-                    <div class="space-y-2 overflow-y-auto max-h-[280px] pr-1 custom-scrollbar">
-                        <template x-for="d in diskons" :key="d.id">
-                            <div class="p-3 bg-gray-50 dark:bg-gray-700/20 rounded-xl flex justify-between items-center border border-gray-100 dark:border-gray-700/60 hover:border-purple-300 dark:hover:border-purple-500 transition-all"
-                                :class="d.no_hp === null ? 'ring-2 ring-purple-500 bg-purple-50/20 dark:bg-purple-950/10' : ''">
-                                <div class="min-w-0 flex-1 pr-2">
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="text-sm font-bold font-mono text-gray-900 dark:text-white"
-                                            x-text="d.no_hp === null ? 'GLOBAL / UNIVERSAL' : d.no_hp"></span>
-                                        <template x-if="d.no_hp === null">
-                                            <span
-                                                class="bg-purple-600 text-white text-[8px] font-black uppercase px-1 rounded tracking-wider">Massal</span>
-                                        </template>
+                    class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+                    <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg">
+                        <i class="fas fa-tags text-purple-500"></i> Kelola Potongan Diskon (Spesifik & Universal)
+                    </h3>
+                    <button @click="showDiskonModal = false"
+                        class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
+                            class="fas fa-times fa-lg"></i></button>
+                </div>
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto max-h-[80vh] custom-scrollbar">
+                    <div class="space-y-4">
+                        <h4 class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider border-b dark:border-gray-700 pb-1"
+                            x-text="diskonForm.id ? 'Edit Aturan Diskon' : 'Tambah Diskon Baru'"></h4>
+                        <form @submit.prevent="simpanDiskon" class="space-y-4">
+                            <div
+                                class="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-xl border dark:border-gray-700 flex items-center justify-between">
+                                <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Jadikan Diskon
+                                    Universal
+                                    (Semua Siswa)</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" x-model="diskonForm.is_universal"
+                                        :disabled="diskonForm.id !== null" class="sr-only peer">
+                                    <div
+                                        class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600">
                                     </div>
-                                    <div class="text-[10px] text-gray-400 dark:text-gray-500 font-semibold truncate mt-0.5"
-                                        x-text="getKeluargaLabelByHp(d.no_hp)"></div>
-                                    <div class="flex flex-wrap items-center gap-1.5 mt-1">
-                                        <span class="text-xs font-mono font-black text-red-500 dark:text-red-400"
-                                            x-text="'- Rp ' + new Intl.NumberFormat('id-ID').format(d.diskon)"></span>
-                                        <span
-                                            class="text-[9px] bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded font-bold"
-                                            x-text="d.keterangan || 'Potongan'"></span>
-                                    </div>
+                                </label>
+                            </div>
+                            <div class="relative" x-data="{ openHpSearch: false }" x-show="!diskonForm.is_universal">
+                                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Pilih
+                                    Keluarga
+                                    Terdaftar (No HP)</label>
+                                <div class="relative mt-1">
+                                    <input type="text" x-model="hpSearchModal" @focus="openHpSearch = true"
+                                        @click.away="openHpSearch = false" :readonly="diskonForm.id !== null"
+                                        placeholder="Ketik No HP / Nama Anak untuk mencari..."
+                                        class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm font-mono focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all pl-8 py-2.5 focus:outline-none">
+                                    <i class="fas fa-search absolute left-3 top-3.5 text-gray-400 text-xs"></i>
                                 </div>
-                                <div class="flex gap-0.5 shrink-0">
-                                    <button @click="editDiskon(d)"
-                                        class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"><i
-                                            class="fas fa-edit text-xs"></i></button>
-                                    <button @click="hapusDiskon(d.id)"
-                                        class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"><i
-                                            class="fas fa-trash text-xs"></i></button>
+                                <div x-show="openHpSearch && filteredFamiliesForModal.length > 0 && !diskonForm.id"
+                                    class="absolute z-[120] w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-xl max-h-40 overflow-y-auto divide-y dark:divide-gray-700"
+                                    x-transition>
+                                    <template x-for="fam in filteredFamiliesForModal" :key="fam.no_hp">
+                                        <button type="button"
+                                            @click="diskonForm.no_hp = fam.no_hp; hpSearchModal = fam.no_hp + ' - (' + fam.siswa_names + ')'; openHpSearch = false"
+                                            class="w-full text-left px-4 py-2.5 text-xs hover:bg-purple-50 dark:hover:bg-purple-900/30 dark:text-white transition-colors flex flex-col font-medium">
+                                            <span x-text="fam.no_hp"
+                                                class="font-bold font-mono text-gray-900 dark:text-white"></span>
+                                            <span x-text="fam.siswa_names"
+                                                class="text-[10px] text-gray-400 dark:text-gray-500 truncate w-full mt-0.5"></span>
+                                        </button>
+                                    </template>
                                 </div>
                             </div>
-                        </template>
-                        <template x-if="diskons.length === 0">
-                            <p class="text-xs text-gray-400 dark:text-gray-500 italic text-center py-8 font-medium">
-                                Belum ada master potongan diskon yang dibuat.</p>
-                        </template>
+                            <div class="bg-purple-50 dark:bg-purple-950/20 p-3 rounded-xl border border-purple-200 dark:border-purple-900 text-xs text-purple-800 dark:text-purple-300 font-semibold flex items-center gap-2"
+                                x-show="diskonForm.is_universal">
+                                <i class="fas fa-bullhorn text-sm shrink-0"></i>
+                                <span>Diskon Universal aktif akan otomatis memotong tagihan akhir <strong>seluruh
+                                        siswa</strong> tanpa terkecuali.</span>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Nominal
+                                    Diskon
+                                    (Rp)</label>
+                                <input type="number" x-model.number="diskonForm.diskon" required
+                                    class="block w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none"
+                                    placeholder="Masukkan nilai rupiah potongan...">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Nama
+                                    Potongan
+                                    / Keterangan Event</label>
+                                <input type="text" x-model="diskonForm.keterangan" required
+                                    class="block w-full rounded-xl border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none"
+                                    placeholder="Contoh: Diskon Ramadhan / Kakak Beradik">
+                            </div>
+                            <div class="flex gap-2 pt-2">
+                                <button type="submit"
+                                    class="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                    <span x-text="diskonForm.id ? 'Update Aturan' : 'Terapkan Aturan'"></span>
+                                </button>
+                                <button type="button" x-show="diskonForm.id" @click="resetDiskonForm"
+                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium dark:text-white transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div
+                        class="flex flex-col border-t md:border-t-0 md:border-l dark:border-gray-700 pt-4 md:pt-0 md:pl-6">
+                        <h4 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
+                            Daftar
+                            Aturan Diskon Terdata</h4>
+                        <div class="space-y-2 overflow-y-auto max-h-[280px] pr-1 custom-scrollbar">
+                            <template x-for="d in diskons" :key="d.id">
+                                <div class="p-3 bg-gray-50 dark:bg-gray-700/20 rounded-xl flex justify-between items-center border border-gray-100 dark:border-gray-700/60 hover:border-purple-300 dark:hover:border-purple-500 transition-all"
+                                    :class="d.no_hp === null ? 'ring-2 ring-purple-500 bg-purple-50/20 dark:bg-purple-950/10' :
+                                        ''">
+                                    <div class="min-w-0 flex-1 pr-2">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="text-sm font-bold font-mono text-gray-900 dark:text-white"
+                                                x-text="d.no_hp === null ? 'GLOBAL / UNIVERSAL' : d.no_hp"></span>
+                                            <template x-if="d.no_hp === null">
+                                                <span
+                                                    class="bg-purple-600 text-white text-[8px] font-black uppercase px-1 rounded tracking-wider">Massal</span>
+                                            </template>
+                                        </div>
+                                        <div class="text-[10px] text-gray-400 dark:text-gray-500 font-semibold truncate mt-0.5"
+                                            x-text="getKeluargaLabelByHp(d.no_hp)"></div>
+                                        <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                                            <span class="text-xs font-mono font-black text-red-500 dark:text-red-400"
+                                                x-text="'- Rp ' + new Intl.NumberFormat('id-ID').format(d.diskon)"></span>
+                                            <span
+                                                class="text-[9px] bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded font-bold"
+                                                x-text="d.keterangan || 'Potongan'"></span>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-0.5 shrink-0">
+                                        <button @click="editDiskon(d)"
+                                            class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"><i
+                                                class="fas fa-edit text-xs"></i></button>
+                                        <button @click="hapusDiskon(d.id)"
+                                            class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"><i
+                                                class="fas fa-trash text-xs"></i></button>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="diskons.length === 0">
+                                <p
+                                    class="text-xs text-gray-400 dark:text-gray-500 italic text-center py-8 font-medium">
+                                    Belum ada master potongan diskon yang dibuat.</p>
+                            </template>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
     </template>
 
     <template x-if="showAddModal">
-    <div class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition>
-        <div @click="showAddModal = false" class="absolute inset-0"></div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
-            @click.stop>
-            <div
-                class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
-                <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg">
-                    <i class="fas fa-file-invoice-dollar text-blue-500"></i> Buat Input Tagihan Manual Baru
-                </h3>
-                <button @click="showAddModal = false"
-                    class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
-                        class="fas fa-times fa-lg"></i></button>
-            </div>
-            <form @submit.prevent="simpanTagihan" class="p-6 space-y-5">
-                <div class="relative" x-data="{ openSearch: false }">
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Pilih Target
-                        Siswa Bimbel</label>
-                    <div class="relative mt-1">
-                        <input type="text" x-model="siswaSearchModal" @focus="openSearch = true"
-                            @click.away="openSearch = false" placeholder="Ketik nama lengkap siswa untuk memfilter..."
-                            class="block w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all focus:outline-none">
-                        <div
-                            class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                            <i class="fas fa-user text-sm"></i>
-                        </div>
-                    </div>
-                    <div x-show="openSearch && filteredSiswasForModal.length > 0"
-                        class="absolute z-[120] w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y dark:divide-gray-700"
-                        x-transition>
-                        <template x-for="s in filteredSiswasForModal" :key="s.id">
-                            <button type="button"
-                                @click="form.id_siswa = s.id; siswaSearchModal = s.name; openSearch = false"
-                                class="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:text-white transition-colors flex items-center gap-2 font-medium">
-                                <i class="fas fa-check-circle text-xs text-blue-500"></i>
-                                <span x-text="s.name" class="font-bold"></span> — <span x-text="s.kelas || 'N/A'"
-                                    class="text-xs text-gray-400 font-medium"></span>
-                            </button>
-                        </template>
-                    </div>
+        <div class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            x-transition>
+            <div @click="showAddModal = false" class="absolute inset-0"></div>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
+                @click.stop>
+                <div
+                    class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
+                    <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg">
+                        <i class="fas fa-file-invoice-dollar text-blue-500"></i> Buat Input Tagihan Manual Baru
+                    </h3>
+                    <button @click="showAddModal = false"
+                        class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
+                            class="fas fa-times fa-lg"></i></button>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Jenis
-                            Tagihan</label>
-                        <select @change="applyPaket($event.target.value)"
-                            class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all focus:outline-none">
-                            <option value="">-- Tanpa paket: buku, denda, kegiatan (boleh berulang) --</option>
-                            <template x-for="p in pakets" :key="p.id">
-                                <option :value="p.id"
-                                    x-text="'Paket: ' + p.nama_paket + ' (Rp ' + new Intl.NumberFormat('id-ID').format(p.harga) + ')'">
-                                </option>
-                            </template>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nominal
-                            Harga Tagihan (Rp)</label>
-                        <input type="number" x-model.number="form.harga" required
-                            class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all focus:outline-none"
-                            placeholder="Masukkan angka tarif tagihan...">
-                    </div>
-                </div>
-                <template x-if="peringatanDuplikat">
-                    <div class="rounded-xl border-2 border-red-400 dark:border-red-700 bg-red-50 dark:bg-red-950/30 p-4">
-                        <div class="flex items-start gap-3">
-                            <i class="fas fa-triangle-exclamation text-red-500 text-xl mt-0.5"></i>
-                            <div class="min-w-0 text-xs leading-relaxed">
-                                <p class="font-black text-red-700 dark:text-red-300 uppercase tracking-wider mb-1">
-                                    Stop — Ini Akan Jadi Tagihan Ganda
-                                </p>
-                                <p class="text-red-800 dark:text-red-200 font-semibold" x-text="peringatanDuplikat"></p>
-                                <p class="text-red-700/90 dark:text-red-300/90 mt-2 font-medium">
-                                    Kalau uangnya sudah diterima, jangan buat tagihan baru — tutup modal ini,
-                                    lalu tekan <span class="font-black">Catat Bayar</span> pada tagihan yang sudah ada.
-                                </p>
+                <form @submit.prevent="simpanTagihan" class="p-6 space-y-5">
+                    <div class="relative" x-data="{ openSearch: false }">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Pilih
+                            Target
+                            Siswa Bimbel</label>
+                        <div class="relative mt-1">
+                            <input type="text" x-model="siswaSearchModal" @focus="openSearch = true"
+                                @click.away="openSearch = false"
+                                placeholder="Ketik nama lengkap siswa untuk memfilter..."
+                                class="block w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all focus:outline-none">
+                            <div
+                                class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                                <i class="fas fa-user text-sm"></i>
                             </div>
                         </div>
+                        <div x-show="openSearch && filteredSiswasForModal.length > 0"
+                            class="absolute z-[120] w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y dark:divide-gray-700"
+                            x-transition>
+                            <template x-for="s in filteredSiswasForModal" :key="s.id">
+                                <button type="button"
+                                    @click="form.id_siswa = s.id; siswaSearchModal = s.name; openSearch = false"
+                                    class="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:text-white transition-colors flex items-center gap-2 font-medium">
+                                    <i class="fas fa-check-circle text-xs text-blue-500"></i>
+                                    <span x-text="s.name" class="font-bold"></span> — <span x-text="s.kelas || 'N/A'"
+                                        class="text-xs text-gray-400 font-medium"></span>
+                                </button>
+                            </template>
+                        </div>
                     </div>
-                </template>
-
-                <template x-if="!form.id_paket && form.id_siswa">
-                    <div class="rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/70 dark:bg-blue-950/20 p-3.5 text-xs text-blue-800 dark:text-blue-200 flex items-start gap-2.5 leading-relaxed">
-                        <i class="fas fa-circle-info text-blue-500 mt-0.5"></i>
-                        <span>
-                            <span class="font-black">Tagihan bebas (tanpa paket).</span>
-                            Cocok untuk buku, denda, atau kegiatan. Jenis ini boleh dibuat berkali-kali untuk siswa yang sama
-                            dan tidak akan pernah diduplikat oleh Penagihan Massal.
-                        </span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Jenis
+                                Tagihan</label>
+                            <select @change="applyPaket($event.target.value)"
+                                class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all focus:outline-none">
+                                <option value="">-- Tanpa paket: buku, denda, kegiatan (boleh berulang) --
+                                </option>
+                                <template x-for="p in pakets" :key="p.id">
+                                    <option :value="p.id"
+                                        x-text="'Paket: ' + p.nama_paket + ' (Rp ' + new Intl.NumberFormat('id-ID').format(p.harga) + ')'">
+                                    </option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Nominal
+                                Harga Tagihan (Rp)</label>
+                            <input type="number" x-model.number="form.harga" required
+                                class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-2.5 bg-white dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all focus:outline-none"
+                                placeholder="Masukkan angka tarif tagihan...">
+                        </div>
                     </div>
-                </template>
+                    <template x-if="peringatanDuplikat">
+                        <div
+                            class="rounded-xl border-2 border-red-400 dark:border-red-700 bg-red-50 dark:bg-red-950/30 p-4">
+                            <div class="flex items-start gap-3">
+                                <i class="fas fa-triangle-exclamation text-red-500 text-xl mt-0.5"></i>
+                                <div class="min-w-0 text-xs leading-relaxed">
+                                    <p class="font-black text-red-700 dark:text-red-300 uppercase tracking-wider mb-1">
+                                        Stop — Ini Akan Jadi Tagihan Ganda
+                                    </p>
+                                    <p class="text-red-800 dark:text-red-200 font-semibold"
+                                        x-text="peringatanDuplikat"></p>
+                                    <p class="text-red-700/90 dark:text-red-300/90 mt-2 font-medium">
+                                        Kalau uangnya sudah diterima, jangan buat tagihan baru — tutup modal ini,
+                                        lalu tekan <span class="font-black">Catat Bayar</span> pada tagihan yang sudah
+                                        ada.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
 
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Keterangan
-                        Catatan Tagihan</label>
-                    <textarea x-model="form.keterangan" rows="3" required
-                        class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-3.5 bg-white dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all focus:outline-none"
-                        placeholder="Tuliskan alasan atau keterangan perihal pembuatan tagihan manual ini..."></textarea>
-                </div>
-                <div class="pt-3 flex justify-end gap-2.5 border-t dark:border-gray-700">
-                    <button type="button" @click="showAddModal = false"
-                        class="px-5 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-xl dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">Batal</button>
-                    <button type="submit" :disabled="isLoading"
-                        class="px-6 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition-all flex items-center gap-2 shadow-md active:scale-95">
-                        <span>Simpan Tagihan Baru</span>
-                    </button>
-                </div>
-            </form>
+                    <template x-if="!form.id_paket && form.id_siswa">
+                        <div
+                            class="rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/70 dark:bg-blue-950/20 p-3.5 text-xs text-blue-800 dark:text-blue-200 flex items-start gap-2.5 leading-relaxed">
+                            <i class="fas fa-circle-info text-blue-500 mt-0.5"></i>
+                            <span>
+                                <span class="font-black">Tagihan bebas (tanpa paket).</span>
+                                Cocok untuk buku, denda, atau kegiatan. Jenis ini boleh dibuat berkali-kali untuk siswa
+                                yang sama
+                                dan tidak akan pernah diduplikat oleh Penagihan Massal.
+                            </span>
+                        </div>
+                    </template>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Keterangan
+                            Catatan Tagihan</label>
+                        <textarea x-model="form.keterangan" rows="3" required
+                            class="w-full rounded-xl border border-gray-300 dark:border-gray-600 p-3.5 bg-white dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all focus:outline-none"
+                            placeholder="Tuliskan alasan atau keterangan perihal pembuatan tagihan manual ini..."></textarea>
+                    </div>
+                    <div class="pt-3 flex justify-end gap-2.5 border-t dark:border-gray-700">
+                        <button type="button" @click="showAddModal = false"
+                            class="px-5 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-xl dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">Batal</button>
+                        <button type="submit" :disabled="isLoading"
+                            class="px-6 py-2 text-sm bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-bold transition-all flex items-center gap-2 shadow-md active:scale-95">
+                            <span>Simpan Tagihan Baru</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
     </template>
 
     <template x-if="showPaketModal">
-    <div class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition>
-        <div @click="showPaketModal = false" class="absolute inset-0"></div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
-            @click.stop>
-            <div
-                class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
-                <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg"><i
-                        class="fas fa-box text-purple-500"></i> Kelola Paket Master Pembayaran Bimbel</h3>
-                <button @click="showPaketModal = false"
-                    class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
-                        class="fas fa-times fa-lg"></i></button>
-            </div>
-            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto max-h-[80vh] custom-scrollbar">
-                <div class="space-y-4">
-                    <h4 class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider border-b dark:border-gray-700 pb-1"
-                        x-text="paketForm.id ? 'Edit Data Paket' : 'Tambah Paket Baru'"></h4>
-                    <form @submit.prevent="savePaket" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Nama Paket
-                                Program</label>
-                            <input type="text" x-model="paketForm.nama_paket" required
-                                class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none"
-                                placeholder="Contoh: SPP Bulanan Reguler">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Harga Tarif
-                                Paket (Rp)</label>
-                            <input type="number" x-model.number="paketForm.harga" required
-                                class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Jumlah Jatah
-                                Pertemuan Sesi</label>
-                            <input type="number" x-model.number="paketForm.pertemuan" required
-                                class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none">
-                        </div>
-                        <div class="flex gap-2 pt-2">
-                            <button type="submit"
-                                class="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                <span x-text="paketForm.id ? 'Update Aturan Paket' : 'Simpan Paket Baru'"></span>
-                            </button>
-                            <button type="button" x-show="paketForm.id" @click="resetPaketForm"
-                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium dark:text-white transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
-                        </div>
-                    </form>
-                </div>
+        <div class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            x-transition>
+            <div @click="showPaketModal = false" class="absolute inset-0"></div>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700 transform transition-all"
+                @click.stop>
                 <div
-                    class="flex flex-col border-t md:border-t-0 md:border-l dark:border-gray-700 pt-4 md:pt-0 md:pl-6">
-                    <h4 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Daftar
-                        Paket Master Terdaftar</h4>
-                    <div class="space-y-2 overflow-y-auto max-h-[280px] pr-1 custom-scrollbar">
-                        <template x-for="p in pakets" :key="p.id">
-                            <div
-                                class="p-3 bg-gray-50 dark:bg-gray-700/20 rounded-xl flex justify-between items-center border border-gray-100 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 transition-all">
-                                <div class="min-w-0 flex-1 pr-2">
-                                    <div class="text-sm font-bold text-gray-800 dark:text-white truncate"
-                                        x-text="p.nama_paket"></div>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <span class="text-xs font-mono font-bold text-purple-600 dark:text-purple-400"
-                                            x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(p.harga)"></span>
-                                        <span
-                                            class="text-[9px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-1.5 py-0.5 rounded-md font-bold"
-                                            x-text="p.pertemuan + ' Sesi'"></span>
+                    class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+                    <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg"><i
+                            class="fas fa-box text-purple-500"></i> Kelola Paket Master Pembayaran Bimbel</h3>
+                    <button @click="showPaketModal = false"
+                        class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
+                            class="fas fa-times fa-lg"></i></button>
+                </div>
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto max-h-[80vh] custom-scrollbar">
+                    <div class="space-y-4">
+                        <h4 class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider border-b dark:border-gray-700 pb-1"
+                            x-text="paketForm.id ? 'Edit Data Paket' : 'Tambah Paket Baru'"></h4>
+                        <form @submit.prevent="savePaket" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Nama Paket
+                                    Program</label>
+                                <input type="text" x-model="paketForm.nama_paket" required
+                                    class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none"
+                                    placeholder="Contoh: SPP Bulanan Reguler">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Harga
+                                    Tarif
+                                    Paket (Rp)</label>
+                                <input type="number" x-model.number="paketForm.harga" required
+                                    class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">Jumlah
+                                    Jatah
+                                    Pertemuan Sesi</label>
+                                <input type="number" x-model.number="paketForm.pertemuan" required
+                                    class="block w-full rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all py-2.5 focus:outline-none">
+                            </div>
+                            <div class="flex gap-2 pt-2">
+                                <button type="submit"
+                                    class="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-bold shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                    <span x-text="paketForm.id ? 'Update Aturan Paket' : 'Simpan Paket Baru'"></span>
+                                </button>
+                                <button type="button" x-show="paketForm.id" @click="resetPaketForm"
+                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium dark:text-white transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">Batal</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div
+                        class="flex flex-col border-t md:border-t-0 md:border-l dark:border-gray-700 pt-4 md:pt-0 md:pl-6">
+                        <h4 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
+                            Daftar
+                            Paket Master Terdaftar</h4>
+                        <div class="space-y-2 overflow-y-auto max-h-[280px] pr-1 custom-scrollbar">
+                            <template x-for="p in pakets" :key="p.id">
+                                <div
+                                    class="p-3 bg-gray-50 dark:bg-gray-700/20 rounded-xl flex justify-between items-center border border-gray-100 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 transition-all">
+                                    <div class="min-w-0 flex-1 pr-2">
+                                        <div class="text-sm font-bold text-gray-800 dark:text-white truncate"
+                                            x-text="p.nama_paket"></div>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span
+                                                class="text-xs font-mono font-bold text-purple-600 dark:text-purple-400"
+                                                x-text="'Rp ' + new Intl.NumberFormat('id-ID').format(p.harga)"></span>
+                                            <span
+                                                class="text-[9px] bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-1.5 py-0.5 rounded-md font-bold"
+                                                x-text="p.pertemuan + ' Sesi'"></span>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-0.5 shrink-0">
+                                        <button @click="editPaket(p)"
+                                            class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"><i
+                                                class="fas fa-edit text-xs"></i></button>
+                                        <button @click="deletePaket(p.id)"
+                                            class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"><i
+                                                class="fas fa-trash text-xs"></i></button>
                                     </div>
                                 </div>
-                                <div class="flex gap-0.5 shrink-0">
-                                    <button @click="editPaket(p)"
-                                        class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"><i
-                                            class="fas fa-edit text-xs"></i></button>
-                                    <button @click="deletePaket(p.id)"
-                                        class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"><i
-                                            class="fas fa-trash text-xs"></i></button>
-                                </div>
-                            </div>
-                        </template>
+                            </template>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
     </template>
 </div>

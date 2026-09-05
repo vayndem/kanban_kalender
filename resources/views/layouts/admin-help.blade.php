@@ -25,7 +25,7 @@
                 [
                     'title' => 'Fungsi Halaman',
                     'items' => [
-                        'Tambah mapel, guru, ruang, sesi, dan catatan dari menu Tambah Data Baru.',
+                        'Mata pelajaran, guru, ruang, dan sesi sekarang dikelola dari menu Workshop, bukan di tab ini.',
                         'Klik kartu jadwal untuk edit kelas, siswa, guru, ruang, dan catatan terkait.',
                         'Gunakan Export / Copy untuk PDF jadwal atau copy teks WhatsApp.',
                     ],
@@ -48,7 +48,8 @@
                 [
                     'title' => 'Fungsi Halaman',
                     'items' => [
-                        'Tambah, edit, arsipkan, pulihkan, atau hapus permanen data siswa.',
+                        'Tambah dan edit siswa sekarang dilakukan dari menu Workshop, bukan di tab ini.',
+                        'Arsipkan, pulihkan, atau hapus permanen data siswa tetap dari tab ini.',
                         'Filter siswa berdasarkan kelas, paket, sesi, guru, dan ruang.',
                         'Ekspor PDF akan mengikuti filter aktif yang sedang dipilih.',
                     ],
@@ -56,9 +57,45 @@
                 [
                     'title' => 'Tips Pakai',
                     'items' => [
+                        'Klik ikon info pada baris siswa untuk melihat jadwal yang diikuti dan menambah catatan.',
                         'Pastikan nomor WhatsApp siswa memakai format +62 agar fitur tagih dan reminder konsisten.',
-                        'Cek jadwal yang diikuti saat edit siswa untuk memastikan paket dan jadwalnya selaras.',
                         'Kalau memakai aksi pilih banyak data, periksa dulu hasil filter agar yang terarsip benar-benar sesuai.',
+                    ],
+                ],
+            ],
+        ];
+    } elseif ($routeName === 'admin.workshop.index') {
+        $helpContent = [
+            'title' => 'Panduan Workshop',
+            'summary' => 'Tempat menambah dan mengubah data pokok: mata pelajaran, guru, ruang, sesi waktu, dan siswa. Setiap form menampilkan data yang sudah ada terkait apa yang sedang diketik, supaya tidak perlu bolak-balik cek halaman lain.',
+            'sections' => [
+                [
+                    'title' => 'Fungsi Halaman',
+                    'items' => [
+                        'Kelola mata pelajaran, guru, ruang, sesi waktu, dan siswa dalam satu halaman.',
+                        'Mengetik no HP siswa akan memeriksa apakah nomor itu sudah dipakai siswa lain (kemungkinan saudara).',
+                        'Mengetik kelas akan menampilkan kelas yang sudah ada untuk grade tersebut.',
+                    ],
+                ],
+                [
+                    'title' => 'Tips Pakai',
+                    'items' => [
+                        'Peringatan kemiripan data hanya informasi, tidak menghalangi penyimpanan.',
+                        'Menjadwalkan siswa ke kelas tetap dilakukan di tab Jadwal Pelajaran seperti biasa.',
+                    ],
+                ],
+            ],
+        ];
+    } elseif ($routeName === 'admin.akunGuru.index') {
+        $helpContent = [
+            'title' => 'Panduan Akun Guru',
+            'summary' => 'Kelola email dan akun login guru di sini. Untuk menambah atau mengubah data guru itu sendiri, gunakan menu Workshop.',
+            'sections' => [
+                [
+                    'title' => 'Fungsi Halaman',
+                    'items' => [
+                        'Isi email guru sebelum akun login bisa dibuatkan.',
+                        'Guru tanpa akun tetap bisa dijadwalkan seperti biasa.',
                     ],
                 ],
             ],

@@ -3,9 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Exports\SiswaExport;
+use App\Exports\SiswaTemplateExport;
+use App\Imports\SiswaMassalImport;
 use App\Models\Arsip;
+use App\Models\Guru;
 use App\Models\Jadwal;
+use App\Models\Paket;
+use App\Models\Ruang;
+use App\Models\Sesi;
 use App\Models\Siswa;
+use App\Support\NomorHp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +20,15 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class SiswaController extends Controller
 {
+    private static function aturanNoHp(): \Closure
+    {
+        return function (string $attribute, $value, \Closure $fail) {
+            if (filled($value) && NomorHp::normalkan($value) === null) {
+                $fail('Nomor WhatsApp tidak dikenali formatnya. Contoh: 08xxxxxxxxxx atau +628xxxxxxxxxx.');
+            }
+        };
+    }
+
     public function jadwal(Siswa $siswa): JsonResponse
     {
         $jadwals = Jadwal::query()
@@ -41,13 +57,12 @@ class SiswaController extends Controller
             'name' => 'required|string|max:255|unique:siswas,name',
             'panggilan' => 'nullable|string|max:100',
             'kelas' => 'nullable|string|max:50',
-            'no_hp' => ['nullable', 'string', 'max:20', 'regex:/^\+62[0-9]{8,15}$/'],
+            'no_hp' => ['nullable', 'string', 'max:20', self::aturanNoHp()],
             'paket_pembayaran' => 'nullable|integer|exists:pakets,id',
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
             'name.unique' => 'Nama siswa sudah terdaftar di sistem.',
             'paket_pembayaran.exists' => 'Paket pembayaran yang dipilih tidak valid.',
-            'no_hp.regex' => 'Nomor WhatsApp harus menggunakan format +628xxxxxxxxxx.',
         ]);
 
         try {
@@ -71,21 +86,20 @@ class SiswaController extends Controller
     {
         $siswa = Siswa::find($id);
 
-        if (!$siswa) {
+        if (! $siswa) {
             return $this->handleNotFound($request, "Siswa (ID: $id)");
         }
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:siswas,name,' . $id,
+            'name' => 'required|string|max:255|unique:siswas,name,'.$id,
             'panggilan' => 'nullable|string|max:100',
             'kelas' => 'nullable|string|max:50',
-            'no_hp' => ['nullable', 'string', 'max:20', 'regex:/^\+62[0-9]{8,15}$/'],
+            'no_hp' => ['nullable', 'string', 'max:20', self::aturanNoHp()],
             'paket_pembayaran' => 'nullable|integer|exists:pakets,id',
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
             'name.unique' => 'Nama siswa sudah digunakan oleh data lain.',
             'paket_pembayaran.exists' => 'Paket pembayaran tidak ditemukan.',
-            'no_hp.regex' => 'Nomor WhatsApp harus menggunakan format +628xxxxxxxxxx.',
         ]);
 
         try {
@@ -102,6 +116,40 @@ class SiswaController extends Controller
             return redirect()->back()->with('success', 'Siswa berhasil diperbarui.');
         } catch (\Exception $e) {
             return $this->handleException($request, 'Gagal memperbarui', $e);
+        }
+    }
+
+    public function downloadImportTemplate()
+    {
+        return Excel::download(new SiswaTemplateExport, 'Kerangka-Import-Siswa.xlsx');
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv',
+        ], [
+            'file.required' => 'Pilih file kerangka yang sudah diisi.',
+            'file.mimes' => 'File harus berformat Excel (.xlsx/.xls) atau CSV.',
+        ]);
+
+        try {
+            $import = new SiswaMassalImport;
+            Excel::import($import, $request->file('file'));
+
+            $pesan = "Impor selesai: {$import->dibuat} siswa baru, {$import->diperbarui} siswa diperbarui";
+            if ($import->dilewati > 0) {
+                $pesan .= ", {$import->dilewati} baris dilewati (nama kosong)";
+            }
+            $pesan .= '.';
+
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'success', 'message' => $pesan]);
+            }
+
+            return redirect()->back()->with('success', $pesan);
+        } catch (\Exception $e) {
+            return $this->handleException($request, 'Gagal mengimpor', $e);
         }
     }
 
@@ -143,11 +191,11 @@ class SiswaController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => $siswas->count() . ' siswa berhasil diarsipkan dan jadwal telah dibersihkan.',
+                    'message' => $siswas->count().' siswa berhasil diarsipkan dan jadwal telah dibersihkan.',
                 ]);
             }
 
-            return redirect()->back()->with('success', $siswas->count() . ' siswa berhasil diarsipkan.');
+            return redirect()->back()->with('success', $siswas->count().' siswa berhasil diarsipkan.');
         } catch (\Exception $e) {
             return $this->handleException($request, 'Gagal memproses', $e);
         }
@@ -167,11 +215,11 @@ class SiswaController extends Controller
         if ($request->wantsJson()) {
             return response()->json([
                 'status' => 'error',
-                'message' => $prefix . ': ' . $e->getMessage(),
+                'message' => $prefix.': '.$e->getMessage(),
             ], 500);
         }
 
-        return redirect()->back()->withInput()->with('error', $prefix . ': ' . $e->getMessage());
+        return redirect()->back()->withInput()->with('error', $prefix.': '.$e->getMessage());
     }
 
     public function exportExcel(Request $request)
@@ -225,7 +273,7 @@ class SiswaController extends Controller
         $siswas = $query->get();
         $filterLabel = $this->buildFilterLabel($request);
 
-        return Excel::download(new SiswaExport($siswas, $filterLabel), 'Data-Siswa-' . now()->format('YmdHis') . '.xlsx');
+        return Excel::download(new SiswaExport($siswas, $filterLabel), 'Data-Siswa-'.now()->format('YmdHis').'.xlsx');
     }
 
     private function buildFilterLabel(Request $request): string
@@ -233,34 +281,34 @@ class SiswaController extends Controller
         $parts = [];
 
         if ($request->filled('kelas')) {
-            $parts[] = 'Kelas: ' . $request->kelas;
+            $parts[] = 'Kelas: '.$request->kelas;
         }
 
         if ($request->filled('paket_id')) {
-            $paket = \App\Models\Paket::find($request->paket_id);
-            $parts[] = 'Paket: ' . ($paket ? $paket->nama_paket : $request->paket_id);
+            $paket = Paket::find($request->paket_id);
+            $parts[] = 'Paket: '.($paket ? $paket->nama_paket : $request->paket_id);
         }
 
         if ($request->filled('sesi_ids')) {
             $ids = array_filter(explode(',', $request->sesi_ids));
-            $names = \App\Models\Sesi::whereIn('id', $ids)->pluck('name')->join(', ');
-            $parts[] = 'Sesi: ' . $names;
+            $names = Sesi::whereIn('id', $ids)->pluck('name')->join(', ');
+            $parts[] = 'Sesi: '.$names;
         }
 
         if ($request->filled('guru_ids')) {
             $ids = array_filter(explode(',', $request->guru_ids));
-            $names = \App\Models\Guru::whereIn('id', $ids)->pluck('name')->join(', ');
-            $parts[] = 'Guru: ' . $names;
+            $names = Guru::whereIn('id', $ids)->pluck('name')->join(', ');
+            $parts[] = 'Guru: '.$names;
         }
 
         if ($request->filled('ruang_ids')) {
             $ids = array_filter(explode(',', $request->ruang_ids));
-            $names = \App\Models\Ruang::whereIn('id', $ids)->pluck('name')->join(', ');
-            $parts[] = 'Ruang: ' . $names;
+            $names = Ruang::whereIn('id', $ids)->pluck('name')->join(', ');
+            $parts[] = 'Ruang: '.$names;
         }
 
         if ($request->filled('search')) {
-            $parts[] = 'Cari: "' . $request->search . '"';
+            $parts[] = 'Cari: "'.$request->search.'"';
         }
 
         return $parts ? implode(' | ', $parts) : 'Semua Siswa';

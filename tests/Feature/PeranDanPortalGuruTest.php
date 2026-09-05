@@ -58,7 +58,8 @@ class PeranDanPortalGuruTest extends TestCase
         [, $user] = $this->guruDenganAkun();
 
         $this->actingAs($user)->get(route('dashboard'))->assertForbidden();
-        $this->actingAs($user)->get(route('admin.masterData.index'))->assertForbidden();
+        $this->actingAs($user)->get(route('admin.akunGuru.index'))->assertForbidden();
+        $this->actingAs($user)->get(route('admin.workshop.index'))->assertForbidden();
         $this->actingAs($user)->get(route('admin.arsip.index'))->assertForbidden();
     }
 
@@ -106,7 +107,8 @@ class PeranDanPortalGuruTest extends TestCase
     public function test_guest_is_redirected_to_login(): void
     {
         $this->get(route('guru.jadwal'))->assertRedirect(route('login'));
-        $this->get(route('admin.masterData.index'))->assertRedirect(route('login'));
+        $this->get(route('admin.akunGuru.index'))->assertRedirect(route('login'));
+        $this->get(route('admin.workshop.index'))->assertRedirect(route('login'));
     }
 
     public function test_teacher_account_without_linked_guru_gets_an_explanation(): void

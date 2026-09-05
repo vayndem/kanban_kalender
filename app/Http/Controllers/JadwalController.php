@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
-use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\JadwalExport;
 use App\Models\Hari;
 use App\Models\Jadwal;
 use App\Models\Sesi;
 use App\Models\Tanda;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 class JadwalController extends Controller
@@ -35,9 +36,9 @@ class JadwalController extends Controller
 
         $finalJadwals = [];
         foreach ($jadwalsData as $jadwal) {
-            $classKey = $jadwal->mata_pelajaran_id . '_' . $jadwal->guru_id . '_' . $jadwal->ruang_id;
+            $classKey = $jadwal->mata_pelajaran_id.'_'.$jadwal->guru_id.'_'.$jadwal->ruang_id;
 
-            if (!isset($finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey])) {
+            if (! isset($finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey])) {
                 $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey] = [
                     'mapel' => $jadwal->mataPelajaran,
                     'guru' => $jadwal->guru,
@@ -81,8 +82,11 @@ class JadwalController extends Controller
             }
 
             $this->ensureNoConflicts(
-                $validated['new_hari_id'], $validated['new_sesi_id'],
-                $validated['mapel_id'], $validated['guru_id'], $validated['ruang_id'],
+                $validated['new_hari_id'],
+                $validated['new_sesi_id'],
+                $validated['mapel_id'],
+                $validated['guru_id'],
+                $validated['ruang_id'],
                 $studentIds,
                 Arr::only($validated, ['old_hari_id', 'old_sesi_id', 'mapel_id', 'guru_id', 'ruang_id'])
             );
@@ -124,26 +128,32 @@ class JadwalController extends Controller
             ]);
 
             $this->ensureNoConflicts(
-                $validated['old_hari_id'], $validated['old_sesi_id'],
-                $validated['mapel_id'], $validated['guru_id'], $validated['ruang_id'],
+                $validated['old_hari_id'],
+                $validated['old_sesi_id'],
+                $validated['mapel_id'],
+                $validated['guru_id'],
+                $validated['ruang_id'],
                 $validated['siswa_ids'],
                 [
-                    'old_hari_id' => $validated['old_hari_id'], 'old_sesi_id' => $validated['old_sesi_id'],
-                    'mapel_id' => $validated['old_mapel_id'], 'guru_id' => $validated['old_guru_id'],
+                    'old_hari_id' => $validated['old_hari_id'],
+                    'old_sesi_id' => $validated['old_sesi_id'],
+                    'mapel_id' => $validated['old_mapel_id'],
+                    'guru_id' => $validated['old_guru_id'],
                     'ruang_id' => $validated['old_ruang_id'],
                 ]
             );
 
             DB::beginTransaction();
 
-            Jadwal::where('hari_id', $validated['old_hari_id'])
+            $kelasLama = Jadwal::where('hari_id', $validated['old_hari_id'])
                 ->where('sesi_id', $validated['old_sesi_id'])
                 ->where('mata_pelajaran_id', $validated['old_mapel_id'])
                 ->where('guru_id', $validated['old_guru_id'])
-                ->where('ruang_id', $validated['old_ruang_id'])
-                ->delete();
+                ->where('ruang_id', $validated['old_ruang_id']);
+            $kodeKelas = (clone $kelasLama)->value('kode_kelas') ?: (string) Str::uuid();
+            $kelasLama->delete();
 
-            if (!empty($validated['siswa_ids'])) {
+            if (! empty($validated['siswa_ids'])) {
                 $now = now();
                 $insertData = [];
                 foreach ($validated['siswa_ids'] as $siswaId) {
@@ -155,21 +165,23 @@ class JadwalController extends Controller
                             'guru_id' => $validated['guru_id'],
                             'ruang_id' => $validated['ruang_id'],
                             'siswa_id' => $siswaId,
+                            'kode_kelas' => $kodeKelas,
                             'created_at' => $now,
                             'updated_at' => $now,
                         ];
                     }
                 }
-                if (!empty($insertData)) {
+                if (! empty($insertData)) {
                     Jadwal::insert($insertData);
                 }
             }
 
-            if (!empty($request->deleted_tanda_ids)) {
+            if (! empty($request->deleted_tanda_ids)) {
                 Tanda::whereIn('id', $request->deleted_tanda_ids)->delete();
             }
 
             DB::commit();
+
             return response()->json(['status' => 'success', 'message' => 'Jadwal dan Catatan berhasil diperbarui.']);
         } catch (ValidationException $e) {
             return response()->json([
@@ -178,7 +190,8 @@ class JadwalController extends Controller
             ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['status' => 'error', 'message' => 'Gagal menyimpan: ' . $e->getMessage()], 500);
+
+            return response()->json(['status' => 'error', 'message' => 'Gagal menyimpan: '.$e->getMessage()], 500);
         }
     }
 
@@ -196,13 +209,18 @@ class JadwalController extends Controller
             ], [
                 'required' => 'Kolom :attribute wajib diisi.',
                 'siswa_ids.required' => 'Pilih minimal satu siswa.',
-                'exists' => 'Data :attribute tidak valid.'
+                'exists' => 'Data :attribute tidak valid.',
             ]);
 
             $jadwalDataUtama = Arr::only($validated, ['hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id']);
+            $jadwalDataUtama['kode_kelas'] = (string) Str::uuid();
             $this->ensureNoConflicts(
-                $validated['hari_id'], $validated['sesi_id'], $validated['mata_pelajaran_id'],
-                $validated['guru_id'], $validated['ruang_id'], $validated['siswa_ids']
+                $validated['hari_id'],
+                $validated['sesi_id'],
+                $validated['mata_pelajaran_id'],
+                $validated['guru_id'],
+                $validated['ruang_id'],
+                $validated['siswa_ids']
             );
 
             $createdCount = DB::transaction(function () use ($jadwalDataUtama, $validated) {
@@ -222,7 +240,7 @@ class JadwalController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => $createdCount . ' jadwal baru berhasil dibuat.',
+                'message' => $createdCount.' jadwal baru berhasil dibuat.',
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -232,7 +250,7 @@ class JadwalController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal menyimpan jadwal: ' . $e->getMessage(),
+                'message' => 'Gagal menyimpan jadwal: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -322,17 +340,21 @@ class JadwalController extends Controller
         $haris = Hari::whereIn('id', $activeHariIds)->orderBy('id')->get();
         $sesis = Sesi::whereIn('id', $activeSesiIds)->orderBy('start_time')->get();
 
-        if ($haris->isEmpty()) $haris = Hari::orderBy('id')->get();
-        if ($sesis->isEmpty()) $sesis = Sesi::orderBy('start_time')->get();
+        if ($haris->isEmpty()) {
+            $haris = Hari::orderBy('id')->get();
+        }
+        if ($sesis->isEmpty()) {
+            $sesis = Sesi::orderBy('start_time')->get();
+        }
 
         $finalJadwals = [];
         $studentsWithNotes = collect();
 
         foreach ($jadwalsData as $jadwal) {
-            $jadwal->siswa->formatted_name_class = $jadwal->siswa->name . ' - ' . $jadwal->siswa->kelas;
-            $classKey = $jadwal->mata_pelajaran_id . '_' . $jadwal->guru_id . '_' . $jadwal->ruang_id;
+            $jadwal->siswa->formatted_name_class = $jadwal->siswa->name.' - '.$jadwal->siswa->kelas;
+            $classKey = $jadwal->mata_pelajaran_id.'_'.$jadwal->guru_id.'_'.$jadwal->ruang_id;
 
-            if (!isset($finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey])) {
+            if (! isset($finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey])) {
                 $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey] = [
                     'mapel' => $jadwal->mataPelajaran,
                     'guru' => $jadwal->guru,
@@ -343,7 +365,7 @@ class JadwalController extends Controller
             $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey]['siswa_list']->push($jadwal->siswa);
 
             if ($jadwal->siswa->tandas->isNotEmpty()) {
-                if (!$studentsWithNotes->has($jadwal->siswa->id)) {
+                if (! $studentsWithNotes->has($jadwal->siswa->id)) {
                     $studentsWithNotes->put($jadwal->siswa->id, $jadwal->siswa);
                 }
             }
@@ -361,10 +383,10 @@ class JadwalController extends Controller
 
         $filename = 'jadwal-pelajaran';
         if ($request->filled('search')) {
-            $filename .= '-search-' . Str::slug($request->search);
+            $filename .= '-search-'.Str::slug($request->search);
         }
 
-        return $pdf->download($filename . '.pdf');
+        return $pdf->download($filename.'.pdf');
     }
 
     public function exportExcel(Request $request)
@@ -399,10 +421,10 @@ class JadwalController extends Controller
 
         $filename = 'jadwal-pelajaran';
         if ($request->filled('search')) {
-            $filename .= '-search-' . Str::slug($request->search);
+            $filename .= '-search-'.Str::slug($request->search);
         }
 
-        return Excel::download(new JadwalExport($jadwals, $request->search), $filename . '.xlsx');
+        return Excel::download(new JadwalExport($jadwals, $request->search), $filename.'.xlsx');
     }
 
     public function generateTextJadwal(Request $request)
@@ -439,23 +461,23 @@ class JadwalController extends Controller
         ]);
 
         $jadwals = $query->get()->sortBy([['hari_id', 'asc'], ['sesi.start_time', 'asc']]);
-        $header = $request->filled('search') ? 'Filter: ' . ucwords($request->search) : 'Jadwal Lengkap';
-        $textOutput = '*' . $header . "*\n\n";
+        $header = $request->filled('search') ? 'Filter: '.ucwords($request->search) : 'Jadwal Lengkap';
+        $textOutput = '*'.$header."*\n\n";
 
         $groupedByHari = $jadwals->groupBy('hari.name');
 
         foreach ($groupedByHari as $hariName => $jadwalsPerHari) {
-            $textOutput .= '🗓️ *' . strtoupper($hariName) . "*\n";
+            $textOutput .= '🗓️ *'.strtoupper($hariName)."*\n";
             $groupedBySesi = $jadwalsPerHari->groupBy('sesi.id');
 
             foreach ($groupedBySesi as $sesiId => $items) {
                 $sesiInfo = $items->first()->sesi;
-                $jamMulai = \Carbon\Carbon::parse($sesiInfo->start_time)->format('H.i');
-                $jamSelesai = \Carbon\Carbon::parse($sesiInfo->end_time)->format('H.i');
+                $jamMulai = Carbon::parse($sesiInfo->start_time)->format('H.i');
+                $jamSelesai = Carbon::parse($sesiInfo->end_time)->format('H.i');
 
-                $textOutput .= "\n" . '🕰️ ' . $jamMulai . ' - ' . $jamSelesai . "\n";
+                $textOutput .= "\n".'🕰️ '.$jamMulai.' - '.$jamSelesai."\n";
                 $groupedByClass = $items->groupBy(function ($item) {
-                    return $item->guru->name . ' - ' . $item->mataPelajaran->name . ' - ' . $item->ruang->name;
+                    return $item->guru->name.' - '.$item->mataPelajaran->name.' - '.$item->ruang->name;
                 });
 
                 foreach ($groupedByClass as $key => $classItems) {
@@ -465,14 +487,15 @@ class JadwalController extends Controller
 
                     $studentDetails = $classItems->map(function ($j) {
                         $displayName = $j->siswa->panggilan ?? explode(' ', trim($j->siswa->name))[0];
-                        return $displayName . ' - ' . $j->siswa->kelas;
+
+                        return $displayName.' - '.$j->siswa->kelas;
                     })->implode(', ');
 
                     $textOutput .= "\n";
-                    $textOutput .= '📚 *' . $mataPelajaranName . "*\n";
-                    $textOutput .= '👩‍🏫 Guru: ' . $guruName . "\n";
-                    $textOutput .= '🏠 Ruang: ' . $ruangName . "\n";
-                    $textOutput .= '🧑‍🎓 Siswa: ' . $studentDetails . "\n";
+                    $textOutput .= '📚 *'.$mataPelajaranName."*\n";
+                    $textOutput .= '👩‍🏫 Guru: '.$guruName."\n";
+                    $textOutput .= '🏠 Ruang: '.$ruangName."\n";
+                    $textOutput .= '🧑‍🎓 Siswa: '.$studentDetails."\n";
                 }
             }
         }
@@ -485,31 +508,34 @@ class JadwalController extends Controller
         $jadwals = $jadwals->sortBy([['hari_id', 'asc'], ['sesi.start_time', 'asc']]);
         $text = "*JADWAL E-LING COURSE*\n";
         if ($search !== '') {
-            $text .= '_Jadwal untuk: ' . ucwords($search) . "_\n";
+            $text .= '_Jadwal untuk: '.ucwords($search)."_\n";
         }
-        $text .= '_Dibuat ' . now()->translatedFormat('d F Y, H:i') . "_\n";
+        $text .= '_Dibuat '.now()->translatedFormat('d F Y, H:i')."_\n";
 
         if ($jadwals->isEmpty()) {
-            return $text . "\nTidak ada jadwal yang ditemukan.";
+            return $text."\nTidak ada jadwal yang ditemukan.";
         }
 
         foreach ($jadwals->groupBy('hari.name') as $hariName => $daySchedules) {
-            $text .= "\n━━━━━━━━━━━━━━\n📅 *" . mb_strtoupper((string) $hariName) . "*\n";
+            $text .= "\n━━━━━━━━━━━━━━\n📅 *".mb_strtoupper((string) $hariName)."*\n";
 
             foreach ($daySchedules->groupBy('sesi.id') as $items) {
                 $session = $items->first()->sesi;
-                $start = \Carbon\Carbon::parse($session->start_time)->format('H.i');
-                $end = \Carbon\Carbon::parse($session->end_time)->format('H.i');
+                $start = Carbon::parse($session->start_time)->format('H.i');
+                $end = Carbon::parse($session->end_time)->format('H.i');
 
                 $classes = $items->groupBy(fn ($item) => implode('-', [
-                    $item->guru_id, $item->mata_pelajaran_id, $item->ruang_id,
+                    $item->guru_id,
+                    $item->mata_pelajaran_id,
+                    $item->ruang_id,
                 ]));
 
                 foreach ($classes as $classItems) {
                     $schedule = $classItems->first();
                     $students = $classItems->map(function ($item) {
                         $name = $item->siswa->panggilan ?: explode(' ', trim($item->siswa->name))[0];
-                        return $name . ($item->siswa->kelas ? ' – ' . $item->siswa->kelas : '');
+
+                        return $name.($item->siswa->kelas ? ' – '.$item->siswa->kelas : '');
                     })->unique()->join(', ');
 
                     $text .= "\n⏰ *{$start}–{$end}* · *{$schedule->mataPelajaran->name}*\n";
@@ -520,7 +546,7 @@ class JadwalController extends Controller
             }
         }
 
-        return $text . "\n━━━━━━━━━━━━━━\n_Simpan pesan ini sebagai pengingat jadwal._";
+        return $text."\n━━━━━━━━━━━━━━\n_Simpan pesan ini sebagai pengingat jadwal._";
     }
 
     public function downloadStash()
@@ -534,6 +560,7 @@ class JadwalController extends Controller
                 'g' => $j->guru_id,
                 'r' => $j->ruang_id,
                 'si' => $j->siswa_id,
+                'k' => $j->kode_kelas,
             ];
         });
 
@@ -541,30 +568,30 @@ class JadwalController extends Controller
             'app' => 'E-Ling-Course',
             'version' => '1.0',
             'timestamp' => now()->toDateTimeString(),
-            'content' => $allJadwals
+            'content' => $allJadwals,
         ];
 
         // Encode ke Base64 agar user tidak bisa baca langsung isinya
         $encodedData = base64_encode(json_encode($data));
-        $filename = "JADWAL_STASH_" . date('Ymd_His') . ".stash";
+        $filename = 'JADWAL_STASH_'.date('Ymd_His').'.stash';
 
         return Response::make($encodedData, 200, [
             'Content-Type' => 'application/octet-stream',
-            'Content-Disposition' => 'attachment; filename=' . $filename,
+            'Content-Disposition' => 'attachment; filename='.$filename,
         ]);
     }
 
     public function uploadStash(Request $request)
     {
         $request->validate([
-            'file_stash' => 'required|file|max:10240'
+            'file_stash' => 'required|file|max:10240',
         ]);
 
         try {
             $fileContent = file_get_contents($request->file('file_stash')->getRealPath());
             $decodedData = json_decode(base64_decode($fileContent), true);
 
-            if (!$decodedData || !isset($decodedData['app']) || $decodedData['app'] !== 'E-Ling-Course') {
+            if (! $decodedData || ! isset($decodedData['app']) || $decodedData['app'] !== 'E-Ling-Course') {
                 return response()->json(['status' => 'error', 'message' => 'Format file stash tidak dikenali!'], 422);
             }
 
@@ -577,14 +604,15 @@ class JadwalController extends Controller
             $now = now();
             foreach ($incomingJadwals as $j) {
                 $insertData[] = [
-                    'hari_id'           => $j['h'],
-                    'sesi_id'           => $j['s'],
+                    'hari_id' => $j['h'],
+                    'sesi_id' => $j['s'],
                     'mata_pelajaran_id' => $j['m'],
-                    'guru_id'           => $j['g'],
-                    'ruang_id'          => $j['r'],
-                    'siswa_id'          => $j['si'],
-                    'created_at'        => $now,
-                    'updated_at'        => $now,
+                    'guru_id' => $j['g'],
+                    'ruang_id' => $j['r'],
+                    'siswa_id' => $j['si'],
+                    'kode_kelas' => blank($j['k'] ?? null) ? null : $j['k'],
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ];
             }
 
@@ -593,17 +621,43 @@ class JadwalController extends Controller
                 Jadwal::insert($chunk);
             }
 
+            $this->isiKodeKelasKosong();
+
             DB::commit();
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Seluruh jadwal berhasil direplace dengan data stash!'
+                'message' => 'Seluruh jadwal berhasil direplace dengan data stash!',
             ]);
         } catch (\Exception $e) {
             if (DB::transactionLevel() > 0) {
                 DB::rollBack();
             }
-            return response()->json(['status' => 'error', 'message' => 'Gagal upload: ' . $e->getMessage()], 500);
+
+            return response()->json(['status' => 'error', 'message' => 'Gagal upload: '.$e->getMessage()], 500);
         }
+    }
+
+    /**
+     * File stash lama tidak membawa kode_kelas. Kelompokkan sisa baris yang
+     * masih kosong per kombinasi hari/sesi/mapel/guru/ruang dan beri kode baru,
+     * supaya Modul Ajar tetap bisa menempel setelah restore dari stash lama.
+     */
+    private function isiKodeKelasKosong(): void
+    {
+        Jadwal::query()
+            ->whereNull('kode_kelas')
+            ->select(['hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id'])
+            ->distinct()
+            ->get()
+            ->each(function ($kelompok) {
+                Jadwal::whereNull('kode_kelas')
+                    ->where('hari_id', $kelompok->hari_id)
+                    ->where('sesi_id', $kelompok->sesi_id)
+                    ->where('mata_pelajaran_id', $kelompok->mata_pelajaran_id)
+                    ->where('guru_id', $kelompok->guru_id)
+                    ->where('ruang_id', $kelompok->ruang_id)
+                    ->update(['kode_kelas' => (string) Str::uuid()]);
+            });
     }
 }

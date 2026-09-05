@@ -17,6 +17,7 @@ use App\Models\Siswa;
 use App\Models\Tanda;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 /**
  * Data demo yang menggambarkan bimbel sedang berjalan.
@@ -208,6 +209,8 @@ class DemoSeeder extends Seeder
             $terpakai['guru'][$kunciGuru] = true;
             $terpakai['ruang'][$kunciRuang] = true;
 
+            $kodeKelas = (string) Str::uuid();
+
             foreach ($daftarSiswa as $nama) {
                 if (! isset($siswa[$nama])) {
                     continue;
@@ -226,6 +229,8 @@ class DemoSeeder extends Seeder
                     'mata_pelajaran_id' => $master['mapel'][$mapel]->id,
                     'guru_id' => $master['guru'][$guru]->id,
                     'ruang_id' => $master['ruang'][$ruang]->id,
+                ], [
+                    'kode_kelas' => $kodeKelas,
                 ]);
             }
         }

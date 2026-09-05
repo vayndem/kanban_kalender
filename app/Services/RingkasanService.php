@@ -12,12 +12,15 @@ use App\Models\Pembayaran;
 use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
+use App\Models\Tanda;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class RingkasanService
 {
     private const BACK_TO_BACK_THRESHOLD = 3;
+
+    private const TANDA_LAMA_HARI = 14;
 
     public function ringkasanHariIni(): array
     {
@@ -128,6 +131,7 @@ class RingkasanService
 
         $sesis = Sesi::orderBy('start_time')->get(['id', 'name', 'start_time', 'end_time']);
         $urutanSesi = $sesis->values()->mapWithKeys(fn (Sesi $s, int $i) => [$s->id => $i]);
+        $sesiById = $sesis->keyBy('id');
         $durasiSesi = $sesis->mapWithKeys(
             fn (Sesi $s) => [$s->id => Carbon::parse($s->end_time)->diffInMinutes(Carbon::parse($s->start_time))]
         );
@@ -155,28 +159,42 @@ class RingkasanService
         $backToBack = collect();
         foreach ($jadwals->groupBy('guru_id') as $guruId => $rowsPerGuru) {
             foreach ($rowsPerGuru->groupBy('hari_id') as $hariId => $rowsPerHari) {
-                $posisi = $rowsPerHari
-                    ->map(fn (Jadwal $r) => $urutanSesi->get($r->sesi_id))
-                    ->filter(fn ($p) => $p !== null)
+                $urutanTerpakai = $rowsPerHari
+                    ->pluck('sesi_id')
                     ->unique()
-                    ->sort()
+                    ->map(fn ($sesiId) => ['sesi_id' => $sesiId, 'posisi' => $urutanSesi->get($sesiId)])
+                    ->filter(fn ($item) => $item['posisi'] !== null)
+                    ->sortBy('posisi')
                     ->values();
 
-                $terpanjang = 0;
-                $panjangSaatIni = 0;
-                $sebelumnya = null;
-                foreach ($posisi as $p) {
-                    $panjangSaatIni = ($sebelumnya !== null && $p === $sebelumnya + 1) ? $panjangSaatIni + 1 : 1;
-                    $terpanjang = max($terpanjang, $panjangSaatIni);
-                    $sebelumnya = $p;
+                $runSaatIni = collect();
+                $runTerpanjang = collect();
+                $posisiSebelumnya = null;
+                foreach ($urutanTerpakai as $item) {
+                    $runSaatIni = ($posisiSebelumnya !== null && $item['posisi'] === $posisiSebelumnya + 1)
+                        ? $runSaatIni->push($item)
+                        : collect([$item]);
+                    if ($runSaatIni->count() > $runTerpanjang->count()) {
+                        $runTerpanjang = $runSaatIni;
+                    }
+                    $posisiSebelumnya = $item['posisi'];
                 }
 
-                if ($terpanjang >= self::BACK_TO_BACK_THRESHOLD) {
+                if ($runTerpanjang->count() >= self::BACK_TO_BACK_THRESHOLD) {
                     $backToBack->push([
                         'guru_id' => $guruId,
                         'nama' => $namaGuru->get($guruId, 'N/A'),
                         'hari' => $namaHari->get($hariId, 'N/A'),
-                        'jumlah_beruntun' => $terpanjang,
+                        'jumlah_beruntun' => $runTerpanjang->count(),
+                        'sesi_list' => $runTerpanjang->map(function ($item) use ($sesiById) {
+                            $sesi = $sesiById->get($item['sesi_id']);
+
+                            return [
+                                'name' => $sesi?->name ?? 'N/A',
+                                'start' => $sesi ? substr((string) $sesi->start_time, 0, 5) : '',
+                                'end' => $sesi ? substr((string) $sesi->end_time, 0, 5) : '',
+                            ];
+                        })->values(),
                     ]);
                 }
             }
@@ -237,6 +255,11 @@ class RingkasanService
             'mapel_tidak_terpakai' => MataPelajaran::doesntHave('jadwals')->get(['id', 'name']),
             'arsip_mengendap' => Arsip::where('created_at', '<=', now()->subMonths($arsipBulan))->get(['id', 'name', 'kelas', 'created_at']),
             'arsip_bulan' => $arsipBulan,
+            'tanda_lama' => Tanda::where('created_at', '<=', now()->subDays(self::TANDA_LAMA_HARI))
+                ->with('siswa:id,name,kelas')
+                ->orderBy('created_at')
+                ->get(['id', 'siswa_id', 'keterangan', 'created_at']),
+            'tanda_lama_hari' => self::TANDA_LAMA_HARI,
         ];
     }
 

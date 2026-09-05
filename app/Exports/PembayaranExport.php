@@ -2,21 +2,26 @@
 
 namespace App\Exports;
 
+use App\Exports\Concerns\MemaksaTeksUntukAwalanPlus;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
-use Maatwebsite\Excel\Concerns\WithMultipleSheets;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class PembayaranExport implements WithMultipleSheets
 {
     protected Collection $pembayarans;
+
     protected Collection $diskons;
+
     protected array $filterSummary;
 
     public function __construct(Collection $pembayarans, Collection $diskons, array $filterSummary = [])
@@ -36,10 +41,14 @@ class PembayaranExport implements WithMultipleSheets
     }
 }
 
-class PembayaranRingkasanKeluargaSheet implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithTitle
+class PembayaranRingkasanKeluargaSheet implements FromCollection, ShouldAutoSize, WithCustomValueBinder, WithHeadings, WithMapping, WithStyles, WithTitle
 {
+    use MemaksaTeksUntukAwalanPlus;
+
     protected Collection $pembayarans;
+
     protected Collection $diskons;
+
     protected array $filterSummary;
 
     private const STATUS_LABELS = [0 => 'Belum Bayar', 1 => 'Tertagih', 2 => 'Lunas'];
@@ -109,7 +118,7 @@ class PembayaranRingkasanKeluargaSheet implements FromCollection, WithHeadings, 
             $row['sisa'],
             $row['status'],
             $row['keterangan'] ?: '-',
-            $row['tanggal_terakhir'] ? \Carbon\Carbon::parse($row['tanggal_terakhir'])->format('d/m/Y') : '-',
+            $row['tanggal_terakhir'] ? Carbon::parse($row['tanggal_terakhir'])->format('d/m/Y') : '-',
         ];
     }
 
@@ -129,12 +138,16 @@ class PembayaranRingkasanKeluargaSheet implements FromCollection, WithHeadings, 
     }
 }
 
-class PembayaranDetailInvoiceSheet implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithTitle
+class PembayaranDetailInvoiceSheet implements FromCollection, ShouldAutoSize, WithCustomValueBinder, WithHeadings, WithMapping, WithStyles, WithTitle
 {
+    use MemaksaTeksUntukAwalanPlus;
+
     protected Collection $pembayarans;
+
     protected array $filterSummary;
 
     private const STATUS_LABELS = [0 => 'Belum Bayar', 1 => 'Tertagih', 2 => 'Lunas'];
+
     private const METODE_LABELS = [0 => 'Cash', 1 => 'Transfer'];
 
     public function __construct(Collection $pembayarans, array $filterSummary)
@@ -178,7 +191,7 @@ class PembayaranDetailInvoiceSheet implements FromCollection, WithHeadings, With
             $sisa,
             self::STATUS_LABELS[(int) $item->status] ?? '-',
             self::METODE_LABELS[$item->pembayaran_via] ?? '-',
-            $item->tanggal_pembayaran ? \Carbon\Carbon::parse($item->tanggal_pembayaran)->format('d/m/Y') : '-',
+            $item->tanggal_pembayaran ? Carbon::parse($item->tanggal_pembayaran)->format('d/m/Y') : '-',
             $item->created_at ? $item->created_at->format('d/m/Y H:i') : '-',
         ];
     }
@@ -199,9 +212,12 @@ class PembayaranDetailInvoiceSheet implements FromCollection, WithHeadings, With
     }
 }
 
-class PembayaranDetailCicilanSheet implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithTitle
+class PembayaranDetailCicilanSheet implements FromCollection, ShouldAutoSize, WithCustomValueBinder, WithHeadings, WithMapping, WithStyles, WithTitle
 {
+    use MemaksaTeksUntukAwalanPlus;
+
     protected Collection $pembayarans;
+
     protected array $filterSummary;
 
     public function __construct(Collection $pembayarans, array $filterSummary)
@@ -251,7 +267,7 @@ class PembayaranDetailCicilanSheet implements FromCollection, WithHeadings, With
             $invoice->siswa->name ?? 'Siswa Tidak Ditemukan',
             (int) $detail->pembayaran,
             $detail->keterangan ?? '-',
-            $detail->created_at ? \Carbon\Carbon::parse($detail->created_at)->format('d/m/Y H:i') : '-',
+            $detail->created_at ? Carbon::parse($detail->created_at)->format('d/m/Y H:i') : '-',
         ];
     }
 

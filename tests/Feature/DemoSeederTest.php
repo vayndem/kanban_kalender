@@ -115,8 +115,26 @@ class DemoSeederTest extends TestCase
                 continue;
             }
 
-            $this->assertCount(0, $bentrok, "Ada siswa terjadwal ganda pada slot yang sama.");
+            $this->assertCount(0, $bentrok, 'Ada siswa terjadwal ganda pada slot yang sama.');
         }
+    }
+
+    public function test_every_class_gets_a_stable_kode_kelas_for_modul_ajar(): void
+    {
+        $this->assertSame(0, DB::table('jadwals')->whereNull('kode_kelas')->count());
+
+        $kodeKelasPerKombinasi = DB::table('jadwals')
+            ->select(['hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id', 'kode_kelas'])
+            ->get()
+            ->groupBy(fn ($r) => "{$r->hari_id}_{$r->sesi_id}_{$r->mata_pelajaran_id}_{$r->guru_id}_{$r->ruang_id}")
+            ->map(fn ($rows) => $rows->pluck('kode_kelas')->unique());
+
+        foreach ($kodeKelasPerKombinasi as $kombinasi => $kodeKelasList) {
+            $this->assertCount(1, $kodeKelasList, "Kombinasi kelas {$kombinasi} punya lebih dari satu kode_kelas.");
+        }
+
+        $semuaKodeKelas = $kodeKelasPerKombinasi->flatten();
+        $this->assertSame($semuaKodeKelas->count(), $semuaKodeKelas->unique()->count(), 'Dua kelas berbeda tidak boleh berbagi kode_kelas yang sama.');
     }
 
     public function test_running_it_twice_does_not_duplicate_anything(): void

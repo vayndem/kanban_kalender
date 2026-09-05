@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Sesi;
+use Illuminate\Http\Request;
 
 class SesiController extends Controller
 {
@@ -24,12 +24,13 @@ class SesiController extends Controller
         ]);
 
         try {
-            Sesi::create($validated);
+            $sesi = Sesi::create($validated);
 
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'Sesi waktu berhasil ditambahkan.'
+                    'message' => 'Sesi waktu berhasil ditambahkan.',
+                    'data' => $sesi,
                 ]);
             }
 
@@ -38,7 +39,7 @@ class SesiController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Gagal menyimpan: ' . $e->getMessage()
+                    'message' => 'Gagal menyimpan: ' . $e->getMessage(),
                 ], 500);
             }
 
@@ -50,8 +51,9 @@ class SesiController extends Controller
     {
         $sesi = Sesi::find($id);
 
-        if (!$sesi) {
+        if (! $sesi) {
             $msg = "Data sesi tidak ditemukan (ID: $id). Kemungkinan sudah dihapus atau data di browser Anda kadaluwarsa. Silakan refresh halaman.";
+
             return $request->wantsJson()
                 ? response()->json(['status' => 'error', 'message' => $msg], 404)
                 : redirect()->back()->with('error', $msg);
@@ -77,7 +79,8 @@ class SesiController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'Sesi waktu berhasil diperbarui.'
+                    'message' => 'Sesi waktu berhasil diperbarui.',
+                    'data' => $sesi,
                 ]);
             }
 
@@ -86,7 +89,7 @@ class SesiController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Gagal memperbarui: ' . $e->getMessage()
+                    'message' => 'Gagal memperbarui: ' . $e->getMessage(),
                 ], 500);
             }
 
@@ -99,10 +102,21 @@ class SesiController extends Controller
         try {
             $sesi = Sesi::find($id);
 
-            if (!$sesi) {
-                $msg = "Data sesi tidak ditemukan. Mungkin sudah dihapus.";
+            if (! $sesi) {
+                $msg = 'Data sesi tidak ditemukan. Mungkin sudah dihapus.';
+
                 return $request->wantsJson()
                     ? response()->json(['status' => 'error', 'message' => $msg], 404)
+                    : redirect()->back()->with('error', $msg);
+            }
+
+            $jumlahJadwal = $sesi->jadwals()->count();
+            if ($jumlahJadwal > 0) {
+                $msg = "Sesi {$sesi->name} tidak bisa dihapus: masih dipakai {$jumlahJadwal} baris jadwal. "
+                    . 'Hapus atau pindahkan jadwalnya dulu di tab Jadwal Pelajaran, baru sesi ini bisa dihapus.';
+
+                return $request->wantsJson()
+                    ? response()->json(['status' => 'error', 'message' => $msg], 422)
                     : redirect()->back()->with('error', $msg);
             }
 
@@ -111,7 +125,7 @@ class SesiController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'Sesi waktu berhasil dihapus.'
+                    'message' => 'Sesi waktu berhasil dihapus.',
                 ]);
             }
 
@@ -120,7 +134,7 @@ class SesiController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Gagal menghapus: ' . $e->getMessage()
+                    'message' => 'Gagal menghapus: ' . $e->getMessage(),
                 ], 500);
             }
 

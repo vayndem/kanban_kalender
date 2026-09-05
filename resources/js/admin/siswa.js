@@ -26,19 +26,14 @@ export const siswaHandler = ({
     isLoadingJadwal: false,
     editJadwalRequestKey: 0,
     viewMode: 'aktif',
-    showSiswaModal: false,
+    showDetailModal: false,
+    detailSiswa: {},
+    catatanForm: { keterangan: '' },
+    isSavingCatatan: false,
     siswaSearch: '',
     selectedSiswas: [],
     sortField: 'name',
     sortOrder: 'asc',
-    siswaForm: {
-        id: null,
-        name: '',
-        panggilan: '',
-        kelas: '',
-        no_hp: '',
-        paket_pembayaran: ''
-    },
     filterKelas: '',
     filterPaket: '',
     filterSesis: [],
@@ -152,7 +147,7 @@ export const siswaHandler = ({
     },
 
     getSiswaJadwalList(siswaId) {
-        if (!siswaId || Number(this.siswaForm.id) !== Number(siswaId)) return [];
+        if (!siswaId || Number(this.detailSiswa.id) !== Number(siswaId)) return [];
         return this.activeStudentSchedules;
     },
 
@@ -164,44 +159,11 @@ export const siswaHandler = ({
         );
     },
 
-    formatPhone() {
-        let val = this.siswaForm.no_hp;
-        if (!val) return;
-        let digits = val.replace(/\D/g, '');
-        if (digits.startsWith('0')) digits = '62' + digits.substring(1);
-        if (digits.startsWith('8')) digits = '62' + digits;
-        this.siswaForm.no_hp = '+' + digits;
-    },
-
-    openTambah() {
-        this.siswaForm = {
-            id: null,
-            name: '',
-            panggilan: '',
-            kelas: '',
-            no_hp: '',
-            paket_pembayaran: ''
-        };
-        this.showSiswaModal = true;
-        this.activeStudentSchedules = [];
-    },
-
-    async openEdit(siswa) {
+    async openDetail(siswa) {
         const requestKey = ++this.editJadwalRequestKey;
-        this.siswaForm = {
-            id: siswa.id,
-            name: siswa.name || '',
-            panggilan: siswa.panggilan || '',
-            kelas: siswa.kelas || '',
-            no_hp: siswa.no_hp || '',
-            paket_pembayaran: siswa.paket_pembayaran == null ? '' : String(siswa.paket_pembayaran)
-        };
-        this.showSiswaModal = true;
-        this.$nextTick(() => {
-            this.$root.querySelectorAll('select').forEach(select =>
-                select.dispatchEvent(new Event('searchable-select:sync'))
-            );
-        });
+        this.detailSiswa = siswa;
+        this.catatanForm = { keterangan: '' };
+        this.showDetailModal = true;
         this.isLoadingJadwal = true;
 
         try {
@@ -223,34 +185,59 @@ export const siswaHandler = ({
         }
     },
 
-    async simpanSiswa() {
-        const isEdit = !!this.siswaForm.id;
-        const url = isEdit ? `${this.routes.siswaBase}/${this.siswaForm.id}` :
-            this.routes.siswaStore;
-        const payload = {
-            ...this.siswaForm,
-            _token: csrfToken()
-        };
-        if (isEdit) payload._method = 'PUT';
+    async simpanCatatan() {
+        if (!this.detailSiswa.id || !this.catatanForm.keterangan.trim()) return;
 
+        this.isSavingCatatan = true;
         try {
-            const response = await fetch(url, {
+            const response = await fetch(this.routes.tandaStore, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken(),
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    siswa_id: this.detailSiswa.id,
+                    keterangan: this.catatanForm.keterangan
+                })
             });
             const res = await response.json();
             if (res.status === 'success') {
-                await AppSwal.toast(res.message || 'Data siswa berhasil disimpan.');
                 window.location.reload();
             } else {
-                AppSwal.error(res.message);
+                AppSwal.error(res.message || 'Gagal menyimpan catatan.');
             }
         } catch (e) {
-            AppSwal.error('Sistem tidak dapat menyimpan data siswa.');
+            AppSwal.error('Gagal menyimpan catatan.');
+        } finally {
+            this.isSavingCatatan = false;
+        }
+    },
+
+    async hapusCatatan(id) {
+        const confirmation = await AppSwal.confirm('Hapus catatan?', 'Catatan ini akan dihapus permanen.', 'Ya, hapus');
+        if (!confirmation.isConfirmed) return;
+
+        this.isSavingCatatan = true;
+        try {
+            const response = await fetch(`${this.routes.tandaBase}/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken(),
+                    'Accept': 'application/json'
+                }
+            });
+            const res = await response.json();
+            if (res.status === 'success') {
+                window.location.reload();
+            } else {
+                AppSwal.error(res.message || 'Gagal menghapus catatan.');
+            }
+        } catch (e) {
+            AppSwal.error('Gagal menghapus catatan.');
+        } finally {
+            this.isSavingCatatan = false;
         }
     },
 

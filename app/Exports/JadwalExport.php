@@ -2,20 +2,24 @@
 
 namespace App\Exports;
 
+use App\Exports\Concerns\MemaksaTeksUntukAwalanPlus;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
-use Maatwebsite\Excel\Concerns\WithMultipleSheets;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class JadwalExport implements WithMultipleSheets
 {
     protected Collection $jadwals;
+
     protected ?string $search;
 
     public function __construct(Collection $jadwals, ?string $search = null)
@@ -33,9 +37,12 @@ class JadwalExport implements WithMultipleSheets
     }
 }
 
-class JadwalDetailSheet implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithTitle
+class JadwalDetailSheet implements FromCollection, ShouldAutoSize, WithCustomValueBinder, WithHeadings, WithMapping, WithStyles, WithTitle
 {
+    use MemaksaTeksUntukAwalanPlus;
+
     protected Collection $jadwals;
+
     protected ?string $search;
 
     public function __construct(Collection $jadwals, ?string $search)
@@ -77,8 +84,8 @@ class JadwalDetailSheet implements FromCollection, WithHeadings, WithMapping, Sh
         return [
             $jadwal->hari?->name ?? '-',
             $jadwal->sesi?->name ?? '-',
-            $jadwal->sesi?->start_time ? \Carbon\Carbon::parse($jadwal->sesi->start_time)->format('H:i') : '-',
-            $jadwal->sesi?->end_time ? \Carbon\Carbon::parse($jadwal->sesi->end_time)->format('H:i') : '-',
+            $jadwal->sesi?->start_time ? Carbon::parse($jadwal->sesi->start_time)->format('H:i') : '-',
+            $jadwal->sesi?->end_time ? Carbon::parse($jadwal->sesi->end_time)->format('H:i') : '-',
             $jadwal->mataPelajaran?->name ?? '-',
             $jadwal->guru?->name ?? '-',
             $jadwal->ruang?->name ?? '-',
@@ -101,7 +108,7 @@ class JadwalDetailSheet implements FromCollection, WithHeadings, WithMapping, Sh
     }
 }
 
-class JadwalCatatanSheet implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles, WithTitle
+class JadwalCatatanSheet implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     protected Collection $jadwals;
 
@@ -142,7 +149,7 @@ class JadwalCatatanSheet implements FromCollection, WithHeadings, WithMapping, S
             $row['siswa']->name,
             $row['siswa']->kelas ?? '-',
             $row['tanda']->keterangan,
-            $row['tanda']->created_at ? \Carbon\Carbon::parse($row['tanda']->created_at)->format('d/m/Y H:i') : '-',
+            $row['tanda']->created_at ? Carbon::parse($row['tanda']->created_at)->format('d/m/Y H:i') : '-',
         ];
     }
 

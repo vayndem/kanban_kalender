@@ -229,7 +229,8 @@
                         <td class="summary-card">
                             <div class="summary-label">Status Laporan</div>
                             <div class="summary-value">
-                                <span class="status-badge status-{{ $data['code'] }}">{{ strtoupper($statusName) }}</span>
+                                <span
+                                    class="status-badge status-{{ $data['code'] }}">{{ strtoupper($statusName) }}</span>
                             </div>
                         </td>
                         <td class="summary-card">
@@ -277,7 +278,8 @@
                                             <strong>{{ $noHp ?: '-' }}</strong>
                                             @if ($keluargaDiskon)
                                                 <div class="muted" style="margin-top:4px;">
-                                                    Diskon: Rp {{ number_format((int) $keluargaDiskon->diskon, 0, ',', '.') }}
+                                                    Diskon: Rp
+                                                    {{ number_format((int) $keluargaDiskon->diskon, 0, ',', '.') }}
                                                 </div>
                                             @endif
                                         </td>
@@ -290,7 +292,8 @@
                                         </div>
                                     </td>
                                     <td class="text-right">Rp {{ number_format((int) $item->harga, 0, ',', '.') }}</td>
-                                    <td class="text-right">Rp {{ number_format((int) $item->total_sudah_dibayar, 0, ',', '.') }}</td>
+                                    <td class="text-right">Rp
+                                        {{ number_format((int) $item->total_sudah_dibayar, 0, ',', '.') }}</td>
                                     <td>
                                         @if ((int) $item->status === 2)
                                             {{ $item->pembayaran_via === 1 ? 'Transfer Bank' : 'Cash / Tunai' }}

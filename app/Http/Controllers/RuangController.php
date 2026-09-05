@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Ruang;
+use Illuminate\Http\Request;
 
 class RuangController extends Controller
 {
@@ -79,6 +79,17 @@ class RuangController extends Controller
     {
         try {
             $ruang = Ruang::findOrFail($id);
+
+            $jumlahJadwal = $ruang->jadwals()->count();
+            if ($jumlahJadwal > 0) {
+                $msg = "Ruang {$ruang->name} tidak bisa dihapus: masih dipakai {$jumlahJadwal} baris jadwal. "
+                    . 'Hapus atau pindahkan jadwalnya dulu di tab Jadwal Pelajaran, baru ruang ini bisa dihapus.';
+
+                return $request->wantsJson()
+                    ? response()->json(['status' => 'error', 'message' => $msg], 422)
+                    : redirect()->back()->with('error', $msg);
+            }
+
             $ruang->delete();
 
             if ($request->wantsJson()) {

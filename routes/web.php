@@ -1,21 +1,23 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\JadwalController;
+use App\Http\Controllers\AkunGuruController;
+use App\Http\Controllers\ArsipController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\MapelController;
+use App\Http\Controllers\DiskonController;
 use App\Http\Controllers\GuruController;
+use App\Http\Controllers\GuruPortalController;
+use App\Http\Controllers\JadwalController;
+use App\Http\Controllers\MapelController;
+use App\Http\Controllers\ModulAjarController;
+use App\Http\Controllers\PaketController;
+use App\Http\Controllers\PembayaranController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RuangController;
 use App\Http\Controllers\SesiController;
 use App\Http\Controllers\SiswaController;
 use App\Http\Controllers\TandaController;
-use App\Http\Controllers\PembayaranController;
-use App\Http\Controllers\PaketController;
-use App\Http\Controllers\ArsipController;
-use App\Http\Controllers\DiskonController;
-use App\Http\Controllers\GuruPortalController;
-use App\Http\Controllers\MasterDataController;
+use App\Http\Controllers\WorkshopController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', [DashboardController::class, 'guestIndex'])->name('welcome');
 
@@ -27,6 +29,16 @@ Route::middleware(['auth', 'role:guru'])->group(function () {
     Route::get('/guru', [GuruPortalController::class, 'index'])->name('guru.jadwal');
 });
 
+Route::middleware(['auth', 'role:admin|guru'])->prefix('modul-ajar')->name('modulAjar.')->group(function () {
+    Route::get('/', [ModulAjarController::class, 'index'])->name('index');
+    Route::post('/header/{kodeKelas}', [ModulAjarController::class, 'simpanHeader'])->name('simpanHeader');
+    Route::post('/{modulAjar}/detail', [ModulAjarController::class, 'simpanDetail'])->name('simpanDetail');
+    Route::put('/detail/{detail}', [ModulAjarController::class, 'updateDetail'])->name('updateDetail');
+    Route::delete('/detail/{detail}', [ModulAjarController::class, 'hapusDetail'])->name('hapusDetail');
+    Route::post('/detail/{detail}/persiapan', [ModulAjarController::class, 'mulaiPersiapan'])->name('mulaiPersiapan');
+    Route::post('/detail/{detail}/nilai', [ModulAjarController::class, 'simpanNilai'])->name('simpanNilai');
+});
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -34,9 +46,11 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('/admin/master-data', [MasterDataController::class, 'index'])->name('admin.masterData.index');
-    Route::post('/admin/master-data/guru/{id}/akun', [MasterDataController::class, 'buatAkunGuru'])->name('admin.masterData.buatAkunGuru');
-    Route::put('/admin/master-data/guru/{id}/email', [MasterDataController::class, 'ubahEmailGuru'])->name('admin.masterData.ubahEmailGuru');
+    Route::get('/admin/akun-guru', [AkunGuruController::class, 'index'])->name('admin.akunGuru.index');
+    Route::post('/admin/akun-guru/guru/{id}/akun', [AkunGuruController::class, 'buatAkunGuru'])->name('admin.akunGuru.buatAkunGuru');
+    Route::put('/admin/akun-guru/guru/{id}/email', [AkunGuruController::class, 'ubahEmailGuru'])->name('admin.akunGuru.ubahEmailGuru');
+
+    Route::get('/admin/workshop', [WorkshopController::class, 'index'])->name('admin.workshop.index');
 
     // --- Jadwal Transaksi / Operasional ---
     Route::post('/admin/jadwal/update-posisi', [JadwalController::class, 'updatePosisi'])->name('admin.jadwal.updatePosisi');
@@ -46,7 +60,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/jadwal/generate-text', [JadwalController::class, 'generateTextJadwal'])->name('admin.jadwal.generateText');
     Route::get('/admin/jadwal/download-stash', [JadwalController::class, 'downloadStash'])->name('admin.jadwal.downloadStash');
     Route::post('/admin/jadwal/upload-stash', [JadwalController::class, 'uploadStash'])->name('admin.jadwal.uploadStash');
-
 
     // 1. Mata Pelajaran
     Route::post('/admin/mapel', [MapelController::class, 'store'])->name('admin.mapel.store');
@@ -70,6 +83,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     // 5. Siswa
     Route::get('/admin/siswa/export-excel', [SiswaController::class, 'exportExcel'])->name('admin.siswa.exportExcel');
+    Route::get('/admin/siswa/import-template', [SiswaController::class, 'downloadImportTemplate'])->name('admin.siswa.importTemplate');
+    Route::post('/admin/siswa/import', [SiswaController::class, 'import'])->name('admin.siswa.import');
     Route::get('/admin/siswa/{siswa}/jadwal', [SiswaController::class, 'jadwal'])->name('admin.siswa.jadwal');
     Route::post('/admin/siswa', [SiswaController::class, 'store'])->name('admin.siswa.store');
     Route::put('/admin/siswa/{id}', [SiswaController::class, 'update'])->name('admin.siswa.update');
@@ -112,4 +127,4 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 Route::get('/jadwal-kalender', [JadwalController::class, 'tampilKalender'])->name('jadwal.kalender');
 Route::get('/jadwal-kalender/export', [JadwalController::class, 'exportPdf'])->name('jadwal.kalender.export');
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

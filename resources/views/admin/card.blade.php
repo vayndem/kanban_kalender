@@ -9,8 +9,9 @@
     ruangData: @js($allRuangs),
     routes: {
         siswaBase: @js(url('admin/siswa')),
-        siswaStore: @js(route('admin.siswa.store')),
         arsipBase: @js(url('admin/arsip')),
+        tandaBase: @js(url('admin/tanda')),
+        tandaStore: @js(route('admin.tanda.store')),
     },
 })">
 
@@ -56,10 +57,10 @@
                     <i class="fas fa-box-archive mr-2"></i> Arsipkan Terpilih (<span
                         x-text="selectedSiswas.length"></span>)
                 </button>
-                <button x-show="viewMode === 'aktif'" @click="openTambah()"
+                <a href="{{ route('admin.workshop.index') }}" x-show="viewMode === 'aktif'"
                     class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
-                    <i class="fas fa-plus mr-2"></i> Tambah
-                </button>
+                    <i class="fas fa-plus mr-2"></i> Tambah di Workshop
+                </a>
             </div>
         </div>
     </div>
@@ -115,26 +116,30 @@
                         :class="openSesi ? 'rotate-180' : ''"></i>
                 </button>
                 <template x-if="openSesi">
-                <div @click.outside="openSesi = false"
-                    class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                    <div class="sticky top-0 z-10 border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
-                        <input type="search" x-model="searchSesi" placeholder="Cari sesi atau jam..." class="w-full rounded-lg border px-3 py-2 text-xs">
+                    <div @click.outside="openSesi = false"
+                        class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                        <div
+                            class="sticky top-0 z-10 border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
+                            <input type="search" x-model="searchSesi" placeholder="Cari sesi atau jam..."
+                                class="w-full rounded-lg border px-3 py-2 text-xs">
+                        </div>
+                        <template
+                            x-for="s in allSesis.filter(item => ((item.name || item.nama_sesi || '') + ' ' + (item.start_time || '') + ' ' + (item.end_time || '')).toLowerCase().includes(searchSesi.toLowerCase()))"
+                            :key="s.id">
+                            <label
+                                class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                <input type="checkbox" :value="s.id" x-model="filterSesis"
+                                    class="rounded text-blue-600 focus:ring-blue-500">
+                                <div class="min-w-0">
+                                    <p class="text-sm text-gray-900 dark:text-white font-medium"
+                                        x-text="s.name || s.nama_sesi"></p>
+                                    <p class="text-[10px] text-gray-400"
+                                        x-text="s.start_time ? s.start_time.substring(0,5) + ' - ' + s.end_time.substring(0,5) : ''">
+                                    </p>
+                                </div>
+                            </label>
+                        </template>
                     </div>
-                    <template x-for="s in allSesis.filter(item => ((item.name || item.nama_sesi || '') + ' ' + (item.start_time || '') + ' ' + (item.end_time || '')).toLowerCase().includes(searchSesi.toLowerCase()))" :key="s.id">
-                        <label
-                            class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
-                            <input type="checkbox" :value="s.id" x-model="filterSesis"
-                                class="rounded text-blue-600 focus:ring-blue-500">
-                            <div class="min-w-0">
-                                <p class="text-sm text-gray-900 dark:text-white font-medium"
-                                    x-text="s.name || s.nama_sesi"></p>
-                                <p class="text-[10px] text-gray-400"
-                                    x-text="s.start_time ? s.start_time.substring(0,5) + ' - ' + s.end_time.substring(0,5) : ''">
-                                </p>
-                            </div>
-                        </label>
-                    </template>
-                </div>
                 </template>
             </div>
 
@@ -148,20 +153,24 @@
                         :class="openGuru ? 'rotate-180' : ''"></i>
                 </button>
                 <template x-if="openGuru">
-                <div @click.outside="openGuru = false"
-                    class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                    <div class="sticky top-0 z-10 border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
-                        <input type="search" x-model="searchGuru" placeholder="Cari nama guru..." class="w-full rounded-lg border px-3 py-2 text-xs">
+                    <div @click.outside="openGuru = false"
+                        class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                        <div
+                            class="sticky top-0 z-10 border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
+                            <input type="search" x-model="searchGuru" placeholder="Cari nama guru..."
+                                class="w-full rounded-lg border px-3 py-2 text-xs">
+                        </div>
+                        <template
+                            x-for="g in guruList.filter(item => item.name.toLowerCase().includes(searchGuru.toLowerCase()))"
+                            :key="g.id">
+                            <label
+                                class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                <input type="checkbox" :value="g.id" x-model="filterGurus"
+                                    class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm text-gray-900 dark:text-white" x-text="g.name"></span>
+                            </label>
+                        </template>
                     </div>
-                    <template x-for="g in guruList.filter(item => item.name.toLowerCase().includes(searchGuru.toLowerCase()))" :key="g.id">
-                        <label
-                            class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
-                            <input type="checkbox" :value="g.id" x-model="filterGurus"
-                                class="rounded text-blue-600 focus:ring-blue-500">
-                            <span class="text-sm text-gray-900 dark:text-white" x-text="g.name"></span>
-                        </label>
-                    </template>
-                </div>
                 </template>
             </div>
 
@@ -176,20 +185,24 @@
                         :class="openRuang ? 'rotate-180' : ''"></i>
                 </button>
                 <template x-if="openRuang">
-                <div @click.outside="openRuang = false"
-                    class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                    <div class="sticky top-0 z-10 border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
-                        <input type="search" x-model="searchRuang" placeholder="Cari ruang..." class="w-full rounded-lg border px-3 py-2 text-xs">
+                    <div @click.outside="openRuang = false"
+                        class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                        <div
+                            class="sticky top-0 z-10 border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
+                            <input type="search" x-model="searchRuang" placeholder="Cari ruang..."
+                                class="w-full rounded-lg border px-3 py-2 text-xs">
+                        </div>
+                        <template
+                            x-for="r in ruangList.filter(item => item.name.toLowerCase().includes(searchRuang.toLowerCase()))"
+                            :key="r.id">
+                            <label
+                                class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                <input type="checkbox" :value="r.id" x-model="filterRuangs"
+                                    class="rounded text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm text-gray-900 dark:text-white" x-text="r.name"></span>
+                            </label>
+                        </template>
                     </div>
-                    <template x-for="r in ruangList.filter(item => item.name.toLowerCase().includes(searchRuang.toLowerCase()))" :key="r.id">
-                        <label
-                            class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
-                            <input type="checkbox" :value="r.id" x-model="filterRuangs"
-                                class="rounded text-blue-600 focus:ring-blue-500">
-                            <span class="text-sm text-gray-900 dark:text-white" x-text="r.name"></span>
-                        </label>
-                    </template>
-                </div>
                 </template>
             </div>
         </div>
@@ -201,8 +214,7 @@
                     class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 w-4 h-4">
                 Pilih Semua yang Tampil
             </label>
-            <button type="button" @click="exportExcel()"
-                class="btn-export text-sm">
+            <button type="button" @click="exportExcel()" class="btn-export text-sm">
                 <i class="fas fa-file-excel"></i> Export Excel <span x-show="hasActiveFilter"
                     class="text-[10px] bg-red-500 px-1.5 py-0.5 rounded"
                     x-text="'(' + filteredSiswa.length + ')'"></span>
@@ -319,14 +331,14 @@
                                 <div class="flex justify-center gap-1">
                                     <template x-if="viewMode === 'aktif'">
                                         <div class="flex gap-1">
-                                            <button type="button" @click.stop="openEdit(siswa)"
-                                                class="icon-action-primary"
-                                                title="Edit">
-                                                <i class="fas fa-pen-to-square"></i>
+                                            <button type="button" @click.stop="openDetail(siswa)"
+                                                class="icon-action-primary relative" title="Detail & Catatan">
+                                                <i class="fas fa-circle-info"></i>
+                                                <span x-show="siswa.tandas && siswa.tandas.length > 0"
+                                                    class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 border border-white dark:border-gray-800"></span>
                                             </button>
                                             <button type="button" @click.stop="hapusSiswa(siswa.id)"
-                                                class="icon-action-warning"
-                                                title="Arsipkan">
+                                                class="icon-action-warning" title="Arsipkan">
                                                 <i class="fas fa-box-archive"></i>
                                             </button>
                                         </div>
@@ -334,13 +346,11 @@
                                     <template x-if="viewMode === 'arsip'">
                                         <div class="flex gap-1">
                                             <button type="button" @click.stop="restoreSiswa(siswa.id)"
-                                                class="icon-action-success"
-                                                title="Pulihkan">
+                                                class="icon-action-success" title="Pulihkan">
                                                 <i class="fas fa-rotate-left"></i>
                                             </button>
                                             <button type="button" @click.stop="hapusPermanen(siswa.id)"
-                                                class="icon-action-danger"
-                                                title="Hapus Permanen">
+                                                class="icon-action-danger" title="Hapus Permanen">
                                                 <i class="fas fa-trash-can"></i>
                                             </button>
                                         </div>
@@ -362,74 +372,93 @@
         </div>
     </div>
 
-    <template x-if="showSiswaModal">
-    <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition>
-        <div @click="showSiswaModal = false" class="absolute inset-0"></div>
+    <template x-if="showDetailModal">
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            x-transition>
+            <div @click="showDetailModal = false" class="absolute inset-0"></div>
 
-        <form @submit.prevent="simpanSiswa"
-            class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full overflow-hidden relative border dark:border-gray-700 transition-all duration-300 max-h-[90vh] flex flex-col"
-            :class="{ 'max-w-3xl': siswaForm.id, 'max-w-md': !siswaForm.id }" @click.stop>
-            <div
-                class="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900 shrink-0">
-                <h3 class="font-bold text-gray-900 dark:text-white text-base sm:text-lg"
-                    x-text="siswaForm.id ? 'Edit Data Siswa' : 'Tambah Siswa Baru'"></h3>
-                <button type="button" @click="showSiswaModal = false"
-                    class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                    <i class="fas fa-times fa-lg"></i>
-                </button>
-            </div>
-
-            <div class="overflow-y-auto flex-1">
-                <div class="grid grid-cols-1" :class="{ 'md:grid-cols-2': siswaForm.id }">
-                    <div class="p-4 sm:p-6 space-y-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="col-span-1 sm:col-span-2">
-                                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama
-                                    Lengkap</label>
-                                <input type="text" x-model="siswaForm.name" required
-                                    class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            </div>
-                            <div>
-                                <label
-                                    class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Panggilan</label>
-                                <input type="text" x-model="siswaForm.panggilan"
-                                    class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            </div>
-                            <div>
-                                <label
-                                    class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Kelas</label>
-                                <input type="text" x-model="siswaForm.kelas"
-                                    class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Nomor
-                                HP</label>
-                            <input type="text" x-model="siswaForm.no_hp" @input="formatPhone"
-                                placeholder="+62812..."
-                                class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Paket
-                                Pembayaran</label>
-                            <select x-model="siswaForm.paket_pembayaran"
-                                class="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                <option value="">-- Pilih Paket --</option>
-                                <template x-for="paket in pakets" :key="paket.id">
-                                    <option :value="String(paket.id)" x-text="paket.nama_paket"></option>
-                                </template>
-                            </select>
-                        </div>
-                        <div
-                            class="pt-4 flex justify-end gap-2 border-t border-gray-100 dark:border-gray-700 md:hidden">
-                            <button type="button" @click="showSiswaModal = false"
-                                class="btn-neutral text-sm">Batal</button>
-                            <button type="submit"
-                                class="btn-primary text-sm">Simpan</button>
-                        </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden relative border dark:border-gray-700 transition-all duration-300 max-h-[90vh] flex flex-col"
+                @click.stop>
+                <div
+                    class="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900 shrink-0">
+                    <div>
+                        <h3 class="font-bold text-gray-900 dark:text-white text-base sm:text-lg"
+                            x-text="detailSiswa.name"></h3>
+                        <p class="text-[11px] text-gray-400 dark:text-gray-500">Profil siswa — data pokok diubah lewat
+                            Workshop.</p>
                     </div>
+                    <button type="button" @click="showDetailModal = false"
+                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <i class="fas fa-times fa-lg"></i>
+                    </button>
+                </div>
 
-                    <template x-if="siswaForm.id">
+                <div class="overflow-y-auto flex-1">
+                    <div class="grid grid-cols-1 md:grid-cols-2">
+                        <div class="p-4 sm:p-6 space-y-4">
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Panggilan
+                                    </p>
+                                    <p class="font-semibold text-gray-800 dark:text-gray-100"
+                                        x-text="detailSiswa.panggilan || '-'"></p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Kelas</p>
+                                    <p class="font-semibold text-gray-800 dark:text-gray-100"
+                                        x-text="detailSiswa.kelas || '-'"></p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Nomor HP
+                                    </p>
+                                    <p class="font-semibold text-gray-800 dark:text-gray-100"
+                                        x-text="detailSiswa.no_hp || '-'"></p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Paket</p>
+                                    <p class="font-semibold text-gray-800 dark:text-gray-100"
+                                        x-text="getPaketName(detailSiswa.paket_pembayaran)"></p>
+                                </div>
+                            </div>
+                            <a :href="`{{ route('admin.workshop.index') }}?edit_siswa=${detailSiswa.id}`"
+                                class="btn-neutral text-xs w-full justify-center">
+                                <i class="fas fa-pen-to-square"></i> Ubah Data Pokok di Workshop
+                            </a>
+
+                            <div class="pt-3 border-t border-gray-100 dark:border-gray-700">
+                                <h4
+                                    class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2 mb-3">
+                                    <i class="fas fa-note-sticky text-amber-500"></i> Catatan
+                                </h4>
+                                <form @submit.prevent="simpanCatatan" class="flex gap-2 mb-3">
+                                    <input type="text" x-model="catatanForm.keterangan" required
+                                        placeholder="Tulis catatan baru..."
+                                        class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                    <button type="submit" class="btn-primary text-xs shrink-0"
+                                        :disabled="isSavingCatatan">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </form>
+                                <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                                    <template x-for="t in detailSiswa.tandas || []" :key="t.id">
+                                        <div
+                                            class="p-2.5 bg-amber-50/60 dark:bg-amber-950/20 rounded-lg border border-amber-100 dark:border-amber-900/30 flex items-start justify-between gap-2 text-xs">
+                                            <span class="text-gray-700 dark:text-gray-200"
+                                                x-text="t.keterangan"></span>
+                                            <button type="button" @click="hapusCatatan(t.id)" :disabled="isSavingCatatan"
+                                                class="text-red-400 hover:text-red-600 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed">
+                                                <i class="fas fa-trash-can"></i>
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <template x-if="!detailSiswa.tandas || detailSiswa.tandas.length === 0">
+                                        <p class="text-xs italic text-gray-400 py-2">Belum ada catatan untuk siswa ini.
+                                        </p>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
                         <div
                             class="p-4 sm:p-6 bg-gray-50/50 dark:bg-gray-800/40 space-y-4 border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-700">
                             <h4
@@ -443,7 +472,7 @@
                                         <span>Memuat jadwal...</span>
                                     </div>
                                 </template>
-                                <template x-for="j in getSiswaJadwalList(siswaForm.id)" :key="j.id">
+                                <template x-for="j in getSiswaJadwalList(detailSiswa.id)" :key="j.id">
                                     <div
                                         class="p-3 bg-white dark:bg-gray-700 rounded-xl border border-gray-100 dark:border-gray-600 shadow-sm flex items-start gap-3">
                                         <div
@@ -468,7 +497,7 @@
                                         </div>
                                     </div>
                                 </template>
-                                <template x-if="!isLoadingJadwal && getSiswaJadwalList(siswaForm.id).length === 0">
+                                <template x-if="!isLoadingJadwal && getSiswaJadwalList(detailSiswa.id).length === 0">
                                     <div
                                         class="text-center py-8 border border-dashed border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700/30">
                                         <i
@@ -479,18 +508,15 @@
                                 </template>
                             </div>
                         </div>
-                    </template>
+                    </div>
+                </div>
+
+                <div
+                    class="p-4 border-t dark:border-gray-700 justify-end gap-2 bg-gray-50 dark:bg-gray-900 shrink-0 flex">
+                    <button type="button" @click="showDetailModal = false"
+                        class="btn-neutral text-sm">Tutup</button>
                 </div>
             </div>
-
-            <div
-                class="p-4 border-t dark:border-gray-700 justify-end gap-2 bg-gray-50 dark:bg-gray-900 shrink-0 hidden md:flex">
-                <button type="button" @click="showSiswaModal = false"
-                    class="btn-neutral text-sm">Batal</button>
-                <button type="submit"
-                    class="btn-primary text-sm">Simpan</button>
-            </div>
-        </form>
-    </div>
+        </div>
     </template>
 </div>

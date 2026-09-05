@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Exceptions\BatchSudahDijalankanException;
 use App\Exports\PembayaranExport;
+use App\Models\Diskon;
 use App\Models\Pembayaran;
 use App\Models\PembayaranDetail;
 use App\Models\Siswa;
-use App\Models\Diskon;
 use App\Services\PaymentBatchService;
-use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\ValidationException;
@@ -26,9 +26,7 @@ class PembayaranController extends Controller
      */
     private const JEDA_ANTI_GANDA = 180;
 
-    public function __construct(private readonly PaymentBatchService $paymentBatchService)
-    {
-    }
+    public function __construct(private readonly PaymentBatchService $paymentBatchService) {}
 
     public function store(Request $request)
     {
@@ -114,7 +112,7 @@ class PembayaranController extends Controller
     {
         $pembayaran = Pembayaran::find($id);
 
-        if (!$pembayaran) {
+        if (! $pembayaran) {
             return $this->handleNotFound($request, "Pembayaran (ID: $id)");
         }
 
@@ -126,6 +124,28 @@ class PembayaranController extends Controller
         ]);
 
         try {
+            // Invoice yang sudah punya riwayat setoran tidak boleh dipindah
+            // kepemilikannya -- setoran itu tetap menempel di ID invoice ini,
+            // jadi memindah id_siswa berarti riwayat uang siswa lama tercatat
+            // seolah milik siswa baru.
+            if ((int) $validated['id_siswa'] !== (int) $pembayaran->id_siswa && $pembayaran->details()->exists()) {
+                throw ValidationException::withMessages([
+                    'id_siswa' => 'Tagihan ini sudah punya riwayat setoran, jadi tidak bisa dipindah ke siswa lain. '
+                        . 'Buat tagihan baru untuk siswa yang benar, dan biarkan tagihan ini seperti semula.',
+                ]);
+            }
+
+            // Harga tidak boleh diturunkan sampai di bawah yang sudah dibayar --
+            // itu membuat sisa kewajiban jadi negatif dan status "lunas" jadi
+            // tidak jujur terhadap uang yang sebenarnya diterima.
+            if ($validated['harga'] < (int) $pembayaran->total_sudah_dibayar) {
+                throw ValidationException::withMessages([
+                    'harga' => 'Nominal tagihan tidak boleh diturunkan sampai di bawah Rp '
+                        . number_format((int) $pembayaran->total_sudah_dibayar, 0, ',', '.')
+                        . ' yang sudah dibayarkan.',
+                ]);
+            }
+
             $siswa = Siswa::find($request->id_siswa);
             $validated['no_hp'] = $siswa->no_hp;
 
@@ -136,6 +156,8 @@ class PembayaranController extends Controller
             }
 
             return redirect()->back()->with('success', 'Data pembayaran diperbarui.');
+        } catch (ValidationException $e) {
+            return $this->handleValidationException($request, $e);
         } catch (\Exception $e) {
             return $this->handleException($request, 'Gagal memperbarui', $e);
         }
@@ -146,8 +168,8 @@ class PembayaranController extends Controller
         try {
             $pembayaran = Pembayaran::find($id);
 
-            if (!$pembayaran) {
-                return $this->handleNotFound($request, "Pembayaran");
+            if (! $pembayaran) {
+                return $this->handleNotFound($request, 'Pembayaran');
             }
 
             $pembayaran->details()->delete();
@@ -188,8 +210,8 @@ class PembayaranController extends Controller
     {
         try {
             $siswa = Siswa::find($id_siswa);
-            if (!$siswa) {
-                return $this->handleNotFound($request, "Siswa");
+            if (! $siswa) {
+                return $this->handleNotFound($request, 'Siswa');
             }
 
             Pembayaran::where('no_hp', $siswa->no_hp)
@@ -212,13 +234,13 @@ class PembayaranController extends Controller
             'nominal' => 'required|integer|min:1',
             'keterangan_detail' => 'nullable|string|max:255',
             'pembayaran_via' => 'required|integer|in:0,1',
-            'tanggal_pembayaran' => 'required|date'
+            'tanggal_pembayaran' => 'required|date',
         ]);
 
         try {
             $siswa = Siswa::find($id_siswa);
-            if (!$siswa) {
-                return $this->handleNotFound($request, "Siswa");
+            if (! $siswa) {
+                return $this->handleNotFound($request, 'Siswa');
             }
 
             DB::transaction(function () use ($request, $siswa) {
@@ -235,7 +257,7 @@ class PembayaranController extends Controller
                 $this->tolakBilaPencatatanGanda($request, $siswa);
 
                 $remaining = (int) $request->nominal;
-                $totalOutstanding = $pembayarans->sum(fn ($item) => max(0, (int) $item->harga - (int) $item->total_sudah_dibayar));
+                $totalOutstanding = $pembayarans->sum(fn($item) => max(0, (int) $item->harga - (int) $item->total_sudah_dibayar));
                 if ($remaining > $totalOutstanding) {
                     throw ValidationException::withMessages([
                         'nominal' => 'Nominal melebihi sisa tagihan sebesar Rp ' . number_format($totalOutstanding, 0, ',', '.') . '.',
@@ -243,11 +265,15 @@ class PembayaranController extends Controller
                 }
 
                 foreach ($pembayarans as $pembayaran) {
-                    if ($remaining <= 0) break;
+                    if ($remaining <= 0) {
+                        break;
+                    }
 
                     $outstanding = max(0, (int) $pembayaran->harga - (int) $pembayaran->total_sudah_dibayar);
                     $allocated = min($remaining, $outstanding);
-                    if ($allocated === 0) continue;
+                    if ($allocated === 0) {
+                        continue;
+                    }
 
                     $detail = PembayaranDetail::create([
                         'id_pembayaran' => $pembayaran->id,
@@ -284,8 +310,8 @@ class PembayaranController extends Controller
     {
         try {
             $siswa = Siswa::find($id_siswa);
-            if (!$siswa) {
-                return $this->handleNotFound($request, "Siswa");
+            if (! $siswa) {
+                return $this->handleNotFound($request, 'Siswa');
             }
 
             $updatedCount = $this->paymentBatchService->settleActive($siswa->no_hp);
@@ -328,8 +354,8 @@ class PembayaranController extends Controller
             ->where('status', 2);
 
         $selectedIds = collect(explode(',', (string) request('ids')))
-            ->filter(fn ($id) => ctype_digit(trim($id)))
-            ->map(fn ($id) => (int) $id)
+            ->filter(fn($id) => ctype_digit(trim($id)))
+            ->map(fn($id) => (int) $id)
             ->values();
 
         if ($selectedIds->isNotEmpty()) {
@@ -363,7 +389,7 @@ class PembayaranController extends Controller
         $logoPath = storage_path('app/public/Logo.png');
         $logoDataUri = null;
 
-        if (!is_file($logoPath) || !is_readable($logoPath)) {
+        if (! is_file($logoPath) || ! is_readable($logoPath)) {
             $logoPath = storage_path('app/Logo.png');
         }
 
@@ -400,8 +426,8 @@ class PembayaranController extends Controller
     public function detailKeluarga(Request $request, $no_hp)
     {
         $selectedIds = collect(explode(',', (string) $request->query('ids')))
-            ->filter(fn ($id) => ctype_digit(trim($id)))
-            ->map(fn ($id) => (int) $id)
+            ->filter(fn($id) => ctype_digit(trim($id)))
+            ->map(fn($id) => (int) $id)
             ->values();
 
         $query = Pembayaran::select([
@@ -453,7 +479,7 @@ class PembayaranController extends Controller
         })->values();
 
         $paymentDetails = $pembayarans
-            ->flatMap(fn ($item) => $item->details->map(function ($detail) {
+            ->flatMap(fn($item) => $item->details->map(function ($detail) {
                 return [
                     'id' => $detail->id,
                     'id_pembayaran' => $detail->id_pembayaran,
@@ -479,10 +505,10 @@ class PembayaranController extends Controller
         $totalHarga = (int) $pembayarans->sum('harga');
         $totalSudahDibayar = (int) $pembayarans->sum('total_sudah_dibayar');
         $totalAkhir = max(0, $totalHarga - $totalNominalDiskon);
-        $statuses = $pembayarans->pluck('status')->map(fn ($status) => (int) $status);
-        $status = $statuses->every(fn ($value) => $value === 2)
+        $statuses = $pembayarans->pluck('status')->map(fn($status) => (int) $status);
+        $status = $statuses->every(fn($value) => $value === 2)
             ? 2
-            : ($statuses->contains(fn ($value) => in_array($value, [1, 2], true)) ? 1 : 0);
+            : ($statuses->contains(fn($value) => in_array($value, [1, 2], true)) ? 1 : 0);
 
         return response()->json([
             'status' => 'success',
@@ -507,8 +533,7 @@ class PembayaranController extends Controller
         ?Diskon $diskonUniversal,
         int $nominalDiskon,
         ?string $logoDataUri
-    )
-    {
+    ) {
         $pdf = Pdf::loadView('pdf.struk', [
             'pembayarans' => $pembayarans,
             'no_hp' => $no_hp,
@@ -532,7 +557,7 @@ class PembayaranController extends Controller
         $fontPath = $baseTmpPath . DIRECTORY_SEPARATOR . 'fonts';
 
         foreach ([$baseTmpPath, $fontPath] as $path) {
-            if (!File::exists($path)) {
+            if (! File::exists($path)) {
                 File::makeDirectory($path, 0755, true, true);
             }
         }
@@ -565,7 +590,7 @@ class PembayaranController extends Controller
         $tanggal = Carbon::parse($request->tanggal_pembayaran)->toDateString();
 
         $kembar = PembayaranDetail::query()
-            ->whereHas('pembayaran', fn ($q) => $q->where('no_hp', $siswa->no_hp))
+            ->whereHas('pembayaran', fn($q) => $q->where('no_hp', $siswa->no_hp))
             ->where('pembayaran', $nominal)
             ->where('keterangan', $keterangan)
             ->whereDate('created_at', $tanggal)
@@ -589,6 +614,7 @@ class PembayaranController extends Controller
     private function handleNotFound($request, $item)
     {
         $msg = "Maaf, data $item tidak ditemukan. Silakan segarkan halaman.";
+
         return $request->wantsJson()
             ? response()->json(['status' => 'error', 'message' => $msg], 404)
             : redirect()->back()->with('error', $msg);
@@ -600,6 +626,7 @@ class PembayaranController extends Controller
         if ($request->wantsJson()) {
             return response()->json(['status' => 'error', 'message' => $msg], 500);
         }
+
         return redirect()->back()->withInput()->with('error', $msg);
     }
 
@@ -628,7 +655,7 @@ class PembayaranController extends Controller
         $statuses = [
             0 => 'Belum Bayar',
             1 => 'Tertagih',
-            2 => 'Lunas'
+            2 => 'Lunas',
         ];
 
         $requestedStatus = $request->filled('status') && $request->status !== 'all'

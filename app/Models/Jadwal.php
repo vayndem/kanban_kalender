@@ -19,41 +19,41 @@ class Jadwal extends Model
         'guru_id',
         'ruang_id',
         'siswa_id',
+        'kode_kelas',
     ];
-
 
     public function siswa(): BelongsTo
     {
         return $this->belongsTo(Siswa::class, 'siswa_id', 'id');
     }
 
-
     public function mataPelajaran(): BelongsTo
     {
         return $this->belongsTo(MataPelajaran::class, 'mata_pelajaran_id', 'id');
     }
-
 
     public function guru(): BelongsTo
     {
         return $this->belongsTo(Guru::class, 'guru_id', 'id');
     }
 
-
     public function hari(): BelongsTo
     {
         return $this->belongsTo(Hari::class, 'hari_id', 'id');
     }
-
 
     public function ruang(): BelongsTo
     {
         return $this->belongsTo(Ruang::class, 'ruang_id', 'id');
     }
 
-
     public function sesi(): BelongsTo
     {
         return $this->belongsTo(Sesi::class, 'sesi_id', 'id');
+    }
+
+    public function modulAjar(): BelongsTo
+    {
+        return $this->belongsTo(ModulAjar::class, 'kode_kelas', 'kode_kelas');
     }
 }

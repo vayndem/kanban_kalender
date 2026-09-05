@@ -31,21 +31,3 @@ export function buildOccupancyIndex(occupancy) {
     }, {});
 }
 
-export function buildFormSources({ subjects, teachers, rooms, sessions, students }) {
-    return {
-        mapel: subjects,
-        guru: teachers,
-        ruang: rooms,
-        sesi: sessions,
-        siswa: students.map(student => ({
-            ...student,
-            name: `${student.panggilan || student.name} - ${student.kelas || '-'}`,
-        })),
-        tanda: students.flatMap(student => (student.tandas || []).map(note => ({
-            id: note.id,
-            name: `${student.panggilan || student.name} - ${student.kelas || '-'} : ${note.keterangan}`,
-            siswa_id: student.id,
-            keterangan: note.keterangan,
-        }))),
-    };
-}

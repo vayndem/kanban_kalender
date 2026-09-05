@@ -135,11 +135,15 @@
     <table>
         @php
             $allDetails = $pembayarans
-                ->flatMap(fn($p) => $p->details->map(fn($detail) => [
-                    'tanggal' => optional($detail->created_at)->translatedFormat('d M Y'),
-                    'keterangan' => $detail->keterangan ?: 'Tanpa keterangan',
-                    'nominal' => (int) $detail->pembayaran,
-                ]))
+                ->flatMap(
+                    fn($p) => $p->details->map(
+                        fn($detail) => [
+                            'tanggal' => optional($detail->created_at)->translatedFormat('d M Y'),
+                            'keterangan' => $detail->keterangan ?: 'Tanpa keterangan',
+                            'nominal' => (int) $detail->pembayaran,
+                        ],
+                    ),
+                )
                 ->values();
         @endphp
         @forelse ($allDetails as $detail)
