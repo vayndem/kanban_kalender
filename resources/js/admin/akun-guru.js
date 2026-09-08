@@ -1,11 +1,12 @@
 import { kirim } from '../core/http';
+import { isDarkMode } from '../core/theme';
 
 export const akunGuruHandler = ({ routes }) => ({
     routes,
     isLoading: false,
 
     async buatAkun(id, nama, email) {
-        const isDark = document.documentElement.classList.contains('dark');
+        const isDark = isDarkMode();
 
         const { value: form } = await Swal.fire({
             title: `Buat akun login untuk ${nama}`,
@@ -77,8 +78,8 @@ export const akunGuruHandler = ({ routes }) => ({
             cancelButtonText: 'Batal',
             confirmButtonColor: '#2563eb',
             cancelButtonColor: '#4b5563',
-            background: document.documentElement.classList.contains('dark') ? '#111827' : '#fff',
-            color: document.documentElement.classList.contains('dark') ? '#fff' : '#000',
+            background: isDarkMode() ? '#111827' : '#fff',
+            color: isDarkMode() ? '#fff' : '#000',
         });
 
         if (baru === undefined) return;

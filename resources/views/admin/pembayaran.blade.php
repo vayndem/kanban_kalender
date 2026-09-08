@@ -52,18 +52,18 @@
             <button @click="exportExcel()" class="btn-export flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-file-excel"></i> <span class="hidden sm:inline">Export</span> Excel
             </button>
-            <button @click="openDiskonManagerModal()" class="btn-accent flex-1 lg:flex-none text-xs md:text-sm">
+            <button @click="openDiskonManagerModal()" class="btn btn-accent flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-tags"></i> Kelola Diskon
             </button>
             <button @click="prosesPenagihanMassal()" :disabled="isLoading"
-                class="disabled:opacity-50 disabled:cursor-not-allowed btn-warning flex-1 lg:flex-none text-xs md:text-sm">
+                class="disabled:opacity-50 disabled:cursor-not-allowed btn btn-warning flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-file-invoice-dollar"></i>
                 <span>Penagihan Massal</span>
             </button>
-            <button @click="openPaketModal()" class="btn-accent flex-1 lg:flex-none text-xs md:text-sm">
+            <button @click="openPaketModal()" class="btn btn-accent flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-box"></i> <span class="hidden sm:inline">Kelola</span> Paket
             </button>
-            <button @click="openAddPembayaran()" class="btn-primary flex-1 lg:flex-none text-xs md:text-sm">
+            <button @click="openAddPembayaran()" class="btn btn-primary flex-1 lg:flex-none text-xs md:text-sm">
                 <i class="fas fa-plus"></i> Tagihan
             </button>
             <button @click="lunaskanSemua()" :disabled="isLoading"
@@ -355,14 +355,14 @@
                                     Detail</button>
                                 <template x-if="item.status == 0">
                                     <button @click="chatWhatsApp(item)" :disabled="isLoading"
-                                        class="disabled:opacity-50 disabled:cursor-not-allowed btn-success px-3 py-1.5 text-[11px] rounded-md">
+                                        class="disabled:opacity-50 disabled:cursor-not-allowed btn btn-success px-3 py-1.5 text-[11px] rounded-md">
                                         <i class="fab fa-whatsapp"></i> Kirim WA
                                     </button>
                                 </template>
                                 <template x-if="item.status == 0 || item.status == 1">
                                     <div class="inline-flex gap-1">
                                         <button @click="prosesBayarSiswa(item)" :disabled="isLoading"
-                                            class="disabled:opacity-50 disabled:cursor-not-allowed btn-primary px-3 py-1.5 text-[11px] rounded-md">
+                                            class="disabled:opacity-50 disabled:cursor-not-allowed btn btn-primary px-3 py-1.5 text-[11px] rounded-md">
                                             <i class="fas fa-hand-holding-usd"></i> Catat Bayar
                                         </button>
                                         <button @click="ubahKeLunas(item)" :disabled="isLoading"
@@ -373,7 +373,7 @@
                                 </template>
                                 <template x-if="item.status == 2">
                                     <a :href="buildStrukUrl(item)" target="_blank"
-                                        class="btn-accent px-3 py-1.5 text-[11px] rounded-md">
+                                        class="btn btn-accent px-3 py-1.5 text-[11px] rounded-md">
                                         <i class="fas fa-print"></i> Cetak Bukti
                                     </a>
                                 </template>
@@ -396,14 +396,14 @@
             <template x-for="item in displayedSummaries" :key="item.no_hp">
                 <div
                     class="bg-gray-50 dark:bg-gray-900/40 p-4 rounded-xl border border-gray-100 dark:border-gray-700/70 space-y-3">
-                    <div class="flex justify-between items-start">
-                        <div>
+                    <div class="flex justify-between items-start gap-2">
+                        <div class="min-w-0 flex-1">
                             <span class="text-sm font-bold text-gray-900 dark:text-white font-mono"
                                 x-text="item.no_hp"></span>
-                            <span class="block text-[11px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5"
+                            <span class="block text-[11px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5 truncate"
                                 x-text="item.siswa_names"></span>
                         </div>
-                        <span class="px-2 py-0.5 rounded font-mono font-bold text-xs"
+                        <span class="shrink-0 px-2 py-0.5 rounded font-mono font-bold text-xs"
                             :class="{
                                 'bg-red-50 dark:bg-red-900/20 text-red-600': item.status == 0,
                                 'bg-orange-50 dark:bg-orange-900/20 text-orange-600': item.status == 1,
@@ -451,24 +451,24 @@
                                 x-text="item.status == 2 ? 'Pelunasan: ' + item.tanggal_pembayaran : 'Periode input: ' + item.tanggal_format"></span>
                         </div>
                     </div>
-                    <div class="flex gap-1.5 pt-1">
+                    <div class="flex flex-wrap gap-2 pt-1">
                         <button @click="openDetailModal(item)"
-                            class="flex-1 bg-gray-200 dark:bg-gray-700 dark:text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95">Detail</button>
+                            class="flex-1 bg-gray-200 dark:bg-gray-700 dark:text-white py-2.5 rounded-lg text-xs font-bold transition-all active:scale-95">Detail</button>
                         <template x-if="item.status == 0">
                             <button @click="chatWhatsApp(item)" :disabled="isLoading"
-                                class="disabled:opacity-50 flex-1 bg-green-500 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95"><i
+                                class="disabled:opacity-50 flex-1 bg-green-500 text-white py-2.5 rounded-lg text-xs font-bold transition-all active:scale-95"><i
                                     class="fab fa-whatsapp mr-1"></i>WA</button>
                         </template>
                         <template x-if="item.status == 0 || item.status == 1">
                             <button @click="prosesBayarSiswa(item)" :disabled="isLoading"
-                                class="disabled:opacity-50 flex-1 bg-blue-600 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95">Bayar</button>
+                                class="disabled:opacity-50 flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-xs font-bold transition-all active:scale-95">Bayar</button>
                             <button @click="ubahKeLunas(item)" :disabled="isLoading"
-                                class="disabled:opacity-50 flex-1 bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95">Ke
+                                class="disabled:opacity-50 flex-1 bg-emerald-600 text-white py-2.5 rounded-lg text-xs font-bold transition-all active:scale-95">Ke
                                 Lunas</button>
                         </template>
                         <template x-if="item.status == 2">
                             <a :href="buildStrukUrl(item)" target="_blank"
-                                class="flex-1 text-center bg-purple-600 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95"><i
+                                class="flex-1 text-center bg-purple-600 text-white py-2.5 rounded-lg text-xs font-bold transition-all active:scale-95"><i
                                     class="fas fa-print mr-1"></i>Struk</a>
                         </template>
                     </div>
@@ -487,11 +487,11 @@
                 @click.stop>
                 <div
                     class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
-                    <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg">
-                        <i class="fas fa-info-circle text-blue-500"></i> Rincian Tagihan Anggota Keluarga
+                    <h3 class="min-w-0 font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg">
+                        <i class="fas fa-info-circle text-blue-500 shrink-0"></i> <span class="truncate">Rincian Tagihan Anggota Keluarga</span>
                     </h3>
                     <button @click="showDetailModal = false"
-                        class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
+                        class="shrink-0 text-gray-400 hover:text-gray-600 p-2.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
                             class="fas fa-times fa-lg"></i></button>
                 </div>
                 <div
@@ -621,11 +621,12 @@
                 @click.stop>
                 <div
                     class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
-                    <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg">
-                        <i class="fas fa-tags text-purple-500"></i> Kelola Potongan Diskon (Spesifik & Universal)
+                    <h3 class="min-w-0 font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg">
+                        <i class="fas fa-tags text-purple-500 shrink-0"></i>
+                        <span class="truncate">Kelola Potongan Diskon <span class="hidden sm:inline">(Spesifik & Universal)</span></span>
                     </h3>
                     <button @click="showDiskonModal = false"
-                        class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
+                        class="shrink-0 text-gray-400 hover:text-gray-600 p-2.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
                             class="fas fa-times fa-lg"></i></button>
                 </div>
                 <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto max-h-[80vh] custom-scrollbar">
@@ -733,12 +734,12 @@
                                                 x-text="d.keterangan || 'Potongan'"></span>
                                         </div>
                                     </div>
-                                    <div class="flex gap-0.5 shrink-0">
+                                    <div class="flex gap-2 shrink-0">
                                         <button @click="editDiskon(d)"
-                                            class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"><i
+                                            class="p-2.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"><i
                                                 class="fas fa-edit text-xs"></i></button>
                                         <button @click="hapusDiskon(d.id)"
-                                            class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"><i
+                                            class="p-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"><i
                                                 class="fas fa-trash text-xs"></i></button>
                                     </div>
                                 </div>
@@ -763,14 +764,14 @@
                 @click.stop>
                 <div
                     class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
-                    <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg">
-                        <i class="fas fa-file-invoice-dollar text-blue-500"></i> Buat Input Tagihan Manual Baru
+                    <h3 class="min-w-0 font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg">
+                        <i class="fas fa-file-invoice-dollar text-blue-500 shrink-0"></i> <span class="truncate">Buat Input Tagihan Manual Baru</span>
                     </h3>
                     <button @click="showAddModal = false"
-                        class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
+                        class="shrink-0 text-gray-400 hover:text-gray-600 p-2.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
                             class="fas fa-times fa-lg"></i></button>
                 </div>
-                <form @submit.prevent="simpanTagihan" class="p-6 space-y-5">
+                <form @submit.prevent="simpanTagihan" class="p-6 space-y-5 overflow-y-auto max-h-[75vh] custom-scrollbar">
                     <div class="relative" x-data="{ openSearch: false }">
                         <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Pilih
                             Target
@@ -792,9 +793,9 @@
                                 <button type="button"
                                     @click="form.id_siswa = s.id; siswaSearchModal = s.name; openSearch = false"
                                     class="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 dark:text-white transition-colors flex items-center gap-2 font-medium">
-                                    <i class="fas fa-check-circle text-xs text-blue-500"></i>
-                                    <span x-text="s.name" class="font-bold"></span> — <span x-text="s.kelas || 'N/A'"
-                                        class="text-xs text-gray-400 font-medium"></span>
+                                    <i class="fas fa-check-circle text-xs text-blue-500 shrink-0"></i>
+                                    <span class="min-w-0 flex-1 truncate"><span x-text="s.name" class="font-bold"></span> — <span x-text="s.kelas || 'N/A'"
+                                        class="text-xs text-gray-400 font-medium"></span></span>
                                 </button>
                             </template>
                         </div>
@@ -885,10 +886,10 @@
                 @click.stop>
                 <div
                     class="p-5 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
-                    <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg"><i
-                            class="fas fa-box text-purple-500"></i> Kelola Paket Master Pembayaran Bimbel</h3>
+                    <h3 class="min-w-0 font-bold text-gray-900 dark:text-white flex items-center gap-2 text-base md:text-lg"><i
+                            class="fas fa-box text-purple-500 shrink-0"></i> <span class="truncate">Kelola Paket Master Pembayaran Bimbel</span></h3>
                     <button @click="showPaketModal = false"
-                        class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
+                        class="shrink-0 text-gray-400 hover:text-gray-600 p-2.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-all"><i
                             class="fas fa-times fa-lg"></i></button>
                 </div>
                 <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto max-h-[80vh] custom-scrollbar">
@@ -948,12 +949,12 @@
                                                 x-text="p.pertemuan + ' Sesi'"></span>
                                         </div>
                                     </div>
-                                    <div class="flex gap-0.5 shrink-0">
+                                    <div class="flex gap-2 shrink-0">
                                         <button @click="editPaket(p)"
-                                            class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"><i
+                                            class="p-2.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"><i
                                                 class="fas fa-edit text-xs"></i></button>
                                         <button @click="deletePaket(p.id)"
-                                            class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"><i
+                                            class="p-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"><i
                                                 class="fas fa-trash text-xs"></i></button>
                                     </div>
                                 </div>

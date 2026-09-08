@@ -1,10 +1,16 @@
 import Sortable from 'sortablejs';
 
 import { csrfToken, salinTeksJadwal } from '../core/http';
+import { isDarkMode } from '../core/theme';
+
+const DAY_NAMES = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+const DESKTOP_QUERY = '(min-width: 1024px)';
 
 export const jadwalHandler = (data) => ({
     activeTab: data.activeTab || 'jadwal',
     universalSearch: '',
+    isDesktop: window.matchMedia(DESKTOP_QUERY).matches,
+    activeDayId: null,
     showModal: false,
     showAddJadwalModal: false,
     editingJadwal: {},
@@ -45,6 +51,13 @@ export const jadwalHandler = (data) => ({
         this.scheduledStudentIds = new Set(this.allJadwals.map(schedule => Number(schedule.siswa_id)));
         this.occupancyIndex = AppDomain.buildOccupancyIndex(this.occupancy);
         this.$watch('searchModalSiswa', () => this.refreshAvailableStudents());
+
+        const todayName = DAY_NAMES[new Date().getDay()];
+        const todayHari = this.allHaris.find(h => h.name === todayName);
+        this.activeDayId = todayHari ? todayHari.id : (this.allHaris[0]?.id ?? null);
+        window.matchMedia(DESKTOP_QUERY).addEventListener('change', event => {
+            this.isDesktop = event.matches;
+        });
     },
 
     refreshPage() {
@@ -60,6 +73,10 @@ export const jadwalHandler = (data) => ({
 
     dayMatches(dayId) {
         return this.matchesIndex(this.searchIndex.days[dayId]);
+    },
+
+    dayVisible(dayId) {
+        return this.dayMatches(dayId) && (this.isDesktop || Number(this.activeDayId) === Number(dayId));
     },
 
     sessionMatches(sessionId) {
@@ -249,10 +266,8 @@ export const jadwalHandler = (data) => ({
             denyButtonText: '<i class="fas fa-cloud-upload-alt mr-2"></i> Upload Stash',
             confirmButtonColor: '#059669',
             denyButtonColor: '#3b82f6',
-            background: document.documentElement.classList.contains('dark') ?
-                '#1f2937' : '#fff',
-            color: document.documentElement.classList.contains('dark') ? '#fff' :
-                '#000',
+            background: isDarkMode() ? '#1f2937' : '#fff',
+            color: isDarkMode() ? '#fff' : '#000',
         }).then((result) => {
             if (result.isConfirmed) {
                 this.downloadStash();
@@ -364,6 +379,9 @@ export function installJadwalDragDrop() {
                 group: 'kanban',
                 animation: 150,
                 ghostClass: 'opacity-50',
+                delay: 150,
+                delayOnTouchOnly: true,
+                touchStartThreshold: 5,
                 onEnd: function(evt) {
                     const toSlot = evt.to;
                     const fromSlot = evt.from;

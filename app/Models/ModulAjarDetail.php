@@ -19,6 +19,7 @@ class ModulAjarDetail extends Model
         'hasil_akhir_pembelajaran',
         'keterangan',
         'sedang_dipersiapkan',
+        'tidak_bisa_hadir',
         'guru_pengganti_id',
         'diajarkan_oleh_guru_id',
         'tanggal_diajarkan',
@@ -26,6 +27,7 @@ class ModulAjarDetail extends Model
 
     protected $casts = [
         'sedang_dipersiapkan' => 'boolean',
+        'tidak_bisa_hadir' => 'boolean',
         'tanggal_diajarkan' => 'date',
     ];
 

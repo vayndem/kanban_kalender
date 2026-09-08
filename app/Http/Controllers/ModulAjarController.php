@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\AbsensiGuru;
-use App\Models\Guru;
 use App\Models\Hari;
 use App\Models\Jadwal;
 use App\Models\ModulAjar;
@@ -17,7 +16,17 @@ use Illuminate\Validation\Rule;
 
 class ModulAjarController extends Controller
 {
-    public function index(Request $request)
+    public function index()
+    {
+        return $this->tampilkan('modul-ajar.index', false);
+    }
+
+    public function absen()
+    {
+        return $this->tampilkan('absen.index', true);
+    }
+
+    private function tampilkan(string $view, bool $sertakanSlotTerbuka)
     {
         $user = Auth::user();
         $guru = $user->isGuru() ? $user->guru : null;
@@ -31,18 +40,30 @@ class ModulAjarController extends Controller
             ->select(['id', 'hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id', 'siswa_id', 'kode_kelas']);
 
         if ($guru) {
-            // Selain kelas sendiri, guru juga perlu melihat kelas yang sedang dia
-            // gantikan (guru_pengganti_id) supaya bisa masuk dan menilai pertemuan itu.
-            $kodeKelasPengganti = ModulAjarDetail::where('guru_pengganti_id', $guru->id)
-                ->with('modulAjar:id,kode_kelas')
-                ->get()
-                ->pluck('modulAjar.kode_kelas')
-                ->filter();
+            $kodeKelasTambahan = collect();
 
-            $query->where(function ($q) use ($guru, $kodeKelasPengganti) {
+            if ($sertakanSlotTerbuka) {
+                // Kelas yang sedang digantikan guru ini, plus kelas siapa pun yang
+                // gurunya menandai tidak bisa hadir (slot terbuka untuk semua guru).
+                $kodeKelasPengganti = ModulAjarDetail::where('guru_pengganti_id', $guru->id)
+                    ->with('modulAjar:id,kode_kelas')
+                    ->get()
+                    ->pluck('modulAjar.kode_kelas')
+                    ->filter();
+
+                $kodeKelasTerbuka = ModulAjarDetail::where('tidak_bisa_hadir', true)
+                    ->with('modulAjar:id,kode_kelas')
+                    ->get()
+                    ->pluck('modulAjar.kode_kelas')
+                    ->filter();
+
+                $kodeKelasTambahan = $kodeKelasPengganti->merge($kodeKelasTerbuka)->unique();
+            }
+
+            $query->where(function ($q) use ($guru, $kodeKelasTambahan) {
                 $q->where('guru_id', $guru->id);
-                if ($kodeKelasPengganti->isNotEmpty()) {
-                    $q->orWhereIn('kode_kelas', $kodeKelasPengganti);
+                if ($kodeKelasTambahan->isNotEmpty()) {
+                    $q->orWhereIn('kode_kelas', $kodeKelasTambahan);
                 }
             });
         }
@@ -93,33 +114,34 @@ class ModulAjarController extends Controller
             return $kelas;
         })->values();
 
-        $awalBulan = now()->startOfMonth()->toDateString();
-        $akhirBulan = now()->endOfMonth()->toDateString();
-
         $absenBulanIni = null;
         $rekapAbsenGuru = null;
 
-        if ($guru) {
-            $absenBulanIni = AbsensiGuru::where('guru_id', $guru->id)
-                ->whereBetween('tanggal', [$awalBulan, $akhirBulan])
-                ->count();
-        } else {
-            $rekapAbsenGuru = AbsensiGuru::query()
-                ->whereBetween('tanggal', [$awalBulan, $akhirBulan])
-                ->with('guru:id,name')
-                ->get()
-                ->groupBy('guru_id')
-                ->map(fn ($rows) => ['nama' => $rows->first()->guru?->name ?? '-', 'jumlah' => $rows->count()])
-                ->sortByDesc('jumlah')
-                ->values();
+        if ($sertakanSlotTerbuka) {
+            $awalBulan = now()->startOfMonth()->toDateString();
+            $akhirBulan = now()->endOfMonth()->toDateString();
+
+            if ($guru) {
+                $absenBulanIni = AbsensiGuru::where('guru_id', $guru->id)
+                    ->whereBetween('tanggal', [$awalBulan, $akhirBulan])
+                    ->count();
+            } else {
+                $rekapAbsenGuru = AbsensiGuru::query()
+                    ->whereBetween('tanggal', [$awalBulan, $akhirBulan])
+                    ->with('guru:id,name')
+                    ->get()
+                    ->groupBy('guru_id')
+                    ->map(fn ($rows) => ['nama' => $rows->first()->guru?->name ?? '-', 'jumlah' => $rows->count()])
+                    ->sortByDesc('jumlah')
+                    ->values();
+            }
         }
 
-        return view('modul-ajar.index', [
+        return view($view, [
             'guru' => $guru,
             'isAdmin' => $user->isAdmin(),
             'haris' => Hari::orderBy('id')->get(['id', 'name']),
             'sesis' => Sesi::orderBy('start_time')->get(['id', 'name', 'start_time', 'end_time']),
-            'gurus' => Guru::orderBy('name')->get(['id', 'name']),
             'kelasList' => $kelasList,
             'absenBulanIni' => $absenBulanIni,
             'rekapAbsenGuru' => $rekapAbsenGuru,
@@ -204,24 +226,82 @@ class ModulAjarController extends Controller
         return response()->json(['status' => 'success', 'message' => 'Detail modul ajar berhasil dihapus.']);
     }
 
-    public function mulaiPersiapan(Request $request, ModulAjarDetail $detail)
+    public function mulaiPersiapan(ModulAjarDetail $detail)
     {
         if (! $this->bolehKelolaKodeKelas($detail->modulAjar->kode_kelas)) {
             return response()->json(['status' => 'error', 'message' => 'Anda tidak berhak mempersiapkan pertemuan ini.'], 403);
         }
 
-        $validated = $request->validate([
-            'guru_pengganti_id' => 'nullable|integer|exists:gurus,id',
-        ]);
+        $user = Auth::user();
+        $guruAktif = $user->isGuru() ? $user->guru : null;
+
+        if (! $user->isAdmin() && $detail->guru_pengganti_id
+            && (! $guruAktif || (int) $detail->guru_pengganti_id !== (int) $guruAktif->id)) {
+            return response()->json(['status' => 'error', 'message' => 'Kelas ini sedang diajar oleh guru pengganti. Tidak bisa diambil alih.'], 409);
+        }
 
         $detail->update([
             'sedang_dipersiapkan' => true,
-            'guru_pengganti_id' => $validated['guru_pengganti_id'] ?? null,
+            'tidak_bisa_hadir' => false,
+            'guru_pengganti_id' => null,
         ]);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Persiapan pertemuan dimulai.',
+            'data' => $detail->fresh(),
+        ]);
+    }
+
+    public function tandaiTidakBisaHadir(ModulAjarDetail $detail)
+    {
+        if (! $this->bolehKelolaKodeKelas($detail->modulAjar->kode_kelas)) {
+            return response()->json(['status' => 'error', 'message' => 'Anda tidak berhak menandai pertemuan ini.'], 403);
+        }
+
+        if ($detail->diajarkan_oleh_guru_id) {
+            return response()->json(['status' => 'error', 'message' => 'Pertemuan ini sudah selesai diajarkan.'], 422);
+        }
+
+        $detail->update([
+            'tidak_bisa_hadir' => true,
+            'sedang_dipersiapkan' => false,
+            'guru_pengganti_id' => null,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Ditandai tidak bisa hadir. Kelas ini sekarang terbuka untuk guru lain.',
+            'data' => $detail->fresh(),
+        ]);
+    }
+
+    public function klaimSlotTerbuka(ModulAjarDetail $detail)
+    {
+        $user = Auth::user();
+
+        if (! $user->isGuru() || ! $user->guru) {
+            return response()->json(['status' => 'error', 'message' => 'Hanya akun guru yang bisa mengambil kelas pengganti.'], 403);
+        }
+
+        $baris = DB::table('modul_ajar_details')
+            ->where('id', $detail->id)
+            ->where('tidak_bisa_hadir', true)
+            ->whereNull('guru_pengganti_id')
+            ->update([
+                'guru_pengganti_id' => $user->guru->id,
+                'sedang_dipersiapkan' => true,
+                'tidak_bisa_hadir' => false,
+                'updated_at' => now(),
+            ]);
+
+        if ($baris === 0) {
+            return response()->json(['status' => 'error', 'message' => 'Kelas ini sudah diambil guru lain, atau tidak lagi terbuka.'], 409);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Kelas berhasil diambil. Silakan mulai mengajar.',
             'data' => $detail->fresh(['guruPengganti']),
         ]);
     }

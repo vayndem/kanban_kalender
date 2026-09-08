@@ -14,6 +14,7 @@ function normalizeName(value) {
 
 const JEDA_MINIMAL_SESI_MENIT = 30;
 const JAM_ISTIRAHAT = { mulai: '11:45', selesai: '12:45' };
+const DAY_NAMES = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
 function jamKeMenit(jam) {
     const [h, m] = String(jam || '').split(':').map(Number);
@@ -57,6 +58,7 @@ export const workshopHandler = ({
     searchSesi: '',
     searchSiswa: '',
     searchKetersediaan: '',
+    activeDayMobile: DAY_NAMES[new Date().getDay()],
 
     mapelForm: { id: null, name: '' },
     guruForm: { id: null, name: '' },
@@ -75,6 +77,10 @@ export const workshopHandler = ({
                     document.getElementById('workshop-siswa-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 });
             }
+        }
+
+        if (this.ketersediaan.length && !this.ketersediaan.some(slot => slot.hari === this.activeDayMobile)) {
+            this.activeDayMobile = this.ketersediaan[0].hari;
         }
     },
 
@@ -185,17 +191,25 @@ export const workshopHandler = ({
         return this.filterList(this.siswas, this.searchSiswa, ['name', 'panggilan', 'kelas', 'no_hp']);
     },
 
-    get filteredKetersediaan() {
+    get ketersediaanGrid() {
         const q = this.searchKetersediaan.trim().toLowerCase();
         const toChips = (names) => names.map(name => ({ name, match: q.length > 0 && name.toLowerCase().includes(q) }));
 
-        return this.ketersediaan
-            .map(slot => ({
+        const hariOrder = [];
+        const bySesi = {};
+        for (const slot of this.ketersediaan) {
+            if (!hariOrder.includes(slot.hari)) hariOrder.push(slot.hari);
+            if (!bySesi[slot.sesi]) bySesi[slot.sesi] = {};
+            bySesi[slot.sesi][slot.hari] = {
                 ...slot,
                 ruang_kosong: toChips(slot.ruang_kosong),
                 guru_kosong: toChips(slot.guru_kosong),
-            }))
-            .filter(slot => !q || slot.ruang_kosong.some(r => r.match) || slot.guru_kosong.some(g => g.match));
+            };
+        }
+
+        const rows = Object.entries(bySesi).map(([sesi, byHari]) => ({ sesi, byHari }));
+
+        return { hariOrder, rows };
     },
 
     getPaketName(id) {

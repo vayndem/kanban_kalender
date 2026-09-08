@@ -20,24 +20,28 @@
         <nav
             class="border-b border-slate-200/80 bg-white/90 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/90">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex h-16 items-center justify-between">
+                <div class="flex min-h-16 items-center justify-between py-2">
                     <div class="flex items-center gap-3 min-w-0">
                         <i class="fas fa-chalkboard-user text-emerald-500 text-lg"></i>
                         <div class="min-w-0">
                             <p class="text-sm font-bold truncate">{{ $guru->name }}</p>
-                            <p class="text-[11px] text-slate-500 dark:text-slate-400">Portal Guru — E-Ling Course</p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Portal Guru — E-Ling Course</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 shrink-0">
                         <a href="{{ route('modulAjar.index') }}"
                             class="text-xs font-bold text-slate-500 hover:text-emerald-600 transition-colors px-3 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30">
-                            <i class="fas fa-book-open-reader mr-1"></i> Modul Ajar
+                            <i class="fas fa-book-open-reader sm:mr-1"></i><span class="hidden sm:inline"> Modul Ajar</span>
+                        </a>
+                        <a href="{{ route('absen.index') }}"
+                            class="text-xs font-bold text-slate-500 hover:text-emerald-600 transition-colors px-3 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30">
+                            <i class="fas fa-clipboard-user sm:mr-1"></i><span class="hidden sm:inline"> Absen</span>
                         </a>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit"
                                 class="text-xs font-bold text-slate-500 hover:text-red-500 transition-colors px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30">
-                                <i class="fas fa-right-from-bracket mr-1"></i> Keluar
+                                <i class="fas fa-right-from-bracket sm:mr-1"></i><span class="hidden sm:inline"> Keluar</span>
                             </button>
                         </form>
                     </div>

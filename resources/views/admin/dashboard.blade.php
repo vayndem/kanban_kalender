@@ -34,6 +34,7 @@
                 store: '{{ route('admin.jadwal.store') }}',
                 updateKelas: '{{ route('admin.jadwal.updateKelas') }}',
                 export: '{{ route('admin.jadwal.export') }}',
+                exportPdf: '{{ route('jadwal.kalender.export') }}',
                 generateText: '{{ route('admin.jadwal.generateText') }}',
                 downloadStash: '{{ route('admin.jadwal.downloadStash') }}',
                 uploadStash: '{{ route('admin.jadwal.uploadStash') }}'
@@ -47,16 +48,20 @@
                 <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg mb-6">
                     <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
 
-                        <div class="flex space-x-3">
+                        <div class="flex flex-wrap gap-3">
                             <button @click.prevent="openExportOptions()" type="button" class="btn-export text-base">
                                 <i class="fas fa-file-export mr-2"></i> Export / Copy
                             </button>
 
-                            <button @click.prevent="openStashOptions()" type="button" class="btn-success text-base">
+                            <a :href="pdfExportUrl" target="_blank" class="btn btn-primary text-base">
+                                <i class="fas fa-file-pdf mr-2"></i> Export PDF
+                            </a>
+
+                            <button @click.prevent="openStashOptions()" type="button" class="btn btn-success text-base">
                                 <i class="fas fa-database mr-2"></i> Stash
                             </button>
 
-                            <a href="{{ route('admin.workshop.index') }}" class="btn-accent text-base">
+                            <a href="{{ route('admin.workshop.index') }}" class="btn btn-accent text-base">
                                 <i class="fas fa-toolbox mr-2"></i> Kelola Guru / Ruang / Sesi / Mapel
                             </a>
                         </div>
@@ -82,6 +87,18 @@
                     </div>
                 </div>
 
+                <div class="mb-3 flex gap-1.5 overflow-x-auto pb-1 lg:hidden">
+                    @foreach ($haris as $hari)
+                        <button type="button" @click="activeDayId = {{ $hari->id }}"
+                            :class="Number(activeDayId) === {{ $hari->id }} ?
+                                'bg-emerald-600 text-white' :
+                                'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'"
+                            class="shrink-0 rounded-lg px-3 py-2 text-xs font-bold transition-colors">
+                            {{ $hari->name }}
+                        </button>
+                    @endforeach
+                </div>
+
                 <div class="overflow-x-auto shadow-md rounded-lg">
                     <table class="min-w-full w-full border-collapse table-fixed"
                         data-update-posisi-url="{{ route('admin.jadwal.updatePosisi') }}">
@@ -105,7 +122,7 @@
                                 @endphp
 
                                 @foreach ($haris as $index => $hari)
-                                    <th x-show="dayMatches({{ $hari->id }})"
+                                    <th x-show="dayVisible({{ $hari->id }})"
                                         class="border border-gray-300 dark:border-gray-600 p-3 text-center uppercase text-xs tracking-wider font-semibold text-gray-600 dark:text-white min-w-[200px]">
                                         <div class="text-base">{{ $hari->name }}</div>
                                         @php
@@ -133,7 +150,7 @@
                                     </td>
 
                                     @foreach ($haris as $hari)
-                                        <td x-show="dayMatches({{ $hari->id }})"
+                                        <td x-show="dayVisible({{ $hari->id }})"
                                             class="kanban-slot border border-gray-200 dark:border-gray-600 p-2 align-top h-64 relative cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors duration-150"
                                             id="slot-{{ $hari->id }}-{{ $sesi->id }}"
                                             data-hari-id="{{ $hari->id }}" data-sesi-id="{{ $sesi->id }}"
@@ -197,7 +214,7 @@
                                                                     refreshStudentSelections();
                                                                 });
                                                             "
-                                                            class="absolute top-1 right-1 p-1.5 rounded-full bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-white hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-500 dark:hover:text-white transition-all duration-200 opacity-0 group-hover:opacity-100">
+                                                            class="absolute top-1 right-1 p-2.5 rounded-full bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-white hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-500 dark:hover:text-white transition-all duration-200 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
                                                             <i class="fas fa-pencil-alt fa-xs"></i>
                                                         </button>
 
@@ -268,12 +285,12 @@
             <div x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
                 x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
                 x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm">
+                class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 py-8 bg-black bg-opacity-60 backdrop-blur-sm sm:items-center">
 
                 <div @click="showModal = false" class="absolute inset-0"></div>
 
                 <div @click.stop
-                    class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden relative border dark:border-gray-700"
+                    class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden relative border dark:border-gray-700"
                     x-transition:enter="ease-out duration-300"
                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
@@ -287,13 +304,13 @@
                             <i class="fas fa-calendar-check text-blue-500"></i> Edit Jadwal & Catatan Siswa
                         </h3>
                         <button @click="showModal = false"
-                            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
                             <i class="fas fa-times fa-lg"></i>
                         </button>
                     </div>
 
-                    <form id="editJadwalForm" @submit.prevent="saveJadwal">
-                        <div class="flex flex-col md:flex-row h-[75vh]">
+                    <form id="editJadwalForm" @submit.prevent="saveJadwal" class="flex flex-1 flex-col min-h-0">
+                        <div class="flex flex-1 min-h-0 flex-col overflow-y-auto md:h-[75vh] md:flex-row md:overflow-visible">
                             <div
                                 class="w-full md:w-2/3 p-6 overflow-y-auto border-r dark:border-r-gray-700 bg-white dark:bg-gray-800 space-y-5">
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -383,7 +400,7 @@
                                                             'text-gray-900 dark:text-white'"></span>
                                                 </div>
                                                 <button @click.stop.prevent="removeSiswa(siswa.id)" type="button"
-                                                    class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-xs transition-colors shrink-0 font-semibold">
+                                                    class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-xs transition-colors shrink-0 font-semibold">
                                                     <i class="fas fa-user-minus"></i> Hapus
                                                 </button>
                                             </div>
@@ -491,12 +508,12 @@
             <div x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
                 x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
                 x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm">
+                class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 py-8 bg-black bg-opacity-60 backdrop-blur-sm sm:items-center">
 
                 <div @click="showAddJadwalModal = false" class="absolute inset-0"></div>
 
                 <div @click.stop
-                    class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden relative border dark:border-gray-700"
+                    class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden relative border dark:border-gray-700"
                     x-transition:enter="ease-out duration-300"
                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
@@ -510,13 +527,13 @@
                             <i class="fas fa-calendar-plus text-green-500"></i> Tambah Jadwal Baru
                         </h3>
                         <button @click="showAddJadwalModal = false"
-                            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
                             <i class="fas fa-times fa-lg"></i>
                         </button>
                     </div>
 
-                    <form @submit.prevent="saveNewJadwal">
-                        <div class="flex flex-col md:flex-row h-[75vh]">
+                    <form @submit.prevent="saveNewJadwal" class="flex flex-1 flex-col min-h-0">
+                        <div class="flex flex-1 min-h-0 flex-col overflow-y-auto md:h-[75vh] md:flex-row md:overflow-visible">
                             <div
                                 class="w-full md:w-2/3 p-6 overflow-y-auto border-r dark:border-r-gray-700 bg-white dark:bg-gray-800 space-y-5">
                                 <div
@@ -623,7 +640,7 @@
                                                             'text-gray-900 dark:text-white'"></span>
                                                 </div>
                                                 <button @click.stop.prevent="removeSiswa(siswa.id)" type="button"
-                                                    class="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-xs transition-colors shrink-0 font-semibold">
+                                                    class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-xs transition-colors shrink-0 font-semibold">
                                                     <i class="fas fa-minus"></i> Lepas
                                                 </button>
                                             </div>

@@ -4,6 +4,7 @@ export const siswaHandler = ({
     initialSiswa,
     initialArsip,
     paketData,
+    kemampuanData,
     scheduleMetaData,
     hariData,
     sesiData,
@@ -15,6 +16,7 @@ export const siswaHandler = ({
     allSiswas: initialSiswa || [],
     allArsips: initialArsip || [],
     pakets: paketData || [],
+    kemampuans: kemampuanData || [],
     scheduleMeta: scheduleMetaData || {},
     activeStudentSchedules: [],
     packageIndex: {},
@@ -25,6 +27,8 @@ export const siswaHandler = ({
     allRuangs: ruangData || [],
     isLoadingJadwal: false,
     editJadwalRequestKey: 0,
+    raporSiswa: null,
+    isLoadingRapor: false,
     viewMode: 'aktif',
     showDetailModal: false,
     detailSiswa: {},
@@ -36,6 +40,7 @@ export const siswaHandler = ({
     sortOrder: 'asc',
     filterKelas: '',
     filterPaket: '',
+    filterKemampuan: '',
     filterSesis: [],
     filterGurus: [],
     filterRuangs: [],
@@ -66,7 +71,7 @@ export const siswaHandler = ({
     },
 
     get hasActiveFilter() {
-        return this.filterKelas || this.filterPaket ||
+        return this.filterKelas || this.filterPaket || this.filterKemampuan ||
             this.filterSesis.length > 0 || this.filterGurus.length > 0 ||
             this.filterRuangs.length > 0 || this.siswaSearch;
     },
@@ -80,6 +85,7 @@ export const siswaHandler = ({
             filters: {
                 kelas: this.filterKelas,
                 paket: this.filterPaket,
+                kemampuan: this.filterKemampuan,
                 sesiIds: this.filterSesis,
                 guruIds: this.filterGurus,
                 ruangIds: this.filterRuangs
@@ -123,6 +129,7 @@ export const siswaHandler = ({
     resetFilter() {
         this.filterKelas = '';
         this.filterPaket = '';
+        this.filterKemampuan = '';
         this.filterSesis = [];
         this.filterGurus = [];
         this.filterRuangs = [];
@@ -165,6 +172,8 @@ export const siswaHandler = ({
         this.catatanForm = { keterangan: '' };
         this.showDetailModal = true;
         this.isLoadingJadwal = true;
+        this.raporSiswa = null;
+        this.muatRapor(siswa.id, requestKey);
 
         try {
             const response = await fetch(`${this.routes.siswaBase}/${siswa.id}/jadwal`, {
@@ -183,6 +192,32 @@ export const siswaHandler = ({
                 this.isLoadingJadwal = false;
             }
         }
+    },
+
+    async muatRapor(siswaId, requestKey) {
+        this.isLoadingRapor = true;
+
+        try {
+            const response = await fetch(`${this.routes.siswaBase}/${siswaId}/rapor`, {
+                headers: { Accept: 'application/json' },
+            });
+            if (!response.ok) throw new Error('Rapor perkembangan gagal dimuat.');
+
+            const result = await response.json();
+            if (requestKey !== this.editJadwalRequestKey) return;
+            this.raporSiswa = result.data;
+        } catch (error) {
+            if (requestKey !== this.editJadwalRequestKey) return;
+            AppSwal.error(error.message || 'Rapor perkembangan gagal dimuat.');
+        } finally {
+            if (requestKey === this.editJadwalRequestKey) {
+                this.isLoadingRapor = false;
+            }
+        }
+    },
+
+    labelTren(tren) {
+        return { naik: 'Naik', turun: 'Turun', stabil: 'Stabil' }[tren] || '-';
     },
 
     async simpanCatatan() {
@@ -313,6 +348,7 @@ export const siswaHandler = ({
         const params = new URLSearchParams();
         if (this.filterKelas) params.set('kelas', this.filterKelas);
         if (this.filterPaket) params.set('paket_id', this.filterPaket);
+        if (this.filterKemampuan) params.set('kemampuan_id', this.filterKemampuan);
         if (this.filterSesis.length) params.set('sesi_ids', this.filterSesis.join(','));
         if (this.filterGurus.length) params.set('guru_ids', this.filterGurus.join(','));
         if (this.filterRuangs.length) params.set('ruang_ids', this.filterRuangs.join(','));

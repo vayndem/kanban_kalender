@@ -1,5 +1,7 @@
+import { isDarkMode } from './theme';
+
 const theme = () => {
-    const dark = document.documentElement.classList.contains('dark');
+    const dark = isDarkMode();
 
     return {
         background: dark ? '#0f172a' : '#ffffff',

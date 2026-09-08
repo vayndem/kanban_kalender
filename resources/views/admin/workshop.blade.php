@@ -184,11 +184,11 @@
                         </div>
 
                         <div class="flex gap-2 pt-2">
-                            <button type="submit" class="btn-primary text-sm flex-1" :disabled="isLoading">
+                            <button type="submit" class="btn btn-primary text-sm flex-1" :disabled="isLoading">
                                 <span x-text="siswaForm.id ? 'Simpan Perubahan' : 'Tambah Siswa'"></span>
                             </button>
                             <button type="button" x-show="siswaForm.id" @click="resetSiswaForm()"
-                                class="btn-neutral text-sm">Batal</button>
+                                class="btn btn-neutral text-sm">Batal</button>
                         </div>
                     </form>
 
@@ -203,7 +203,7 @@
                                     <i class="fas fa-download"></i> Download Kerangka
                                 </a>
                                 <input type="file" x-ref="fileImportSiswa" accept=".xlsx,.xls,.csv" class="hidden" @change="importSiswaMassal($event)">
-                                <button type="button" @click="$refs.fileImportSiswa.click()" class="btn-accent text-xs px-3 py-1.5 rounded-md" :disabled="isLoading">
+                                <button type="button" @click="$refs.fileImportSiswa.click()" class="btn btn-accent text-xs px-3 py-1.5 rounded-md" :disabled="isLoading">
                                     <i class="fas fa-upload"></i> Upload &amp; Import
                                 </button>
                             </div>
@@ -223,7 +223,7 @@
                                             x-text="(s.kelas || '-') + ' · ' + (s.no_hp || 'tanpa HP')"></p>
                                     </div>
                                     <button type="button" @click="editSiswa(s)"
-                                        class="btn-neutral px-2.5 py-1 text-[11px] rounded-md shrink-0">
+                                        class="btn btn-neutral px-2.5 py-1 text-[11px] rounded-md shrink-0">
                                         <i class="fas fa-pen-to-square"></i>
                                     </button>
                                 </div>
@@ -258,11 +258,11 @@
                             <span class="font-bold">Akun Guru</span>.
                         </p>
                         <div class="flex gap-2 pt-2">
-                            <button type="submit" class="btn-primary text-sm flex-1" :disabled="isLoading">
+                            <button type="submit" class="btn btn-primary text-sm flex-1" :disabled="isLoading">
                                 <span x-text="guruForm.id ? 'Simpan Perubahan' : 'Tambah Guru'"></span>
                             </button>
                             <button type="button" x-show="guruForm.id" @click="resetGuruForm()"
-                                class="btn-neutral text-sm">Batal</button>
+                                class="btn btn-neutral text-sm">Batal</button>
                         </div>
                     </form>
 
@@ -283,7 +283,7 @@
                                     </div>
                                     <div class="flex gap-1 shrink-0">
                                         <button type="button" @click="editGuru(g)"
-                                            class="btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
+                                            class="btn btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
                                                 class="fas fa-pen-to-square"></i></button>
                                         <button type="button" @click="hapusGuru(g)" :disabled="!g.bisa_dihapus"
                                             :class="g.bisa_dihapus ? '' : 'opacity-40 cursor-not-allowed'"
@@ -319,11 +319,11 @@
                             </template>
                         </div>
                         <div class="flex gap-2 pt-2">
-                            <button type="submit" class="btn-primary text-sm flex-1" :disabled="isLoading">
+                            <button type="submit" class="btn btn-primary text-sm flex-1" :disabled="isLoading">
                                 <span x-text="ruangForm.id ? 'Simpan Perubahan' : 'Tambah Ruang'"></span>
                             </button>
                             <button type="button" x-show="ruangForm.id" @click="resetRuangForm()"
-                                class="btn-neutral text-sm">Batal</button>
+                                class="btn btn-neutral text-sm">Batal</button>
                         </div>
                     </form>
 
@@ -344,7 +344,7 @@
                                     </div>
                                     <div class="flex gap-1 shrink-0">
                                         <button type="button" @click="editRuang(r)"
-                                            class="btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
+                                            class="btn btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
                                                 class="fas fa-pen-to-square"></i></button>
                                         <button type="button" @click="hapusRuang(r)" :disabled="!r.bisa_dihapus"
                                             :class="r.bisa_dihapus ? '' : 'opacity-40 cursor-not-allowed'"
@@ -404,11 +404,11 @@
                             </div>
                         </template>
                         <div class="flex gap-2 pt-2">
-                            <button type="submit" class="btn-primary text-sm flex-1" :disabled="isLoading">
+                            <button type="submit" class="btn btn-primary text-sm flex-1" :disabled="isLoading">
                                 <span x-text="sesiForm.id ? 'Simpan Perubahan' : 'Tambah Sesi'"></span>
                             </button>
                             <button type="button" x-show="sesiForm.id" @click="resetSesiForm()"
-                                class="btn-neutral text-sm">Batal</button>
+                                class="btn btn-neutral text-sm">Batal</button>
                         </div>
                     </form>
 
@@ -432,7 +432,7 @@
                                     </div>
                                     <div class="flex gap-1 shrink-0">
                                         <button type="button" @click="editSesi(s)"
-                                            class="btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
+                                            class="btn btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
                                                 class="fas fa-pen-to-square"></i></button>
                                         <button type="button" @click="hapusSesi(s)" :disabled="!s.bisa_dihapus"
                                             :class="s.bisa_dihapus ? '' : 'opacity-40 cursor-not-allowed'"
@@ -468,11 +468,11 @@
                             </template>
                         </div>
                         <div class="flex gap-2 pt-2">
-                            <button type="submit" class="btn-primary text-sm flex-1" :disabled="isLoading">
+                            <button type="submit" class="btn btn-primary text-sm flex-1" :disabled="isLoading">
                                 <span x-text="mapelForm.id ? 'Simpan Perubahan' : 'Tambah Mapel'"></span>
                             </button>
                             <button type="button" x-show="mapelForm.id" @click="resetMapelForm()"
-                                class="btn-neutral text-sm">Batal</button>
+                                class="btn btn-neutral text-sm">Batal</button>
                         </div>
                     </form>
 
@@ -493,7 +493,7 @@
                                     </div>
                                     <div class="flex gap-1 shrink-0">
                                         <button type="button" @click="editMapel(m)"
-                                            class="btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
+                                            class="btn btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
                                                 class="fas fa-pen-to-square"></i></button>
                                         <button type="button" @click="hapusMapel(m)" :disabled="!m.bisa_dihapus"
                                             :class="m.bisa_dihapus ? '' : 'opacity-40 cursor-not-allowed'"
@@ -552,11 +552,11 @@
                             bisa diloncat atau dipilih manual.
                         </p>
                         <div class="flex gap-2 pt-2">
-                            <button type="submit" class="btn-primary text-sm flex-1" :disabled="isLoading">
+                            <button type="submit" class="btn btn-primary text-sm flex-1" :disabled="isLoading">
                                 <span x-text="kemampuanForm.id ? 'Simpan Perubahan' : 'Tambah Level'"></span>
                             </button>
                             <button type="button" x-show="kemampuanForm.id" @click="resetKemampuanForm()"
-                                class="btn-neutral text-sm">Batal</button>
+                                class="btn btn-neutral text-sm">Batal</button>
                         </div>
                     </form>
 
@@ -576,7 +576,7 @@
                                     </div>
                                     <div class="flex gap-1 shrink-0">
                                         <button type="button" @click="editKemampuan(k)"
-                                            class="btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
+                                            class="btn btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
                                                 class="fas fa-pen-to-square"></i></button>
                                         <button type="button" @click="hapusKemampuan(k)" :disabled="!bisaHapusKemampuan(k)"
                                             :class="bisaHapusKemampuan(k) ? '' : 'opacity-40 cursor-not-allowed'"
@@ -605,57 +605,89 @@
                 </p>
                 <input type="text" x-model="searchKetersediaan" placeholder="Cari nama guru atau ruang yang masih bebas..."
                     class="w-full mb-3 rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                    <template x-for="slot in filteredKetersediaan" :key="slot.hari + '_' + slot.sesi">
-                        <div
-                            class="rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/40 p-3.5">
-                            <div class="flex items-center justify-between mb-2.5">
-                                <p class="text-xs font-black text-gray-800 dark:text-gray-100">
-                                    <span x-text="slot.hari"></span> · <span x-text="slot.sesi"></span>
-                                </p>
-                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                                    :class="slot.kelas_berjalan > 0 ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-400'"
-                                    x-text="slot.kelas_berjalan + ' kelas'">
-                                </span>
-                            </div>
-                            <div class="space-y-2">
-                                <div>
-                                    <span class="text-[10px] font-bold text-gray-400 uppercase">Ruang kosong</span>
-                                    <div class="mt-1 flex flex-wrap gap-1">
-                                        <template x-for="r in slot.ruang_kosong" :key="r.name">
-                                            <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold"
-                                                :class="r.match ? 'bg-amber-300 dark:bg-amber-700 text-amber-950 dark:text-amber-50 ring-2 ring-amber-500' : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'"
-                                                x-text="r.name"></span>
-                                        </template>
-                                        <template x-if="slot.ruang_kosong.length === 0">
-                                            <span
-                                                class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-red-50 dark:bg-red-950/30 text-red-500">Penuh</span>
-                                        </template>
-                                    </div>
-                                </div>
-                                <div>
-                                    <span class="text-[10px] font-bold text-gray-400 uppercase">Guru bebas</span>
-                                    <div class="mt-1 flex flex-wrap gap-1">
-                                        <template x-for="g in slot.guru_kosong" :key="g.name">
-                                            <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold"
-                                                :class="g.match ? 'bg-amber-300 dark:bg-amber-700 text-amber-950 dark:text-amber-50 ring-2 ring-amber-500' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'"
-                                                x-text="g.name"></span>
-                                        </template>
-                                        <template x-if="slot.guru_kosong.length === 0">
-                                            <span
-                                                class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-red-50 dark:bg-red-950/30 text-red-500">Semua
-                                                terpakai</span>
-                                        </template>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+
+                <div class="mb-3 flex gap-1.5 overflow-x-auto pb-1 lg:hidden">
+                    <template x-for="hari in ketersediaanGrid.hariOrder" :key="hari">
+                        <button type="button" @click="activeDayMobile = hari"
+                            :class="activeDayMobile === hari ? 'bg-emerald-600 text-white' :
+                                'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'"
+                            class="shrink-0 rounded-lg px-3 py-2 text-xs font-bold transition-colors"
+                            x-text="hari"></button>
                     </template>
-                    <template x-if="filteredKetersediaan.length === 0">
-                        <p class="text-xs text-gray-400 italic text-center py-6 col-span-full">
-                            Tidak ada slot kosong yang cocok dengan pencarian "<span x-text="searchKetersediaan"></span>".
-                        </p>
-                    </template>
+                </div>
+
+                <div class="overflow-x-auto shadow-md rounded-lg">
+                    <table class="min-w-full w-full border-collapse table-fixed">
+                        <thead class="bg-gray-100 dark:bg-gray-700/80">
+                            <tr>
+                                <th
+                                    class="border border-gray-300 dark:border-gray-600 p-3 text-center uppercase text-xs tracking-wider font-semibold text-gray-600 dark:text-white w-28 lg:w-36">
+                                    Sesi
+                                </th>
+                                <template x-for="hari in ketersediaanGrid.hariOrder" :key="hari">
+                                    <th :class="hari === activeDayMobile ? '' : 'hidden lg:table-cell'"
+                                        class="border border-gray-300 dark:border-gray-600 p-3 text-center uppercase text-xs tracking-wider font-semibold text-gray-600 dark:text-white min-w-[220px]"
+                                        x-text="hari"></th>
+                                </template>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white dark:bg-gray-800">
+                            <template x-for="row in ketersediaanGrid.rows" :key="row.sesi">
+                                <tr class="even:bg-gray-50/50 dark:even:bg-gray-800/60">
+                                    <td
+                                        class="border border-gray-200 dark:border-gray-600 p-2 text-center align-middle font-semibold text-gray-700 dark:text-white"
+                                        x-text="row.sesi"></td>
+                                    <template x-for="hari in ketersediaanGrid.hariOrder" :key="hari">
+                                        <td :class="hari === activeDayMobile ? '' : 'hidden lg:table-cell'"
+                                            class="border border-gray-200 dark:border-gray-600 p-2.5 align-top">
+                                            <template x-if="row.byHari[hari]">
+                                                <div class="space-y-2">
+                                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded inline-block"
+                                                        :class="row.byHari[hari].kelas_berjalan > 0 ?
+                                                            'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400' :
+                                                            'bg-gray-100 dark:bg-gray-800 text-gray-400'"
+                                                        x-text="row.byHari[hari].kelas_berjalan + ' kelas'"></span>
+                                                    <div>
+                                                        <span class="text-[10px] font-bold text-gray-400 uppercase">Ruang kosong</span>
+                                                        <div class="mt-1 flex flex-wrap gap-1">
+                                                            <template x-for="r in row.byHari[hari].ruang_kosong" :key="r.name">
+                                                                <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold"
+                                                                    :class="r.match ?
+                                                                        'bg-amber-300 dark:bg-amber-700 text-amber-950 dark:text-amber-50 ring-2 ring-amber-500' :
+                                                                        'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300'"
+                                                                    x-text="r.name"></span>
+                                                            </template>
+                                                            <template x-if="row.byHari[hari].ruang_kosong.length === 0">
+                                                                <span
+                                                                    class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-red-50 dark:bg-red-950/30 text-red-500">Penuh</span>
+                                                            </template>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-[10px] font-bold text-gray-400 uppercase">Guru bebas</span>
+                                                        <div class="mt-1 flex flex-wrap gap-1">
+                                                            <template x-for="g in row.byHari[hari].guru_kosong" :key="g.name">
+                                                                <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold"
+                                                                    :class="g.match ?
+                                                                        'bg-amber-300 dark:bg-amber-700 text-amber-950 dark:text-amber-50 ring-2 ring-amber-500' :
+                                                                        'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'"
+                                                                    x-text="g.name"></span>
+                                                            </template>
+                                                            <template x-if="row.byHari[hari].guru_kosong.length === 0">
+                                                                <span
+                                                                    class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-red-50 dark:bg-red-950/30 text-red-500">Semua
+                                                                    terpakai</span>
+                                                            </template>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </td>
+                                    </template>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 

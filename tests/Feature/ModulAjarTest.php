@@ -35,7 +35,7 @@ class ModulAjarTest extends TestCase
 
     private function guruDenganAkun(string $nama = 'Bu Rina'): array
     {
-        $guru = Guru::create(['name' => $nama, 'email' => strtolower(str_replace(' ', '.', $nama)) . '@eling.test']);
+        $guru = Guru::create(['name' => $nama, 'email' => strtolower(str_replace(' ', '.', $nama)).'@eling.test']);
         $user = User::factory()->guru($guru)->create(['name' => $nama, 'email' => $guru->email]);
 
         return [$guru, $user];
@@ -47,7 +47,7 @@ class ModulAjarTest extends TestCase
             'siswa_id' => Siswa::factory()->create()->id,
             'mata_pelajaran_id' => MataPelajaran::factory()->create()->id,
             'guru_id' => $guru->id,
-            'hari_id' => Hari::factory()->create(['name' => 'Senin' . uniqid()])->id,
+            'hari_id' => Hari::factory()->create(['name' => 'Senin'.uniqid()])->id,
             'ruang_id' => Ruang::factory()->create()->id,
             'sesi_id' => Sesi::factory()->create()->id,
             'kode_kelas' => $kodeKelas,
@@ -70,7 +70,7 @@ class ModulAjarTest extends TestCase
         $responAdmin->assertOk()->assertSee('Kelas Saya')->assertSee('Kelas Lain');
     }
 
-    public function test_a_substitute_guru_can_see_the_class_they_are_covering_in_their_own_list(): void
+    public function test_a_substitute_guru_can_see_the_class_they_are_covering_only_on_the_absen_page(): void
     {
         [$guruAsli] = $this->guruDenganAkun('Bu Rina');
         [$guruPengganti, $userPengganti] = $this->guruDenganAkun('Bu Sekar');
@@ -79,9 +79,14 @@ class ModulAjarTest extends TestCase
         $detail = $this->buatModulDenganDetail('kode-1');
         $detail->update(['guru_pengganti_id' => $guruPengganti->id]);
 
-        $this->actingAs($userPengganti)->get(route('modulAjar.index'))
+        $this->actingAs($userPengganti)->get(route('absen.index'))
             ->assertOk()
             ->assertSee('Penjumlahan');
+
+        // Modul Ajar sekarang murni kurikulum -- tidak lagi memperhitungkan status pengganti.
+        $this->actingAs($userPengganti)->get(route('modulAjar.index'))
+            ->assertOk()
+            ->assertDontSee('Penjumlahan');
     }
 
     public function test_header_requires_all_four_fields(): void
@@ -223,8 +228,8 @@ class ModulAjarTest extends TestCase
         $guru = Guru::factory()->create();
         $ruang = Ruang::factory()->create();
         $mapel = MataPelajaran::factory()->create();
-        $hariAsal = Hari::factory()->create(['name' => 'HariAsal' . uniqid()]);
-        $hariTujuan = Hari::factory()->create(['name' => 'HariTujuan' . uniqid()]);
+        $hariAsal = Hari::factory()->create(['name' => 'HariAsal'.uniqid()]);
+        $hariTujuan = Hari::factory()->create(['name' => 'HariTujuan'.uniqid()]);
         $sesiAsal = Sesi::factory()->create();
         $sesiTujuan = Sesi::factory()->create();
         $siswa = Siswa::factory()->create();
@@ -271,7 +276,7 @@ class ModulAjarTest extends TestCase
         $guru = Guru::factory()->create();
         $ruang = Ruang::factory()->create();
         $mapel = MataPelajaran::factory()->create();
-        $hari = Hari::factory()->create(['name' => 'Hari' . uniqid()]);
+        $hari = Hari::factory()->create(['name' => 'Hari'.uniqid()]);
         $sesi = Sesi::factory()->create();
         $siswaLama = Siswa::factory()->create();
         $siswaBaru = Siswa::factory()->create();
@@ -332,7 +337,7 @@ class ModulAjarTest extends TestCase
         $guru = Guru::factory()->create();
         $ruang = Ruang::factory()->create();
         $mapel = MataPelajaran::factory()->create();
-        $hari = Hari::factory()->create(['name' => 'Hari' . uniqid()]);
+        $hari = Hari::factory()->create(['name' => 'Hari'.uniqid()]);
         $sesi = Sesi::factory()->create();
         $siswaA = Siswa::factory()->create();
         $siswaB = Siswa::factory()->create();
@@ -360,7 +365,7 @@ class ModulAjarTest extends TestCase
         $bersama = [
             'mata_pelajaran_id' => MataPelajaran::factory()->create()->id,
             'guru_id' => $guru->id,
-            'hari_id' => Hari::factory()->create(['name' => 'Hari' . uniqid()])->id,
+            'hari_id' => Hari::factory()->create(['name' => 'Hari'.uniqid()])->id,
             'ruang_id' => Ruang::factory()->create()->id,
             'sesi_id' => Sesi::factory()->create()->id,
             'kode_kelas' => $kodeKelas,
@@ -453,22 +458,33 @@ class ModulAjarTest extends TestCase
         ])->assertStatus(422);
     }
 
-    public function test_substitute_teacher_can_grade_and_gets_attendance_credit_then_slot_reverts_automatically(): void
+    public function test_substitute_teacher_can_claim_an_open_slot_and_grade_it_then_slot_reverts_automatically(): void
     {
         [$guruAsli, $userAsli] = $this->guruDenganAkun('Bu Rina');
         [$guruPengganti, $userPengganti] = $this->guruDenganAkun('Bu Sekar');
+        [, $userLain] = $this->guruDenganAkun('Pak Anwar');
         $siswa = Siswa::factory()->create();
         $this->buatKelasDenganSiswa($guruAsli, 'kode-1', [$siswa->id]);
         $detail = $this->buatModulDenganDetail('kode-1');
 
-        // Guru asli menunjuk pengganti saat persiapan.
-        $this->actingAs($userAsli)->postJson(route('modulAjar.mulaiPersiapan', $detail->id), [
-            'guru_pengganti_id' => $guruPengganti->id,
-        ])->assertOk();
-        $this->assertSame($guruPengganti->id, $detail->fresh()->guru_pengganti_id);
+        // Guru asli menandai dirinya tidak bisa hadir -- langsung terbuka untuk semua guru,
+        // tanpa perlu ACC siapa pun.
+        $this->actingAs($userAsli)->postJson(route('modulAjar.tandaiTidakBisaHadir', $detail->id))->assertOk();
+        $this->assertTrue($detail->fresh()->tidak_bisa_hadir);
 
-        // Guru pengganti belum ditugaskan di jadwal ini sama sekali, tapi tetap boleh menilai
-        // karena sedang jadi guru_pengganti untuk detail ini.
+        // Muncul di halaman Absen guru lain yang sama sekali tidak terlibat di kelas ini.
+        $this->actingAs($userLain)->get(route('absen.index'))->assertOk()->assertSee('Penjumlahan');
+
+        // Guru pengganti mengambil slot terbuka (war tiket -- siapa cepat dia dapat).
+        $this->actingAs($userPengganti)->postJson(route('modulAjar.klaimSlotTerbuka', $detail->id))->assertOk();
+        $detail->refresh();
+        $this->assertSame($guruPengganti->id, $detail->guru_pengganti_id);
+        $this->assertTrue($detail->sedang_dipersiapkan);
+        $this->assertFalse($detail->tidak_bisa_hadir);
+
+        // Sudah diambil orang lain -- guru ketiga yang tidak terlibat tidak lagi melihat kelas ini.
+        $this->actingAs($userLain)->get(route('absen.index'))->assertOk()->assertDontSee('Penjumlahan');
+
         $this->actingAs($userPengganti)->postJson(route('modulAjar.simpanNilai', $detail->id), [
             'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'nilai' => 5]],
         ])->assertOk();
@@ -478,6 +494,78 @@ class ModulAjarTest extends TestCase
         $this->assertSame($guruPengganti->id, $detail->diajarkan_oleh_guru_id, 'Absen harus dikreditkan ke guru yang benar-benar mengajar.');
         $this->assertSame($guruAsli->id, Jadwal::where('kode_kelas', 'kode-1')->value('guru_id'), 'Jadwal asli tidak boleh berubah sama sekali.');
         $this->assertDatabaseHas('absensi_gurus', ['guru_id' => $guruPengganti->id, 'modul_ajar_detail_id' => $detail->id]);
+    }
+
+    public function test_only_the_owning_guru_or_admin_can_mark_tidak_bisa_hadir(): void
+    {
+        [$guru, $user] = $this->guruDenganAkun();
+        [, $userLain] = $this->guruDenganAkun('Pak Anwar');
+        $siswa = Siswa::factory()->create();
+        $this->buatKelasDenganSiswa($guru, 'kode-1', [$siswa->id]);
+        $detail = $this->buatModulDenganDetail('kode-1');
+
+        $this->actingAs($userLain)->postJson(route('modulAjar.tandaiTidakBisaHadir', $detail->id))->assertStatus(403);
+
+        $this->actingAs($user)->postJson(route('modulAjar.tandaiTidakBisaHadir', $detail->id))->assertOk();
+        $this->assertTrue($detail->fresh()->tidak_bisa_hadir);
+    }
+
+    public function test_cannot_mark_tidak_bisa_hadir_for_a_detail_already_taught(): void
+    {
+        [$guru, $user] = $this->guruDenganAkun();
+        $siswa = Siswa::factory()->create();
+        $this->buatKelasDenganSiswa($guru, 'kode-1', [$siswa->id]);
+        $detail = $this->buatModulDenganDetail('kode-1');
+        $this->actingAs($user)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
+        $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'nilai' => 4]],
+        ])->assertOk();
+
+        $this->actingAs($user)->postJson(route('modulAjar.tandaiTidakBisaHadir', $detail->id))->assertStatus(422);
+    }
+
+    public function test_claiming_an_open_slot_is_first_come_first_served(): void
+    {
+        [$guruAsli, $userAsli] = $this->guruDenganAkun('Bu Rina');
+        [$guruA, $userA] = $this->guruDenganAkun('Guru A');
+        [, $userB] = $this->guruDenganAkun('Guru B');
+        $siswa = Siswa::factory()->create();
+        $this->buatKelasDenganSiswa($guruAsli, 'kode-1', [$siswa->id]);
+        $detail = $this->buatModulDenganDetail('kode-1');
+        $this->actingAs($userAsli)->postJson(route('modulAjar.tandaiTidakBisaHadir', $detail->id))->assertOk();
+
+        $this->actingAs($userA)->postJson(route('modulAjar.klaimSlotTerbuka', $detail->id))->assertOk();
+        $this->actingAs($userB)->postJson(route('modulAjar.klaimSlotTerbuka', $detail->id))->assertStatus(409);
+
+        $this->assertSame($guruA->id, $detail->fresh()->guru_pengganti_id);
+    }
+
+    public function test_admin_without_a_guru_account_cannot_claim_an_open_slot(): void
+    {
+        [$guruAsli, $userAsli] = $this->guruDenganAkun('Bu Rina');
+        $siswa = Siswa::factory()->create();
+        $this->buatKelasDenganSiswa($guruAsli, 'kode-1', [$siswa->id]);
+        $detail = $this->buatModulDenganDetail('kode-1');
+        $this->actingAs($userAsli)->postJson(route('modulAjar.tandaiTidakBisaHadir', $detail->id))->assertOk();
+
+        $this->actingAs($this->admin())->postJson(route('modulAjar.klaimSlotTerbuka', $detail->id))->assertStatus(403);
+    }
+
+    public function test_owning_guru_cannot_silently_take_back_a_class_from_an_active_substitute(): void
+    {
+        [$guruAsli, $userAsli] = $this->guruDenganAkun('Bu Rina');
+        [, $userPengganti] = $this->guruDenganAkun('Bu Sekar');
+        $siswa = Siswa::factory()->create();
+        $this->buatKelasDenganSiswa($guruAsli, 'kode-1', [$siswa->id]);
+        $detail = $this->buatModulDenganDetail('kode-1');
+        $this->actingAs($userAsli)->postJson(route('modulAjar.tandaiTidakBisaHadir', $detail->id))->assertOk();
+        $this->actingAs($userPengganti)->postJson(route('modulAjar.klaimSlotTerbuka', $detail->id))->assertOk();
+
+        $this->actingAs($userAsli)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertStatus(409);
+
+        // Admin tetap bisa override kalau memang perlu.
+        $this->actingAs($this->admin())->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
+        $this->assertNull($detail->fresh()->guru_pengganti_id);
     }
 
     public function test_reteaching_a_detail_overwrites_the_previous_grades_instead_of_keeping_history(): void
@@ -527,12 +615,12 @@ class ModulAjarTest extends TestCase
             'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'nilai' => 3]],
         ])->assertOk();
 
-        $this->actingAs($this->admin())->get(route('modulAjar.index'))
+        $this->actingAs($this->admin())->get(route('absen.index'))
             ->assertOk()
             ->assertSee('Bu Rina')
             ->assertSee('1 sesi');
 
-        $this->actingAs($user)->get(route('modulAjar.index'))
+        $this->actingAs($user)->get(route('absen.index'))
             ->assertOk()
             ->assertSee('Sudah mengajar 1 sesi bulan ini');
     }

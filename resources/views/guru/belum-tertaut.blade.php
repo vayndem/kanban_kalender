@@ -25,7 +25,7 @@
             </p>
             <form method="POST" action="{{ route('logout') }}" class="mt-5">
                 @csrf
-                <button type="submit" class="btn-neutral w-full text-sm">
+                <button type="submit" class="btn btn-neutral w-full text-sm">
                     <i class="fas fa-right-from-bracket"></i> Keluar
                 </button>
             </form>

@@ -76,6 +76,7 @@ export function filterStudents({
         const metadata = scheduleMeta[student.id] || {};
         return (!filters.kelas || student.kelas === filters.kelas)
             && (!filters.paket || Number(student.paket_pembayaran) === Number(filters.paket))
+            && (!filters.kemampuan || Number(student.tingkat_kemampuan_id) === Number(filters.kemampuan))
             && includesAny(metadata.sesi_ids || [], filters.sesiIds)
             && includesAny(metadata.guru_ids || [], filters.guruIds)
             && includesAny(metadata.ruang_ids || [], filters.ruangIds);

@@ -12,10 +12,14 @@ use App\Models\Paket;
 use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
+use App\Models\TingkatKemampuan;
+use App\Services\RaporService;
 use App\Support\NomorHp;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
 class SiswaController extends Controller
@@ -49,6 +53,28 @@ class SiswaController extends Controller
             'status' => 'success',
             'data' => $jadwals,
         ]);
+    }
+
+    public function rapor(Siswa $siswa, Request $request, RaporService $raporService): JsonResponse
+    {
+        $request->validate(['dari' => 'nullable|date', 'sampai' => 'nullable|date']);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $raporService->untukSiswa($siswa, $request->query('dari'), $request->query('sampai')),
+        ]);
+    }
+
+    public function raporPdf(Siswa $siswa, Request $request, RaporService $raporService)
+    {
+        $request->validate(['dari' => 'nullable|date', 'sampai' => 'nullable|date']);
+
+        $pdf = Pdf::loadView('pdf.rapor', [
+            'rapor' => $raporService->untukSiswa($siswa, $request->query('dari'), $request->query('sampai')),
+            'dicetakPada' => now()->translatedFormat('d F Y, H:i'),
+        ]);
+
+        return $pdf->download('Rapor-'.Str::slug($siswa->name).'-'.now()->format('YmdHis').'.pdf');
     }
 
     public function store(Request $request)
@@ -253,6 +279,10 @@ class SiswaController extends Controller
             $query->where('paket_pembayaran', $request->paket_id);
         }
 
+        if ($request->filled('kemampuan_id')) {
+            $query->where('tingkat_kemampuan_id', $request->kemampuan_id);
+        }
+
         if ($request->filled('sesi_ids')) {
             $sesiIds = array_filter(explode(',', $request->sesi_ids));
             $query->whereHas('jadwals', function ($q) use ($sesiIds) {
@@ -291,6 +321,11 @@ class SiswaController extends Controller
         if ($request->filled('paket_id')) {
             $paket = Paket::find($request->paket_id);
             $parts[] = 'Paket: '.($paket ? $paket->nama_paket : $request->paket_id);
+        }
+
+        if ($request->filled('kemampuan_id')) {
+            $kemampuan = TingkatKemampuan::find($request->kemampuan_id);
+            $parts[] = 'Kemampuan: '.($kemampuan ? 'Level '.$kemampuan->level.' — '.$kemampuan->keterangan : $request->kemampuan_id);
         }
 
         if ($request->filled('sesi_ids')) {

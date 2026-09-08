@@ -11,6 +11,7 @@ import { pembayaranHandler } from './admin/pembayaran';
 import { siswaHandler } from './admin/siswa';
 import { workshopHandler } from './admin/workshop';
 import { modulAjarHandler } from './admin/modul-ajar';
+import { absenHandler } from './admin/absen';
 import { calendarApp } from './components/calendar';
 import { installAlerts } from './core/alerts';
 import { salinTeksJadwal } from './core/http';
@@ -52,6 +53,7 @@ Alpine.data('pembayaranHandler', pembayaranHandler);
 Alpine.data('akunGuruHandler', akunGuruHandler);
 Alpine.data('workshopHandler', workshopHandler);
 Alpine.data('modulAjarHandler', modulAjarHandler);
+Alpine.data('absenHandler', absenHandler);
 Alpine.start();
 
 installJadwalDragDrop();

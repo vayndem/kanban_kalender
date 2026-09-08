@@ -3,10 +3,9 @@ import { csrfToken, kirim } from '../core/http';
 const HEADER_KOSONG = { tujuan_pembelajaran: '', kompetensi_awal: '', model_pembelajaran: '', sarana_media: '' };
 const DETAIL_KOSONG = { materi: '', sub_materi: '', cara_mengajar: '', tugas: '', tujuan: '', hasil_akhir_pembelajaran: '', keterangan: '' };
 
-export const modulAjarHandler = ({ isAdmin, initialKelasList, gurus, routes }) => ({
+export const modulAjarHandler = ({ isAdmin, initialKelasList, routes }) => ({
     isAdmin,
     kelasList: initialKelasList || [],
-    gurus: gurus || [],
     routes,
     isLoading: false,
     selectedKelas: null,
@@ -14,17 +13,8 @@ export const modulAjarHandler = ({ isAdmin, initialKelasList, gurus, routes }) =
     detailForm: { ...DETAIL_KOSONG },
     editingDetailId: null,
 
-    pengajaranDetail: null,
-    pengajaranTahap: null,
-    persiapanForm: { guru_pengganti_id: '' },
-    nilaiForm: [],
-
     kelasDi(hariId, sesiId) {
         return this.kelasList.filter(k => Number(k.hari_id) === Number(hariId) && Number(k.sesi_id) === Number(sesiId));
-    },
-
-    adaSedangDipersiapkan(kelas) {
-        return (kelas.modul_ajar?.details || []).some(d => d.sedang_dipersiapkan);
     },
 
     openKelas(kelas) {
@@ -42,7 +32,6 @@ export const modulAjarHandler = ({ isAdmin, initialKelasList, gurus, routes }) =
 
     closeModal() {
         this.selectedKelas = null;
-        this.tutupPengajaran();
     },
 
     get bisaUbahHeader() {
@@ -144,72 +133,4 @@ export const modulAjarHandler = ({ isAdmin, initialKelasList, gurus, routes }) =
         }
     },
 
-    tutupPengajaran() {
-        this.pengajaranDetail = null;
-        this.pengajaranTahap = null;
-        this.persiapanForm = { guru_pengganti_id: '' };
-        this.nilaiForm = [];
-    },
-
-    bukaPersiapan(detail) {
-        this.pengajaranDetail = detail;
-        this.pengajaranTahap = 'persiapan';
-        this.persiapanForm = { guru_pengganti_id: detail.guru_pengganti_id ? String(detail.guru_pengganti_id) : '' };
-    },
-
-    async simpanPersiapan() {
-        this.isLoading = true;
-        try {
-            const res = await kirim(`${this.routes.detailBase}/${this.pengajaranDetail.id}/persiapan`, 'POST', this.persiapanForm);
-            if (res.status !== 'success') return AppSwal.error(res.message);
-
-            this.perbaruiDetailLokal(res.data);
-            this.pengajaranDetail = { ...this.pengajaranDetail, ...res.data };
-            AppSwal.toast(res.message);
-        } catch (e) {
-            AppSwal.error('Gagal memulai persiapan.');
-        } finally {
-            this.isLoading = false;
-        }
-    },
-
-    bukaNilai(detail) {
-        this.pengajaranDetail = detail;
-        this.pengajaranTahap = 'nilai';
-        this.nilaiForm = (this.selectedKelas.siswa_list || []).map(s => {
-            const lama = (detail.absensis || []).find(a => Number(a.siswa_id) === Number(s.id));
-            return {
-                siswa_id: s.id,
-                nama: s.panggilan || s.name,
-                hadir: lama ? lama.hadir : true,
-                nilai: lama ? lama.nilai : null,
-            };
-        });
-    },
-
-    async simpanNilai() {
-        this.isLoading = true;
-        try {
-            const payload = { absensi: this.nilaiForm.map(({ siswa_id, hadir, nilai }) => ({ siswa_id, hadir, nilai: hadir ? (Number(nilai) || null) : null })) };
-            const res = await kirim(`${this.routes.detailBase}/${this.pengajaranDetail.id}/nilai`, 'POST', payload);
-            if (res.status !== 'success') return AppSwal.error(res.message);
-
-            this.perbaruiDetailLokal(res.data);
-            AppSwal.toast(res.message);
-            this.tutupPengajaran();
-        } catch (e) {
-            AppSwal.error('Gagal menyimpan nilai.');
-        } finally {
-            this.isLoading = false;
-        }
-    },
-
-    perbaruiDetailLokal(detailBaru) {
-        const details = this.selectedKelas.modul_ajar.details || [];
-        const idx = details.findIndex(d => d.id === detailBaru.id);
-        if (idx !== -1) details[idx] = { ...details[idx], ...detailBaru };
-
-        const idxKelas = this.kelasList.findIndex(k => k.kode_kelas === this.selectedKelas.kode_kelas);
-        if (idxKelas !== -1) this.kelasList[idxKelas] = { ...this.kelasList[idxKelas], modul_ajar: this.selectedKelas.modul_ajar };
-    },
 });

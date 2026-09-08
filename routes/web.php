@@ -37,8 +37,12 @@ Route::middleware(['auth', 'role:admin|guru'])->prefix('modul-ajar')->name('modu
     Route::put('/detail/{detail}', [ModulAjarController::class, 'updateDetail'])->name('updateDetail');
     Route::delete('/detail/{detail}', [ModulAjarController::class, 'hapusDetail'])->name('hapusDetail');
     Route::post('/detail/{detail}/persiapan', [ModulAjarController::class, 'mulaiPersiapan'])->name('mulaiPersiapan');
+    Route::post('/detail/{detail}/tidak-bisa-hadir', [ModulAjarController::class, 'tandaiTidakBisaHadir'])->name('tandaiTidakBisaHadir');
+    Route::post('/detail/{detail}/klaim', [ModulAjarController::class, 'klaimSlotTerbuka'])->name('klaimSlotTerbuka');
     Route::post('/detail/{detail}/nilai', [ModulAjarController::class, 'simpanNilai'])->name('simpanNilai');
 });
+
+Route::middleware(['auth', 'role:admin|guru'])->get('/absen', [ModulAjarController::class, 'absen'])->name('absen.index');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -87,6 +91,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/siswa/import-template', [SiswaController::class, 'downloadImportTemplate'])->name('admin.siswa.importTemplate');
     Route::post('/admin/siswa/import', [SiswaController::class, 'import'])->name('admin.siswa.import');
     Route::get('/admin/siswa/{siswa}/jadwal', [SiswaController::class, 'jadwal'])->name('admin.siswa.jadwal');
+    Route::get('/admin/siswa/{siswa}/rapor', [SiswaController::class, 'rapor'])->name('admin.siswa.rapor');
+    Route::get('/admin/siswa/{siswa}/rapor/pdf', [SiswaController::class, 'raporPdf'])->name('admin.siswa.raporPdf');
     Route::post('/admin/siswa', [SiswaController::class, 'store'])->name('admin.siswa.store');
     Route::put('/admin/siswa/{id}', [SiswaController::class, 'update'])->name('admin.siswa.update');
     Route::delete('/admin/siswa/{id}', [SiswaController::class, 'destroy'])->name('admin.siswa.destroy');

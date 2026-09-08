@@ -11,6 +11,7 @@ use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
 use App\Models\TingkatKemampuan;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
@@ -105,7 +106,7 @@ class WorkshopController extends Controller
     private function petaKetersediaan(Collection $jadwals): array
     {
         $haris = Hari::orderBy('id')->get(['id', 'name']);
-        $sesis = Sesi::orderBy('start_time')->get(['id', 'name']);
+        $sesis = Sesi::orderBy('start_time')->get(['id', 'name', 'start_time', 'end_time']);
         $ruangs = Ruang::orderBy('name')->get(['id', 'name']);
         $gurus = Guru::orderBy('name')->get(['id', 'name']);
 
@@ -120,7 +121,7 @@ class WorkshopController extends Controller
 
                 $peta[] = [
                     'hari' => $hari->name,
-                    'sesi' => $sesi->name,
+                    'sesi' => $sesi->name.' - '.Carbon::parse($sesi->start_time)->format('H:i').'–'.Carbon::parse($sesi->end_time)->format('H:i'),
                     'kelas_berjalan' => $diSlot->unique(fn ($j) => "{$j->ruang_id}_{$j->guru_id}")->count(),
                     'ruang_kosong' => $ruangs->whereNotIn('id', $ruangTerpakai)->pluck('name')->values(),
                     'guru_kosong' => $gurus->whereNotIn('id', $guruTerpakai)->pluck('name')->values(),

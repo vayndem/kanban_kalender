@@ -34,7 +34,7 @@
             </div>
         </div>
 
-        <div class="mb-6 grid gap-3 sm:grid-cols-4">
+        <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <select x-model="filterHari"
                 class="min-h-11 w-full rounded-xl border-gray-300 bg-white text-sm text-gray-900 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
                 <option value="">Semua Hari</option>

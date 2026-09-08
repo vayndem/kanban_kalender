@@ -14,6 +14,7 @@ use App\Models\Diskon;
 use App\Models\Pembayaran;
 use App\Models\Paket;
 use App\Models\Arsip;
+use App\Models\TingkatKemampuan;
 use App\Services\PaymentBatchService;
 use App\Services\RingkasanService;
 
@@ -39,6 +40,7 @@ class DashboardController extends Controller
         $allSiswas = collect();
         $allArsips = collect();
         $pakets = collect();
+        $kemampuans = collect();
         $diskons = collect();
         $jadwalsData = collect();
         $studentScheduleMeta = collect();
@@ -92,6 +94,7 @@ class DashboardController extends Controller
             $allSiswas = Siswa::with('tandas:id,siswa_id,keterangan,created_at')->orderBy('name')->get();
             $allArsips = Arsip::orderBy('name')->get();
             $pakets = Paket::query()->select(['id', 'nama_paket', 'harga', 'pertemuan'])->orderBy('nama_paket')->get();
+            $kemampuans = TingkatKemampuan::orderBy('level')->get(['id', 'level', 'keterangan']);
             $studentScheduleMeta = Jadwal::query()
                 ->select(['siswa_id', 'sesi_id', 'guru_id', 'ruang_id'])
                 ->get()
@@ -207,6 +210,7 @@ class DashboardController extends Controller
             'pembayaranSummaries' => $pembayaranSummaries,
             'batchStatus' => $batchStatus,
             'pakets' => $pakets,
+            'kemampuans' => $kemampuans,
             'jadwalsData' => $jadwalsData,
             'studentScheduleMeta' => $studentScheduleMeta,
             'diskons' => $diskons,

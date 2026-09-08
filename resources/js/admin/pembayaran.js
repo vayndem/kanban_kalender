@@ -1,4 +1,5 @@
 import { csrfToken } from '../core/http';
+import { isDarkMode } from '../core/theme';
 
 export const pembayaranHandler = ({
     initialSummaries,
@@ -396,7 +397,7 @@ export const pembayaranHandler = ({
         if (sisaTagihan <= 0) {
             return AppSwal.error('Tagihan ini sudah tidak memiliki sisa kewajiban.');
         }
-        const isDark = document.documentElement.classList.contains('dark');
+        const isDark = isDarkMode();
         const paidPercent = totalTagihan > 0 ? Math.min(100, Math.round((sudahDibayar / totalTagihan) * 100)) : 0;
 
         const {

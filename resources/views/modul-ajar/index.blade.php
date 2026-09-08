@@ -30,6 +30,10 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
+                        <a href="{{ route('absen.index') }}"
+                            class="text-xs font-bold text-slate-500 hover:text-emerald-600 transition-colors px-3 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30">
+                            <i class="fas fa-clipboard-user sm:mr-1"></i><span class="hidden sm:inline"> Absen</span>
+                        </a>
                         <a href="{{ $isAdmin ? route('dashboard') : route('guru.jadwal') }}"
                             class="text-xs font-bold text-slate-500 hover:text-emerald-600 transition-colors px-3 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30">
                             <i class="fas fa-arrow-left mr-1"></i> {{ $isAdmin ? 'Dashboard' : 'Jadwal Saya' }}
@@ -50,7 +54,6 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" x-data="modulAjarHandler({
                 isAdmin: @js($isAdmin),
                 initialKelasList: @js($kelasList),
-                gurus: @js($gurus),
                 routes: {
                     headerBase: @js(url('modul-ajar/header')),
                     kelolaDetailBase: @js(url('modul-ajar')),
@@ -71,33 +74,17 @@
                         <i class="fas fa-book-open-reader text-emerald-500"></i> Modul Ajar
                     </h3>
                     <p class="text-gray-500 dark:text-gray-400 mt-0.5 text-xs md:text-sm">
-                        Klik kelas untuk mengisi tujuan pembelajaran, rincian materi, dan menilai anak-anak setelah mengajar.
-                        Kotak abu-abu berarti sudah ada modul ajar; kotak kuning berarti sedang ada pertemuan yang dipersiapkan tapi belum dinilai.
+                        Klik kelas untuk mengisi tujuan pembelajaran dan rincian materi. Kotak abu-abu berarti sudah ada modul ajar.
+                        Untuk mulai mengajar, tandai tidak bisa hadir, atau menilai anak-anak, buka menu
+                        <a href="{{ route('absen.index') }}" class="font-bold text-emerald-600 hover:underline">Absen</a>.
                     </p>
-
-                    @if ($guru)
-                        <div class="mt-3 inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
-                            <i class="fas fa-clipboard-check"></i> Sudah mengajar {{ $absenBulanIni }} sesi bulan ini
-                        </div>
-                    @elseif ($rekapAbsenGuru && $rekapAbsenGuru->isNotEmpty())
-                        <div class="mt-3 rounded-lg border border-gray-100 dark:border-gray-700 p-3">
-                            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Rekap Absen Guru Bulan Ini</p>
-                            <div class="flex flex-wrap gap-2">
-                                @foreach ($rekapAbsenGuru as $r)
-                                    <span class="rounded-lg bg-slate-100 dark:bg-slate-700 px-2.5 py-1 text-xs font-bold text-slate-600 dark:text-slate-200">
-                                        {{ $r['nama'] }}: {{ $r['jumlah'] }} sesi
-                                    </span>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
                 </div>
 
                 <div class="overflow-x-auto shadow-md rounded-lg">
                     <table class="min-w-full w-full border-collapse table-fixed">
                         <thead class="bg-gray-100 dark:bg-gray-700/80">
                             <tr>
-                                <th class="border border-gray-300 dark:border-gray-600 p-3 text-center uppercase text-xs tracking-wider font-semibold text-gray-600 dark:text-white w-24 lg:w-32">
+                                <th class="sticky left-0 z-10 border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700/80 p-3 text-center uppercase text-xs tracking-wider font-semibold text-gray-600 dark:text-white w-24 lg:w-32">
                                     Sesi
                                 </th>
                                 @foreach ($haris as $hari)
@@ -110,7 +97,7 @@
                         <tbody class="bg-white dark:bg-gray-800">
                             @foreach ($sesis as $sesi)
                                 <tr class="even:bg-gray-50/50 dark:even:bg-gray-800/60">
-                                    <td class="border border-gray-200 dark:border-gray-600 p-2 text-center align-middle font-semibold text-gray-700 dark:text-white">
+                                    <td class="sticky left-0 z-10 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 p-2 text-center align-middle font-semibold text-gray-700 dark:text-white">
                                         {{ $sesi->name }}
                                         <span class="block text-xs text-gray-500 dark:text-gray-300 font-normal">
                                             {{ \Illuminate\Support\Str::of($sesi->start_time)->substr(0, 5) }} –
@@ -123,7 +110,7 @@
                                             <template x-for="kelas in kelasDi({{ $hari->id }}, {{ $sesi->id }})" :key="kelas.kode_kelas">
                                                 <div @click="openKelas(kelas)"
                                                     class="group relative p-2.5 mb-2 rounded-lg shadow border-l-4 text-sm cursor-pointer transition-all duration-200 ease-out hover:shadow-xl hover:-translate-y-0.5"
-                                                    :class="adaSedangDipersiapkan(kelas) ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/30' : (kelas.ada_header ? 'border-emerald-400 bg-gray-100 dark:bg-gray-700/60' : 'border-emerald-400 bg-white dark:bg-gray-700/90')">
+                                                    :class="kelas.ada_header ? 'border-emerald-400 bg-gray-100 dark:bg-gray-700/60' : 'border-emerald-400 bg-white dark:bg-gray-700/90'">
 
                                                     <span x-show="kelas.ada_header"
                                                         class="absolute top-1 right-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-black text-white"
@@ -132,9 +119,6 @@
                                                     <strong class="block font-bold text-gray-900 dark:text-white truncate" x-text="kelas.mapel"></strong>
                                                     <span class="block text-gray-600 dark:text-gray-200 mt-1" x-text="kelas.guru"></span>
                                                     <span class="block text-gray-500 dark:text-gray-300 text-xs mt-1" x-text="'Ruang: ' + kelas.ruang"></span>
-                                                    <span x-show="adaSedangDipersiapkan(kelas)" class="mt-1.5 inline-flex items-center gap-1 rounded-md bg-amber-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                                                        <i class="fas fa-hourglass-half"></i> Sedang dipersiapkan
-                                                    </span>
                                                 </div>
                                             </template>
                                         </td>
@@ -182,7 +166,7 @@
                                             <textarea x-model="headerForm.sarana_media" required rows="2"
                                                 class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
                                         </div>
-                                        <button type="submit" class="btn-primary text-sm w-full" :disabled="isLoading">
+                                        <button type="submit" class="btn btn-primary text-sm w-full" :disabled="isLoading">
                                             <span x-text="selectedKelas.ada_header ? 'Simpan Perubahan' : 'Simpan Modul Ajar'"></span>
                                         </button>
                                     </form>
@@ -206,7 +190,7 @@
                                         <div class="space-y-2">
                                             <template x-for="d in (selectedKelas.modul_ajar.details || [])" :key="d.id">
                                                 <div class="rounded-lg border p-2.5"
-                                                    :class="d.sedang_dipersiapkan ? 'border-amber-300 bg-amber-50/60 dark:bg-amber-950/20' : (d.diajarkan_oleh_guru_id ? 'border-emerald-200 bg-emerald-50/40 dark:bg-emerald-950/10' : 'border-gray-100 dark:border-gray-700')">
+                                                    :class="d.diajarkan_oleh_guru_id ? 'border-emerald-200 bg-emerald-50/40 dark:bg-emerald-950/10' : 'border-gray-100 dark:border-gray-700'">
                                                     <div class="flex items-start justify-between gap-2">
                                                         <div class="min-w-0">
                                                             <p class="text-sm font-bold text-gray-800 dark:text-gray-100">
@@ -219,7 +203,7 @@
                                                             </p>
                                                         </div>
                                                         <div x-show="isAdmin" class="flex gap-1 shrink-0">
-                                                            <button type="button" @click="editDetail(d)" class="btn-neutral px-2 py-1 text-[11px] rounded-md"><i class="fas fa-pen-to-square"></i></button>
+                                                            <button type="button" @click="editDetail(d)" class="btn btn-neutral px-2 py-1 text-[11px] rounded-md"><i class="fas fa-pen-to-square"></i></button>
                                                             <button type="button" @click="hapusDetail(d)" class="btn-sacred px-2 py-1 text-[11px] rounded-md"><i class="fas fa-trash-can"></i></button>
                                                         </div>
                                                     </div>
@@ -230,19 +214,6 @@
                                                         <p x-show="d.hasil_akhir_pembelajaran"><span class="font-semibold">Hasil akhir:</span> <span x-text="d.hasil_akhir_pembelajaran"></span></p>
                                                         <p x-show="d.keterangan"><span class="font-semibold">Keterangan:</span> <span x-text="d.keterangan"></span></p>
                                                     </dl>
-
-                                                    <div class="mt-2 flex gap-2">
-                                                        <button type="button" x-show="!d.sedang_dipersiapkan && !d.diajarkan_oleh_guru_id"
-                                                            @click="bukaPersiapan(d)" class="btn-accent text-[11px] px-2.5 py-1 rounded-md">
-                                                            <i class="fas fa-chalkboard-user"></i> Mulai Ajar
-                                                        </button>
-                                                        <button type="button" x-show="d.sedang_dipersiapkan" @click="bukaNilai(d)" class="btn-warning text-[11px] px-2.5 py-1 rounded-md">
-                                                            <i class="fas fa-clipboard-list"></i> Lihat Roster / Nilai
-                                                        </button>
-                                                        <button type="button" x-show="!d.sedang_dipersiapkan && d.diajarkan_oleh_guru_id" @click="bukaPersiapan(d)" class="btn-neutral text-[11px] px-2.5 py-1 rounded-md">
-                                                            <i class="fas fa-rotate"></i> Ajar Ulang
-                                                        </button>
-                                                    </div>
                                                 </div>
                                             </template>
                                             <template x-if="(selectedKelas.modul_ajar.details || []).length === 0">
@@ -267,93 +238,16 @@
                                             <textarea x-model="detailForm.keterangan" placeholder="Keterangan (opsional)" rows="2"
                                                 class="w-full rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
                                             <div class="flex gap-2">
-                                                <button type="submit" class="btn-primary text-xs flex-1" :disabled="isLoading">
+                                                <button type="submit" class="btn btn-primary text-xs flex-1" :disabled="isLoading">
                                                     <span x-text="editingDetailId ? 'Simpan Perubahan' : 'Tambah Materi'"></span>
                                                 </button>
-                                                <button type="button" x-show="editingDetailId" @click="resetDetailForm()" class="btn-neutral text-xs">Batal</button>
+                                                <button type="button" x-show="editingDetailId" @click="resetDetailForm()" class="btn btn-neutral text-xs">Batal</button>
                                             </div>
                                         </form>
                                     </div>
                                 </template>
                                 <template x-if="!selectedKelas.ada_header">
                                     <p class="text-xs text-gray-400 italic text-center py-2">Isi modul ajar dulu sebelum menambah rincian materi.</p>
-                                </template>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-
-                {{-- Sub-panel: persiapan (roster + ganti guru) / nilai (grading) --}}
-                <template x-if="pengajaranDetail">
-                    <div x-show="pengajaranDetail" x-transition.opacity class="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" @click="tutupPengajaran()">
-                        <div @click.stop x-transition class="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-800">
-                            <div class="flex items-start justify-between gap-4 bg-gradient-to-r from-amber-500 to-orange-500 p-4 text-white sticky top-0">
-                                <div class="min-w-0">
-                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-100" x-text="pengajaranTahap === 'nilai' ? 'Penilaian' : 'Persiapan'"></p>
-                                    <h3 class="mt-1 text-lg font-black truncate" x-text="pengajaranDetail.materi"></h3>
-                                </div>
-                                <button type="button" @click="tutupPengajaran()" class="shrink-0 rounded-full bg-white/15 px-3 py-2 text-sm font-bold hover:bg-white/25">Tutup</button>
-                            </div>
-
-                            <div class="p-4 space-y-4">
-                                {{-- Tahap persiapan: roster + ganti guru --}}
-                                <template x-if="pengajaranTahap === 'persiapan'">
-                                    <div class="space-y-4">
-                                        <div>
-                                            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400">Guru Pengganti (kalau berhalangan)</label>
-                                            <div class="mt-1 flex gap-2">
-                                                <select x-model="persiapanForm.guru_pengganti_id" class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                                                    <option value="">-- Tidak ada, saya sendiri --</option>
-                                                    <template x-for="g in gurus" :key="g.id">
-                                                        <option :value="String(g.id)" x-text="g.name"></option>
-                                                    </template>
-                                                </select>
-                                                <button type="button" @click="simpanPersiapan()" class="btn-primary text-xs px-3" :disabled="isLoading">Simpan</button>
-                                            </div>
-                                            <p x-show="pengajaranDetail.guru_pengganti" class="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
-                                                <i class="fas fa-people-arrows"></i> Digantikan oleh <span x-text="pengajaranDetail.guru_pengganti?.name"></span> untuk pertemuan ini.
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Daftar Anak (<span x-text="(selectedKelas.siswa_list || []).length"></span>)</p>
-                                            <div class="space-y-1">
-                                                <template x-for="s in (selectedKelas.siswa_list || [])" :key="s.id">
-                                                    <div class="rounded-lg bg-gray-50 dark:bg-gray-900/40 px-3 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200" x-text="s.panggilan || s.name"></div>
-                                                </template>
-                                            </div>
-                                        </div>
-
-                                        <button type="button" @click="bukaNilai(pengajaranDetail)" class="btn-primary text-sm w-full">
-                                            <i class="fas fa-arrow-right"></i> Lanjut ke Penilaian
-                                        </button>
-                                    </div>
-                                </template>
-
-                                {{-- Tahap nilai: grading per siswa --}}
-                                <template x-if="pengajaranTahap === 'nilai'">
-                                    <form @submit.prevent="simpanNilai()" class="space-y-3">
-                                        <template x-for="item in nilaiForm" :key="item.siswa_id">
-                                            <div class="flex items-center gap-2 rounded-lg border border-gray-100 dark:border-gray-700 p-2.5">
-                                                <span class="flex-1 text-sm font-bold text-gray-800 dark:text-gray-100" x-text="item.nama"></span>
-                                                <label class="flex items-center gap-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
-                                                    <input type="checkbox" x-model="item.hadir"> Hadir
-                                                </label>
-                                                <select x-show="item.hadir" x-model="item.nilai" :required="item.hadir"
-                                                    class="rounded-lg border border-gray-300 dark:border-gray-600 p-1.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                                                    <option value="">Nilai</option>
-                                                    <option value="1">1</option>
-                                                    <option value="2">2</option>
-                                                    <option value="3">3</option>
-                                                    <option value="4">4</option>
-                                                    <option value="5">5</option>
-                                                </select>
-                                            </div>
-                                        </template>
-                                        <button type="submit" class="btn-primary text-sm w-full" :disabled="isLoading">
-                                            <i class="fas fa-check"></i> Simpan Nilai & Selesaikan Pertemuan
-                                        </button>
-                                    </form>
                                 </template>
                             </div>
                         </div>

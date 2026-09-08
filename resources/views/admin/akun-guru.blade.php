@@ -27,7 +27,7 @@
                 </p>
             </div>
 
-            <div class="grid grid-cols-3 gap-3 mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                 <div
                     class="rounded-xl border border-emerald-200/70 dark:border-emerald-900/50 bg-emerald-50/70 dark:bg-emerald-950/20 p-3">
                     <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
@@ -66,7 +66,7 @@
                 </div>
             @endif
 
-            <div class="overflow-x-auto border border-gray-100 dark:border-gray-700 rounded-xl">
+            <div class="hidden sm:block overflow-x-auto border border-gray-100 dark:border-gray-700 rounded-xl">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
                     <thead class="bg-gray-50 dark:bg-gray-900/50 text-left">
                         <tr>
@@ -93,14 +93,14 @@
                                             diisi</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
+                                <td class="px-4 py-3">
                                     <span
                                         class="text-xs font-semibold text-gray-700 dark:text-gray-300">{{ $g['jumlah_slot'] }}
                                         slot</span>
                                     <span class="text-[11px] text-gray-400"> · {{ $g['jumlah_baris_jadwal'] }} baris
                                         jadwal</span>
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap">
+                                <td class="px-4 py-3">
                                     @if ($g['punya_akun'])
                                         <span
                                             class="text-[10px] font-black px-2 py-1 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
@@ -112,21 +112,23 @@
                                             ADA</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 text-center whitespace-nowrap space-x-1">
-                                    <button
-                                        @click="ubahEmail({{ $g['id'] }}, @js($g['name']), @js($g['email']))"
-                                        :disabled="isLoading"
-                                        class="btn-neutral px-3 py-1.5 text-[11px] rounded-md disabled:opacity-50">
-                                        <i class="fas fa-envelope"></i> Email
-                                    </button>
-                                    @if (!$g['punya_akun'])
+                                <td class="px-4 py-3 text-center">
+                                    <div class="flex flex-col gap-1.5 sm:flex-row sm:justify-center sm:gap-2">
                                         <button
-                                            @click="buatAkun({{ $g['id'] }}, @js($g['name']), @js($g['email']))"
+                                            @click="ubahEmail({{ $g['id'] }}, @js($g['name']), @js($g['email']))"
                                             :disabled="isLoading"
-                                            class="btn-primary px-3 py-1.5 text-[11px] rounded-md disabled:opacity-50">
-                                            <i class="fas fa-user-plus"></i> Buat Akun
+                                            class="btn btn-neutral px-3 py-2 text-xs rounded-md disabled:opacity-50">
+                                            <i class="fas fa-envelope"></i> Email
                                         </button>
-                                    @endif
+                                        @if (!$g['punya_akun'])
+                                            <button
+                                                @click="buatAkun({{ $g['id'] }}, @js($g['name']), @js($g['email']))"
+                                                :disabled="isLoading"
+                                                class="btn btn-primary px-3 py-2 text-xs rounded-md disabled:opacity-50">
+                                                <i class="fas fa-user-plus"></i> Buat Akun
+                                            </button>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -138,6 +140,57 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+
+            <div class="sm:hidden divide-y divide-gray-100 dark:divide-gray-700 rounded-xl border border-gray-100 dark:border-gray-700">
+                @forelse ($gurus as $g)
+                    <div class="p-4 space-y-2.5">
+                        <div class="flex items-center justify-between gap-2">
+                            <p class="font-bold text-gray-900 dark:text-white truncate">{{ $g['name'] }}</p>
+                            @if ($g['punya_akun'])
+                                <span
+                                    class="shrink-0 text-[10px] font-black px-2 py-1 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                                    <i class="fas fa-check"></i> AKTIF
+                                </span>
+                            @else
+                                <span
+                                    class="shrink-0 text-[10px] font-black px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">BELUM
+                                    ADA</span>
+                            @endif
+                        </div>
+                        <p class="text-xs">
+                            @if ($g['email'])
+                                <span class="font-mono text-gray-700 dark:text-gray-300">{{ $g['email'] }}</span>
+                            @else
+                                <span class="italic text-amber-600 dark:text-amber-400">Email belum diisi</span>
+                            @endif
+                        </p>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                            <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $g['jumlah_slot'] }} slot</span>
+                            · {{ $g['jumlah_baris_jadwal'] }} baris jadwal
+                        </p>
+                        <div class="flex flex-col gap-1.5 pt-1">
+                            <button
+                                @click="ubahEmail({{ $g['id'] }}, @js($g['name']), @js($g['email']))"
+                                :disabled="isLoading"
+                                class="btn btn-neutral w-full py-2 text-xs rounded-md disabled:opacity-50">
+                                <i class="fas fa-envelope"></i> Email
+                            </button>
+                            @if (!$g['punya_akun'])
+                                <button
+                                    @click="buatAkun({{ $g['id'] }}, @js($g['name']), @js($g['email']))"
+                                    :disabled="isLoading"
+                                    class="btn btn-primary w-full py-2 text-xs rounded-md disabled:opacity-50">
+                                    <i class="fas fa-user-plus"></i> Buat Akun
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="p-8 text-center text-gray-400 italic text-xs">
+                        Belum ada guru terdaftar. Tambahkan lewat menu Workshop.
+                    </div>
+                @endforelse
             </div>
 
         </div>
