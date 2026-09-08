@@ -23,7 +23,7 @@
     --color-primary-content: #ffffff;
     --color-secondary: #475569;
     --color-secondary-content: #ffffff;
-    --color-accent: #0f766e;
+    --color-accent: #7c3aed;
     --color-accent-content: #ffffff;
     --color-neutral: #334155;
     --color-neutral-content: #ffffff;
@@ -59,8 +59,8 @@
     --color-primary-content: #04231a;
     --color-secondary: #94a3b8;
     --color-secondary-content: #0f172a;
-    --color-accent: #2dd4bf;
-    --color-accent-content: #042f2a;
+    --color-accent: #a78bfa;
+    --color-accent-content: #1e1b4b;
     --color-neutral: #475569;
     --color-neutral-content: #f8fafc;
     --color-info: #38bdf8;
@@ -309,52 +309,6 @@
         background-color: #15803d;
     }
 
-    .btn.btn-primary,
-    .btn.btn-success,
-    .btn.btn-accent {
-        @apply border-none text-white shadow-sm;
-    }
-
-    .btn.btn-primary {
-        background-color: #047857;
-    }
-
-    .btn.btn-primary:hover {
-        background-color: #065f46;
-    }
-
-    .btn.btn-success {
-        background-color: #15803d;
-    }
-
-    .btn.btn-success:hover {
-        background-color: #166534;
-    }
-
-    .btn.btn-accent {
-        background-color: #0f766e;
-    }
-
-    .btn.btn-accent:hover {
-        background-color: #115e59;
-    }
-
-    .btn.btn-primary:disabled,
-    .btn.btn-success:disabled,
-    .btn.btn-accent:disabled {
-        @apply text-white/70;
-        background-color: #334155;
-    }
-
-    .btn-export {
-        @apply border-none bg-rose-600 text-white shadow-sm hover:bg-rose-700 focus:ring-rose-500;
-    }
-
-    .btn-sacred {
-        @apply border-none bg-gradient-to-r from-red-700 via-rose-700 to-red-800 text-white shadow-lg shadow-rose-900/20 hover:from-red-800 hover:via-rose-800 hover:to-red-900 focus:ring-rose-600;
-    }
-
-
     .icon-action-primary {
         @apply icon-action text-info hover:bg-info/10;
     }
@@ -506,4 +460,63 @@
         height: auto !important;
         max-height: none !important;
     }
+}
+
+.btn.btn-primary,
+.btn.btn-success,
+.btn.btn-accent,
+.btn.btn-info,
+.btn.btn-warning,
+.btn.btn-error,
+.btn.btn-export,
+.btn.btn-sacred {
+    --btn-fg: #ffffff;
+    --btn-border-style: none;
+}
+
+.btn.btn-primary {
+    --btn-color: #047857;
+}
+
+.btn.btn-success {
+    --btn-color: #15803d;
+}
+
+.btn.btn-accent {
+    --btn-color: #7c3aed;
+}
+
+.btn.btn-info {
+    --btn-color: #0369a1;
+}
+
+.btn.btn-warning {
+    --btn-color: #a1500a;
+}
+
+.btn.btn-error {
+    --btn-color: #b91c1c;
+}
+
+.btn.btn-export {
+    --btn-color: #be123c;
+}
+
+.btn.btn-sacred {
+    --btn-color: #9f1239;
+}
+
+.badge.badge-primary {
+    --badge-color: #047857;
+    --badge-fg: #ffffff;
+}
+
+.badge.badge-success {
+    --badge-color: #15803d;
+    --badge-fg: #ffffff;
+}
+
+.badge.badge-accent {
+    --badge-color: #7c3aed;
+    --badge-fg: #ffffff;
 }

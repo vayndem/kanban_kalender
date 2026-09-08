@@ -57,7 +57,7 @@
                                 <i class="fas fa-file-pdf mr-2"></i> Export PDF
                             </a>
 
-                            <button @click.prevent="openStashOptions()" type="button" class="btn btn-success text-base">
+                            <button @click.prevent="openStashOptions()" type="button" class="btn btn-info text-base">
                                 <i class="fas fa-database mr-2"></i> Stash
                             </button>
 
