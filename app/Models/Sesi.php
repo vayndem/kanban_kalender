@@ -12,10 +12,34 @@ class Sesi extends Model
 
     protected $fillable = ['name', 'start_time', 'end_time'];
 
-    protected $casts = [
-        'start_time' => 'datetime:H:i',
-        'end_time' => 'datetime:H:i',
-    ];
+    public function getStartTimeAttribute(?string $value): ?string
+    {
+        return $this->jamSaja($value);
+    }
+
+    public function getEndTimeAttribute(?string $value): ?string
+    {
+        return $this->jamSaja($value);
+    }
+
+    public function getRentangJamAttribute(): string
+    {
+        return $this->start_time && $this->end_time
+            ? $this->start_time.'–'.$this->end_time
+            : '';
+    }
+
+    public function getLabelAttribute(): string
+    {
+        $rentang = $this->rentang_jam;
+
+        return $rentang === '' ? (string) $this->name : $this->name.' - '.$rentang;
+    }
+
+    private function jamSaja(?string $value): ?string
+    {
+        return $value === null || $value === '' ? null : substr($value, 0, 5);
+    }
 
     public function jadwals(): HasMany
     {

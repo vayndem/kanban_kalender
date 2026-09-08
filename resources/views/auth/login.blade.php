@@ -12,7 +12,7 @@
         <div>
             <x-input-label for="email" :value="__('Email')" />
             <div class="relative">
-                <i class="fas fa-envelope pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-base-content/40"></i>
+                <i class="fas fa-envelope pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-base-content/60"></i>
                 <x-text-input id="email" class="block w-full pl-10" type="email" name="email" :value="old('email')"
                     placeholder="nama@email.com" required autofocus autocomplete="username" />
             </div>
@@ -22,12 +22,12 @@
         <div>
             <x-input-label for="password" :value="__('Password')" />
             <div class="relative">
-                <i class="fas fa-lock pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-base-content/40"></i>
+                <i class="fas fa-lock pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-base-content/60"></i>
                 <x-text-input id="password" class="block w-full pl-10 pr-11" ::type="lihatPassword ? 'text' : 'password'"
                     type="password" name="password" placeholder="••••••••" required autocomplete="current-password" />
                 <button type="button" @click="lihatPassword = !lihatPassword"
                     :aria-label="lihatPassword ? 'Sembunyikan password' : 'Tampilkan password'"
-                    class="absolute right-2 top-1/2 -translate-y-1/2 rounded-btn p-2 text-base-content/40 transition hover:bg-base-200 hover:text-base-content">
+                    class="absolute right-2 top-1/2 -translate-y-1/2 rounded-field p-2 text-base-content/60 transition hover:bg-base-200 hover:text-base-content">
                     <i class="fas" :class="lihatPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
                 </button>
             </div>

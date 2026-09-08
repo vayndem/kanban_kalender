@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <p class="text-[10px] font-black uppercase tracking-[.2em] text-success">
+                <p class="text-[11px] font-black uppercase tracking-[.2em] text-success">
                     Control Center</p>
                 <h2 class="text-xl font-black tracking-tight text-base-content sm:text-2xl">Dashboard
                     Operasional</h2>
@@ -49,7 +49,7 @@
                     <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
 
                         <div class="flex flex-wrap gap-3">
-                            <button @click.prevent="openExportOptions()" type="button" class="btn-export text-base">
+                            <button @click.prevent="openExportOptions()" type="button" class="btn btn-export text-base">
                                 <i class="fas fa-file-export mr-2"></i> Export / Copy
                             </button>
 
@@ -66,20 +66,20 @@
                             </a>
                         </div>
 
-                        <div class="flex-grow max-w-2xl">
+                        <div class="grow max-w-2xl">
                             <label for="universalSearch"
                                 class="block text-sm font-medium text-base-content/80 mb-1">
                                 <i class="fas fa-search mr-1"></i> Pencarian Universal
                             </label>
-                            <div class="relative rounded-md shadow-sm">
+                            <div class="relative rounded-md shadow-xs">
                                 <input type="text" id="universalSearch" x-model.debounce.300ms="universalSearch"
                                     placeholder="Cari Hari, Sesi, Mapel, Guru, atau Nama Siswa..."
-                                    class="w-full pl-10 px-3 py-2 border border-base-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary bg-base-100 text-base-content">
+                                    class="w-full pl-10 px-3 py-2 border border-base-300 rounded-md shadow-xs focus:outline-hidden focus:ring-primary focus:border-primary bg-base-100 text-base-content">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <i class="fas fa-search text-base-content/50"></i>
+                                    <i class="fas fa-search text-base-content/60"></i>
                                 </div>
                                 <button x-show="universalSearch.length > 0" @click="universalSearch = ''"
-                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-base-content/50 hover:text-base-content/70 cursor-pointer">
+                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-base-content/60 hover:text-base-content/70 cursor-pointer">
                                     <i class="fas fa-times-circle"></i>
                                 </button>
                             </div>
@@ -129,7 +129,7 @@
                                             $offset = $dayOffsets[$hari->name] ?? $index;
                                             $date = $startOfWeek->copy()->addDays($offset);
                                         @endphp
-                                        <span class="block mt-1 text-[10px] font-normal ">
+                                        <span class="block mt-1 text-[11px] font-normal ">
                                             {{ $date->translatedFormat('d F Y') }}
                                         </span>
                                     </th>
@@ -176,10 +176,10 @@
                                                                 ' ' .
                                                                 $siswaNames,
                                                         );
-                                                        $cardBgColor = $siswaCount < 4 ? 'bg-base-100' : 'bg-base-100/90';
+                                                        $cardBgColor = $siswaCount < 4 ? 'bg-base-200' : 'bg-base-200/80';
                                                     @endphp
 
-                                                    <div class="kanban-card group relative {{ $cardBgColor }} backdrop-blur-sm p-2.5 mb-2 rounded-lg shadow border-l-4 text-sm cursor-move transition-all duration-200 ease-out hover:shadow-xl hover:-translate-y-1"
+                                                    <div class="kanban-card group relative {{ $cardBgColor }} p-2.5 mb-2 rounded-field shadow-xs border border-base-300 border-l-4 text-sm cursor-move transition-all duration-200 ease-out hover:shadow-lg hover:-translate-y-0.5 hover:border-primary"
                                                         style="border-left-color: {{ $groupedClass['mapel']->border_color }};"
                                                         data-mapel-id="{{ $groupedClass['mapel']->id }}"
                                                         data-guru-id="{{ $groupedClass['guru']->id }}"
@@ -214,7 +214,7 @@
                                                                     refreshStudentSelections();
                                                                 });
                                                             "
-                                                            class="absolute top-1 right-1 p-2.5 rounded-full bg-base-200 text-base-content/60 hover:bg-primary/10 hover:text-primary dark:hover:bg-primary transition-all duration-200 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
+                                                            class="absolute top-1 right-1 p-2.5 rounded-full bg-base-200 text-base-content/60 hover:bg-primary/10 hover:text-primary transition-all duration-200 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
                                                             <i class="fas fa-pencil-alt fa-xs"></i>
                                                         </button>
 
@@ -237,7 +237,7 @@
                                                                 class="list-decimal list-inside text-base-content/60 text-xs pl-1">
                                                                 @foreach ($groupedClass['siswa_list'] as $siswa)
                                                                     <li
-                                                                        class="{{ $siswa->tandas->isNotEmpty() ? 'text-yellow-600 dark:text-yellow-400 font-bold' : '' }}">
+                                                                        class="{{ $siswa->tandas->isNotEmpty() ? 'text-warning font-bold' : '' }}">
                                                                         {{ $siswa->name }} -
                                                                         {{ $siswa->kelas }}
                                                                     </li>
@@ -285,7 +285,7 @@
             <div x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
                 x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
                 x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 py-8 bg-black bg-opacity-60 backdrop-blur-sm sm:items-center">
+                class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 py-8 bg-black bg-opacity-60 backdrop-blur-xs sm:items-center">
 
                 <div @click="showModal = false" class="absolute inset-0"></div>
 
@@ -304,7 +304,7 @@
                             <i class="fas fa-calendar-check text-primary"></i> Edit Jadwal & Catatan Siswa
                         </h3>
                         <button @click="showModal = false"
-                            class="text-base-content/50 hover:text-base-content/70 p-2.5 hover:bg-base-300 rounded-lg transition-colors">
+                            class="text-base-content/60 hover:text-base-content/70 p-2.5 hover:bg-base-300 rounded-lg transition-colors">
                             <i class="fas fa-times fa-lg"></i>
                         </button>
                     </div>
@@ -316,10 +316,10 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div>
                                         <label
-                                            class="block text-xs font-bold text-base-content/50 uppercase tracking-wider mb-1.5">Mata
+                                            class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1.5">Mata
                                             Pelajaran</label>
                                         <select x-model="editingJadwal.mapel_id"
-                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                                             <template x-for="mapel in allMapels" :key="mapel.id">
                                                 <option :value="mapel.id" x-text="mapel.name"></option>
                                             </template>
@@ -328,9 +328,9 @@
 
                                     <div>
                                         <label
-                                            class="block text-xs font-bold text-base-content/50 uppercase tracking-wider mb-1.5">Guru</label>
+                                            class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1.5">Guru</label>
                                         <select x-model="editingJadwal.guru_id"
-                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                                             <template x-for="guru in availableGurus(editingJadwal)"
                                                 :key="guru.id">
                                                 <option :value="guru.id" x-text="guru.name"></option>
@@ -340,9 +340,9 @@
 
                                     <div>
                                         <label
-                                            class="block text-xs font-bold text-base-content/50 uppercase tracking-wider mb-1.5">Ruang</label>
+                                            class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1.5">Ruang</label>
                                         <select x-model="editingJadwal.ruang_id"
-                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                                             <template x-for="ruang in availableRuangs(editingJadwal)"
                                                 :key="ruang.id">
                                                 <option :value="ruang.id" x-text="ruang.name"></option>
@@ -353,17 +353,17 @@
 
                                 <div class="border-t border-base-300 pt-4">
                                     <label
-                                        class="block text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2">Cari
+                                        class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-2">Cari
                                         & Tambah Siswa Baru</label>
                                     <div class="relative">
                                         <div
-                                            class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-base-content/50">
+                                            class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-base-content/60">
                                             <i class="fas fa-user-plus text-sm"></i>
                                         </div>
                                         <input type="text" x-model.debounce.300ms="searchModalSiswa"
                                             @keydown.escape.prevent="searchModalSiswa = ''"
                                             placeholder="Ketik nama siswa terdaftar untuk ditambahkan ke kelas ini..."
-                                            class="pl-10 w-full px-4 py-2.5 border border-base-300 rounded-xl shadow-sm focus:ring-2 focus:ring-primary bg-base-100 text-base-content text-sm focus:outline-none">
+                                            class="pl-10 w-full px-4 py-2.5 border border-base-300 rounded-xl shadow-xs focus:ring-2 focus:ring-primary bg-base-100 text-base-content text-sm focus:outline-hidden">
                                         <div x-show="availableStudentResults.length > 0" x-transition
                                             @click.away="searchModalSiswa = ''"
                                             class="absolute z-30 w-full mt-1 bg-base-100 border rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-base-300">
@@ -380,7 +380,7 @@
 
                                 <div class="border-t border-base-300 pt-4">
                                     <label
-                                        class="block text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2">Daftar
+                                        class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-2">Daftar
                                         Siswa Terpilih Di Kelas Ini (<span
                                             x-text="selectedStudentResults.length"></span>)</label>
                                     <div
@@ -393,20 +393,20 @@
                                                         selectedStudentDetail.id === siswa.id
                                                 }">
                                                 <div class="flex items-center gap-2 min-w-0">
-                                                    <i class="fas fa-circle-user shrink-0 text-base-content/50"
-                                                        :class="hasTanda(siswa) ? 'text-yellow-500' : ''"></i>
+                                                    <i class="fas fa-circle-user shrink-0 text-base-content/60"
+                                                        :class="hasTanda(siswa) ? 'text-warning' : ''"></i>
                                                     <span x-text="siswa.name" class="text-sm font-bold truncate"
-                                                        :class="hasTanda(siswa) ? 'text-yellow-600 dark:text-yellow-400' :
+                                                        :class="hasTanda(siswa) ? 'text-warning' :
                                                             'text-base-content'"></span>
                                                 </div>
                                                 <button @click.stop.prevent="removeSiswa(siswa.id)" type="button"
-                                                    class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-xs transition-colors shrink-0 font-semibold">
+                                                    class="p-2 text-error hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-xs transition-colors shrink-0 font-semibold">
                                                     <i class="fas fa-user-minus"></i> Hapus
                                                 </button>
                                             </div>
                                         </template>
                                         <div x-show="editingJadwal.siswa_ids && editingJadwal.siswa_ids.length === 0"
-                                            class="col-span-full text-sm text-base-content/50 text-center py-10 border-2 border-dashed border-base-300 bg-base-200/50 rounded-xl">
+                                            class="col-span-full text-sm text-base-content/60 text-center py-10 border-2 border-dashed border-base-300 bg-base-200/50 rounded-xl">
                                             <i class="fas fa-users mb-2 text-3xl"></i><br> Belum ada siswa terpilih
                                             di kelas ini
                                         </div>
@@ -422,25 +422,25 @@
                                         <i class="fas fa-clipboard-user text-primary"></i> Detail & Catatan Siswa
                                     </h4>
                                 </div>
-                                <div class="p-6 overflow-y-auto flex-grow">
+                                <div class="p-6 overflow-y-auto grow">
                                     <template x-if="selectedStudentDetail">
                                         <div class="animate-fadeIn space-y-6">
                                             <div class="text-center">
                                                 <div
-                                                    class="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md">
+                                                    class="w-16 h-16 bg-gradient-to-br from-blue-500 to-accent rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md">
                                                     <span class="text-2xl font-black text-white"
                                                         x-text="selectedStudentDetail.name.charAt(0)"></span>
                                                 </div>
                                                 <h3 class="text-base font-black text-base-content leading-tight"
                                                     x-text="selectedStudentDetail.name"></h3>
                                                 <span
-                                                    class="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-base-300 text-base-content/70 rounded"
+                                                    class="inline-block mt-1 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider bg-base-300 text-base-content/70 rounded"
                                                     x-text="'Kelas: ' + (selectedStudentDetail.kelas || 'N/A')"></span>
                                             </div>
                                             <div class="space-y-3">
                                                 <h5
-                                                    class="text-xs font-black uppercase text-base-content/50 tracking-widest border-b pb-1 flex items-center gap-1.5">
-                                                    <i class="fas fa-sticky-note text-yellow-500"></i> Catatan
+                                                    class="text-xs font-black uppercase text-base-content/60 tracking-widest border-b pb-1 flex items-center gap-1.5">
+                                                    <i class="fas fa-sticky-note text-warning"></i> Catatan
                                                     Khusus
                                                 </h5>
                                                 <template x-if="hasTanda(selectedStudentDetail)">
@@ -449,16 +449,16 @@
                                                         <template x-for="tanda in selectedStudentDetail.tandas"
                                                             :key="tanda.id">
                                                             <div
-                                                                class="relative bg-yellow-50/60 dark:bg-yellow-950/20 border-l-4 border-yellow-400 p-3 rounded-xl shadow-sm text-xs text-base-content">
+                                                                class="relative bg-yellow-50/60 dark:bg-yellow-950/20 border-l-4 border-yellow-400 p-3 rounded-xl shadow-xs text-xs text-base-content">
                                                                 <p x-text="tanda.keterangan"
                                                                     class="break-words font-medium leading-relaxed pr-6">
                                                                 </p>
                                                                 <span
-                                                                    class="text-[9px] text-base-content/50 mt-1.5 block font-mono"
+                                                                    class="text-[10px] text-base-content/60 mt-1.5 block font-mono"
                                                                     x-text="new Date(tanda.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})"></span>
                                                                 <button type="button"
                                                                     @click.stop="markTandaForDeletion(tanda.id, selectedStudentDetail.id)"
-                                                                    class="absolute top-2 right-2 text-red-400 hover:text-red-600 p-1 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+                                                                    class="absolute top-2 right-2 text-error hover:text-error p-1 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
                                                                     title="Hapus Catatan">
                                                                     <i class="fas fa-times"></i>
                                                                 </button>
@@ -471,7 +471,7 @@
                                                         class="text-center py-6 bg-base-100 rounded-xl border border-base-300 p-4">
                                                         <i
                                                             class="fas fa-circle-check text-green-400 text-2xl mb-1 block"></i>
-                                                        <p class="text-xs text-base-content/50">Tidak
+                                                        <p class="text-xs text-base-content/60">Tidak
                                                             ada catatan untuk siswa ini.</p>
                                                     </div>
                                                 </template>
@@ -480,7 +480,7 @@
                                     </template>
                                     <template x-if="!selectedStudentDetail">
                                         <div
-                                            class="h-full flex flex-col items-center justify-center text-center text-base-content/50 p-4 min-h-[200px]">
+                                            class="h-full flex flex-col items-center justify-center text-center text-base-content/60 p-4 min-h-[200px]">
                                             <i
                                                 class="fas fa-arrow-pointer text-3xl mb-3 opacity-40 animate-bounce"></i>
                                             <p class="text-xs leading-relaxed">Klik salah satu nama siswa di daftar
@@ -494,7 +494,7 @@
                         <div
                             class="px-6 py-4 bg-base-200 border-t flex justify-end gap-2.5">
                             <button type="button" @click="showModal = false"
-                                class="px-4 py-2 text-sm font-bold text-base-content/70 bg-base-100 border border-base-300 rounded-xl shadow-sm hover:bg-base-200 transition-all">Batal</button>
+                                class="px-4 py-2 text-sm font-bold text-base-content/70 bg-base-100 border border-base-300 rounded-xl shadow-xs hover:bg-base-200 transition-all">Batal</button>
                             <button type="button" id="saveJadwalButton" @click.prevent="saveJadwal"
                                 class="px-5 py-2 text-sm font-bold text-white bg-primary border border-transparent rounded-xl shadow-md hover:bg-primary/90 transition-all flex items-center gap-2"><i
                                     class="fas fa-save"></i> Simpan Perubahan</button>
@@ -508,7 +508,7 @@
             <div x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
                 x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
                 x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 py-8 bg-black bg-opacity-60 backdrop-blur-sm sm:items-center">
+                class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 py-8 bg-black bg-opacity-60 backdrop-blur-xs sm:items-center">
 
                 <div @click="showAddJadwalModal = false" class="absolute inset-0"></div>
 
@@ -527,7 +527,7 @@
                             <i class="fas fa-calendar-plus text-green-500"></i> Tambah Jadwal Baru
                         </h3>
                         <button @click="showAddJadwalModal = false"
-                            class="text-base-content/50 hover:text-base-content/70 p-2.5 hover:bg-base-300 rounded-lg transition-colors">
+                            class="text-base-content/60 hover:text-base-content/70 p-2.5 hover:bg-base-300 rounded-lg transition-colors">
                             <i class="fas fa-times fa-lg"></i>
                         </button>
                     </div>
@@ -537,7 +537,7 @@
                             <div
                                 class="w-full md:w-2/3 p-6 overflow-y-auto border-r bg-base-100 space-y-5">
                                 <div
-                                    class="bg-gradient-to-r from-blue-500 to-indigo-600 p-4 rounded-xl shadow-inner text-white flex items-center gap-3">
+                                    class="bg-gradient-to-r from-blue-500 to-accent p-4 rounded-xl shadow-inner text-white flex items-center gap-3">
                                     <div class="p-2.5 bg-white/20 rounded-xl">
                                         <i class="fas fa-clock text-lg"></i>
                                     </div>
@@ -556,10 +556,10 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div>
                                         <label
-                                            class="block text-xs font-bold text-base-content/50 uppercase tracking-wider mb-1.5">Mata
+                                            class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1.5">Mata
                                             Pelajaran</label>
                                         <select x-model.number="newJadwal.mata_pelajaran_id"
-                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                                             <template x-for="mapel in allMapels" :key="mapel.id">
                                                 <option :value="mapel.id" x-text="mapel.name"></option>
                                             </template>
@@ -568,9 +568,9 @@
 
                                     <div>
                                         <label
-                                            class="block text-xs font-bold text-base-content/50 uppercase tracking-wider mb-1.5">Guru</label>
+                                            class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1.5">Guru</label>
                                         <select x-model.number="newJadwal.guru_id"
-                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                                             <template x-for="guru in availableGurus(newJadwal)"
                                                 :key="guru.id">
                                                 <option :value="guru.id" x-text="guru.name"></option>
@@ -580,9 +580,9 @@
 
                                     <div>
                                         <label
-                                            class="block text-xs font-bold text-base-content/50 uppercase tracking-wider mb-1.5">Ruang</label>
+                                            class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1.5">Ruang</label>
                                         <select x-model.number="newJadwal.ruang_id"
-                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                                             <template x-for="ruang in availableRuangs(newJadwal)"
                                                 :key="ruang.id">
                                                 <option :value="ruang.id" x-text="ruang.name"></option>
@@ -593,17 +593,17 @@
 
                                 <div class="border-t border-base-300 pt-4">
                                     <label
-                                        class="block text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2">Cari
+                                        class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-2">Cari
                                         & Hubungkan Siswa</label>
                                     <div class="relative">
                                         <div
-                                            class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-base-content/50">
+                                            class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-base-content/60">
                                             <i class="fas fa-user-search text-sm"></i>
                                         </div>
                                         <input type="text" x-model.debounce.300ms="searchModalSiswa"
                                             @keydown.escape.prevent="searchModalSiswa = ''"
                                             placeholder="Ketik nama lengkap atau panggilan siswa untuk dimasukkan..."
-                                            class="pl-10 w-full px-4 py-2.5 border border-base-300 rounded-xl shadow-sm focus:ring-2 focus:ring-primary bg-base-100 text-base-content text-sm focus:outline-none">
+                                            class="pl-10 w-full px-4 py-2.5 border border-base-300 rounded-xl shadow-xs focus:ring-2 focus:ring-primary bg-base-100 text-base-content text-sm focus:outline-hidden">
                                         <div x-show="availableStudentResults.length > 0" x-transition
                                             @click.away="searchModalSiswa = ''"
                                             class="absolute z-30 w-full mt-1 bg-base-100 border rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-base-300">
@@ -620,7 +620,7 @@
 
                                 <div class="border-t border-base-300 pt-4">
                                     <label
-                                        class="block text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2">Anggota
+                                        class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-2">Anggota
                                         Siswa Terpilih Kelas Baru (<span
                                             x-text="selectedStudentResults.length"></span>)</label>
                                     <div
@@ -633,20 +633,20 @@
                                                         selectedStudentDetail.id === siswa.id
                                                 }">
                                                 <div class="flex items-center gap-2 min-w-0">
-                                                    <i class="fas fa-circle-user shrink-0 text-base-content/50"
-                                                        :class="hasTanda(siswa) ? 'text-yellow-500' : ''"></i>
+                                                    <i class="fas fa-circle-user shrink-0 text-base-content/60"
+                                                        :class="hasTanda(siswa) ? 'text-warning' : ''"></i>
                                                     <span x-text="siswa.name" class="text-sm font-bold truncate"
-                                                        :class="hasTanda(siswa) ? 'text-yellow-600 dark:text-yellow-400' :
+                                                        :class="hasTanda(siswa) ? 'text-warning' :
                                                             'text-base-content'"></span>
                                                 </div>
                                                 <button @click.stop.prevent="removeSiswa(siswa.id)" type="button"
-                                                    class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-xs transition-colors shrink-0 font-semibold">
+                                                    class="p-2 text-error hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg text-xs transition-colors shrink-0 font-semibold">
                                                     <i class="fas fa-minus"></i> Lepas
                                                 </button>
                                             </div>
                                         </template>
                                         <div x-show="selectedStudentResults.length === 0"
-                                            class="col-span-full text-sm text-base-content/50 text-center py-10 border-2 border-dashed border-base-300 bg-base-200/50 rounded-xl">
+                                            class="col-span-full text-sm text-base-content/60 text-center py-10 border-2 border-dashed border-base-300 bg-base-200/50 rounded-xl">
                                             <i class="fas fa-users-slash mb-2 text-3xl"></i><br> Belum melampirkan
                                             siswa, silakan cari di kolom atas
                                         </div>
@@ -662,7 +662,7 @@
                                         <i class="fas fa-clipboard-user text-green-500"></i> Catatan Siswa Terpilih
                                     </h4>
                                 </div>
-                                <div class="p-6 overflow-y-auto flex-grow">
+                                <div class="p-6 overflow-y-auto grow">
                                     <template x-if="selectedStudentDetail">
                                         <div class="animate-fadeIn space-y-6">
                                             <div class="text-center">
@@ -674,13 +674,13 @@
                                                 <h3 class="text-base font-black text-base-content leading-tight"
                                                     x-text="selectedStudentDetail.name"></h3>
                                                 <span
-                                                    class="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-base-300 text-base-content/70 rounded"
+                                                    class="inline-block mt-1 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider bg-base-300 text-base-content/70 rounded"
                                                     x-text="'Kelas: ' + (selectedStudentDetail.kelas || 'N/A')"></span>
                                             </div>
                                             <div class="space-y-3">
                                                 <h5
-                                                    class="text-xs font-black uppercase text-base-content/50 tracking-widest border-b pb-1 flex items-center gap-1.5">
-                                                    <i class="fas fa-sticky-note text-yellow-500"></i> Catatan
+                                                    class="text-xs font-black uppercase text-base-content/60 tracking-widest border-b pb-1 flex items-center gap-1.5">
+                                                    <i class="fas fa-sticky-note text-warning"></i> Catatan
                                                     Khusus
                                                 </h5>
                                                 <template x-if="hasTanda(selectedStudentDetail)">
@@ -689,12 +689,12 @@
                                                         <template x-for="tanda in selectedStudentDetail.tandas"
                                                             :key="tanda.id">
                                                             <div
-                                                                class="bg-yellow-50/60 dark:bg-yellow-950/20 border-l-4 border-yellow-400 p-3 rounded-xl shadow-sm text-xs text-base-content">
+                                                                class="bg-yellow-50/60 dark:bg-yellow-950/20 border-l-4 border-yellow-400 p-3 rounded-xl shadow-xs text-xs text-base-content">
                                                                 <p x-text="tanda.keterangan"
                                                                     class="break-words font-medium leading-relaxed">
                                                                 </p>
                                                                 <span
-                                                                    class="text-[9px] text-base-content/50 mt-1.5 block font-mono"
+                                                                    class="text-[10px] text-base-content/60 mt-1.5 block font-mono"
                                                                     x-text="new Date(tanda.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'})"></span>
                                                             </div>
                                                         </template>
@@ -705,7 +705,7 @@
                                                         class="text-center py-6 bg-base-100 rounded-xl border border-base-300 p-4">
                                                         <i
                                                             class="fas fa-circle-check text-green-400 text-2xl mb-1 block"></i>
-                                                        <p class="text-xs text-base-content/50">Tidak
+                                                        <p class="text-xs text-base-content/60">Tidak
                                                             ada catatan untuk siswa ini.</p>
                                                     </div>
                                                 </template>
@@ -714,7 +714,7 @@
                                     </template>
                                     <template x-if="!selectedStudentDetail">
                                         <div
-                                            class="h-full flex flex-col items-center justify-center text-center text-base-content/50 p-4 min-h-[200px]">
+                                            class="h-full flex flex-col items-center justify-center text-center text-base-content/60 p-4 min-h-[200px]">
                                             <i
                                                 class="fas fa-arrow-pointer text-3xl mb-3 opacity-40 animate-bounce"></i>
                                             <p class="text-xs leading-relaxed">Klik salah satu komponen kartu siswa
@@ -729,7 +729,7 @@
                         <div
                             class="px-6 py-4 bg-base-200 border-t flex justify-end gap-2.5">
                             <button type="button" @click="showAddJadwalModal = false"
-                                class="px-4 py-2 text-sm font-bold text-base-content/70 bg-base-100 border border-base-300 rounded-xl shadow-sm hover:bg-base-200 transition-all">Batal</button>
+                                class="px-4 py-2 text-sm font-bold text-base-content/70 bg-base-100 border border-base-300 rounded-xl shadow-xs hover:bg-base-200 transition-all">Batal</button>
                             <button type="button" id="saveNewJadwalButton" @click.prevent="saveNewJadwal()"
                                 class="px-5 py-2 text-sm font-bold text-white bg-green-600 border border-transparent rounded-xl shadow-md hover:bg-green-700 transition-all flex items-center gap-2"><i
                                     class="fas fa-check-circle"></i> Simpan Jadwal Baru</button>

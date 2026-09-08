@@ -17,7 +17,7 @@
 
 <body class="font-sans antialiased">
     <a href="#konten-utama"
-        class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-btn focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-primary-content">
+        class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-field focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-primary-content">
         Lompat ke konten utama
     </a>
 
@@ -36,9 +36,7 @@
             <div class="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8">
                 @include('admin.partials.tabs', ['activeTab' => $activeTab])
 
-                <div class="animate-rise">
-                    {{ $slot }}
-                </div>
+                {{ $slot }}
             </div>
         </main>
 

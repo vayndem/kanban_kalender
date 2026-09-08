@@ -33,21 +33,21 @@
                     <div
                         class="app-card border-success/40 bg-success/10 p-4">
                         <p
-                            class="text-[10px] font-bold uppercase tracking-wider text-success">
+                            class="text-[11px] font-bold uppercase tracking-wider text-success">
                             Kelas Diampu</p>
                         <p class="mt-1.5 text-2xl font-black text-success">{{ $totalKelas }}
                         </p>
                     </div>
                     <div
                         class="app-card border-primary/40 bg-primary/10 p-4">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-primary">Siswa
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-primary">Siswa
                             Diajar</p>
                         <p class="mt-1.5 text-2xl font-black text-primary">{{ $totalSiswa }}</p>
                     </div>
                     <div
                         class="app-card col-span-2 flex items-center gap-2.5 p-4 sm:col-span-1">
-                        <i class="fas fa-eye text-base-content/50"></i>
-                        <p class="text-[11px] text-base-content/70 leading-snug">
+                        <i class="fas fa-eye text-base-content/60"></i>
+                        <p class="text-xs text-base-content/70 leading-snug">
                             Halaman ini <span class="font-bold">hanya menampilkan</span> jadwal Anda.
                             Perubahan jadwal dilakukan oleh admin.
                         </p>
@@ -64,13 +64,13 @@
                         <div
                             class="px-4 py-3 border-b border-base-300 bg-base-200 flex items-center justify-between">
                             <h2 class="font-bold text-sm">{{ $hari->name }}</h2>
-                            <span class="text-[11px] font-semibold text-base-content/60">
+                            <span class="text-xs font-semibold text-base-content/60">
                                 {{ $kelasHariIni->count() }} kelas
                             </span>
                         </div>
 
                         @if ($kelasHariIni->isEmpty())
-                            <p class="px-4 py-6 text-center text-xs italic text-base-content/50">Tidak ada kelas pada hari ini.</p>
+                            <p class="px-4 py-6 text-center text-xs italic text-base-content/60">Tidak ada kelas pada hari ini.</p>
                         @else
                             <div class="divide-y divide-base-300">
                                 @foreach ($sesis as $sesi)
@@ -84,7 +84,7 @@
                                             <div class="sm:w-40 shrink-0">
                                                 <p class="text-xs font-black text-success">
                                                     {{ $sesi->name }}</p>
-                                                <p class="text-[11px] text-base-content/60 font-mono">
+                                                <p class="text-xs text-base-content/60 font-mono">
                                                     {{ \Illuminate\Support\Str::of($sesi->start_time)->substr(0, 5) }}
                                                     –
                                                     {{ \Illuminate\Support\Str::of($sesi->end_time)->substr(0, 5) }}
@@ -107,10 +107,10 @@
                                                 <div class="mt-2 flex flex-wrap gap-1.5">
                                                     @foreach ($k['siswa'] as $s)
                                                         <span
-                                                            class="rounded-btn border border-base-300 bg-base-200 px-2 py-1 text-[11px]">
+                                                            class="rounded-field border border-base-300 bg-base-200 px-2 py-1 text-xs">
                                                             {{ $s['panggilan'] ?: $s['nama'] }}
                                                             @if ($s['kelas'])
-                                                                <span class="text-base-content/50">·
+                                                                <span class="text-base-content/60">·
                                                                     {{ $s['kelas'] }}</span>
                                                             @endif
                                                         </span>
@@ -124,7 +124,7 @@
                         @endif
                     </div>
                 @empty
-                    <p class="text-center text-sm text-base-content/50 py-10">Belum ada hari yang terdaftar.</p>
+                    <p class="text-center text-sm text-base-content/60 py-10">Belum ada hari yang terdaftar.</p>
                 @endforelse
 
             </div>

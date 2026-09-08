@@ -1,11 +1,11 @@
-<nav x-data="{ open: false }" class="sticky top-0 z-50 border-b border-base-300 bg-base-100/90 shadow-sm backdrop-blur-xl">
+<nav x-data="{ open: false }" class="sticky top-0 z-50 border-b border-base-300 bg-base-100/90 shadow-xs backdrop-blur-xl">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex">
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
                         <x-application-logo class="block h-10 w-10" />
-                        <span class="hidden lg:block"><strong class="block text-sm font-black tracking-tight text-base-content">E-ling Admin</strong><small class="block text-[10px] font-bold uppercase tracking-[.16em] text-primary">Course Manager</small></span>
+                        <span class="hidden lg:block"><strong class="block text-sm font-black tracking-tight text-base-content">E-ling Admin</strong><small class="block text-[11px] font-bold uppercase tracking-[.16em] text-primary">Course Manager</small></span>
                     </a>
                 </div>
 
@@ -29,8 +29,8 @@
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center gap-2 rounded-btn border border-base-300 bg-base-200 px-3 py-2 text-sm font-bold text-base-content transition hover:border-primary/50 hover:text-primary">
-                            <div class="flex h-7 w-7 items-center justify-center rounded-btn bg-primary/15 text-xs font-black text-primary">{{ mb_strtoupper(mb_substr(Auth::user()->name, 0, 1)) }}</div>
+                        <button class="inline-flex items-center gap-2 rounded-field border border-base-300 bg-base-200 px-3 py-2 text-sm font-bold text-base-content transition hover:border-primary/50 hover:text-primary">
+                            <div class="flex h-7 w-7 items-center justify-center rounded-field brand-chip text-xs font-black">{{ mb_strtoupper(mb_substr(Auth::user()->name, 0, 1)) }}</div>
                             <div>{{ Auth::user()->name }}</div>
 
                             <div class="ms-1">
@@ -88,7 +88,7 @@
 
         <div class="pt-4 pb-1 border-t border-base-300">
             <div class="flex items-center gap-3 px-4">
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-btn bg-primary/15 text-sm font-black text-primary">{{ mb_strtoupper(mb_substr(Auth::user()->name, 0, 1)) }}</div>
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-field brand-chip text-sm font-black">{{ mb_strtoupper(mb_substr(Auth::user()->name, 0, 1)) }}</div>
                 <div class="min-w-0">
                     <div class="font-bold text-base text-base-content break-words">{{ Auth::user()->name }}</div>
                     <div class="text-sm text-base-content/60 break-words">{{ Auth::user()->email }}</div>

@@ -1,16 +1,124 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@source '../views';
+@source '../js';
+
+@plugin '@tailwindcss/forms';
+
+@plugin 'daisyui' {
+    themes: false;
+    logs: false;
+}
+
+@plugin 'daisyui/theme' {
+    name: 'eling';
+    default: true;
+    color-scheme: light;
+
+    --color-base-100: #ffffff;
+    --color-base-200: #f1f5f9;
+    --color-base-300: #cbd5e1;
+    --color-base-content: #0f172a;
+    --color-primary: #047857;
+    --color-primary-content: #ffffff;
+    --color-secondary: #475569;
+    --color-secondary-content: #ffffff;
+    --color-accent: #0f766e;
+    --color-accent-content: #ffffff;
+    --color-neutral: #334155;
+    --color-neutral-content: #ffffff;
+    --color-info: #0369a1;
+    --color-info-content: #ffffff;
+    --color-success: #15803d;
+    --color-success-content: #ffffff;
+    --color-warning: #a1500a;
+    --color-warning-content: #ffffff;
+    --color-error: #b91c1c;
+    --color-error-content: #ffffff;
+
+    --radius-selector: 2rem;
+    --radius-field: 1rem;
+    --radius-box: 2rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 1;
+}
+
+@plugin 'daisyui/theme' {
+    name: 'eling-dark';
+    prefersdark: true;
+    color-scheme: dark;
+
+    --color-base-100: #1e293b;
+    --color-base-200: #0f172a;
+    --color-base-300: #475569;
+    --color-base-content: #e2e8f0;
+    --color-primary: #34d399;
+    --color-primary-content: #04231a;
+    --color-secondary: #94a3b8;
+    --color-secondary-content: #0f172a;
+    --color-accent: #2dd4bf;
+    --color-accent-content: #042f2a;
+    --color-neutral: #475569;
+    --color-neutral-content: #f8fafc;
+    --color-info: #38bdf8;
+    --color-info-content: #082f49;
+    --color-success: #4ade80;
+    --color-success-content: #052e16;
+    --color-warning: #fbbf24;
+    --color-warning-content: #451a03;
+    --color-error: #f87171;
+    --color-error-content: #450a0a;
+
+    --radius-selector: 2rem;
+    --radius-field: 1rem;
+    --radius-box: 2rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 1;
+}
+
+@theme {
+    --font-sans: 'Figtree', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
 
 @layer base {
+    *,
+    ::before,
+    ::after {
+        border-color: var(--color-base-300);
+    }
+
     html {
         scroll-behavior: smooth;
+        -webkit-text-size-adjust: 100%;
     }
 
     body {
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         text-rendering: optimizeLegibility;
+        font-feature-settings: 'cv11', 'ss01';
+        letter-spacing: -0.006em;
+        line-height: 1.55;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        letter-spacing: -0.018em;
+        line-height: 1.25;
+    }
+
+    .tabular,
+    td,
+    th {
+        font-variant-numeric: tabular-nums;
     }
 
     ::selection {
@@ -26,7 +134,7 @@
     input:not([type='checkbox']):not([type='radio']),
     textarea,
     select {
-        @apply border-base-300 bg-base-100 text-base-content placeholder:text-base-content/40;
+        @apply border-base-300 bg-base-100 text-base-content placeholder:text-base-content/60;
     }
 
     select option {
@@ -60,25 +168,45 @@
     }
 }
 
+@utility app-card {
+    @apply rounded-box border border-base-300 bg-base-100 text-base-content transition-all duration-200;
+    box-shadow: 0 1px 2px oklch(0% 0 0 / 0.06), 0 8px 24px -16px oklch(0% 0 0 / 0.35);
+}
+
+@utility app-tab {
+    @apply inline-flex items-center gap-2 whitespace-nowrap rounded-field px-3.5 py-2.5 text-sm font-bold text-base-content/60 transition-all duration-200 hover:bg-base-200 hover:text-base-content;
+}
+
+@utility icon-action {
+    @apply rounded-field p-2.5 transition-all duration-150 active:scale-95;
+}
+
+@utility brand-chip {
+    @apply flex shrink-0 items-center justify-center rounded-field text-white shadow-sm;
+    background-color: #047857;
+}
+
 @layer components {
     .app-canvas {
         @apply bg-base-200;
         background-image:
-            radial-gradient(at 10% 0%, oklch(var(--p) / 0.10) 0px, transparent 55%),
-            radial-gradient(at 92% 4%, oklch(var(--a) / 0.08) 0px, transparent 50%);
+            radial-gradient(at 10% 0%, oklch(var(--p) / 0.08) 0px, transparent 55%),
+            radial-gradient(at 92% 4%, oklch(var(--a) / 0.06) 0px, transparent 50%);
         background-attachment: fixed;
     }
 
-    .app-card {
-        @apply rounded-box border border-base-300 bg-base-100 text-base-content shadow-sm transition-all duration-200;
-    }
 
     .app-card-hover {
         @apply app-card;
     }
 
     .app-card-hover:hover {
-        @apply -translate-y-0.5 border-primary/40 shadow-lg;
+        @apply -translate-y-0.5 border-primary;
+        box-shadow: 0 2px 6px oklch(0% 0 0 / 0.10), 0 16px 32px -18px oklch(0% 0 0 / 0.5);
+    }
+
+    .app-surface {
+        @apply rounded-box border border-base-300 bg-base-200/70;
     }
 
     .app-card-pad {
@@ -86,12 +214,12 @@
     }
 
     .app-section-head {
-        @apply mb-3 flex items-center gap-2.5 text-[11px] font-black uppercase tracking-[0.14em] text-base-content/60;
+        @apply mb-3 flex items-center gap-2.5 text-sm font-extrabold tracking-tight text-base-content;
     }
 
     .app-section-head::before {
         content: '';
-        @apply h-4 w-1 shrink-0 rounded-full bg-gradient-to-b from-primary to-accent;
+        @apply h-5 w-1 shrink-0 rounded-full bg-gradient-to-b from-primary to-accent;
     }
 
     .app-section-title {
@@ -116,11 +244,11 @@
     }
 
     .app-stat-label {
-        @apply mt-0.5 text-[11px] font-bold uppercase tracking-wider text-base-content/60;
+        @apply mt-0.5 text-xs font-semibold text-base-content/70;
     }
 
     .app-chip {
-        @apply inline-flex items-center gap-1 rounded-btn bg-base-200 px-2 py-1 text-[11px] font-bold text-base-content/70;
+        @apply inline-flex items-center gap-1 rounded-field border border-base-300 bg-base-200 px-2 py-1 text-xs font-semibold text-base-content/80;
     }
 
     .app-empty {
@@ -128,7 +256,7 @@
     }
 
     .app-empty-icon {
-        @apply mb-3 flex h-12 w-12 items-center justify-center rounded-box bg-base-200 text-xl text-base-content/40;
+        @apply mb-3 flex h-12 w-12 items-center justify-center rounded-box bg-base-200 text-xl text-base-content/60;
     }
 
     .app-empty-title {
@@ -140,36 +268,92 @@
     }
 
     .app-label {
-        @apply mb-1 block text-[11px] font-bold uppercase tracking-wider text-base-content/60;
+        @apply mb-1.5 block text-xs font-semibold text-base-content/70;
     }
 
     .app-input {
-        @apply w-full rounded-btn border border-base-300 bg-base-100 px-3 py-2.5 text-sm text-base-content shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20;
+        @apply w-full rounded-field border border-base-300 bg-base-100 px-3 py-2.5 text-sm text-base-content shadow-sm outline-hidden transition focus:border-primary focus:ring-2 focus:ring-primary/20;
     }
 
-    .app-tab {
-        @apply inline-flex items-center gap-2 whitespace-nowrap rounded-btn px-3.5 py-2.5 text-sm font-bold text-base-content/60 transition-all duration-200 hover:bg-base-200 hover:text-base-content;
-    }
 
     .app-tab-active {
-        @apply app-tab bg-gradient-to-br from-primary to-accent text-primary-content shadow-md shadow-primary/30 hover:from-primary hover:to-accent hover:text-primary-content;
+        @apply app-tab text-white shadow-md shadow-black/20 hover:text-white;
+        background-image: linear-gradient(135deg, #047857, #0f766e);
     }
 
     .app-table-wrap {
         @apply overflow-x-auto rounded-box border border-base-300;
     }
 
+    .badge.badge-primary,
+    .badge.badge-success,
+    .badge.badge-accent {
+        @apply border-none text-white;
+    }
+
+    .badge.badge-primary {
+        background-color: #047857;
+    }
+
+    .badge.badge-success {
+        background-color: #15803d;
+    }
+
+    .badge.badge-accent {
+        background-color: #0f766e;
+    }
+
+
+    .brand-chip-success {
+        @apply brand-chip;
+        background-color: #15803d;
+    }
+
+    .btn.btn-primary,
+    .btn.btn-success,
+    .btn.btn-accent {
+        @apply border-none text-white shadow-sm;
+    }
+
+    .btn.btn-primary {
+        background-color: #047857;
+    }
+
+    .btn.btn-primary:hover {
+        background-color: #065f46;
+    }
+
+    .btn.btn-success {
+        background-color: #15803d;
+    }
+
+    .btn.btn-success:hover {
+        background-color: #166534;
+    }
+
+    .btn.btn-accent {
+        background-color: #0f766e;
+    }
+
+    .btn.btn-accent:hover {
+        background-color: #115e59;
+    }
+
+    .btn.btn-primary:disabled,
+    .btn.btn-success:disabled,
+    .btn.btn-accent:disabled {
+        @apply text-white/70;
+        background-color: #334155;
+    }
+
     .btn-export {
-        @apply btn border-none bg-rose-600 text-white shadow-sm hover:bg-rose-700 focus:ring-rose-500;
+        @apply border-none bg-rose-600 text-white shadow-sm hover:bg-rose-700 focus:ring-rose-500;
     }
 
     .btn-sacred {
-        @apply btn border-none bg-gradient-to-r from-red-700 via-rose-700 to-red-800 text-white shadow-lg shadow-rose-900/20 hover:from-red-800 hover:via-rose-800 hover:to-red-900 focus:ring-rose-600;
+        @apply border-none bg-gradient-to-r from-red-700 via-rose-700 to-red-800 text-white shadow-lg shadow-rose-900/20 hover:from-red-800 hover:via-rose-800 hover:to-red-900 focus:ring-rose-600;
     }
 
-    .icon-action {
-        @apply rounded-btn p-2.5 transition-all duration-150 active:scale-95;
-    }
 
     .icon-action-primary {
         @apply icon-action text-info hover:bg-info/10;
@@ -208,7 +392,8 @@
     }
 
     .modal-header-brand {
-        @apply flex items-start justify-between gap-4 bg-gradient-to-br from-primary to-accent p-5 text-primary-content;
+        @apply flex items-start justify-between gap-4 p-5 text-white;
+        background-image: linear-gradient(135deg, #047857, #0f766e);
     }
 
     .search-preview-item {
@@ -229,11 +414,11 @@
     }
 
     .searchable-select-input {
-        @apply min-h-10 w-full rounded-btn border border-base-300 bg-base-100 py-2 pl-9 pr-3 text-sm text-base-content outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20;
+        @apply min-h-10 w-full rounded-field border border-base-300 bg-base-100 py-2 pl-9 pr-3 text-sm text-base-content outline-hidden transition focus:border-primary focus:ring-2 focus:ring-primary/20;
     }
 
     .searchable-select-trigger {
-        @apply flex min-h-10 w-full items-center justify-between gap-3 rounded-btn border border-base-300 bg-base-100 px-3 py-2 text-left text-sm font-semibold text-base-content shadow-sm outline-none transition hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20;
+        @apply flex min-h-10 w-full items-center justify-between gap-3 rounded-field border border-base-300 bg-base-100 px-3 py-2 text-left text-sm font-semibold text-base-content shadow-sm outline-hidden transition hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20;
     }
 
     .searchable-select-trigger-label {
@@ -241,7 +426,7 @@
     }
 
     .searchable-select-chevron {
-        @apply shrink-0 text-xs text-base-content/40 transition-transform;
+        @apply shrink-0 text-xs text-base-content/60 transition-transform;
     }
 
     .searchable-select-panel {
@@ -253,7 +438,7 @@
     }
 
     .searchable-select-search-wrap > i {
-        @apply pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-xs text-base-content/40;
+        @apply pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-xs text-base-content/60;
     }
 
     .searchable-select-results {
@@ -261,7 +446,7 @@
     }
 
     .searchable-select-option {
-        @apply flex w-full items-center justify-between gap-3 rounded-btn px-3 py-2.5 text-left transition hover:bg-primary/10;
+        @apply flex w-full items-center justify-between gap-3 rounded-field px-3 py-2.5 text-left transition hover:bg-primary/10;
     }
 
     .searchable-select-option.is-active,
@@ -274,11 +459,11 @@
     }
 
     .searchable-select-option-preview {
-        @apply shrink-0 text-[10px] text-base-content/40;
+        @apply shrink-0 text-[10px] text-base-content/60;
     }
 
     .searchable-select-empty {
-        @apply px-3 py-5 text-center text-sm text-base-content/50;
+        @apply px-3 py-5 text-center text-sm text-base-content/60;
     }
 }
 

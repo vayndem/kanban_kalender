@@ -30,7 +30,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                 <div
                     class="rounded-xl border border-success/40 bg-success/10 p-3">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-success">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-success">
                         <i class="fas fa-chalkboard-user mr-1"></i>Total Guru
                     </p>
                     <p class="mt-1 text-xl font-black text-success">{{ $ringkasan['guru'] }}
@@ -38,7 +38,7 @@
                 </div>
                 <div
                     class="rounded-xl border border-primary/40 bg-primary/10 p-3">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-primary">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-primary">
                         <i class="fas fa-user-check mr-1"></i>Punya Akun
                     </p>
                     <p class="mt-1 text-xl font-black text-primary">{{ $ringkasan['guru_berakun'] }}
@@ -46,10 +46,10 @@
                 </div>
                 <div
                     class="rounded-xl border border-amber-200/70 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-950/20 p-3">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-warning">
                         <i class="fas fa-envelope-circle-check mr-1"></i>Belum Ada Email
                     </p>
-                    <p class="mt-1 text-xl font-black text-amber-800 dark:text-amber-200">
+                    <p class="mt-1 text-xl font-black text-warning">
                         {{ $ringkasan['guru_tanpa_email'] }}</p>
                 </div>
             </div>
@@ -57,8 +57,8 @@
             @if ($ringkasan['guru_tanpa_email'] > 0)
                 <div
                     class="mb-6 rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/20 px-4 py-3.5 flex items-start gap-2.5">
-                    <i class="fas fa-circle-exclamation text-amber-500 mt-0.5"></i>
-                    <p class="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+                    <i class="fas fa-circle-exclamation text-warning mt-0.5"></i>
+                    <p class="text-xs text-warning leading-relaxed">
                         <span class="font-black">{{ $ringkasan['guru_tanpa_email'] }} guru belum punya email.</span>
                         Guru hanya bisa dibuatkan akun login setelah emailnya diisi. Isi lewat tabel di bawah.
                         Guru tanpa akun tetap bisa dijadwalkan seperti biasa.
@@ -70,12 +70,12 @@
                 <table class="min-w-full divide-y divide-base-300 text-sm">
                     <thead class="bg-base-200 text-left">
                         <tr>
-                            <th class="px-4 py-3 text-xs font-bold text-base-content/50 uppercase tracking-wider">Nama</th>
-                            <th class="px-4 py-3 text-xs font-bold text-base-content/50 uppercase tracking-wider">Email</th>
-                            <th class="px-4 py-3 text-xs font-bold text-base-content/50 uppercase tracking-wider">Beban
+                            <th class="px-4 py-3 text-xs font-bold text-base-content/60 uppercase tracking-wider">Nama</th>
+                            <th class="px-4 py-3 text-xs font-bold text-base-content/60 uppercase tracking-wider">Email</th>
+                            <th class="px-4 py-3 text-xs font-bold text-base-content/60 uppercase tracking-wider">Beban
                                 Mengajar</th>
-                            <th class="px-4 py-3 text-xs font-bold text-base-content/50 uppercase tracking-wider">Akun</th>
-                            <th class="px-4 py-3 text-center text-xs font-bold text-base-content/50 uppercase tracking-wider">
+                            <th class="px-4 py-3 text-xs font-bold text-base-content/60 uppercase tracking-wider">Akun</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-base-content/60 uppercase tracking-wider">
                                 Aksi</th>
                         </tr>
                     </thead>
@@ -89,7 +89,7 @@
                                         <span
                                             class="font-mono text-xs text-base-content/80">{{ $g['email'] }}</span>
                                     @else
-                                        <span class="text-[11px] italic text-amber-600 dark:text-amber-400">belum
+                                        <span class="text-xs italic text-warning">belum
                                             diisi</span>
                                     @endif
                                 </td>
@@ -97,18 +97,18 @@
                                     <span
                                         class="text-xs font-semibold text-base-content/80">{{ $g['jumlah_slot'] }}
                                         slot</span>
-                                    <span class="text-[11px] text-base-content/50"> · {{ $g['jumlah_baris_jadwal'] }} baris
+                                    <span class="text-xs text-base-content/60"> · {{ $g['jumlah_baris_jadwal'] }} baris
                                         jadwal</span>
                                 </td>
                                 <td class="px-4 py-3">
                                     @if ($g['punya_akun'])
                                         <span
-                                            class="text-[10px] font-black px-2 py-1 rounded bg-success/10 text-success">
+                                            class="text-[11px] font-black px-2 py-1 rounded bg-success/10 text-success">
                                             <i class="fas fa-check"></i> AKTIF
                                         </span>
                                     @else
                                         <span
-                                            class="text-[10px] font-black px-2 py-1 rounded bg-base-200 text-base-content/60">BELUM
+                                            class="text-[11px] font-black px-2 py-1 rounded bg-base-200 text-base-content/60">BELUM
                                             ADA</span>
                                     @endif
                                 </td>
@@ -133,7 +133,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-4 py-10 text-center text-base-content/50 italic text-xs">
+                                <td colspan="5" class="px-4 py-10 text-center text-base-content/60 italic text-xs">
                                     Belum ada guru terdaftar. Tambahkan lewat menu Workshop.
                                 </td>
                             </tr>
@@ -149,12 +149,12 @@
                             <p class="font-bold text-base-content truncate">{{ $g['name'] }}</p>
                             @if ($g['punya_akun'])
                                 <span
-                                    class="shrink-0 text-[10px] font-black px-2 py-1 rounded bg-success/10 text-success">
+                                    class="shrink-0 text-[11px] font-black px-2 py-1 rounded bg-success/10 text-success">
                                     <i class="fas fa-check"></i> AKTIF
                                 </span>
                             @else
                                 <span
-                                    class="shrink-0 text-[10px] font-black px-2 py-1 rounded bg-base-200 text-base-content/60">BELUM
+                                    class="shrink-0 text-[11px] font-black px-2 py-1 rounded bg-base-200 text-base-content/60">BELUM
                                     ADA</span>
                             @endif
                         </div>
@@ -162,10 +162,10 @@
                             @if ($g['email'])
                                 <span class="font-mono text-base-content/80">{{ $g['email'] }}</span>
                             @else
-                                <span class="italic text-amber-600 dark:text-amber-400">Email belum diisi</span>
+                                <span class="italic text-warning">Email belum diisi</span>
                             @endif
                         </p>
-                        <p class="text-[11px] text-base-content/60">
+                        <p class="text-xs text-base-content/60">
                             <span class="font-semibold text-base-content/80">{{ $g['jumlah_slot'] }} slot</span>
                             · {{ $g['jumlah_baris_jadwal'] }} baris jadwal
                         </p>
@@ -187,7 +187,7 @@
                         </div>
                     </div>
                 @empty
-                    <div class="p-8 text-center text-base-content/50 italic text-xs">
+                    <div class="p-8 text-center text-base-content/60 italic text-xs">
                         Belum ada guru terdaftar. Tambahkan lewat menu Workshop.
                     </div>
                 @endforelse

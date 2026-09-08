@@ -156,7 +156,7 @@
     <button
         type="button"
         @click="open = true"
-        class="group flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-white shadow-xl shadow-success/20 transition hover:scale-105 hover:shadow-2xl hover:shadow-success/20 focus:outline-none focus:ring-4 focus:ring-primary dark:focus:ring-primary"
+        class="group flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-white shadow-xl shadow-success/20 transition hover:scale-105 hover:shadow-2xl hover:shadow-success/20 focus:outline-hidden focus:ring-4 focus:ring-primary dark:focus:ring-primary"
         aria-label="Buka panduan admin"
     >
         <span class="text-2xl font-black">?</span>
@@ -165,7 +165,7 @@
     <template x-if="open">
     <div
         x-transition.opacity
-        class="fixed inset-0 z-[121] flex items-end justify-end bg-base-200/45 p-4 backdrop-blur-sm sm:items-center sm:justify-center"
+        class="fixed inset-0 z-[121] flex items-end justify-end bg-base-200/45 p-4 backdrop-blur-xs sm:items-center sm:justify-center"
     >
         <div @click="open = false" class="absolute inset-0"></div>
 
@@ -182,9 +182,9 @@
             <div class="bg-gradient-to-r from-primary to-accent px-6 py-5 text-white">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-success">Pusat Bantuan</p>
+                        <p class="text-xs font-black uppercase tracking-[0.2em] text-white/75">Pusat Bantuan</p>
                         <h3 class="mt-2 text-xl font-black" x-text="content.title"></h3>
-                        <p class="mt-2 text-sm text-success" x-text="content.summary"></p>
+                        <p class="mt-2 text-sm leading-relaxed text-white/85" x-text="content.summary"></p>
                     </div>
                     <button
                         type="button"

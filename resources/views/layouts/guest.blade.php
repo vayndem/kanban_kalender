@@ -32,7 +32,7 @@
                 </div>
             </div>
 
-            <p class="mt-6 text-center text-xs text-base-content/50">
+            <p class="mt-6 text-center text-xs text-base-content/60">
                 Butuh bantuan? Hubungi admin E-Ling Course.
             </p>
         </div>

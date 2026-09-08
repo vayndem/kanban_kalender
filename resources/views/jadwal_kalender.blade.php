@@ -22,42 +22,42 @@
         <div class="mb-3 grid gap-3 sm:grid-cols-[1fr_auto]">
             <label class="relative block">
                 <span class="sr-only">Cari jadwal</span>
-                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-base-content/50"></i>
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-base-content/60"></i>
                 <input type="search" x-model.debounce.200ms="query" placeholder="Cari jadwal..."
-                    class="input input-bordered min-h-12 w-full pl-11 pr-10">
+                    class="input min-h-12 w-full pl-11 pr-10">
                 <button x-show="query" @click="query = ''" type="button" aria-label="Hapus pencarian"
                     class="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-base-content/60 hover:bg-base-200">&times;</button>
             </label>
             <div
-                class="flex min-h-12 items-center rounded-xl border border-base-300 bg-base-100 px-4 text-sm font-semibold text-base-content/70 shadow-sm">
+                class="flex min-h-12 items-center rounded-xl border border-base-300 bg-base-100 px-4 text-sm font-semibold text-base-content/70 shadow-xs">
                 <i class="far fa-calendar mr-2 text-primary"></i><span x-text="todayLabel"></span>
             </div>
         </div>
 
         <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <select x-model="filterHari"
-                class="select select-bordered min-h-11 w-full text-sm">
+                class="select min-h-11 w-full text-sm">
                 <option value="">Semua Hari</option>
                 @foreach ($haris as $hari)
                     <option value="{{ $hari->id }}">{{ $hari->name }}</option>
                 @endforeach
             </select>
             <select x-model="filterMapel"
-                class="select select-bordered min-h-11 w-full text-sm">
+                class="select min-h-11 w-full text-sm">
                 <option value="">Semua Mata Pelajaran</option>
                 @foreach ($mapels as $mapel)
                     <option value="{{ $mapel->id }}">{{ $mapel->name }}</option>
                 @endforeach
             </select>
             <select x-model="filterGuru"
-                class="select select-bordered min-h-11 w-full text-sm">
+                class="select min-h-11 w-full text-sm">
                 <option value="">Semua Guru</option>
                 @foreach ($gurus as $guru)
                     <option value="{{ $guru->id }}">{{ $guru->name }}</option>
                 @endforeach
             </select>
             <select x-model="filterRuang"
-                class="select select-bordered min-h-11 w-full text-sm">
+                class="select min-h-11 w-full text-sm">
                 <option value="">Semua Ruang</option>
                 @foreach ($ruangs as $ruang)
                     <option value="{{ $ruang->id }}">{{ $ruang->name }}</option>
@@ -129,7 +129,7 @@
         {{-- Desktop/tablet: kalender matriks. --}}
         <template x-if="isDesktop">
             <div
-                class="app-table-wrap bg-base-100 shadow-sm">
+                class="app-table-wrap bg-base-100 shadow-xs">
                 <table class="min-w-[980px] w-full table-fixed border-collapse">
                     <thead>
                         <tr class="bg-base-200">
@@ -137,7 +137,7 @@
                             @foreach ($haris as $hari)
                                 <th class="border-b border-base-300 p-3 text-sm"
                                     :class="isCurrentDay(@js($hari->name)) ?
-                                        'bg-primary/10 text-primary' : ''">
+                                        'bg-primary text-primary-content font-black' : ''">
                                     {{ $hari->name }}</th>
                             @endforeach
                         </tr>
@@ -157,7 +157,7 @@
                                             <article
                                                 x-show="matches(@js($searchText), { hari: {{ $hari->id }}, mapel: {{ $groupedClass['mapel']->id }}, guru: {{ $groupedClass['guru']->id }}, ruang: {{ $groupedClass['ruang']->id }} })"
                                                 x-transition
-                                                class="mb-2 rounded-btn border-l-4 bg-base-200 p-3 text-xs shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                                                class="mb-2 rounded-field border border-base-300 border-l-4 bg-base-200 p-3 text-xs shadow-xs transition-all hover:-translate-y-0.5 hover:shadow-md"
                                                 style="border-left-color: {{ $groupedClass['mapel']->border_color }}">
                                                 <strong
                                                     class="block text-sm text-base-content">{{ $groupedClass['mapel']->name }}</strong>

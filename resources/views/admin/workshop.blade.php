@@ -63,7 +63,7 @@
                 @endphp
                 @foreach ($kartu as [$label, $nilai, $ikon, $kotak, $teks])
                     <div class="rounded-box border p-3 transition-transform hover:-translate-y-0.5 {{ $kotak }}">
-                        <p class="text-[10px] font-bold uppercase tracking-wider {{ $teks }}">
+                        <p class="text-[11px] font-bold uppercase tracking-wider {{ $teks }}">
                             <i class="fas {{ $ikon }} mr-1"></i>{{ $label }}
                         </p>
                         <p class="mt-1 text-xl font-black text-base-content">{{ $nilai }}</p>
@@ -86,16 +86,16 @@
             <div x-show="activeSection === 'siswa'" x-cloak>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <form id="workshop-siswa-form" @submit.prevent="simpanSiswa" class="space-y-3">
-                        <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider"
+                        <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider"
                             x-text="siswaForm.id ? 'Ubah Siswa' : 'Tambah Siswa Baru'"></h4>
 
                         <div>
-                            <label class="block text-[11px] font-semibold text-base-content/60">Nama
+                            <label class="block text-xs font-semibold text-base-content/60">Nama
                                 Lengkap</label>
                             <input type="text" x-model="siswaForm.name" required
-                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                             <template x-for="mirip in kemiripanSiswaNama" :key="mirip.id">
-                                <p class="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
+                                <p class="mt-1 text-xs text-warning">
                                     <i class="fas fa-triangle-exclamation"></i> Mirip dengan siswa yang sudah ada:
                                     <span class="font-bold" x-text="mirip.name"></span>
                                     <span x-text="mirip.kelas ? '(' + mirip.kelas + ')' : ''"></span>
@@ -106,26 +106,26 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label
-                                    class="block text-[11px] font-semibold text-base-content/60">Panggilan</label>
+                                    class="block text-xs font-semibold text-base-content/60">Panggilan</label>
                                 <input type="text" x-model="siswaForm.panggilan"
-                                    class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                    class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                             </div>
                             <div>
                                 <label
-                                    class="block text-[11px] font-semibold text-base-content/60">Kelas</label>
+                                    class="block text-xs font-semibold text-base-content/60">Kelas</label>
                                 <input type="text" x-model="siswaForm.kelas"
-                                    class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                    class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                             </div>
                         </div>
                         <template x-if="infoKelas.length > 0">
                             <div
                                 class="rounded-lg border border-primary/40 bg-primary/10 p-2.5">
-                                <p class="text-[11px] font-bold text-primary mb-1">
+                                <p class="text-xs font-bold text-primary mb-1">
                                     <i class="fas fa-circle-info"></i> Kelas <span x-text="siswaForm.kelas"></span>
                                     sudah ada di:
                                 </p>
                                 <template x-for="(k, i) in infoKelas" :key="i">
-                                    <p class="text-[11px] text-primary">
+                                    <p class="text-xs text-primary">
                                         <span x-text="k.hari"></span>, <span x-text="k.sesi"></span> —
                                         <span x-text="k.mapel"></span> · <span x-text="k.guru"></span> · <span
                                             x-text="k.ruang"></span>
@@ -135,14 +135,14 @@
                         </template>
 
                         <div>
-                            <label class="block text-[11px] font-semibold text-base-content/60">Nomor
+                            <label class="block text-xs font-semibold text-base-content/60">Nomor
                                 HP</label>
                             <input type="text" x-model="siswaForm.no_hp" @input="formatPhone" placeholder="+62812..."
-                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                             <template x-if="kemiripanNoHp.length > 0">
                                 <div
                                     class="mt-1.5 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/20 p-2.5">
-                                    <p class="text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                                    <p class="text-xs font-bold text-warning">
                                         <i class="fas fa-people-arrows"></i>
                                         Nomor ini sudah dipakai:
                                         <span x-text="kemiripanNoHp.map(s => s.name).join(', ')"></span>.
@@ -153,10 +153,10 @@
                         </div>
 
                         <div>
-                            <label class="block text-[11px] font-semibold text-base-content/60">Paket
+                            <label class="block text-xs font-semibold text-base-content/60">Paket
                                 Pembayaran</label>
                             <select x-model="siswaForm.paket_pembayaran"
-                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                                 <option value="">-- Pilih Paket --</option>
                                 <template x-for="p in pakets" :key="p.id">
                                     <option :value="String(p.id)" x-text="formatPaketLabel(p)"></option>
@@ -165,15 +165,15 @@
                         </div>
 
                         <div>
-                            <label class="block text-[11px] font-semibold text-base-content/60">Kemampuan</label>
+                            <label class="block text-xs font-semibold text-base-content/60">Kemampuan</label>
                             <select x-model="siswaForm.tingkat_kemampuan_id"
-                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                                 <option value="">-- Pilih Kemampuan --</option>
                                 <template x-for="k in kemampuans" :key="k.id">
                                     <option :value="String(k.id)" x-text="'Level ' + k.level + ' — ' + k.keterangan"></option>
                                 </template>
                             </select>
-                            <p class="mt-1 text-[11px] text-base-content/50" x-show="kemampuans.length === 0">
+                            <p class="mt-1 text-xs text-base-content/60" x-show="kemampuans.length === 0">
                                 Belum ada level kemampuan — tambahkan dulu di tab <span class="font-bold">Kemampuan</span>.
                             </p>
                         </div>
@@ -189,12 +189,12 @@
 
                     <div>
                         <div class="mb-3 rounded-lg border border-dashed border-base-300 p-3">
-                            <h5 class="text-[11px] font-bold text-base-content/50 uppercase tracking-wider mb-2">Import Massal</h5>
-                            <p class="text-[11px] text-base-content/60 mb-2">
+                            <h5 class="text-xs font-bold text-base-content/60 uppercase tracking-wider mb-2">Import Massal</h5>
+                            <p class="text-xs text-base-content/60 mb-2">
                                 Download kerangka, isi datanya, lalu upload lagi. Siswa dengan nama yang sudah ada akan diperbarui, yang belum ada akan ditambahkan baru.
                             </p>
                             <div class="flex flex-wrap gap-2">
-                                <a :href="routes.siswaImportTemplate" class="btn-export text-xs px-3 py-1.5 rounded-md">
+                                <a :href="routes.siswaImportTemplate" class="btn btn-export text-xs px-3 py-1.5 rounded-md">
                                     <i class="fas fa-download"></i> Download Kerangka
                                 </a>
                                 <input type="file" x-ref="fileImportSiswa" accept=".xlsx,.xls,.csv" class="hidden" @change="importSiswaMassal($event)">
@@ -205,7 +205,7 @@
                         </div>
 
                         <input type="text" x-model="searchSiswa" placeholder="Cari nama, kelas, atau no HP..."
-                            class="w-full mb-3 rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                            class="w-full mb-3 rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                         <div class="space-y-1.5 max-h-[520px] overflow-y-auto pr-1">
                             <template x-for="s in filteredSiswas" :key="s.id">
                                 <div class="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-base-300 hover:border-primary dark:hover:border-primary transition-all"
@@ -214,17 +214,17 @@
                                     <div class="min-w-0">
                                         <p class="text-xs font-bold text-base-content truncate"
                                             x-text="s.name"></p>
-                                        <p class="text-[10px] text-base-content/50"
+                                        <p class="text-[11px] text-base-content/60"
                                             x-text="(s.kelas || '-') + ' · ' + (s.no_hp || 'tanpa HP')"></p>
                                     </div>
                                     <button type="button" @click="editSiswa(s)"
-                                        class="btn btn-neutral px-2.5 py-1 text-[11px] rounded-md shrink-0">
+                                        class="btn btn-neutral px-2.5 py-1 text-xs rounded-md shrink-0">
                                         <i class="fas fa-pen-to-square"></i>
                                     </button>
                                 </div>
                             </template>
                             <template x-if="filteredSiswas.length === 0">
-                                <p class="text-xs text-base-content/50 italic text-center py-6">Tidak ada siswa ditemukan.</p>
+                                <p class="text-xs text-base-content/60 italic text-center py-6">Tidak ada siswa ditemukan.</p>
                             </template>
                         </div>
                     </div>
@@ -235,21 +235,21 @@
             <div x-show="activeSection === 'guru'" x-cloak>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <form @submit.prevent="simpanGuru" class="space-y-3">
-                        <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider"
+                        <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider"
                             x-text="guruForm.id ? 'Ubah Guru' : 'Tambah Guru Baru'"></h4>
                         <div>
-                            <label class="block text-[11px] font-semibold text-base-content/60">Nama
+                            <label class="block text-xs font-semibold text-base-content/60">Nama
                                 Guru</label>
                             <input type="text" x-model="guruForm.name" required
-                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                             <template x-for="mirip in kemiripanGuru" :key="mirip.id">
-                                <p class="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
+                                <p class="mt-1 text-xs text-warning">
                                     <i class="fas fa-triangle-exclamation"></i> Sudah ada guru bernama <span
                                         class="font-bold" x-text="mirip.name"></span>.
                                 </p>
                             </template>
                         </div>
-                        <p class="text-[11px] text-base-content/50">Untuk mengisi email dan membuat akun login, buka menu
+                        <p class="text-xs text-base-content/60">Untuk mengisi email dan membuat akun login, buka menu
                             <span class="font-bold">Akun Guru</span>.
                         </p>
                         <div class="flex gap-2 pt-2">
@@ -263,7 +263,7 @@
 
                     <div>
                         <input type="text" x-model="searchGuru" placeholder="Cari nama guru..."
-                            class="w-full mb-3 rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                            class="w-full mb-3 rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                         <div class="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
                             <template x-for="g in filteredGurus" :key="g.id">
                                 <div
@@ -271,24 +271,24 @@
                                     <div class="min-w-0">
                                         <p class="text-xs font-bold text-base-content truncate"
                                             x-text="g.name"></p>
-                                        <p class="text-[10px]"
-                                            :class="g.bisa_dihapus ? 'text-base-content/50' : 'text-primary font-semibold'"
+                                        <p class="text-[11px]"
+                                            :class="g.bisa_dihapus ? 'text-base-content/60' : 'text-primary font-semibold'"
                                             x-text="g.jumlah_baris_jadwal + ' baris jadwal' + (g.bisa_dihapus ? '' : ' · sedang dipakai')">
                                         </p>
                                     </div>
                                     <div class="flex gap-1 shrink-0">
                                         <button type="button" @click="editGuru(g)"
-                                            class="btn btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
+                                            class="btn btn-neutral px-2.5 py-1 text-xs rounded-md"><i
                                                 class="fas fa-pen-to-square"></i></button>
                                         <button type="button" @click="hapusGuru(g)" :disabled="!g.bisa_dihapus"
                                             :class="g.bisa_dihapus ? '' : 'opacity-40 cursor-not-allowed'"
-                                            class="btn-sacred px-2.5 py-1 text-[11px] rounded-md"><i
+                                            class="btn btn-sacred px-2.5 py-1 text-xs rounded-md"><i
                                                 class="fas fa-trash-can"></i></button>
                                     </div>
                                 </div>
                             </template>
                             <template x-if="filteredGurus.length === 0">
-                                <p class="text-xs text-base-content/50 italic text-center py-6">Tidak ada guru ditemukan.</p>
+                                <p class="text-xs text-base-content/60 italic text-center py-6">Tidak ada guru ditemukan.</p>
                             </template>
                         </div>
                     </div>
@@ -299,15 +299,15 @@
             <div x-show="activeSection === 'ruang'" x-cloak>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <form @submit.prevent="simpanRuang" class="space-y-3">
-                        <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider"
+                        <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider"
                             x-text="ruangForm.id ? 'Ubah Ruang' : 'Tambah Ruang Baru'"></h4>
                         <div>
-                            <label class="block text-[11px] font-semibold text-base-content/60">Nama
+                            <label class="block text-xs font-semibold text-base-content/60">Nama
                                 Ruang</label>
                             <input type="text" x-model="ruangForm.name" required
-                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                             <template x-for="mirip in kemiripanRuang" :key="mirip.id">
-                                <p class="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
+                                <p class="mt-1 text-xs text-warning">
                                     <i class="fas fa-triangle-exclamation"></i> Sudah ada ruang bernama <span
                                         class="font-bold" x-text="mirip.name"></span>.
                                 </p>
@@ -324,7 +324,7 @@
 
                     <div>
                         <input type="text" x-model="searchRuang" placeholder="Cari nama ruang..."
-                            class="w-full mb-3 rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                            class="w-full mb-3 rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                         <div class="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
                             <template x-for="r in filteredRuangs" :key="r.id">
                                 <div
@@ -332,24 +332,24 @@
                                     <div class="min-w-0">
                                         <p class="text-xs font-bold text-base-content truncate"
                                             x-text="r.name"></p>
-                                        <p class="text-[10px]"
-                                            :class="r.bisa_dihapus ? 'text-base-content/50' : 'text-primary font-semibold'"
+                                        <p class="text-[11px]"
+                                            :class="r.bisa_dihapus ? 'text-base-content/60' : 'text-primary font-semibold'"
                                             x-text="r.jumlah_baris_jadwal + ' baris jadwal' + (r.bisa_dihapus ? '' : ' · sedang dipakai')">
                                         </p>
                                     </div>
                                     <div class="flex gap-1 shrink-0">
                                         <button type="button" @click="editRuang(r)"
-                                            class="btn btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
+                                            class="btn btn-neutral px-2.5 py-1 text-xs rounded-md"><i
                                                 class="fas fa-pen-to-square"></i></button>
                                         <button type="button" @click="hapusRuang(r)" :disabled="!r.bisa_dihapus"
                                             :class="r.bisa_dihapus ? '' : 'opacity-40 cursor-not-allowed'"
-                                            class="btn-sacred px-2.5 py-1 text-[11px] rounded-md"><i
+                                            class="btn btn-sacred px-2.5 py-1 text-xs rounded-md"><i
                                                 class="fas fa-trash-can"></i></button>
                                     </div>
                                 </div>
                             </template>
                             <template x-if="filteredRuangs.length === 0">
-                                <p class="text-xs text-base-content/50 italic text-center py-6">Tidak ada ruang ditemukan.</p>
+                                <p class="text-xs text-base-content/60 italic text-center py-6">Tidak ada ruang ditemukan.</p>
                             </template>
                         </div>
                     </div>
@@ -360,15 +360,15 @@
             <div x-show="activeSection === 'sesi'" x-cloak>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <form @submit.prevent="simpanSesi" class="space-y-3">
-                        <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider"
+                        <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider"
                             x-text="sesiForm.id ? 'Ubah Sesi' : 'Tambah Sesi Baru'"></h4>
                         <div>
-                            <label class="block text-[11px] font-semibold text-base-content/60">Nama
+                            <label class="block text-xs font-semibold text-base-content/60">Nama
                                 Sesi</label>
                             <input type="text" x-model="sesiForm.name" required
-                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                             <template x-for="mirip in kemiripanSesi" :key="mirip.id">
-                                <p class="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
+                                <p class="mt-1 text-xs text-warning">
                                     <i class="fas fa-triangle-exclamation"></i> Sudah ada sesi bernama <span
                                         class="font-bold" x-text="mirip.name"></span>.
                                 </p>
@@ -376,23 +376,23 @@
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-[11px] font-semibold text-base-content/60">Jam
+                                <label class="block text-xs font-semibold text-base-content/60">Jam
                                     Mulai</label>
                                 <input type="time" x-model="sesiForm.start_time" required
-                                    class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                    class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                             </div>
                             <div>
-                                <label class="block text-[11px] font-semibold text-base-content/60">Jam
+                                <label class="block text-xs font-semibold text-base-content/60">Jam
                                     Selesai</label>
                                 <input type="time" x-model="sesiForm.end_time" required
-                                    class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                    class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                             </div>
                         </div>
                         <template x-if="konflikJamSesi.length > 0">
                             <div
                                 class="rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/20 p-2.5 space-y-1">
                                 <template x-for="(pesan, i) in konflikJamSesi" :key="i">
-                                    <p class="text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                                    <p class="text-xs font-bold text-warning">
                                         <i class="fas fa-triangle-exclamation"></i> <span x-text="pesan"></span>
                                     </p>
                                 </template>
@@ -409,7 +409,7 @@
 
                     <div>
                         <input type="text" x-model="searchSesi" placeholder="Cari nama sesi..."
-                            class="w-full mb-3 rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                            class="w-full mb-3 rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                         <div class="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
                             <template x-for="s in filteredSesis" :key="s.id">
                                 <div
@@ -417,27 +417,27 @@
                                     <div class="min-w-0">
                                         <p class="text-xs font-bold text-base-content truncate">
                                             <span x-text="s.name"></span>
-                                            <span class="font-mono font-normal text-base-content/50"
+                                            <span class="font-mono font-normal text-base-content/60"
                                                 x-text="'(' + String(s.start_time).substring(0,5) + '–' + String(s.end_time).substring(0,5) + ')'"></span>
                                         </p>
-                                        <p class="text-[10px]"
-                                            :class="s.bisa_dihapus ? 'text-base-content/50' : 'text-primary font-semibold'"
+                                        <p class="text-[11px]"
+                                            :class="s.bisa_dihapus ? 'text-base-content/60' : 'text-primary font-semibold'"
                                             x-text="s.jumlah_baris_jadwal + ' baris jadwal' + (s.bisa_dihapus ? '' : ' · sedang dipakai')">
                                         </p>
                                     </div>
                                     <div class="flex gap-1 shrink-0">
                                         <button type="button" @click="editSesi(s)"
-                                            class="btn btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
+                                            class="btn btn-neutral px-2.5 py-1 text-xs rounded-md"><i
                                                 class="fas fa-pen-to-square"></i></button>
                                         <button type="button" @click="hapusSesi(s)" :disabled="!s.bisa_dihapus"
                                             :class="s.bisa_dihapus ? '' : 'opacity-40 cursor-not-allowed'"
-                                            class="btn-sacred px-2.5 py-1 text-[11px] rounded-md"><i
+                                            class="btn btn-sacred px-2.5 py-1 text-xs rounded-md"><i
                                                 class="fas fa-trash-can"></i></button>
                                     </div>
                                 </div>
                             </template>
                             <template x-if="filteredSesis.length === 0">
-                                <p class="text-xs text-base-content/50 italic text-center py-6">Tidak ada sesi ditemukan.</p>
+                                <p class="text-xs text-base-content/60 italic text-center py-6">Tidak ada sesi ditemukan.</p>
                             </template>
                         </div>
                     </div>
@@ -448,15 +448,15 @@
             <div x-show="activeSection === 'mapel'" x-cloak>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <form @submit.prevent="simpanMapel" class="space-y-3">
-                        <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider"
+                        <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider"
                             x-text="mapelForm.id ? 'Ubah Mata Pelajaran' : 'Tambah Mata Pelajaran Baru'"></h4>
                         <div>
-                            <label class="block text-[11px] font-semibold text-base-content/60">Nama Mata
+                            <label class="block text-xs font-semibold text-base-content/60">Nama Mata
                                 Pelajaran</label>
                             <input type="text" x-model="mapelForm.name" required
-                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                             <template x-for="mirip in kemiripanMapel" :key="mirip.id">
-                                <p class="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
+                                <p class="mt-1 text-xs text-warning">
                                     <i class="fas fa-triangle-exclamation"></i> Sudah ada mata pelajaran bernama <span
                                         class="font-bold" x-text="mirip.name"></span>.
                                 </p>
@@ -473,7 +473,7 @@
 
                     <div>
                         <input type="text" x-model="searchMapel" placeholder="Cari nama mata pelajaran..."
-                            class="w-full mb-3 rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                            class="w-full mb-3 rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                         <div class="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
                             <template x-for="m in filteredMapels" :key="m.id">
                                 <div
@@ -481,24 +481,24 @@
                                     <div class="min-w-0">
                                         <p class="text-xs font-bold text-base-content truncate"
                                             x-text="m.name"></p>
-                                        <p class="text-[10px]"
-                                            :class="m.bisa_dihapus ? 'text-base-content/50' : 'text-primary font-semibold'"
+                                        <p class="text-[11px]"
+                                            :class="m.bisa_dihapus ? 'text-base-content/60' : 'text-primary font-semibold'"
                                             x-text="m.jumlah_baris_jadwal + ' baris jadwal' + (m.bisa_dihapus ? '' : ' · sedang dipakai')">
                                         </p>
                                     </div>
                                     <div class="flex gap-1 shrink-0">
                                         <button type="button" @click="editMapel(m)"
-                                            class="btn btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
+                                            class="btn btn-neutral px-2.5 py-1 text-xs rounded-md"><i
                                                 class="fas fa-pen-to-square"></i></button>
                                         <button type="button" @click="hapusMapel(m)" :disabled="!m.bisa_dihapus"
                                             :class="m.bisa_dihapus ? '' : 'opacity-40 cursor-not-allowed'"
-                                            class="btn-sacred px-2.5 py-1 text-[11px] rounded-md"><i
+                                            class="btn btn-sacred px-2.5 py-1 text-xs rounded-md"><i
                                                 class="fas fa-trash-can"></i></button>
                                     </div>
                                 </div>
                             </template>
                             <template x-if="filteredMapels.length === 0">
-                                <p class="text-xs text-base-content/50 italic text-center py-6">Tidak ada mata pelajaran
+                                <p class="text-xs text-base-content/60 italic text-center py-6">Tidak ada mata pelajaran
                                     ditemukan.</p>
                             </template>
                         </div>
@@ -508,8 +508,8 @@
 
             {{-- ===================== PAKET ===================== --}}
             <div x-show="activeSection === 'paket'" x-cloak>
-                <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-1">Paket Pembayaran</h4>
-                <p class="text-[11px] text-base-content/60 mb-3">
+                <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1">Paket Pembayaran</h4>
+                <p class="text-xs text-base-content/60 mb-3">
                     Daftar saja — untuk menambah atau mengubah paket, buka menu "Kelola Paket" di tab Pembayaran.
                 </p>
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -517,15 +517,15 @@
                         <div class="rounded-xl border border-base-300 p-3">
                             <div class="flex items-center justify-between">
                                 <span class="font-bold text-sm text-base-content">{{ $p['nama_paket'] }}</span>
-                                <span class="font-mono text-xs font-bold text-purple-600 dark:text-purple-400">Rp {{ number_format($p['harga'], 0, ',', '.') }}</span>
+                                <span class="font-mono text-xs font-bold text-accent">Rp {{ number_format($p['harga'], 0, ',', '.') }}</span>
                             </div>
-                            <p class="mt-1 text-[11px] text-base-content/60">
+                            <p class="mt-1 text-xs text-base-content/60">
                                 {{ $p['pertemuan'] }} pertemuan ·
                                 <span class="{{ $p['jumlah_siswa'] > 0 ? 'text-primary font-semibold' : '' }}">{{ $p['jumlah_siswa'] }} siswa memakai</span>
                             </p>
                         </div>
                     @empty
-                        <p class="text-xs text-base-content/50 italic text-center py-6 col-span-full">Belum ada paket.</p>
+                        <p class="text-xs text-base-content/60 italic text-center py-6 col-span-full">Belum ada paket.</p>
                     @endforelse
                 </div>
             </div>
@@ -534,15 +534,15 @@
             <div x-show="activeSection === 'kemampuan'" x-cloak>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <form @submit.prevent="simpanKemampuan" class="space-y-3">
-                        <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider"
+                        <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider"
                             x-text="kemampuanForm.id ? 'Ubah Keterangan' : 'Tambah Level Baru (Level ' + (kemampuans.length + 1) + ')'"></h4>
                         <div>
-                            <label class="block text-[11px] font-semibold text-base-content/60">Keterangan</label>
+                            <label class="block text-xs font-semibold text-base-content/60">Keterangan</label>
                             <input type="text" x-model="kemampuanForm.keterangan" required
                                 placeholder="Contoh: Pemula, belum lancar membaca"
-                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                         </div>
-                        <p class="text-[11px] text-base-content/50" x-show="!kemampuanForm.id">
+                        <p class="text-xs text-base-content/60" x-show="!kemampuanForm.id">
                             <i class="fas fa-circle-info"></i> Nomor level otomatis lanjut dari yang tertinggi — tidak
                             bisa diloncat atau dipilih manual.
                         </p>
@@ -564,25 +564,25 @@
                                         <p class="text-xs font-bold text-base-content truncate">
                                             Level <span x-text="k.level"></span> — <span x-text="k.keterangan"></span>
                                         </p>
-                                        <p class="text-[10px]"
-                                            :class="k.jumlah_siswa === 0 ? 'text-base-content/50' : 'text-primary font-semibold'"
+                                        <p class="text-[11px]"
+                                            :class="k.jumlah_siswa === 0 ? 'text-base-content/60' : 'text-primary font-semibold'"
                                             x-text="k.jumlah_siswa + ' siswa memakai'">
                                         </p>
                                     </div>
                                     <div class="flex gap-1 shrink-0">
                                         <button type="button" @click="editKemampuan(k)"
-                                            class="btn btn-neutral px-2.5 py-1 text-[11px] rounded-md"><i
+                                            class="btn btn-neutral px-2.5 py-1 text-xs rounded-md"><i
                                                 class="fas fa-pen-to-square"></i></button>
                                         <button type="button" @click="hapusKemampuan(k)" :disabled="!bisaHapusKemampuan(k)"
                                             :class="bisaHapusKemampuan(k) ? '' : 'opacity-40 cursor-not-allowed'"
                                             :title="bisaHapusKemampuan(k) ? '' : 'Hapus level tertinggi dulu, baru turun satu-satu'"
-                                            class="btn-sacred px-2.5 py-1 text-[11px] rounded-md"><i
+                                            class="btn btn-sacred px-2.5 py-1 text-xs rounded-md"><i
                                                 class="fas fa-trash-can"></i></button>
                                     </div>
                                 </div>
                             </template>
                             <template x-if="kemampuans.length === 0">
-                                <p class="text-xs text-base-content/50 italic text-center py-6">Belum ada level kemampuan.
+                                <p class="text-xs text-base-content/60 italic text-center py-6">Belum ada level kemampuan.
                                 </p>
                             </template>
                         </div>
@@ -592,14 +592,14 @@
 
             {{-- ===================== SLOT KOSONG ===================== --}}
             <div x-show="activeSection === 'ketersediaan'" x-cloak>
-                <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-1">Slot Kosong per Hari &amp;
+                <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1">Slot Kosong per Hari &amp;
                     Sesi</h4>
-                <p class="text-[11px] text-base-content/60 mb-3">
+                <p class="text-xs text-base-content/60 mb-3">
                     Sebelum menambah kelas di tab Jadwal Pelajaran, lihat dulu ruang dan guru mana yang masih bebas di
                     sini.
                 </p>
                 <input type="text" x-model="searchKetersediaan" placeholder="Cari nama guru atau ruang yang masih bebas..."
-                    class="w-full mb-3 rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                    class="w-full mb-3 rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
 
                 <div class="mb-3 flex gap-1.5 overflow-x-auto pb-1 lg:hidden">
                     <template x-for="hari in ketersediaanGrid.hariOrder" :key="hari">
@@ -637,40 +637,40 @@
                                             class="border border-base-300 p-2.5 align-top">
                                             <template x-if="row.byHari[hari]">
                                                 <div class="space-y-2">
-                                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded inline-block"
+                                                    <span class="text-[11px] font-bold px-1.5 py-0.5 rounded inline-block"
                                                         :class="row.byHari[hari].kelas_berjalan > 0 ?
                                                             'bg-primary/10 text-primary' :
-                                                            'bg-base-200 text-base-content/50'"
+                                                            'bg-base-200 text-base-content/60'"
                                                         x-text="row.byHari[hari].kelas_berjalan + ' kelas'"></span>
                                                     <div>
-                                                        <span class="text-[10px] font-bold text-base-content/50 uppercase">Ruang kosong</span>
+                                                        <span class="text-[11px] font-bold text-base-content/60 uppercase">Ruang kosong</span>
                                                         <div class="mt-1 flex flex-wrap gap-1">
                                                             <template x-for="r in row.byHari[hari].ruang_kosong" :key="r.name">
-                                                                <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold"
+                                                                <span class="px-2 py-0.5 rounded-md text-xs font-semibold"
                                                                     :class="r.match ?
-                                                                        'bg-amber-300 dark:bg-amber-700 text-amber-950 dark:text-amber-50 ring-2 ring-amber-500' :
+                                                                        'bg-amber-300 dark:bg-amber-700 text-warning ring-2 ring-amber-500' :
                                                                         'bg-success/10 text-success'"
                                                                     x-text="r.name"></span>
                                                             </template>
                                                             <template x-if="row.byHari[hari].ruang_kosong.length === 0">
                                                                 <span
-                                                                    class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-red-50 dark:bg-red-950/30 text-red-500">Penuh</span>
+                                                                    class="px-2 py-0.5 rounded-md text-xs font-semibold bg-red-50 dark:bg-red-950/30 text-error">Penuh</span>
                                                             </template>
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <span class="text-[10px] font-bold text-base-content/50 uppercase">Guru bebas</span>
+                                                        <span class="text-[11px] font-bold text-base-content/60 uppercase">Guru bebas</span>
                                                         <div class="mt-1 flex flex-wrap gap-1">
                                                             <template x-for="g in row.byHari[hari].guru_kosong" :key="g.name">
-                                                                <span class="px-2 py-0.5 rounded-md text-[11px] font-semibold"
+                                                                <span class="px-2 py-0.5 rounded-md text-xs font-semibold"
                                                                     :class="g.match ?
-                                                                        'bg-amber-300 dark:bg-amber-700 text-amber-950 dark:text-amber-50 ring-2 ring-amber-500' :
+                                                                        'bg-amber-300 dark:bg-amber-700 text-warning ring-2 ring-amber-500' :
                                                                         'bg-base-200 text-base-content/70'"
                                                                     x-text="g.name"></span>
                                                             </template>
                                                             <template x-if="row.byHari[hari].guru_kosong.length === 0">
                                                                 <span
-                                                                    class="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-red-50 dark:bg-red-950/30 text-red-500">Semua
+                                                                    class="px-2 py-0.5 rounded-md text-xs font-semibold bg-red-50 dark:bg-red-950/30 text-error">Semua
                                                                     terpakai</span>
                                                             </template>
                                                         </div>

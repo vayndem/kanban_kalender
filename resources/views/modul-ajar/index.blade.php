@@ -86,11 +86,11 @@
                                         <td class="border border-base-300 p-2 align-top h-40">
                                             <template x-for="kelas in kelasDi({{ $hari->id }}, {{ $sesi->id }})" :key="kelas.kode_kelas">
                                                 <div @click="openKelas(kelas)"
-                                                    class="group relative p-2.5 mb-2 rounded-lg shadow border-l-4 text-sm cursor-pointer transition-all duration-200 ease-out hover:shadow-xl hover:-translate-y-0.5"
+                                                    class="group relative p-2.5 mb-2 rounded-lg shadow-sm border-l-4 text-sm cursor-pointer transition-all duration-200 ease-out hover:shadow-xl hover:-translate-y-0.5"
                                                     :class="kelas.ada_header ? 'border-success/40 bg-base-200' : 'border-success/40 bg-base-100'">
 
                                                     <span x-show="kelas.ada_header"
-                                                        class="absolute top-1 right-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-success px-1 text-[10px] font-black text-white"
+                                                        class="absolute top-1 right-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-success px-1 text-[11px] font-black text-white"
                                                         x-text="kelas.jumlah_detail"></span>
 
                                                     <strong class="block font-bold text-base-content truncate" x-text="kelas.mapel"></strong>
@@ -108,11 +108,11 @@
 
                 {{-- Modal isi modul ajar --}}
                 <template x-if="selectedKelas">
-                    <div x-show="selectedKelas" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" @click="closeModal()">
+                    <div x-show="selectedKelas" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs" @click="closeModal()">
                         <div @click.stop x-transition class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-base-300 bg-base-100 shadow-2xl">
-                            <div class="flex items-start justify-between gap-4 bg-gradient-to-r from-primary to-accent p-5 text-white sticky top-0">
+                            <div class="modal-header-brand sticky top-0 z-10">
                                 <div class="min-w-0">
-                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-success" x-text="selectedKelas.guru + ' · ' + selectedKelas.ruang"></p>
+                                    <p class="text-xs font-black uppercase tracking-[0.18em] text-white/75" x-text="selectedKelas.guru + ' · ' + selectedKelas.ruang"></p>
                                     <h3 class="mt-1 text-xl font-black truncate" x-text="selectedKelas.mapel"></h3>
                                 </div>
                                 <button type="button" @click="closeModal()" class="shrink-0 rounded-full bg-white/15 px-3 py-2 text-sm font-bold hover:bg-white/25">Tutup</button>
@@ -122,26 +122,26 @@
                                 {{-- Header --}}
                                 <template x-if="bisaUbahHeader">
                                     <form @submit.prevent="simpanHeader" class="space-y-3">
-                                        <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider">Modul Ajar</h4>
+                                        <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider">Modul Ajar</h4>
                                         <div>
-                                            <label class="block text-[11px] font-semibold text-base-content/60">Tujuan Pembelajaran</label>
+                                            <label class="block text-xs font-semibold text-base-content/60">Tujuan Pembelajaran</label>
                                             <textarea x-model="headerForm.tujuan_pembelajaran" required rows="2"
-                                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none"></textarea>
+                                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden"></textarea>
                                         </div>
                                         <div>
-                                            <label class="block text-[11px] font-semibold text-base-content/60">Kompetensi Awal</label>
+                                            <label class="block text-xs font-semibold text-base-content/60">Kompetensi Awal</label>
                                             <textarea x-model="headerForm.kompetensi_awal" required rows="2"
-                                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none"></textarea>
+                                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden"></textarea>
                                         </div>
                                         <div>
-                                            <label class="block text-[11px] font-semibold text-base-content/60">Model/Metode Pembelajaran</label>
+                                            <label class="block text-xs font-semibold text-base-content/60">Model/Metode Pembelajaran</label>
                                             <input type="text" x-model="headerForm.model_pembelajaran" required
-                                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                                         </div>
                                         <div>
-                                            <label class="block text-[11px] font-semibold text-base-content/60">Sarana/Media</label>
+                                            <label class="block text-xs font-semibold text-base-content/60">Sarana/Media</label>
                                             <textarea x-model="headerForm.sarana_media" required rows="2"
-                                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-none"></textarea>
+                                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden"></textarea>
                                         </div>
                                         <button type="submit" class="btn btn-primary text-sm w-full" :disabled="isLoading">
                                             <span x-text="selectedKelas.ada_header ? 'Simpan Perubahan' : 'Simpan Modul Ajar'"></span>
@@ -150,19 +150,19 @@
                                 </template>
                                 <template x-if="!bisaUbahHeader">
                                     <div class="space-y-2 rounded-lg border border-base-300 p-3">
-                                        <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider">Modul Ajar</h4>
+                                        <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider">Modul Ajar</h4>
                                         <p class="text-xs text-base-content/70"><span class="font-bold">Tujuan:</span> <span x-text="headerForm.tujuan_pembelajaran"></span></p>
                                         <p class="text-xs text-base-content/70"><span class="font-bold">Kompetensi Awal:</span> <span x-text="headerForm.kompetensi_awal"></span></p>
                                         <p class="text-xs text-base-content/70"><span class="font-bold">Model/Metode:</span> <span x-text="headerForm.model_pembelajaran"></span></p>
                                         <p class="text-xs text-base-content/70"><span class="font-bold">Sarana/Media:</span> <span x-text="headerForm.sarana_media"></span></p>
-                                        <p class="text-[11px] italic text-base-content/50">Sudah diisi — hanya admin yang bisa mengubah.</p>
+                                        <p class="text-xs italic text-base-content/60">Sudah diisi — hanya admin yang bisa mengubah.</p>
                                     </div>
                                 </template>
 
                                 {{-- Detail --}}
                                 <template x-if="selectedKelas.ada_header">
                                     <div class="space-y-3 border-t border-base-300 pt-4">
-                                        <h4 class="text-xs font-bold text-base-content/50 uppercase tracking-wider">Rincian Materi</h4>
+                                        <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider">Rincian Materi</h4>
 
                                         <div class="space-y-2">
                                             <template x-for="d in (selectedKelas.modul_ajar.details || [])" :key="d.id">
@@ -175,16 +175,16 @@
                                                                 <span x-text="d.materi"></span>
                                                             </p>
                                                             <p x-show="d.sub_materi" class="text-xs text-base-content/60" x-text="d.sub_materi"></p>
-                                                            <p x-show="d.diajarkan_oleh_guru_id" class="text-[11px] text-success mt-1">
+                                                            <p x-show="d.diajarkan_oleh_guru_id" class="text-xs text-success mt-1">
                                                                 Diajarkan oleh <span x-text="d.diajarkan_oleh_guru?.name"></span> pada <span x-text="d.tanggal_diajarkan"></span>
                                                             </p>
                                                         </div>
                                                         <div x-show="isAdmin" class="flex gap-1 shrink-0">
-                                                            <button type="button" @click="editDetail(d)" class="btn btn-neutral px-2 py-1 text-[11px] rounded-md"><i class="fas fa-pen-to-square"></i></button>
-                                                            <button type="button" @click="hapusDetail(d)" class="btn-sacred px-2 py-1 text-[11px] rounded-md"><i class="fas fa-trash-can"></i></button>
+                                                            <button type="button" @click="editDetail(d)" class="btn btn-neutral px-2 py-1 text-xs rounded-md"><i class="fas fa-pen-to-square"></i></button>
+                                                            <button type="button" @click="hapusDetail(d)" class="btn btn-sacred px-2 py-1 text-xs rounded-md"><i class="fas fa-trash-can"></i></button>
                                                         </div>
                                                     </div>
-                                                    <dl class="mt-1.5 grid grid-cols-1 gap-1 text-[11px] text-base-content/60">
+                                                    <dl class="mt-1.5 grid grid-cols-1 gap-1 text-xs text-base-content/60">
                                                         <p x-show="d.cara_mengajar"><span class="font-semibold">Cara mengajar:</span> <span x-text="d.cara_mengajar"></span></p>
                                                         <p x-show="d.tugas"><span class="font-semibold">Tugas:</span> <span x-text="d.tugas"></span></p>
                                                         <p x-show="d.tujuan"><span class="font-semibold">Tujuan:</span> <span x-text="d.tujuan"></span></p>
@@ -194,26 +194,26 @@
                                                 </div>
                                             </template>
                                             <template x-if="(selectedKelas.modul_ajar.details || []).length === 0">
-                                                <p class="text-xs text-base-content/50 italic text-center py-3">Belum ada rincian materi.</p>
+                                                <p class="text-xs text-base-content/60 italic text-center py-3">Belum ada rincian materi.</p>
                                             </template>
                                         </div>
 
                                         <form @submit.prevent="simpanDetail" class="space-y-2 rounded-lg border border-dashed border-base-300 p-3">
-                                            <h5 class="text-[11px] font-bold text-base-content/50 uppercase tracking-wider" x-text="editingDetailId ? 'Ubah Materi' : 'Tambah Materi'"></h5>
+                                            <h5 class="text-xs font-bold text-base-content/60 uppercase tracking-wider" x-text="editingDetailId ? 'Ubah Materi' : 'Tambah Materi'"></h5>
                                             <input type="text" x-model="detailForm.materi" required placeholder="Materi"
-                                                class="w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-none">
+                                                class="w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-hidden">
                                             <input type="text" x-model="detailForm.sub_materi" placeholder="Sub materi (opsional)"
-                                                class="w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-none">
+                                                class="w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-hidden">
                                             <textarea x-model="detailForm.cara_mengajar" placeholder="Cara mengajar (opsional)" rows="2"
-                                                class="w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-none"></textarea>
+                                                class="w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-hidden"></textarea>
                                             <textarea x-model="detailForm.tugas" placeholder="Tugas (opsional)" rows="2"
-                                                class="w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-none"></textarea>
+                                                class="w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-hidden"></textarea>
                                             <textarea x-model="detailForm.tujuan" placeholder="Tujuan (opsional)" rows="2"
-                                                class="w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-none"></textarea>
+                                                class="w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-hidden"></textarea>
                                             <textarea x-model="detailForm.hasil_akhir_pembelajaran" placeholder="Hasil akhir pembelajaran (opsional)" rows="2"
-                                                class="w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-none"></textarea>
+                                                class="w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-hidden"></textarea>
                                             <textarea x-model="detailForm.keterangan" placeholder="Keterangan (opsional)" rows="2"
-                                                class="w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-none"></textarea>
+                                                class="w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-hidden"></textarea>
                                             <div class="flex gap-2">
                                                 <button type="submit" class="btn btn-primary text-xs flex-1" :disabled="isLoading">
                                                     <span x-text="editingDetailId ? 'Simpan Perubahan' : 'Tambah Materi'"></span>
@@ -224,7 +224,7 @@
                                     </div>
                                 </template>
                                 <template x-if="!selectedKelas.ada_header">
-                                    <p class="text-xs text-base-content/50 italic text-center py-2">Isi modul ajar dulu sebelum menambah rincian materi.</p>
+                                    <p class="text-xs text-base-content/60 italic text-center py-2">Isi modul ajar dulu sebelum menambah rincian materi.</p>
                                 </template>
                             </div>
                         </div>

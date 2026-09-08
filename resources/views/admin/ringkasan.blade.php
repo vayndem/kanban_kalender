@@ -26,7 +26,7 @@
     @if ($bentrok->isNotEmpty())
         <div class="app-card overflow-hidden border-error/40">
             <div class="flex items-center gap-3 bg-error/10 px-4 py-3">
-                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-btn bg-error text-error-content shadow-sm">
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-field bg-error text-error-content shadow-xs">
                     <i class="fas fa-triangle-exclamation"></i>
                 </span>
                 <div>
@@ -43,7 +43,7 @@
                     </li>
                 @endforeach
                 @if ($bentrok->count() > 10)
-                    <li class="pt-1 text-[11px] italic text-base-content/50">...dan {{ $bentrok->count() - 10 }} lainnya.</li>
+                    <li class="pt-1 text-xs italic text-base-content/60">...dan {{ $bentrok->count() - 10 }} lainnya.</li>
                 @endif
             </ul>
         </div>
@@ -56,10 +56,10 @@
                 <div class="app-stat">
                     <div class="flex items-start justify-between gap-2">
                         <div class="min-w-0">
-                            <div class="app-stat-value">{{ $kartu['nilai'] }}@if ($kartu['sisa'])<span class="text-base font-bold text-base-content/40">{{ $kartu['sisa'] }}</span>@endif</div>
+                            <div class="app-stat-value">{{ $kartu['nilai'] }}@if ($kartu['sisa'])<span class="text-base font-bold text-base-content/60">{{ $kartu['sisa'] }}</span>@endif</div>
                             <div class="app-stat-label">{{ $kartu['label'] }}</div>
                         </div>
-                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-btn bg-primary/10 text-primary">
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-field bg-primary/10 text-primary">
                             <i class="fas {{ $kartu['icon'] }}"></i>
                         </span>
                     </div>
@@ -93,8 +93,8 @@
             <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
                 :class="sudahHariIni ? 'bg-success/5' : 'bg-warning/5'">
                 <div class="flex items-start gap-3">
-                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-btn shadow-sm"
-                        :class="sudahHariIni ? 'bg-success text-success-content' : 'bg-warning text-warning-content'">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-field shadow-xs"
+                        :class="sudahHariIni ? 'brand-chip-success' : 'bg-warning text-warning-content'">
                         <i class="fas" :class="sudahHariIni ? 'fa-circle-check' : 'fa-triangle-exclamation'"></i>
                     </span>
                     <div>
@@ -191,8 +191,8 @@
                                     </p>
                                     <div class="mt-2 flex flex-wrap gap-1.5">
                                         @foreach ($b['sesi_list'] as $s)
-                                            <span class="inline-flex items-center gap-1 rounded-btn border border-warning/40 bg-base-100 px-2 py-1 text-[11px] font-bold text-base-content/80 shadow-sm">
-                                                <i class="fas fa-clock text-[10px] text-warning"></i> {{ $s['name'] }}
+                                            <span class="inline-flex items-center gap-1 rounded-field border border-warning/40 bg-base-100 px-2 py-1 text-xs font-bold text-base-content/80 shadow-xs">
+                                                <i class="fas fa-clock text-[11px] text-warning"></i> {{ $s['name'] }}
                                                 ({{ $s['start'] }}&ndash;{{ $s['end'] }})
                                             </span>
                                         @endforeach
@@ -205,7 +205,7 @@
 
                 <div class="max-h-60 space-y-1 overflow-y-auto pr-1">
                     @forelse ($beban['beban'] as $g)
-                        <div class="flex justify-between gap-2 rounded-btn px-2 py-1.5 text-xs font-semibold text-base-content/80 transition hover:bg-base-200">
+                        <div class="flex justify-between gap-2 rounded-field px-2 py-1.5 text-xs font-semibold text-base-content/80 transition hover:bg-base-200">
                             <span class="min-w-0 flex-1 truncate">{{ $g['nama'] }}</span>
                             <span class="shrink-0 whitespace-nowrap tabular-nums text-base-content/60">{{ $g['jumlah_sesi'] }} sesi &middot; {{ intdiv($g['total_menit'], 60) }}j
                                 {{ $g['total_menit'] % 60 }}m</span>
@@ -230,7 +230,7 @@
                 <input type="hidden" name="periode" value="{{ $periode }}">
                 <label for="piutang_bulan" class="font-bold text-base-content/60">Piutang lebih dari</label>
                 <select id="piutang_bulan" name="piutang_bulan" onchange="this.form.submit()"
-                    class="select select-bordered select-xs sm:select-sm">
+                    class="select select-xs sm:select-sm">
                     @foreach ([1, 2, 3, 4, 6, 12] as $m)
                         <option value="{{ $m }}"
                             {{ (int) $finansial['piutang_bulan'] === $m ? 'selected' : '' }}>{{ $m }} bulan
@@ -246,10 +246,10 @@
                 @forelse ($finansial['belum_ditagih'] as $item)
                     <x-list-row icon="fa-user" tone="text-error">
                         <span class="min-w-0 flex-1 truncate font-bold text-base-content">{{ $item['siswa_name'] }}</span>
-                        <span class="ml-auto shrink-0 text-base-content/50">{{ $item['paket'] }}</span>
+                        <span class="ml-auto shrink-0 text-base-content/60">{{ $item['paket'] }}</span>
                     </x-list-row>
                 @empty
-                    <p class="p-2 text-xs italic text-base-content/40">Semua siswa sudah ditagih bulan ini.</p>
+                    <p class="p-2 text-xs italic text-base-content/60">Semua siswa sudah ditagih bulan ini.</p>
                 @endforelse
             </x-list-panel>
 
@@ -261,7 +261,7 @@
                         <span class="ml-auto shrink-0 font-black text-warning">Rp {{ number_format($item['total_sisa'], 0, ',', '.') }}</span>
                     </x-list-row>
                 @empty
-                    <p class="p-2 text-xs italic text-base-content/40">Tidak ada piutang lama.</p>
+                    <p class="p-2 text-xs italic text-base-content/60">Tidak ada piutang lama.</p>
                 @endforelse
             </x-list-panel>
 
@@ -270,10 +270,10 @@
                 @forelse ($finansial['diskon_menggantung'] as $d)
                     <x-list-row icon="fa-tag" tone="text-accent">
                         <span class="min-w-0 flex-1 truncate font-bold text-base-content">{{ $d->no_hp }}</span>
-                        <span class="ml-auto shrink-0 text-base-content/50">Rp {{ number_format($d->diskon, 0, ',', '.') }}</span>
+                        <span class="ml-auto shrink-0 text-base-content/60">Rp {{ number_format($d->diskon, 0, ',', '.') }}</span>
                     </x-list-row>
                 @empty
-                    <p class="p-2 text-xs italic text-base-content/40">Tidak ada diskon menggantung.</p>
+                    <p class="p-2 text-xs italic text-base-content/60">Tidak ada diskon menggantung.</p>
                 @endforelse
             </x-list-panel>
         </div>
@@ -288,11 +288,11 @@
                     <x-list-row icon="fa-user" tone="text-info">
                         <span class="min-w-0 flex-1 truncate font-bold text-base-content">{{ $s->name }}</span>
                         @if ($s->kelas)
-                            <span class="ml-auto shrink-0 text-base-content/50">{{ $s->kelas }}</span>
+                            <span class="ml-auto shrink-0 text-base-content/60">{{ $s->kelas }}</span>
                         @endif
                     </x-list-row>
                 @empty
-                    <p class="p-2 text-xs italic text-base-content/40">Semua siswa sudah terjadwal.</p>
+                    <p class="p-2 text-xs italic text-base-content/60">Semua siswa sudah terjadwal.</p>
                 @endforelse
             </x-list-panel>
 
@@ -303,7 +303,7 @@
                         <span class="min-w-0 flex-1 truncate font-bold text-base-content">{{ $s->name }}</span>
                     </x-list-row>
                 @empty
-                    <p class="p-2 text-xs italic text-base-content/40">Semua siswa punya no. HP.</p>
+                    <p class="p-2 text-xs italic text-base-content/60">Semua siswa punya no. HP.</p>
                 @endforelse
             </x-list-panel>
 
@@ -312,11 +312,11 @@
                 @forelse ($kebersihan['arsip_mengendap'] as $a)
                     <x-list-row icon="fa-box">
                         <span class="min-w-0 flex-1 truncate font-bold text-base-content">{{ $a->name }}</span>
-                        <span class="ml-auto shrink-0 text-base-content/50">sejak
+                        <span class="ml-auto shrink-0 text-base-content/60">sejak
                             {{ \Carbon\Carbon::parse($a->created_at)->translatedFormat('d M Y') }}</span>
                     </x-list-row>
                 @empty
-                    <p class="p-2 text-xs italic text-base-content/40">Tidak ada arsip yang mengendap lama.</p>
+                    <p class="p-2 text-xs italic text-base-content/60">Tidak ada arsip yang mengendap lama.</p>
                 @endforelse
             </x-list-panel>
 
@@ -327,11 +327,11 @@
                         <span class="min-w-0 flex-1 truncate font-bold text-base-content" title="{{ $t->keterangan }}">
                             {{ $t->siswa->name ?? 'Siswa dihapus' }}
                         </span>
-                        <span class="ml-auto shrink-0 text-base-content/50">sejak
+                        <span class="ml-auto shrink-0 text-base-content/60">sejak
                             {{ \Carbon\Carbon::parse($t->created_at)->translatedFormat('d M Y') }}</span>
                     </x-list-row>
                 @empty
-                    <p class="p-2 text-xs italic text-base-content/40">Tidak ada catatan yang mengendap lama.</p>
+                    <p class="p-2 text-xs italic text-base-content/60">Tidak ada catatan yang mengendap lama.</p>
                 @endforelse
             </x-list-panel>
         </div>
@@ -344,13 +344,13 @@
                 @foreach ([['Guru Tidak Terpakai', 'fa-chalkboard-user', $kebersihan['guru_tidak_terpakai']], ['Ruang Tidak Terpakai', 'fa-door-open', $kebersihan['ruang_tidak_terpakai']], ['Mapel Tidak Terpakai', 'fa-book', $kebersihan['mapel_tidak_terpakai']]] as [$judul, $ikon, $daftar])
                     <div>
                         <p class="mb-2 flex items-center gap-1.5 text-xs font-black text-base-content/60">
-                            <i class="fas {{ $ikon }} text-base-content/40"></i> {{ $judul }} ({{ $daftar->count() }})
+                            <i class="fas {{ $ikon }} text-base-content/60"></i> {{ $judul }} ({{ $daftar->count() }})
                         </p>
                         <div class="flex flex-wrap gap-1">
                             @forelse ($daftar as $entri)
                                 <span class="app-chip">{{ $entri->name }}</span>
                             @empty
-                                <span class="text-xs italic text-base-content/40">-</span>
+                                <span class="text-xs italic text-base-content/60">-</span>
                             @endforelse
                         </div>
                     </div>
@@ -366,13 +366,11 @@
             const map = {};
             for (const c of this.cards) {
                 if (!map[c.sesi_id]) {
-                    const jam = c.sesi_start && c.sesi_end ?
-                        ` - ${String(c.sesi_start).substring(0, 5)}–${String(c.sesi_end).substring(0, 5)}` : '';
-                    map[c.sesi_id] = { sesi_label: c.sesi_name + jam, items: [] };
+                    map[c.sesi_id] = { sesi_label: c.sesi_label, sesi_start: c.sesi_start || '', items: [] };
                 }
                 map[c.sesi_id].items.push(c);
             }
-            return Object.values(map);
+            return Object.values(map).sort((a, b) => a.sesi_start.localeCompare(b.sesi_start));
         },
     }">
         <h3 class="app-section-head">Jadwal Hari Ini</h3>
@@ -396,7 +394,7 @@
                             </th>
                             <th class="min-w-[240px] border-b border-base-300 p-3 text-center text-xs uppercase tracking-wider text-base-content/60">
                                 <div class="text-base font-black text-base-content">{{ now()->translatedFormat('l') }}</div>
-                                <span class="mt-0.5 block text-[10px] font-semibold normal-case">{{ now()->translatedFormat('d F Y') }}</span>
+                                <span class="mt-0.5 block text-[11px] font-semibold normal-case">{{ now()->translatedFormat('d F Y') }}</span>
                             </th>
                         </tr>
                     </thead>
@@ -409,20 +407,20 @@
                                     <div class="space-y-2">
                                         <template x-for="(card, idx) in grup.items" :key="idx">
                                             <button type="button" @click="selectedCard = card"
-                                                class="group flex w-full flex-col rounded-btn border-l-4 border-base-300 bg-base-200/60 p-2.5 text-left text-sm shadow-sm transition-all hover:-translate-y-0.5 hover:border-l-primary hover:shadow-md">
+                                                class="group flex w-full flex-col rounded-field border border-base-300 border-l-4 bg-base-200 p-2.5 text-left text-sm shadow-xs transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-md">
                                                 <div class="flex items-center justify-between gap-2">
                                                     <strong class="truncate font-bold text-base-content group-hover:text-primary"
                                                         x-text="card.mapel_name"></strong>
                                                     <span class="badge badge-neutral badge-sm shrink-0 gap-1 font-black">
-                                                        <i class="fas fa-user-group text-[9px]"></i> <span x-text="card.siswa_list.length"></span>
+                                                        <i class="fas fa-user-group text-[10px]"></i> <span x-text="card.siswa_list.length"></span>
                                                     </span>
                                                 </div>
                                                 <span class="mt-1 flex items-center gap-1.5 text-xs text-base-content/70">
-                                                    <i class="fas fa-chalkboard-user text-[10px] text-base-content/40"></i>
+                                                    <i class="fas fa-chalkboard-user text-[11px] text-base-content/60"></i>
                                                     <span x-text="card.guru_name"></span>
                                                 </span>
                                                 <span class="flex items-center gap-1.5 text-xs text-base-content/60">
-                                                    <i class="fas fa-door-open text-[10px] text-base-content/40"></i>
+                                                    <i class="fas fa-door-open text-[11px] text-base-content/60"></i>
                                                     <span x-text="card.ruang_name"></span>
                                                 </span>
                                             </button>
@@ -438,12 +436,12 @@
 
         <template x-if="selectedCard">
             <div x-show="selectedCard" x-transition.opacity @keydown.escape.window="selectedCard = null"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
                 @click="selectedCard = null">
                 <div @click.stop x-transition class="responsive-modal-panel max-w-lg">
                     <div class="modal-header-brand">
                         <div class="min-w-0">
-                            <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-80"
+                            <p class="text-[11px] font-black uppercase tracking-[0.2em] opacity-80"
                                 x-text="selectedCard.sesi_name"></p>
                             <h3 class="mt-1 truncate text-xl font-black" x-text="selectedCard.mapel_name"></h3>
                             <p class="mt-1 text-sm opacity-90">
@@ -457,13 +455,13 @@
                         </button>
                     </div>
                     <div class="max-h-[50vh] overflow-y-auto p-5">
-                        <p class="mb-3 text-xs font-black uppercase tracking-wider text-base-content/50">Daftar Siswa
+                        <p class="mb-3 text-xs font-black uppercase tracking-wider text-base-content/60">Daftar Siswa
                             (<span x-text="selectedCard.siswa_list.length"></span>)</p>
                         <div class="space-y-2">
                             <template x-for="siswa in selectedCard.siswa_list" :key="siswa.name">
-                                <div class="flex items-center justify-between gap-3 rounded-btn border border-base-300 bg-base-200/60 px-3 py-2">
+                                <div class="flex items-center justify-between gap-3 rounded-field border border-base-300 bg-base-200/60 px-3 py-2">
                                     <span class="text-sm font-bold text-base-content" x-text="siswa.name"></span>
-                                    <span class="text-xs font-semibold text-base-content/50" x-text="siswa.kelas || '-'"></span>
+                                    <span class="text-xs font-semibold text-base-content/60" x-text="siswa.kelas || '-'"></span>
                                 </div>
                             </template>
                         </div>

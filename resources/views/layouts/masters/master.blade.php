@@ -18,14 +18,14 @@
 <body class="bg-base-200 text-base-content min-h-screen flex flex-col">
 
     <header
-        class="sticky top-0 z-50 w-full border-b border-base-300 bg-base-100/80 shadow-sm backdrop-blur-xl">
+        class="sticky top-0 z-50 w-full border-b border-base-300 bg-base-100/80 shadow-xs backdrop-blur-xl">
         <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between gap-2 h-16">
                 <div class="flex items-center">
                     <a href="{{ url('/') }}"
                         class="group flex items-center gap-2 text-2xl font-black tracking-tighter">
                         <div
-                            class="rounded-btn bg-gradient-to-br from-primary to-accent p-1.5 text-white transition-transform group-hover:rotate-6">
+                            class="rounded-field bg-gradient-to-br from-primary to-accent p-1.5 text-white transition-transform group-hover:rotate-6">
                             <i class="fas fa-calendar-check"></i>
                         </div>
                         <span class="hidden sm:inline text-gradient-brand"
@@ -37,7 +37,7 @@
 
                 <div class="flex items-center space-x-2">
                     <a href="{{ route('jadwal.kalender') }}"
-                        class="flex items-center gap-2 rounded-btn px-2 py-2 text-sm font-bold text-base-content/70 transition-all hover:bg-base-200 hover:text-base-content sm:px-4">
+                        class="flex items-center gap-2 rounded-field px-2 py-2 text-sm font-bold text-base-content/70 transition-all hover:bg-base-200 hover:text-base-content sm:px-4">
                         <i class="fas fa-columns text-primary"></i>
                         <span class="hidden sm:inline">Kalender</span>
                     </a>
@@ -63,7 +63,7 @@
         </nav>
     </header>
 
-    <main class="flex-grow min-h-screen">
+    <main class="grow min-h-screen">
         @yield('content')
     </main>
 
@@ -73,7 +73,7 @@
                 <div class="text-center md:text-left">
                     <div class="flex items-center justify-center md:justify-start gap-2 mb-3">
                         <div
-                            class="flex h-8 w-8 items-center justify-center rounded-btn bg-gradient-to-br from-primary to-accent text-xs text-white">
+                            class="flex h-8 w-8 items-center justify-center rounded-field bg-gradient-to-br from-primary to-accent text-xs text-white">
                             <i class="fas fa-calendar-check"></i>
                         </div>
                         <span class="text-lg font-bold text-base-content tracking-tight">E-ling
@@ -84,11 +84,11 @@
                     </p>
                 </div>
                 <div class="flex justify-center md:justify-end gap-6">
-                    <a href="#" class="text-base-content/50 transition-colors hover:text-primary"><i
+                    <a href="#" class="text-base-content/60 transition-colors hover:text-primary"><i
                             class="fab fa-whatsapp fa-lg"></i></a>
-                    <a href="#" class="text-base-content/50 transition-colors hover:text-primary"><i
+                    <a href="#" class="text-base-content/60 transition-colors hover:text-primary"><i
                             class="fab fa-instagram fa-lg"></i></a>
-                    <a href="#" class="text-base-content/50 transition-colors hover:text-primary"><i
+                    <a href="#" class="text-base-content/60 transition-colors hover:text-primary"><i
                             class="fas fa-envelope fa-lg"></i></a>
                 </div>
             </div>
@@ -99,7 +99,7 @@
                 </div>
                 <div class="text-base-content/60 text-sm">
                     Made by <span class="font-bold text-base-content">Vayndem</span>
-                    with <span class="inline-block animate-pulse ml-1 text-red-500">❤</span>
+                    with <span class="inline-block animate-pulse ml-1 text-error">❤</span>
                 </div>
             </div>
         </div>

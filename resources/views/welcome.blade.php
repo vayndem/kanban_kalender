@@ -11,7 +11,7 @@
 
             <div class="relative z-10 flex flex-col items-center justify-between gap-10 lg:flex-row">
                 <div class="max-w-2xl text-center lg:text-left">
-                    <span class="mb-4 inline-block rounded-full bg-white/20 px-4 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                    <span class="mb-4 inline-block rounded-full bg-white/20 px-4 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-xs">
                         Official Learning Center
                     </span>
                     <h1 class="mb-4 text-3xl font-extrabold leading-tight text-white sm:text-4xl md:text-5xl">
@@ -26,19 +26,19 @@
                         </a>
                         @auth
                             <a href="{{ route('dashboard') }}"
-                                class="btn border-white/30 bg-white/10 text-white backdrop-blur-sm hover:border-white/50 hover:bg-white/20">
+                                class="btn border-white/30 bg-white/10 text-white backdrop-blur-xs hover:border-white/50 hover:bg-white/20">
                                 Dashboard Admin
                             </a>
                         @else
                             <a href="{{ route('login') }}"
-                                class="btn border-white/30 bg-white/10 text-white backdrop-blur-sm hover:border-white/50 hover:bg-white/20">
+                                class="btn border-white/30 bg-white/10 text-white backdrop-blur-xs hover:border-white/50 hover:bg-white/20">
                                 Login Staf
                             </a>
                         @endauth
                     </div>
                 </div>
                 <div class="hidden lg:block">
-                    <div class="rounded-full bg-white/10 p-8 backdrop-blur-sm">
+                    <div class="rounded-full bg-white/10 p-8 backdrop-blur-xs">
                         <i class="fas fa-graduation-cap fa-10x text-white/20"></i>
                     </div>
                 </div>
@@ -64,7 +64,7 @@
                         <span class="h-8 w-2 rounded-full bg-gradient-to-b from-primary to-accent"></span>
                         Aktivitas Belajar Hari Ini
                     </h4>
-                    <span class="self-start rounded-btn bg-base-200 px-4 py-1.5 text-xs font-bold text-base-content/60 sm:self-auto">
+                    <span class="self-start rounded-field bg-base-200 px-4 py-1.5 text-xs font-bold text-base-content/60 sm:self-auto">
                         {{ \Carbon\Carbon::now()->translatedFormat('l, d F') }}
                     </span>
                 </div>
@@ -72,15 +72,15 @@
                 <div class="space-y-4 sm:space-y-6">
                     @forelse($listJadwal as $namaSesi => $jadwals)
                         <div class="flex flex-col gap-4 rounded-box border border-base-300 bg-base-200/60 p-4 sm:gap-6 sm:p-6 md:flex-row">
-                            <div class="flex w-full flex-shrink-0 items-center justify-between gap-1 border-b border-base-300 pb-4 text-center md:w-28 md:flex-col md:justify-center md:border-b-0 md:border-r md:pb-0 md:pr-6">
+                            <div class="flex w-full shrink-0 items-center justify-between gap-1 border-b border-base-300 pb-4 text-center md:w-28 md:flex-col md:justify-center md:border-b-0 md:border-r md:pb-0 md:pr-6">
                                 <span class="text-xs font-black uppercase tracking-widest text-primary">Waktu</span>
                                 <div class="text-lg font-black text-base-content sm:text-xl md:mt-1">{{ $namaSesi }}</div>
-                                <div class="text-[10px] font-semibold text-base-content/50">
+                                <div class="text-[11px] font-semibold text-base-content/60">
                                     {{ $jadwals->first()->sesi->start_time }} - {{ $jadwals->first()->sesi->end_time }}
                                 </div>
                             </div>
 
-                            <div class="grid flex-grow grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div class="grid grow grid-cols-1 gap-4 sm:grid-cols-2">
                                 @foreach ($jadwals as $j)
                                     <button type="button"
                                         @click="modalTitle = '{{ $j->mataPelajaran->name }}'; modalStudents = {{ $j->slot_students->toJson() }}; showSiswaModal = true"
@@ -90,12 +90,12 @@
                                                 <div class="break-words text-sm font-bold leading-tight text-base-content">
                                                     {{ $j->mataPelajaran->name }}
                                                 </div>
-                                                <div class="mt-1 flex items-center gap-1 truncate text-[11px] font-bold text-primary">
-                                                    <i class="fas fa-user-tie flex-shrink-0 text-[9px]"></i>
+                                                <div class="mt-1 flex items-center gap-1 truncate text-xs font-bold text-primary">
+                                                    <i class="fas fa-user-tie shrink-0 text-[10px]"></i>
                                                     <span class="truncate">{{ $j->guru->name }}</span>
                                                 </div>
                                             </div>
-                                            <div class="app-chip flex-shrink-0 whitespace-nowrap">
+                                            <div class="app-chip shrink-0 whitespace-nowrap">
                                                 {{ $j->ruang->name }}
                                             </div>
                                         </div>
@@ -133,7 +133,7 @@
         </div>
 
         <template x-if="showSiswaModal">
-            <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" x-transition
+            <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs" x-transition
                 @keydown.escape.window="showSiswaModal = false">
                 <div @click="showSiswaModal = false" class="absolute inset-0"></div>
                 <div class="responsive-modal-panel relative m-2 max-w-md" @click.stop>
@@ -143,19 +143,19 @@
                             <p class="mt-0.5 text-xs text-base-content/60">Daftar Siswa Terjadwal</p>
                         </div>
                         <button @click="showSiswaModal = false" aria-label="Tutup"
-                            class="btn btn-circle btn-ghost btn-sm flex-shrink-0">
+                            class="btn btn-circle btn-ghost btn-sm shrink-0">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
                     <div class="max-h-[50vh] space-y-2 overflow-y-auto p-4 sm:max-h-[60vh] sm:p-6">
                         <template x-for="(siswa, index) in modalStudents" :key="index">
-                            <div class="flex min-w-0 items-center justify-between gap-2 rounded-btn border border-base-300 bg-base-200/60 p-3">
+                            <div class="flex min-w-0 items-center justify-between gap-2 rounded-field border border-base-300 bg-base-200/60 p-3">
                                 <div class="flex min-w-0 flex-1 items-center gap-3">
-                                    <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-btn bg-primary/10 text-sm font-black text-primary"
+                                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-field bg-primary/10 text-sm font-black text-primary"
                                         x-text="siswa.name.charAt(0)"></div>
                                     <span class="truncate text-sm font-semibold text-base-content" x-text="siswa.name"></span>
                                 </div>
-                                <span class="badge badge-primary badge-sm flex-shrink-0 whitespace-nowrap font-bold"
+                                <span class="badge badge-primary badge-sm shrink-0 whitespace-nowrap font-bold"
                                     x-text="'Kelas ' + siswa.kelas"></span>
                             </div>
                         </template>

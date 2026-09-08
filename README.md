@@ -1,24 +1,24 @@
 # Kanban Kalender - E-Ling Course
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=venom&color=0:1d4ed8,50:2563eb,100:f97316&height=240&section=header&text=Kanban%20Kalender&fontSize=60&fontColor=ffffff&animation=fadeIn&fontAlignY=42&stroke=ffffff&strokeWidth=1&desc=Admin%20Bimbel%20%7C%20Jadwal%20%7C%20Siswa%20%7C%20Pembayaran%20%7C%20Modul%20Ajar&descFontSize=18&descAlignY=64&descAlign=50&descFontColor=e2e8f0" alt="Kanban Kalender Header" />
+  <img src="https://capsule-render.vercel.app/api?type=venom&color=0:065f46,50:059669,100:0d9488&height=240&section=header&text=Kanban%20Kalender&fontSize=60&fontColor=ffffff&animation=fadeIn&fontAlignY=42&stroke=ffffff&strokeWidth=1&desc=Admin%20Bimbel%20%7C%20Jadwal%20%7C%20Siswa%20%7C%20Pembayaran%20%7C%20Modul%20Ajar&descFontSize=18&descAlignY=64&descAlign=50&descFontColor=e2e8f0" alt="Kanban Kalender Header" />
 </p>
 
 <p align="center">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&pause=1000&color=2563EB&center=true&vCenter=true&width=760&lines=Manage+class+schedules+with+conflict+protection.;Track+students%2C+payments%2C+discounts%2C+and+archives.;Run+curriculum%2C+attendance%2C+and+student+progress+reports.;Generate+formal+PDF+exports+for+operations+and+finance." alt="Typing SVG" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&pause=1000&color=059669&center=true&vCenter=true&width=760&lines=Manage+class+schedules+with+conflict+protection.;Track+students%2C+payments%2C+discounts%2C+and+archives.;Run+curriculum%2C+attendance%2C+and+student+progress+reports.;Generate+formal+PDF+exports+for+operations+and+finance." alt="Typing SVG" />
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Laravel-12-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel 12">
   <img src="https://img.shields.io/badge/PHP-8.3-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP 8.3">
-  <img src="https://img.shields.io/badge/TailwindCSS-3-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 3">
-  <img src="https://img.shields.io/badge/daisyUI-4-5A0EF8?style=for-the-badge&logo=daisyui&logoColor=white" alt="daisyUI 4">
+  <img src="https://img.shields.io/badge/TailwindCSS-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 4">
+  <img src="https://img.shields.io/badge/daisyUI-5-059669?style=for-the-badge&logo=daisyui&logoColor=white" alt="daisyUI 5">
   <img src="https://img.shields.io/badge/Alpine.js-8BC0D0?style=for-the-badge&logo=alpinedotjs&logoColor=0F172A" alt="Alpine.js">
   <img src="https://img.shields.io/badge/DomPDF-PDF-F97316?style=for-the-badge&logo=adobeacrobatreader&logoColor=white" alt="DomPDF">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-177%20passing-16a34a?style=flat-square" alt="177 tests passing">
+  <img src="https://img.shields.io/badge/tests-183%20passing-16a34a?style=flat-square" alt="183 tests passing">
   <img src="https://img.shields.io/badge/static%20analysis-Larastan%20lv1-8b5cf6?style=flat-square" alt="Larastan level 1">
   <img src="https://img.shields.io/badge/style-Laravel%20Pint-f59e0b?style=flat-square" alt="Laravel Pint">
 </p>
@@ -142,11 +142,11 @@ This project is designed to keep day-to-day operations stable:
 
 ## Design System
 
-The UI runs on **Tailwind CSS 3 + daisyUI 4**, and the theme is the single source of truth for color.
+The UI runs on **Tailwind CSS 4 + daisyUI 5**, configured CSS-first. There is no `tailwind.config.js` and no `postcss.config.js` — the entire theme lives in `resources/css/app.css` and is compiled by the `@tailwindcss/vite` plugin.
 
 - **Semantic tokens, not hardcoded palettes.** Surfaces use `base-100` / `base-200` / `base-300`, text uses `base-content` with opacity steps, and meaning uses `primary` / `accent` / `success` / `warning` / `error` / `info`.
 - **Dark mode is automatic and OS-driven.** daisyUI injects the dark theme at `:root` under `@media (prefers-color-scheme: dark)`, so token-based classes flip on their own — the codebase deliberately has **no** `darkMode: 'class'` and no `dark:` variants layered on tokens.
-- **`primary` (blue) is brand chrome; `success` (emerald) means done, paid, or present.** Keeping them distinct is what makes "submit" and "settled" readable at a glance.
+- **The brand is emerald green.** `primary` is emerald and `accent` is teal; `success` is a brighter green so "submit" and "settled" still read differently. No blue or purple chrome.
 - **daisyUI wins name collisions.** Custom helpers in `resources/css/app.css` are prefixed `app-` (`app-card`, `app-stat`, `app-empty`, `app-tab`, `app-input`, `app-chip`, `app-table-wrap`, …), while `badge`, `stats`, `table`, `join`, `alert`, `modal`, and friends come straight from daisyUI.
 - Reusable Blade components: `x-list-panel` / `x-list-row` (Ringkasan's tinted list cards) and `x-portal-nav` (the shared top bar for Portal Guru, Absen, and Modul Ajar).
 
@@ -238,7 +238,7 @@ composer run dev
 ## Quality Gates
 
 ```bash
-vendor/bin/phpunit          # 177 feature/unit tests
+vendor/bin/phpunit          # 183 feature/unit tests
 npm run test:js             # plain Node test runner, no framework
 vendor/bin/phpstan analyse  # Larastan level 1 (Controllers + Models)
 vendor/bin/pint             # code style
@@ -286,7 +286,7 @@ Example command for Windows with a project-local PHP 8.3:
 ### Styling & Routing
 
 - `resources/css/app.css` — design system on top of daisyUI
-- `tailwind.config.js` — daisyUI light/dark themes and token defaults
+- `resources/css/app.css` — also holds the daisyUI theme blocks (`eling` / `eling-dark`), radii, and the `@utility` bases
 - `routes/web.php`
 
 ---
@@ -322,5 +322,5 @@ Internal / private project workflow.
 </p>
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:f97316,50:2563eb,100:1d4ed8&height=120&section=footer" alt="Footer Banner" />
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d9488,50:059669,100:065f46&height=120&section=footer" alt="Footer Banner" />
 </p>

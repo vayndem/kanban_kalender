@@ -67,6 +67,7 @@ class RingkasanService
                 return [
                     'sesi_id' => $first->sesi_id,
                     'sesi_name' => $first->sesi?->name ?? 'N/A',
+                    'sesi_label' => $first->sesi?->label ?? 'N/A',
                     'sesi_start' => $first->sesi?->start_time,
                     'sesi_end' => $first->sesi?->end_time,
                     'mapel_name' => $first->mataPelajaran?->name ?? 'N/A',
@@ -134,7 +135,7 @@ class RingkasanService
         $urutanSesi = $sesis->values()->mapWithKeys(fn (Sesi $s, int $i) => [$s->id => $i]);
         $sesiById = $sesis->keyBy('id');
         $durasiSesi = $sesis->mapWithKeys(
-            fn (Sesi $s) => [$s->id => Carbon::parse($s->end_time)->diffInMinutes(Carbon::parse($s->start_time))]
+            fn (Sesi $s) => [$s->id => (int) Carbon::parse($s->start_time)->diffInMinutes(Carbon::parse($s->end_time))]
         );
 
         $query = Jadwal::query()->select(['hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id']);
