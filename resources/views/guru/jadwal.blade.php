@@ -15,62 +15,39 @@
 </head>
 
 <body class="font-sans antialiased">
-    <div class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div class="app-canvas min-h-screen text-base-content">
 
-        <nav
-            class="border-b border-slate-200/80 bg-white/90 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/90">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex min-h-16 items-center justify-between py-2">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <i class="fas fa-chalkboard-user text-emerald-500 text-lg"></i>
-                        <div class="min-w-0">
-                            <p class="text-sm font-bold truncate">{{ $guru->name }}</p>
-                            <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Portal Guru — E-Ling Course</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        <a href="{{ route('modulAjar.index') }}"
-                            class="text-xs font-bold text-slate-500 hover:text-emerald-600 transition-colors px-3 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30">
-                            <i class="fas fa-book-open-reader sm:mr-1"></i><span class="hidden sm:inline"> Modul Ajar</span>
-                        </a>
-                        <a href="{{ route('absen.index') }}"
-                            class="text-xs font-bold text-slate-500 hover:text-emerald-600 transition-colors px-3 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/30">
-                            <i class="fas fa-clipboard-user sm:mr-1"></i><span class="hidden sm:inline"> Absen</span>
-                        </a>
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit"
-                                class="text-xs font-bold text-slate-500 hover:text-red-500 transition-colors px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30">
-                                <i class="fas fa-right-from-bracket sm:mr-1"></i><span class="hidden sm:inline"> Keluar</span>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </nav>
+        <x-portal-nav icon="fa-chalkboard-user" :title="$guru->name" subtitle="Portal Guru — E-Ling Course">
+            <a href="{{ route('modulAjar.index') }}" class="btn btn-ghost btn-sm text-xs">
+                <i class="fas fa-book-open-reader"></i><span class="hidden sm:inline"> Modul Ajar</span>
+            </a>
+            <a href="{{ route('absen.index') }}" class="btn btn-ghost btn-sm text-xs">
+                <i class="fas fa-clipboard-user"></i><span class="hidden sm:inline"> Absen</span>
+            </a>
+        </x-portal-nav>
 
         <main class="py-6 sm:py-8">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     <div
-                        class="rounded-xl border border-emerald-200/70 dark:border-emerald-900/50 bg-emerald-50/70 dark:bg-emerald-950/20 p-4">
+                        class="app-card border-success/40 bg-success/10 p-4">
                         <p
-                            class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                            class="text-[10px] font-bold uppercase tracking-wider text-success">
                             Kelas Diampu</p>
-                        <p class="mt-1.5 text-2xl font-black text-emerald-800 dark:text-emerald-200">{{ $totalKelas }}
+                        <p class="mt-1.5 text-2xl font-black text-success">{{ $totalKelas }}
                         </p>
                     </div>
                     <div
-                        class="rounded-xl border border-blue-200/70 dark:border-blue-900/50 bg-blue-50/70 dark:bg-blue-950/20 p-4">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">Siswa
+                        class="app-card border-primary/40 bg-primary/10 p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-primary">Siswa
                             Diajar</p>
-                        <p class="mt-1.5 text-2xl font-black text-blue-800 dark:text-blue-200">{{ $totalSiswa }}</p>
+                        <p class="mt-1.5 text-2xl font-black text-primary">{{ $totalSiswa }}</p>
                     </div>
                     <div
-                        class="col-span-2 sm:col-span-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 flex items-center gap-2.5">
-                        <i class="fas fa-eye text-slate-400"></i>
-                        <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-snug">
+                        class="app-card col-span-2 flex items-center gap-2.5 p-4 sm:col-span-1">
+                        <i class="fas fa-eye text-base-content/50"></i>
+                        <p class="text-[11px] text-base-content/70 leading-snug">
                             Halaman ini <span class="font-bold">hanya menampilkan</span> jadwal Anda.
                             Perubahan jadwal dilakukan oleh admin.
                         </p>
@@ -83,20 +60,19 @@
                     @endphp
 
                     <div
-                        class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+                        class="app-card overflow-hidden">
                         <div
-                            class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between">
+                            class="px-4 py-3 border-b border-base-300 bg-base-200 flex items-center justify-between">
                             <h2 class="font-bold text-sm">{{ $hari->name }}</h2>
-                            <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                            <span class="text-[11px] font-semibold text-base-content/60">
                                 {{ $kelasHariIni->count() }} kelas
                             </span>
                         </div>
 
                         @if ($kelasHariIni->isEmpty())
-                            <p class="px-4 py-6 text-center text-xs text-slate-400 italic">Tidak ada kelas pada hari
-                                ini.</p>
+                            <p class="px-4 py-6 text-center text-xs italic text-base-content/50">Tidak ada kelas pada hari ini.</p>
                         @else
-                            <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                            <div class="divide-y divide-base-300">
                                 @foreach ($sesis as $sesi)
                                     @php
                                         $kelasSesi = $kelasHariIni->where('sesi_id', $sesi->id);
@@ -106,9 +82,9 @@
                                     @foreach ($kelasSesi as $k)
                                         <div class="p-4 flex flex-col sm:flex-row sm:items-start gap-3">
                                             <div class="sm:w-40 shrink-0">
-                                                <p class="text-xs font-black text-emerald-600 dark:text-emerald-400">
+                                                <p class="text-xs font-black text-success">
                                                     {{ $sesi->name }}</p>
-                                                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                                                <p class="text-[11px] text-base-content/60 font-mono">
                                                     {{ \Illuminate\Support\Str::of($sesi->start_time)->substr(0, 5) }}
                                                     –
                                                     {{ \Illuminate\Support\Str::of($sesi->end_time)->substr(0, 5) }}
@@ -119,11 +95,11 @@
                                                 <div class="flex flex-wrap items-center gap-2">
                                                     <span class="font-bold text-sm">{{ $k['mata_pelajaran'] }}</span>
                                                     <span
-                                                        class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                                        class="app-chip">
                                                         <i class="fas fa-door-open mr-1"></i>{{ $k['ruang'] }}
                                                     </span>
                                                     <span
-                                                        class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+                                                        class="badge badge-primary badge-sm font-bold">
                                                         {{ $k['siswa']->count() }} siswa
                                                     </span>
                                                 </div>
@@ -131,10 +107,10 @@
                                                 <div class="mt-2 flex flex-wrap gap-1.5">
                                                     @foreach ($k['siswa'] as $s)
                                                         <span
-                                                            class="text-[11px] px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700">
+                                                            class="rounded-btn border border-base-300 bg-base-200 px-2 py-1 text-[11px]">
                                                             {{ $s['panggilan'] ?: $s['nama'] }}
                                                             @if ($s['kelas'])
-                                                                <span class="text-slate-400">·
+                                                                <span class="text-base-content/50">·
                                                                     {{ $s['kelas'] }}</span>
                                                             @endif
                                                         </span>
@@ -148,7 +124,7 @@
                         @endif
                     </div>
                 @empty
-                    <p class="text-center text-sm text-slate-400 py-10">Belum ada hari yang terdaftar.</p>
+                    <p class="text-center text-sm text-base-content/50 py-10">Belum ada hari yang terdaftar.</p>
                 @endforelse
 
             </div>

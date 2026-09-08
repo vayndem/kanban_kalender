@@ -16,22 +16,29 @@
 </head>
 
 <body class="font-sans antialiased">
-    <div class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <a href="#konten-utama"
+        class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-btn focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-primary-content">
+        Lompat ke konten utama
+    </a>
+
+    <div class="app-canvas min-h-screen text-base-content">
         @include('layouts.navigation')
 
         @isset($header)
-            <header class="border-b border-slate-200/80 bg-white/80 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/80">
+            <header class="border-b border-base-300 bg-base-100/80 backdrop-blur-xl">
                 <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
                     {{ $header }}
                 </div>
             </header>
         @endisset
 
-        <main class="py-5 sm:py-8">
+        <main id="konten-utama" class="py-5 sm:py-8">
             <div class="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8">
                 @include('admin.partials.tabs', ['activeTab' => $activeTab])
 
-                {{ $slot }}
+                <div class="animate-rise">
+                    {{ $slot }}
+                </div>
             </div>
         </main>
 

@@ -8,20 +8,20 @@
         <div x-show="isLoading" x-cloak
             class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-[2px] cursor-wait">
             <div
-                class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl px-6 py-5 flex items-center gap-3 border dark:border-gray-700">
-                <i class="fas fa-circle-notch fa-spin text-emerald-500 text-xl"></i>
-                <p class="text-sm font-bold text-gray-900 dark:text-white">Sedang diproses...</p>
+                class="bg-base-100 rounded-2xl shadow-2xl px-6 py-5 flex items-center gap-3 border">
+                <i class="fas fa-circle-notch fa-spin text-success text-xl"></i>
+                <p class="text-sm font-bold text-base-content">Sedang diproses...</p>
             </div>
         </div>
 
         <div
-            class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
+            class="bg-base-100 p-4 md:p-6 rounded-xl shadow-lg border border-base-300">
 
-            <div class="border-b border-gray-50 dark:border-gray-700/50 pb-4 mb-6">
-                <h3 class="text-lg md:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <i class="fas fa-user-shield text-emerald-500"></i> Akun Guru
+            <div class="border-b border-base-300 pb-4 mb-6">
+                <h3 class="text-lg md:text-xl font-bold text-base-content flex items-center gap-2">
+                    <i class="fas fa-user-shield text-success"></i> Akun Guru
                 </h3>
-                <p class="text-gray-500 dark:text-gray-400 mt-0.5 text-xs md:text-sm">
+                <p class="text-base-content/60 mt-0.5 text-xs md:text-sm">
                     Kelola email dan akun login guru di sini. Untuk menambah/mengubah data guru, ruang, sesi, mata
                     pelajaran, atau siswa, buka menu <span class="font-bold">Workshop</span>.
                 </p>
@@ -29,19 +29,19 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                 <div
-                    class="rounded-xl border border-emerald-200/70 dark:border-emerald-900/50 bg-emerald-50/70 dark:bg-emerald-950/20 p-3">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                    class="rounded-xl border border-success/40 bg-success/10 p-3">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-success">
                         <i class="fas fa-chalkboard-user mr-1"></i>Total Guru
                     </p>
-                    <p class="mt-1 text-xl font-black text-emerald-800 dark:text-emerald-200">{{ $ringkasan['guru'] }}
+                    <p class="mt-1 text-xl font-black text-success">{{ $ringkasan['guru'] }}
                     </p>
                 </div>
                 <div
-                    class="rounded-xl border border-blue-200/70 dark:border-blue-900/50 bg-blue-50/70 dark:bg-blue-950/20 p-3">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">
+                    class="rounded-xl border border-primary/40 bg-primary/10 p-3">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-primary">
                         <i class="fas fa-user-check mr-1"></i>Punya Akun
                     </p>
-                    <p class="mt-1 text-xl font-black text-blue-800 dark:text-blue-200">{{ $ringkasan['guru_berakun'] }}
+                    <p class="mt-1 text-xl font-black text-primary">{{ $ringkasan['guru_berakun'] }}
                     </p>
                 </div>
                 <div
@@ -66,28 +66,28 @@
                 </div>
             @endif
 
-            <div class="hidden sm:block overflow-x-auto border border-gray-100 dark:border-gray-700 rounded-xl">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                    <thead class="bg-gray-50 dark:bg-gray-900/50 text-left">
+            <div class="hidden sm:block overflow-x-auto border border-base-300 rounded-xl">
+                <table class="min-w-full divide-y divide-base-300 text-sm">
+                    <thead class="bg-base-200 text-left">
                         <tr>
-                            <th class="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Nama</th>
-                            <th class="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Email</th>
-                            <th class="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Beban
+                            <th class="px-4 py-3 text-xs font-bold text-base-content/50 uppercase tracking-wider">Nama</th>
+                            <th class="px-4 py-3 text-xs font-bold text-base-content/50 uppercase tracking-wider">Email</th>
+                            <th class="px-4 py-3 text-xs font-bold text-base-content/50 uppercase tracking-wider">Beban
                                 Mengajar</th>
-                            <th class="px-4 py-3 text-xs font-bold text-gray-400 uppercase tracking-wider">Akun</th>
-                            <th class="px-4 py-3 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">
+                            <th class="px-4 py-3 text-xs font-bold text-base-content/50 uppercase tracking-wider">Akun</th>
+                            <th class="px-4 py-3 text-center text-xs font-bold text-base-content/50 uppercase tracking-wider">
                                 Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
+                    <tbody class="bg-base-100 divide-y divide-base-300">
                         @forelse ($gurus as $g)
-                            <tr class="hover:bg-gray-50/70 dark:hover:bg-gray-700/20">
-                                <td class="px-4 py-3 font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                            <tr class="hover:bg-base-200/70">
+                                <td class="px-4 py-3 font-bold text-base-content whitespace-nowrap">
                                     {{ $g['name'] }}</td>
                                 <td class="px-4 py-3">
                                     @if ($g['email'])
                                         <span
-                                            class="font-mono text-xs text-gray-700 dark:text-gray-300">{{ $g['email'] }}</span>
+                                            class="font-mono text-xs text-base-content/80">{{ $g['email'] }}</span>
                                     @else
                                         <span class="text-[11px] italic text-amber-600 dark:text-amber-400">belum
                                             diisi</span>
@@ -95,20 +95,20 @@
                                 </td>
                                 <td class="px-4 py-3">
                                     <span
-                                        class="text-xs font-semibold text-gray-700 dark:text-gray-300">{{ $g['jumlah_slot'] }}
+                                        class="text-xs font-semibold text-base-content/80">{{ $g['jumlah_slot'] }}
                                         slot</span>
-                                    <span class="text-[11px] text-gray-400"> · {{ $g['jumlah_baris_jadwal'] }} baris
+                                    <span class="text-[11px] text-base-content/50"> · {{ $g['jumlah_baris_jadwal'] }} baris
                                         jadwal</span>
                                 </td>
                                 <td class="px-4 py-3">
                                     @if ($g['punya_akun'])
                                         <span
-                                            class="text-[10px] font-black px-2 py-1 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                                            class="text-[10px] font-black px-2 py-1 rounded bg-success/10 text-success">
                                             <i class="fas fa-check"></i> AKTIF
                                         </span>
                                     @else
                                         <span
-                                            class="text-[10px] font-black px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">BELUM
+                                            class="text-[10px] font-black px-2 py-1 rounded bg-base-200 text-base-content/60">BELUM
                                             ADA</span>
                                     @endif
                                 </td>
@@ -133,7 +133,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-4 py-10 text-center text-gray-400 italic text-xs">
+                                <td colspan="5" class="px-4 py-10 text-center text-base-content/50 italic text-xs">
                                     Belum ada guru terdaftar. Tambahkan lewat menu Workshop.
                                 </td>
                             </tr>
@@ -142,31 +142,31 @@
                 </table>
             </div>
 
-            <div class="sm:hidden divide-y divide-gray-100 dark:divide-gray-700 rounded-xl border border-gray-100 dark:border-gray-700">
+            <div class="sm:hidden divide-y divide-base-300 rounded-xl border border-base-300">
                 @forelse ($gurus as $g)
                     <div class="p-4 space-y-2.5">
                         <div class="flex items-center justify-between gap-2">
-                            <p class="font-bold text-gray-900 dark:text-white truncate">{{ $g['name'] }}</p>
+                            <p class="font-bold text-base-content truncate">{{ $g['name'] }}</p>
                             @if ($g['punya_akun'])
                                 <span
-                                    class="shrink-0 text-[10px] font-black px-2 py-1 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                                    class="shrink-0 text-[10px] font-black px-2 py-1 rounded bg-success/10 text-success">
                                     <i class="fas fa-check"></i> AKTIF
                                 </span>
                             @else
                                 <span
-                                    class="shrink-0 text-[10px] font-black px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">BELUM
+                                    class="shrink-0 text-[10px] font-black px-2 py-1 rounded bg-base-200 text-base-content/60">BELUM
                                     ADA</span>
                             @endif
                         </div>
                         <p class="text-xs">
                             @if ($g['email'])
-                                <span class="font-mono text-gray-700 dark:text-gray-300">{{ $g['email'] }}</span>
+                                <span class="font-mono text-base-content/80">{{ $g['email'] }}</span>
                             @else
                                 <span class="italic text-amber-600 dark:text-amber-400">Email belum diisi</span>
                             @endif
                         </p>
-                        <p class="text-[11px] text-gray-500 dark:text-gray-400">
-                            <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $g['jumlah_slot'] }} slot</span>
+                        <p class="text-[11px] text-base-content/60">
+                            <span class="font-semibold text-base-content/80">{{ $g['jumlah_slot'] }} slot</span>
                             · {{ $g['jumlah_baris_jadwal'] }} baris jadwal
                         </p>
                         <div class="flex flex-col gap-1.5 pt-1">
@@ -187,7 +187,7 @@
                         </div>
                     </div>
                 @empty
-                    <div class="p-8 text-center text-gray-400 italic text-xs">
+                    <div class="p-8 text-center text-base-content/50 italic text-xs">
                         Belum ada guru terdaftar. Tambahkan lewat menu Workshop.
                     </div>
                 @endforelse

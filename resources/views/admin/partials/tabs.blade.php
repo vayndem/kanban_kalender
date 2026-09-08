@@ -14,20 +14,23 @@
     ];
 @endphp
 
-<div
-    class="mb-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-    <nav class="flex min-w-max gap-1" aria-label="Tabs">
+<div class="app-card sticky top-16 z-40 mb-6 overflow-x-auto p-1.5 backdrop-blur-xl">
+    <nav class="flex min-w-max items-center gap-1" aria-label="Tabs">
         @foreach ($tabs as $key => $tab)
             <a href="{{ route('dashboard', ['tab' => $key]) }}"
-                class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition {{ $activeTab === $key ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200 dark:shadow-none' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white' }}">
-                <i class="fas {{ $tab['icon'] }}"></i> {{ $tab['label'] }}
+                @if ($activeTab === $key) aria-current="page" @endif
+                class="{{ $activeTab === $key ? 'app-tab-active' : 'app-tab' }}">
+                <i class="fas {{ $tab['icon'] }} text-xs opacity-80"></i> {{ $tab['label'] }}
             </a>
         @endforeach
 
+        <span class="mx-1 h-6 w-px shrink-0 bg-base-300" aria-hidden="true"></span>
+
         @foreach ($extraTabs as $key => $tab)
             <a href="{{ route($tab['route']) }}"
-                class="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition {{ $activeTab === $key ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200 dark:shadow-none' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white' }}">
-                <i class="fas {{ $tab['icon'] }}"></i> {{ $tab['label'] }}
+                @if ($activeTab === $key) aria-current="page" @endif
+                class="{{ $activeTab === $key ? 'app-tab-active' : 'app-tab' }}">
+                <i class="fas {{ $tab['icon'] }} text-xs opacity-80"></i> {{ $tab['label'] }}
             </a>
         @endforeach
     </nav>

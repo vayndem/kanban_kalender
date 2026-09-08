@@ -1,4 +1,4 @@
-<div class="bg-gray-50 dark:bg-gray-900/50 p-4 sm:p-6 rounded-xl shadow-inner" x-data="siswaHandler({
+<div class="app-card app-card-pad" x-data="siswaHandler({
     initialSiswa: @js($allSiswas),
     initialArsip: @js($allArsips),
     paketData: @js($pakets),
@@ -16,69 +16,67 @@
     },
 })">
 
-    <div class="flex flex-col gap-4 mb-8 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h3 class="text-xl font-bold text-gray-900 sm:text-2xl dark:text-white flex items-center">
-                <i class="fas mr-3 text-blue-500"
-                    :class="viewMode === 'aktif' ? 'fa-user-graduate' : 'fa-archive'"></i>
-                <span x-text="viewMode === 'aktif' ? 'Data Master Siswa' : 'Arsip Data Siswa'"></span>
-            </h3>
-            <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                Total: <span x-text="viewMode === 'aktif' ? allSiswas.length : allArsips.length"></span> Siswa
-            </p>
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-3">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-box bg-primary/10 text-lg text-primary">
+                <i class="fas" :class="viewMode === 'aktif' ? 'fa-user-graduate' : 'fa-archive'"></i>
+            </span>
+            <div>
+                <h3 class="text-xl font-black tracking-tight text-base-content sm:text-2xl">
+                    <span x-text="viewMode === 'aktif' ? 'Data Master Siswa' : 'Arsip Data Siswa'"></span>
+                </h3>
+                <p class="mt-0.5 text-xs text-base-content/60 sm:text-sm">
+                    Total <span class="font-black text-base-content"
+                        x-text="viewMode === 'aktif' ? allSiswas.length : allArsips.length"></span> siswa
+                </p>
+            </div>
         </div>
 
-        <div class="flex flex-col gap-3 w-full sm:w-auto sm:flex-row sm:items-center">
-            <div
-                class="flex bg-gray-200 dark:bg-gray-700 p-1 rounded-xl shadow-sm border dark:border-gray-600 w-full sm:w-auto">
+        <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+            <div class="join w-full sm:w-auto">
                 <button @click="viewMode = 'aktif'; selectedSiswas = []"
-                    :class="{ 'bg-white dark:bg-gray-600 shadow-sm text-blue-600 dark:text-blue-300': viewMode === 'aktif', 'text-gray-500 dark:text-gray-400': viewMode !== 'aktif' }"
-                    class="flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200">
+                    :class="viewMode === 'aktif' ? 'btn-primary' : 'btn-ghost border border-base-300'"
+                    class="btn join-item btn-sm flex-1 sm:flex-none">
                     AKTIF
                 </button>
                 <button @click="viewMode = 'arsip'; selectedSiswas = []"
-                    :class="{ 'bg-white dark:bg-gray-600 shadow-sm text-red-600 dark:text-red-300': viewMode === 'arsip', 'text-gray-500 dark:text-gray-400': viewMode !== 'arsip' }"
-                    class="flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200">
+                    :class="viewMode === 'arsip' ? 'btn-error text-white' : 'btn-ghost border border-base-300'"
+                    class="btn join-item btn-sm flex-1 sm:flex-none">
                     ARSIP
                 </button>
             </div>
 
-            <div class="relative w-full sm:w-64">
-                <input type="text" x-model="siswaSearch" placeholder="Cari nama atau kelas..."
-                    class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-blue-500">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i class="fas fa-search text-gray-400"></i>
-                </div>
-            </div>
+            <label class="relative w-full sm:w-64">
+                <i class="fas fa-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-base-content/40"></i>
+                <input type="search" x-model="siswaSearch" placeholder="Cari nama atau kelas..."
+                    class="app-input pl-10">
+            </label>
 
-            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                 <button x-show="viewMode === 'aktif' && selectedSiswas.length > 0"
                     @click="hapusSiswa(selectedSiswas.join(','))"
-                    class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm animate-fade-in">
-                    <i class="fas fa-box-archive mr-2"></i> Arsipkan Terpilih (<span
-                        x-text="selectedSiswas.length"></span>)
+                    class="btn btn-warning btn-sm w-full sm:w-auto">
+                    <i class="fas fa-box-archive"></i> Arsipkan Terpilih (<span x-text="selectedSiswas.length"></span>)
                 </button>
                 <a href="{{ route('admin.workshop.index') }}" x-show="viewMode === 'aktif'"
-                    class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
-                    <i class="fas fa-plus mr-2"></i> Tambah di Workshop
+                    class="btn btn-primary btn-sm w-full sm:w-auto">
+                    <i class="fas fa-plus"></i> Tambah di Workshop
                 </a>
             </div>
         </div>
     </div>
 
     <div x-show="viewMode === 'aktif'" x-transition
-        class="mb-6 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm space-y-4">
-        <div class="flex items-center justify-between">
-            <p
-                class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                <i class="fas fa-filter text-blue-500"></i> Filter Siswa
+        class="mb-6 space-y-4 rounded-box border border-base-300 bg-base-200/50 p-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <p class="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-base-content/60">
+                <i class="fas fa-filter text-primary"></i> Filter Siswa
             </p>
             <div class="flex items-center gap-2">
-                <span x-show="hasActiveFilter"
-                    class="text-[10px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 px-2 py-0.5 rounded-full"
+                <span x-show="hasActiveFilter" class="badge badge-primary badge-sm font-bold"
                     x-text="filteredSiswa.length + ' siswa ditemukan'"></span>
                 <button type="button" x-show="hasActiveFilter" @click="resetFilter()"
-                    class="text-[10px] font-bold text-red-500 hover:text-red-700 flex items-center gap-1">
+                    class="btn btn-ghost btn-xs text-error hover:bg-error/10">
                     <i class="fas fa-times"></i> Reset
                 </button>
             </div>
@@ -86,9 +84,9 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-6 gap-3">
             <div>
-                <label class="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Kelas</label>
+                <label class="app-label">Kelas</label>
                 <select x-model="filterKelas"
-                    class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    class="select select-bordered select-sm w-full">
                     <option value="">Semua Kelas</option>
                     <template x-for="k in kelasList" :key="k">
                         <option :value="k" x-text="k"></option>
@@ -97,9 +95,9 @@
             </div>
 
             <div>
-                <label class="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Paket</label>
+                <label class="app-label">Paket</label>
                 <select x-model="filterPaket"
-                    class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    class="select select-bordered select-sm w-full">
                     <option value="">Semua Paket</option>
                     <template x-for="p in pakets" :key="p.id">
                         <option :value="p.id" x-text="p.nama_paket"></option>
@@ -108,9 +106,9 @@
             </div>
 
             <div>
-                <label class="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Kemampuan</label>
+                <label class="app-label">Kemampuan</label>
                 <select x-model="filterKemampuan"
-                    class="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    class="select select-bordered select-sm w-full">
                     <option value="">Semua Kemampuan</option>
                     <template x-for="k in kemampuans" :key="k.id">
                         <option :value="k.id" x-text="'Level ' + k.level + ' — ' + k.keterangan"></option>
@@ -119,33 +117,33 @@
             </div>
 
             <div x-data="{ openSesi: false, searchSesi: '' }" class="relative">
-                <label class="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Sesi</label>
+                <label class="app-label">Sesi</label>
                 <button type="button" @click="openSesi = !openSesi"
-                    class="w-full text-sm text-left rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 flex items-center justify-between focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    class="searchable-select-trigger">
                     <span x-text="filterSesis.length ? filterSesis.length + ' sesi dipilih' : 'Semua Sesi'"
-                        :class="filterSesis.length ? 'text-blue-600 dark:text-blue-300 font-semibold' : ''"></span>
-                    <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200"
+                        :class="filterSesis.length ? 'text-primary font-semibold' : ''"></span>
+                    <i class="fas fa-chevron-down text-xs text-base-content/50 transition-transform duration-200"
                         :class="openSesi ? 'rotate-180' : ''"></i>
                 </button>
                 <template x-if="openSesi">
                     <div @click.outside="openSesi = false"
-                        class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                        class="searchable-select-panel max-h-48 overflow-y-auto">
                         <div
-                            class="sticky top-0 z-10 border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
+                            class="searchable-select-search-wrap sticky top-0 z-10">
                             <input type="search" x-model="searchSesi" placeholder="Cari sesi atau jam..."
-                                class="w-full rounded-lg border px-3 py-2 text-xs">
+                                class="input input-bordered input-xs w-full">
                         </div>
                         <template
                             x-for="s in allSesis.filter(item => ((item.name || item.nama_sesi || '') + ' ' + (item.start_time || '') + ' ' + (item.end_time || '')).toLowerCase().includes(searchSesi.toLowerCase()))"
                             :key="s.id">
                             <label
-                                class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                class="flex cursor-pointer items-center gap-3 rounded-btn px-3 py-2 transition hover:bg-primary/10">
                                 <input type="checkbox" :value="s.id" x-model="filterSesis"
-                                    class="rounded text-blue-600 focus:ring-blue-500">
+                                    class="checkbox checkbox-primary checkbox-sm">
                                 <div class="min-w-0">
-                                    <p class="text-sm text-gray-900 dark:text-white font-medium"
+                                    <p class="text-sm text-base-content font-medium"
                                         x-text="s.name || s.nama_sesi"></p>
-                                    <p class="text-[10px] text-gray-400"
+                                    <p class="text-[10px] text-base-content/50"
                                         x-text="s.start_time ? s.start_time.substring(0,5) + ' - ' + s.end_time.substring(0,5) : ''">
                                     </p>
                                 </div>
@@ -156,30 +154,30 @@
             </div>
 
             <div x-data="{ openGuru: false, searchGuru: '' }" class="relative">
-                <label class="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Guru</label>
+                <label class="app-label">Guru</label>
                 <button type="button" @click="openGuru = !openGuru"
-                    class="w-full text-sm text-left rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 flex items-center justify-between focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    class="searchable-select-trigger">
                     <span x-text="filterGurus.length ? filterGurus.length + ' guru dipilih' : 'Semua Guru'"
-                        :class="filterGurus.length ? 'text-blue-600 dark:text-blue-300 font-semibold' : ''"></span>
-                    <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200"
+                        :class="filterGurus.length ? 'text-primary font-semibold' : ''"></span>
+                    <i class="fas fa-chevron-down text-xs text-base-content/50 transition-transform duration-200"
                         :class="openGuru ? 'rotate-180' : ''"></i>
                 </button>
                 <template x-if="openGuru">
                     <div @click.outside="openGuru = false"
-                        class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                        class="searchable-select-panel max-h-48 overflow-y-auto">
                         <div
-                            class="sticky top-0 z-10 border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
+                            class="searchable-select-search-wrap sticky top-0 z-10">
                             <input type="search" x-model="searchGuru" placeholder="Cari nama guru..."
-                                class="w-full rounded-lg border px-3 py-2 text-xs">
+                                class="input input-bordered input-xs w-full">
                         </div>
                         <template
                             x-for="g in guruList.filter(item => item.name.toLowerCase().includes(searchGuru.toLowerCase()))"
                             :key="g.id">
                             <label
-                                class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                class="flex cursor-pointer items-center gap-3 rounded-btn px-3 py-2 transition hover:bg-primary/10">
                                 <input type="checkbox" :value="g.id" x-model="filterGurus"
-                                    class="rounded text-blue-600 focus:ring-blue-500">
-                                <span class="text-sm text-gray-900 dark:text-white" x-text="g.name"></span>
+                                    class="checkbox checkbox-primary checkbox-sm">
+                                <span class="text-sm text-base-content" x-text="g.name"></span>
                             </label>
                         </template>
                     </div>
@@ -188,30 +186,30 @@
 
             <div x-data="{ openRuang: false, searchRuang: '' }" class="relative">
                 <label
-                    class="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Ruang</label>
+                    class="app-label">Ruang</label>
                 <button type="button" @click="openRuang = !openRuang"
-                    class="w-full text-sm text-left rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2 flex items-center justify-between focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    class="searchable-select-trigger">
                     <span x-text="filterRuangs.length ? filterRuangs.length + ' ruang dipilih' : 'Semua Ruang'"
-                        :class="filterRuangs.length ? 'text-blue-600 dark:text-blue-300 font-semibold' : ''"></span>
-                    <i class="fas fa-chevron-down text-xs text-gray-400 transition-transform duration-200"
+                        :class="filterRuangs.length ? 'text-primary font-semibold' : ''"></span>
+                    <i class="fas fa-chevron-down text-xs text-base-content/50 transition-transform duration-200"
                         :class="openRuang ? 'rotate-180' : ''"></i>
                 </button>
                 <template x-if="openRuang">
                     <div @click.outside="openRuang = false"
-                        class="absolute z-30 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                        class="searchable-select-panel max-h-48 overflow-y-auto">
                         <div
-                            class="sticky top-0 z-10 border-b border-gray-100 bg-white p-2 dark:border-gray-700 dark:bg-gray-800">
+                            class="searchable-select-search-wrap sticky top-0 z-10">
                             <input type="search" x-model="searchRuang" placeholder="Cari ruang..."
-                                class="w-full rounded-lg border px-3 py-2 text-xs">
+                                class="input input-bordered input-xs w-full">
                         </div>
                         <template
                             x-for="r in ruangList.filter(item => item.name.toLowerCase().includes(searchRuang.toLowerCase()))"
                             :key="r.id">
                             <label
-                                class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                class="flex cursor-pointer items-center gap-3 rounded-btn px-3 py-2 transition hover:bg-primary/10">
                                 <input type="checkbox" :value="r.id" x-model="filterRuangs"
-                                    class="rounded text-blue-600 focus:ring-blue-500">
-                                <span class="text-sm text-gray-900 dark:text-white" x-text="r.name"></span>
+                                    class="checkbox checkbox-primary checkbox-sm">
+                                <span class="text-sm text-base-content" x-text="r.name"></span>
                             </label>
                         </template>
                     </div>
@@ -219,11 +217,11 @@
             </div>
         </div>
 
-        <div class="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+        <div class="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-base-300">
             <label
-                class="inline-flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-400 cursor-pointer select-none">
+                class="inline-flex items-center gap-2 text-xs font-bold text-base-content/70 cursor-pointer select-none">
                 <input type="checkbox" @change="toggleSelectAll($el.checked)" :checked="isAllSelected()"
-                    class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 w-4 h-4">
+                    class="rounded border-base-300 text-primary focus:ring-primary w-4 h-4">
                 Pilih Semua yang Tampil
             </label>
             <button type="button" @click="exportExcel()" class="btn-export text-sm">
@@ -235,61 +233,61 @@
     </div>
 
     <div
-        class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+        class="bg-base-100 rounded-2xl border border-base-300 shadow-sm overflow-hidden">
         <div class="hidden sm:block overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr
-                        class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 select-none">
+                        class="border-b border-base-300 bg-base-200 text-xs font-bold uppercase tracking-wider text-base-content/60 select-none">
                         <th class="p-4 w-10 text-center">
                             <input type="checkbox" @change="toggleSelectAll($el.checked)" :checked="isAllSelected()"
-                                class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 w-4 h-4 shadow-sm cursor-pointer">
+                                class="checkbox checkbox-primary checkbox-sm">
                         </th>
-                        <th class="p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        <th class="p-4 cursor-pointer hover:bg-base-200 transition-colors"
                             @click="toggleSort('name')">
                             Siswa <i class="fas ml-1 text-[10px]"
                                 :class="sortField === 'name' ? (sortOrder === 'asc' ? 'fa-sort-up' :
-                                    'fa-sort-down') : 'fa-sort text-gray-300'"></i>
+                                    'fa-sort-down') : 'fa-sort text-base-content/40'"></i>
                         </th>
-                        <th class="p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        <th class="p-4 cursor-pointer hover:bg-base-200 transition-colors"
                             @click="toggleSort('kelas')">
                             Kelas & Paket <i class="fas ml-1 text-[10px]"
                                 :class="sortField === 'kelas' ? (sortOrder === 'asc' ? 'fa-sort-up' :
-                                    'fa-sort-down') : 'fa-sort text-gray-300'"></i>
+                                    'fa-sort-down') : 'fa-sort text-base-content/40'"></i>
                         </th>
                         <th class="p-4">Kontak</th>
                         <th class="p-4">Status & Kuota Pertemuan</th>
                         <th class="p-4 text-center w-28">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-sm">
+                <tbody class="divide-y divide-base-300 text-sm">
                     <template x-for="siswa in filteredSiswa" :key="siswa.id">
-                        <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors group"
+                        <tr class="hover:bg-base-200/50 transition-colors group"
                             :class="{
                                 'opacity-75 grayscale-[0.5]': viewMode === 'arsip',
-                                'bg-blue-50/30 dark:bg-blue-900/10': selectedSiswas
+                                'bg-primary/10': selectedSiswas
                                     .includes(siswa.id)
                             }">
                             <td class="p-4 text-center">
                                 <label class="inline-flex p-3 -m-3 cursor-pointer">
                                     <input type="checkbox" :value="siswa.id" x-model="selectedSiswas"
-                                        class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 w-4 h-4 shadow-sm cursor-pointer transition-transform group-hover:scale-105">
+                                        class="checkbox checkbox-primary checkbox-sm">
                                 </label>
                             </td>
                             <td class="p-4">
                                 <div class="flex items-center gap-3">
                                     <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0 text-sm font-bold"
                                         :class="getStatusJadwal(siswa).isKurang && viewMode === 'aktif' ?
-                                            'bg-gradient-to-br from-orange-400 to-red-500' :
-                                            'bg-gradient-to-br from-blue-50 to-indigo-600'">
+                                            'bg-gradient-to-br from-warning to-error' :
+                                            'bg-gradient-to-br from-primary to-accent'">
                                         <span x-text="siswa.name.charAt(0)"></span>
                                     </div>
                                     <div class="min-w-0">
-                                        <p class="font-bold text-gray-900 dark:text-white truncate"
+                                        <p class="font-bold text-base-content truncate"
                                             :class="getStatusJadwal(siswa).isKurang && viewMode === 'aktif' ?
-                                                'text-orange-500' : ''"
+                                                'text-warning' : ''"
                                             x-text="siswa.name"></p>
-                                        <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5"
+                                        <p class="text-[10px] text-base-content/50 mt-0.5"
                                             x-text="'ID: #' + siswa.id"></p>
                                     </div>
                                 </div>
@@ -297,22 +295,22 @@
                             <td class="p-4">
                                 <div class="space-y-1">
                                     <span
-                                        class="inline-flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                                        class="inline-flex items-center gap-1 text-xs font-semibold text-base-content/80 uppercase tracking-wider bg-base-200 px-2 py-0.5 rounded">
                                         <i class="fas fa-id-badge opacity-60 text-[10px]"></i> <span
                                             x-text="siswa.kelas || 'N/A'"></span>
                                     </span>
                                     <template x-if="siswa.paket_pembayaran">
                                         <div class="text-[10px] font-bold uppercase tracking-wide truncate max-w-[150px]"
                                             :class="getStatusJadwal(siswa).isKurang && viewMode === 'aktif' ?
-                                                'text-orange-500' : 'text-blue-500'">
+                                                'text-warning' : 'text-primary'">
                                             <span x-text="getPaketName(siswa.paket_pembayaran)"></span>
                                         </div>
                                     </template>
                                 </div>
                             </td>
-                            <td class="p-4 text-gray-600 dark:text-gray-400 font-medium">
+                            <td class="p-4 text-base-content/70 font-medium">
                                 <div class="flex items-center gap-1.5">
-                                    <i class="fas fa-phone-alt text-[10px] text-gray-400"></i>
+                                    <i class="fas fa-phone-alt text-[10px] text-base-content/50"></i>
                                     <span x-text="siswa.no_hp || '-'"></span>
                                 </div>
                             </td>
@@ -322,19 +320,19 @@
                                         <div class="flex items-center gap-1.5">
                                             <div class="w-2 h-2 rounded-full"
                                                 :class="viewMode === 'aktif' ? (getStatusJadwal(siswa).isKurang ?
-                                                    'bg-orange-500 animate-pulse' : 'bg-green-500') : 'bg-gray-400'">
+                                                    'bg-warning animate-pulse' : 'bg-success') : 'bg-base-300'">
                                             </div>
-                                            <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400"
+                                            <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/50"
                                                 x-text="viewMode === 'aktif' ? (getStatusJadwal(siswa).isKurang ? 'Incomplete' : 'Active') : 'Archived'"></span>
                                         </div>
-                                        <span class="text-gray-500 dark:text-gray-400 text-[10px]"
+                                        <span class="text-base-content/60 text-[10px]"
                                             x-text="getStatusJadwal(siswa).kuota > 0 ? getStatusJadwal(siswa).total + ' / ' + getStatusJadwal(siswa).kuota + ' Pertemuan' : 'Jadwal Belum Diatur'"></span>
                                     </div>
                                     <template x-if="getStatusJadwal(siswa).kuota > 0">
                                         <div
-                                            class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+                                            class="w-full bg-base-200 rounded-full h-1.5 overflow-hidden">
                                             <div class="h-full rounded-full transition-all duration-500"
-                                                :class="getStatusJadwal(siswa).isKurang ? 'bg-orange-500' : 'bg-green-500'"
+                                                :class="getStatusJadwal(siswa).isKurang ? 'bg-warning' : 'bg-success'"
                                                 :style="`width: ${Math.min((getStatusJadwal(siswa).total / getStatusJadwal(siswa).kuota) * 100, 100)}%`">
                                             </div>
                                         </div>
@@ -349,7 +347,7 @@
                                                 class="icon-action-primary relative" title="Detail & Catatan">
                                                 <i class="fas fa-circle-info"></i>
                                                 <span x-show="siswa.tandas && siswa.tandas.length > 0"
-                                                    class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 border border-white dark:border-gray-800"></span>
+                                                    class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 border border-white"></span>
                                             </button>
                                             <button type="button" @click.stop="hapusSiswa(siswa.id)"
                                                 class="icon-action-warning" title="Arsipkan">
@@ -375,9 +373,12 @@
                     </template>
                     <template x-if="filteredSiswa.length === 0">
                         <tr>
-                            <td colspan="6" class="p-8 text-center text-gray-400 dark:text-gray-500">
-                                <i class="fas fa-user-slash text-3xl mb-2 block"></i>
-                                Tidak ada data siswa yang ditemukan.
+                            <td colspan="6" class="p-6">
+                                <div class="app-empty border-0">
+                                    <div class="app-empty-icon"><i class="fas fa-user-slash"></i></div>
+                                    <p class="app-empty-title">Tidak ada data siswa yang ditemukan.</p>
+                                    <p class="app-empty-text">Coba ubah kata pencarian atau tekan Reset pada panel filter di atas.</p>
+                                </div>
                             </td>
                         </tr>
                     </template>
@@ -385,30 +386,30 @@
             </table>
         </div>
 
-        <div class="sm:hidden divide-y divide-gray-100 dark:divide-gray-700">
+        <div class="sm:hidden divide-y divide-base-300">
             <template x-for="siswa in filteredSiswa" :key="siswa.id">
                 <div class="p-4 space-y-3"
                     :class="{
                         'opacity-75 grayscale-[0.5]': viewMode === 'arsip',
-                        'bg-blue-50/30 dark:bg-blue-900/10': selectedSiswas.includes(siswa.id)
+                        'bg-primary/10': selectedSiswas.includes(siswa.id)
                     }">
                     <div class="flex items-start gap-3">
                         <label class="inline-flex shrink-0 p-1 -m-1 pt-2 cursor-pointer">
                             <input type="checkbox" :value="siswa.id" x-model="selectedSiswas"
-                                class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 w-4 h-4 shadow-sm cursor-pointer">
+                                class="checkbox checkbox-primary checkbox-sm">
                         </label>
                         <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0 text-sm font-bold"
                             :class="getStatusJadwal(siswa).isKurang && viewMode === 'aktif' ?
-                                'bg-gradient-to-br from-orange-400 to-red-500' :
-                                'bg-gradient-to-br from-blue-50 to-indigo-600'">
+                                'bg-gradient-to-br from-warning to-error' :
+                                'bg-gradient-to-br from-primary to-accent'">
                             <span x-text="siswa.name.charAt(0)"></span>
                         </div>
                         <div class="min-w-0 flex-1">
-                            <p class="font-bold text-gray-900 dark:text-white truncate"
+                            <p class="font-bold text-base-content truncate"
                                 :class="getStatusJadwal(siswa).isKurang && viewMode === 'aktif' ?
-                                    'text-orange-500' : ''"
+                                    'text-warning' : ''"
                                 x-text="siswa.name"></p>
-                            <p class="text-[10px] text-gray-400 dark:text-gray-500" x-text="'ID: #' + siswa.id"></p>
+                            <p class="text-[10px] text-base-content/50" x-text="'ID: #' + siswa.id"></p>
                         </div>
                         <div class="flex gap-2 shrink-0">
                             <template x-if="viewMode === 'aktif'">
@@ -417,7 +418,7 @@
                                         class="icon-action-primary relative" title="Detail & Catatan">
                                         <i class="fas fa-circle-info"></i>
                                         <span x-show="siswa.tandas && siswa.tandas.length > 0"
-                                            class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 border border-white dark:border-gray-800"></span>
+                                            class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 border border-white"></span>
                                     </button>
                                     <button type="button" @click.stop="hapusSiswa(siswa.id)"
                                         class="icon-action-warning" title="Arsipkan">
@@ -442,18 +443,18 @@
 
                     <div class="flex flex-wrap items-center gap-2 pl-12">
                         <span
-                            class="inline-flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                            class="inline-flex items-center gap-1 text-xs font-semibold text-base-content/80 uppercase tracking-wider bg-base-200 px-2 py-0.5 rounded">
                             <i class="fas fa-id-badge opacity-60 text-[10px]"></i> <span
                                 x-text="siswa.kelas || 'N/A'"></span>
                         </span>
                         <template x-if="siswa.paket_pembayaran">
                             <span class="text-[10px] font-bold uppercase tracking-wide truncate max-w-[140px]"
                                 :class="getStatusJadwal(siswa).isKurang && viewMode === 'aktif' ?
-                                    'text-orange-500' : 'text-blue-500'"
+                                    'text-warning' : 'text-primary'"
                                 x-text="getPaketName(siswa.paket_pembayaran)"></span>
                         </template>
-                        <span class="ml-auto flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 font-medium">
-                            <i class="fas fa-phone-alt text-[10px] text-gray-400"></i>
+                        <span class="ml-auto flex items-center gap-1.5 text-xs text-base-content/70 font-medium">
+                            <i class="fas fa-phone-alt text-[10px] text-base-content/50"></i>
                             <span x-text="siswa.no_hp || '-'"></span>
                         </span>
                     </div>
@@ -463,18 +464,18 @@
                             <div class="flex items-center gap-1.5">
                                 <div class="w-2 h-2 rounded-full"
                                     :class="viewMode === 'aktif' ? (getStatusJadwal(siswa).isKurang ?
-                                        'bg-orange-500 animate-pulse' : 'bg-green-500') : 'bg-gray-400'">
+                                        'bg-warning animate-pulse' : 'bg-success') : 'bg-base-300'">
                                 </div>
-                                <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400"
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-base-content/50"
                                     x-text="viewMode === 'aktif' ? (getStatusJadwal(siswa).isKurang ? 'Incomplete' : 'Active') : 'Archived'"></span>
                             </div>
-                            <span class="text-gray-500 dark:text-gray-400 text-[10px]"
+                            <span class="text-base-content/60 text-[10px]"
                                 x-text="getStatusJadwal(siswa).kuota > 0 ? getStatusJadwal(siswa).total + ' / ' + getStatusJadwal(siswa).kuota + ' Pertemuan' : 'Jadwal Belum Diatur'"></span>
                         </div>
                         <template x-if="getStatusJadwal(siswa).kuota > 0">
-                            <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+                            <div class="w-full bg-base-200 rounded-full h-1.5 overflow-hidden">
                                 <div class="h-full rounded-full transition-all duration-500"
-                                    :class="getStatusJadwal(siswa).isKurang ? 'bg-orange-500' : 'bg-green-500'"
+                                    :class="getStatusJadwal(siswa).isKurang ? 'bg-warning' : 'bg-success'"
                                     :style="`width: ${Math.min((getStatusJadwal(siswa).total / getStatusJadwal(siswa).kuota) * 100, 100)}%`">
                                 </div>
                             </div>
@@ -483,7 +484,7 @@
                 </div>
             </template>
             <template x-if="filteredSiswa.length === 0">
-                <div class="p-8 text-center text-gray-400 dark:text-gray-500">
+                <div class="p-8 text-center text-base-content/50">
                     <i class="fas fa-user-slash text-3xl mb-2 block"></i>
                     Tidak ada data siswa yang ditemukan.
                 </div>
@@ -496,18 +497,18 @@
             x-transition>
             <div @click="showDetailModal = false" class="absolute inset-0"></div>
 
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden relative border dark:border-gray-700 transition-all duration-300 max-h-[90vh] flex flex-col"
+            <div class="bg-base-100 rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden relative border transition-all duration-300 max-h-[90vh] flex flex-col"
                 @click.stop>
                 <div
-                    class="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900 shrink-0">
+                    class="p-4 border-b flex justify-between items-center bg-base-200 shrink-0">
                     <div>
-                        <h3 class="font-bold text-gray-900 dark:text-white text-base sm:text-lg"
+                        <h3 class="font-bold text-base-content text-base sm:text-lg"
                             x-text="detailSiswa.name"></h3>
-                        <p class="text-[11px] text-gray-400 dark:text-gray-500">Profil siswa — data pokok diubah lewat
+                        <p class="text-[11px] text-base-content/50">Profil siswa — data pokok diubah lewat
                             Workshop.</p>
                     </div>
                     <button type="button" @click="showDetailModal = false"
-                        class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        class="text-base-content/50 hover:text-base-content/70">
                         <i class="fas fa-times fa-lg"></i>
                     </button>
                 </div>
@@ -517,25 +518,25 @@
                         <div class="p-4 sm:p-6 space-y-4">
                             <div class="grid grid-cols-2 gap-3 text-sm">
                                 <div>
-                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Panggilan
+                                    <p class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Panggilan
                                     </p>
-                                    <p class="font-semibold text-gray-800 dark:text-gray-100"
+                                    <p class="font-semibold text-base-content"
                                         x-text="detailSiswa.panggilan || '-'"></p>
                                 </div>
                                 <div>
-                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Kelas</p>
-                                    <p class="font-semibold text-gray-800 dark:text-gray-100"
+                                    <p class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Kelas</p>
+                                    <p class="font-semibold text-base-content"
                                         x-text="detailSiswa.kelas || '-'"></p>
                                 </div>
                                 <div>
-                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Nomor HP
+                                    <p class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Nomor HP
                                     </p>
-                                    <p class="font-semibold text-gray-800 dark:text-gray-100"
+                                    <p class="font-semibold text-base-content"
                                         x-text="detailSiswa.no_hp || '-'"></p>
                                 </div>
                                 <div>
-                                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Paket</p>
-                                    <p class="font-semibold text-gray-800 dark:text-gray-100"
+                                    <p class="text-[10px] font-bold text-base-content/50 uppercase tracking-wider">Paket</p>
+                                    <p class="font-semibold text-base-content"
                                         x-text="getPaketName(detailSiswa.paket_pembayaran)"></p>
                                 </div>
                             </div>
@@ -544,15 +545,15 @@
                                 <i class="fas fa-pen-to-square"></i> Ubah Data Pokok di Workshop
                             </a>
 
-                            <div class="pt-3 border-t border-gray-100 dark:border-gray-700">
+                            <div class="pt-3 border-t border-base-300">
                                 <h4
-                                    class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2 mb-3">
+                                    class="text-xs font-bold text-base-content/80 uppercase tracking-wider flex items-center gap-2 mb-3">
                                     <i class="fas fa-note-sticky text-amber-500"></i> Catatan
                                 </h4>
                                 <form @submit.prevent="simpanCatatan" class="flex gap-2 mb-3">
                                     <input type="text" x-model="catatanForm.keterangan" required
                                         placeholder="Tulis catatan baru..."
-                                        class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                        class="flex-1 rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-none">
                                     <button type="submit" class="btn btn-primary text-xs shrink-0"
                                         :disabled="isSavingCatatan">
                                         <i class="fas fa-plus"></i>
@@ -562,7 +563,7 @@
                                     <template x-for="t in detailSiswa.tandas || []" :key="t.id">
                                         <div
                                             class="p-2.5 bg-amber-50/60 dark:bg-amber-950/20 rounded-lg border border-amber-100 dark:border-amber-900/30 flex items-start justify-between gap-2 text-xs">
-                                            <span class="text-gray-700 dark:text-gray-200"
+                                            <span class="text-base-content/80"
                                                 x-text="t.keterangan"></span>
                                             <button type="button" @click="hapusCatatan(t.id)" :disabled="isSavingCatatan"
                                                 class="text-red-400 hover:text-red-600 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed">
@@ -571,7 +572,7 @@
                                         </div>
                                     </template>
                                     <template x-if="!detailSiswa.tandas || detailSiswa.tandas.length === 0">
-                                        <p class="text-xs italic text-gray-400 py-2">Belum ada catatan untuk siswa ini.
+                                        <p class="text-xs italic text-base-content/50 py-2">Belum ada catatan untuk siswa ini.
                                         </p>
                                     </template>
                                 </div>
@@ -579,34 +580,34 @@
                         </div>
 
                         <div
-                            class="p-4 sm:p-6 bg-gray-50/50 dark:bg-gray-800/40 space-y-4 border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-700">
+                            class="p-4 sm:p-6 bg-base-200/50 space-y-4 border-t md:border-t-0 md:border-l border-base-300">
                             <h4
-                                class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
-                                <i class="fas fa-calendar-alt text-blue-500"></i> Jadwal Kelas Diikuti
+                                class="text-xs font-bold text-base-content/80 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fas fa-calendar-alt text-primary"></i> Jadwal Kelas Diikuti
                             </h4>
                             <div class="space-y-3 max-h-[300px] md:max-h-[400px] overflow-y-auto pr-1">
                                 <template x-if="isLoadingJadwal">
-                                    <div class="flex items-center justify-center gap-2 py-8 text-sm text-gray-400">
-                                        <i class="fas fa-spinner fa-spin text-blue-500"></i>
+                                    <div class="flex items-center justify-center gap-2 py-8 text-sm text-base-content/50">
+                                        <i class="fas fa-spinner fa-spin text-primary"></i>
                                         <span>Memuat jadwal...</span>
                                     </div>
                                 </template>
                                 <template x-for="j in getSiswaJadwalList(detailSiswa.id)" :key="j.id">
                                     <div
-                                        class="p-3 bg-white dark:bg-gray-700 rounded-xl border border-gray-100 dark:border-gray-600 shadow-sm flex items-start gap-3">
+                                        class="p-3 bg-base-100 rounded-xl border border-base-300 shadow-sm flex items-start gap-3">
                                         <div
-                                            class="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-blue-600 dark:text-blue-400 shrink-0">
+                                            class="p-2 bg-primary/10 rounded-lg text-primary shrink-0">
                                             <i class="fas fa-clock text-sm"></i>
                                         </div>
                                         <div class="flex-grow min-w-0">
-                                            <p class="text-sm font-bold text-gray-900 dark:text-white truncate"
+                                            <p class="text-sm font-bold text-base-content truncate"
                                                 x-text="j.mapel_name"></p>
-                                            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">
+                                            <p class="text-xs text-base-content/60 font-medium mt-0.5">
                                                 <span class="capitalize" x-text="j.hari_name"></span> | <span
                                                     x-text="j.sesi_name"></span> (<span x-text="j.sesi_time"></span>)
                                             </p>
                                             <p
-                                                class="text-[11px] text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1">
+                                                class="text-[11px] text-base-content/50 mt-1 flex items-center gap-1">
                                                 <i class="fas fa-chalkboard-user opacity-60"></i> <span
                                                     x-text="j.guru_name"></span>
                                                 <span class="mx-1">•</span>
@@ -618,33 +619,33 @@
                                 </template>
                                 <template x-if="!isLoadingJadwal && getSiswaJadwalList(detailSiswa.id).length === 0">
                                     <div
-                                        class="text-center py-8 border border-dashed border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700/30">
+                                        class="text-center py-8 border border-dashed border-base-300 rounded-xl bg-base-100">
                                         <i
-                                            class="fas fa-calendar-times text-gray-300 dark:text-gray-600 text-2xl mb-2"></i>
-                                        <p class="text-xs text-gray-400 dark:text-gray-500">Belum ada jadwal yang
+                                            class="fas fa-calendar-times text-base-content/40 text-2xl mb-2"></i>
+                                        <p class="text-xs text-base-content/50">Belum ada jadwal yang
                                             diatur untuk siswa ini.</p>
                                     </div>
                                 </template>
                             </div>
 
-                            <div class="pt-4 border-t border-gray-100 dark:border-gray-700">
+                            <div class="pt-4 border-t border-base-300">
                                 <h4
-                                    class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2 mb-3">
-                                    <i class="fas fa-chart-line text-emerald-500"></i> Rapor Perkembangan
+                                    class="text-xs font-bold text-base-content/80 uppercase tracking-wider flex items-center gap-2 mb-3">
+                                    <i class="fas fa-chart-line text-success"></i> Rapor Perkembangan
                                 </h4>
 
                                 <template x-if="isLoadingRapor">
-                                    <div class="flex items-center justify-center gap-2 py-6 text-sm text-gray-400">
-                                        <i class="fas fa-spinner fa-spin text-emerald-500"></i>
+                                    <div class="flex items-center justify-center gap-2 py-6 text-sm text-base-content/50">
+                                        <i class="fas fa-spinner fa-spin text-success"></i>
                                         <span>Memuat rapor...</span>
                                     </div>
                                 </template>
 
                                 <template x-if="!isLoadingRapor && raporSiswa && raporSiswa.ringkasan.total_pertemuan === 0">
                                     <div
-                                        class="text-center py-6 border border-dashed border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700/30">
-                                        <i class="fas fa-chart-simple text-gray-300 dark:text-gray-600 text-2xl mb-2"></i>
-                                        <p class="text-xs text-gray-400 dark:text-gray-500">Belum ada pertemuan yang
+                                        class="text-center py-6 border border-dashed border-base-300 rounded-xl bg-base-100">
+                                        <i class="fas fa-chart-simple text-base-content/40 text-2xl mb-2"></i>
+                                        <p class="text-xs text-base-content/50">Belum ada pertemuan yang
                                             dinilai untuk siswa ini.</p>
                                     </div>
                                 </template>
@@ -653,37 +654,37 @@
                                     <div class="space-y-3">
                                         <div class="grid grid-cols-2 gap-2">
                                             <div
-                                                class="rounded-xl border border-gray-100 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5 text-center">
-                                                <p class="text-lg font-black text-gray-900 dark:text-white"
+                                                class="rounded-xl border border-base-300 bg-base-100 p-2.5 text-center">
+                                                <p class="text-lg font-black text-base-content"
                                                     x-text="raporSiswa.ringkasan.total_pertemuan"></p>
-                                                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                                                <p class="text-[10px] font-bold uppercase tracking-wider text-base-content/50">
                                                     Pertemuan</p>
                                             </div>
                                             <div
-                                                class="rounded-xl border border-gray-100 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5 text-center">
-                                                <p class="text-lg font-black text-gray-900 dark:text-white"
+                                                class="rounded-xl border border-base-300 bg-base-100 p-2.5 text-center">
+                                                <p class="text-lg font-black text-base-content"
                                                     x-text="raporSiswa.ringkasan.persen_kehadiran + '%'"></p>
-                                                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                                                <p class="text-[10px] font-bold uppercase tracking-wider text-base-content/50">
                                                     Kehadiran</p>
                                             </div>
                                             <div
-                                                class="rounded-xl border border-gray-100 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5 text-center">
-                                                <p class="text-lg font-black text-gray-900 dark:text-white"
+                                                class="rounded-xl border border-base-300 bg-base-100 p-2.5 text-center">
+                                                <p class="text-lg font-black text-base-content"
                                                     x-text="raporSiswa.ringkasan.rata_nilai ?? '-'"></p>
-                                                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                                                <p class="text-[10px] font-bold uppercase tracking-wider text-base-content/50">
                                                     Rata-rata Nilai</p>
                                             </div>
                                             <div
-                                                class="rounded-xl border border-gray-100 dark:border-gray-600 bg-white dark:bg-gray-700 p-2.5 text-center">
+                                                class="rounded-xl border border-base-300 bg-base-100 p-2.5 text-center">
                                                 <p class="text-lg font-black"
                                                     :class="{
-                                                        'text-emerald-600 dark:text-emerald-400': raporSiswa.ringkasan.tren === 'naik',
+                                                        'text-success': raporSiswa.ringkasan.tren === 'naik',
                                                         'text-red-600 dark:text-red-400': raporSiswa.ringkasan.tren === 'turun',
-                                                        'text-blue-600 dark:text-blue-400': raporSiswa.ringkasan.tren === 'stabil',
-                                                        'text-gray-400': !raporSiswa.ringkasan.tren
+                                                        'text-primary': raporSiswa.ringkasan.tren === 'stabil',
+                                                        'text-base-content/50': !raporSiswa.ringkasan.tren
                                                     }"
                                                     x-text="labelTren(raporSiswa.ringkasan.tren)"></p>
-                                                <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                                                <p class="text-[10px] font-bold uppercase tracking-wider text-base-content/50">
                                                     Tren Nilai</p>
                                             </div>
                                         </div>
@@ -691,16 +692,16 @@
                                         <div class="space-y-1.5">
                                             <template x-for="m in raporSiswa.per_mapel" :key="m.mapel">
                                                 <div
-                                                    class="flex items-center justify-between gap-2 rounded-lg bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 px-3 py-2">
+                                                    class="flex items-center justify-between gap-2 rounded-lg bg-base-100 border border-base-300 px-3 py-2">
                                                     <div class="min-w-0">
-                                                        <p class="text-xs font-bold text-gray-800 dark:text-gray-100 truncate"
+                                                        <p class="text-xs font-bold text-base-content truncate"
                                                             x-text="m.mapel"></p>
-                                                        <p class="text-[10px] text-gray-400"
+                                                        <p class="text-[10px] text-base-content/50"
                                                             x-text="m.hadir + ' dari ' + m.jumlah_pertemuan + ' pertemuan hadir'">
                                                         </p>
                                                     </div>
                                                     <span
-                                                        class="shrink-0 rounded-md bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 text-xs font-black text-emerald-700 dark:text-emerald-300"
+                                                        class="shrink-0 rounded-md bg-success/10 px-2 py-1 text-xs font-black text-success"
                                                         x-text="'Nilai ' + (m.rata_nilai ?? '-')"></span>
                                                 </div>
                                             </template>
@@ -718,7 +719,7 @@
                 </div>
 
                 <div
-                    class="p-4 border-t dark:border-gray-700 justify-end gap-2 bg-gray-50 dark:bg-gray-900 shrink-0 flex">
+                    class="p-4 border-t justify-end gap-2 bg-base-200 shrink-0 flex">
                     <button type="button" @click="showDetailModal = false"
                         class="btn btn-neutral text-sm">Tutup</button>
                 </div>

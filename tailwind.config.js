@@ -16,6 +16,12 @@ export default {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
+            borderColor: {
+                DEFAULT: 'oklch(var(--b3) / 1)',
+            },
+            ringColor: {
+                DEFAULT: 'oklch(var(--p) / 0.5)',
+            },
         },
     },
 

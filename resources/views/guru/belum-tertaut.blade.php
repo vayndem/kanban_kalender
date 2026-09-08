@@ -11,16 +11,17 @@
 </head>
 
 <body class="font-sans antialiased">
-    <div class="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
-        <div
-            class="max-w-md w-full rounded-2xl border border-amber-200 dark:border-amber-900 bg-white dark:bg-slate-900 p-6 text-center">
-            <i class="fas fa-link-slash text-amber-500 text-3xl"></i>
-            <h1 class="mt-3 text-lg font-bold text-slate-900 dark:text-white">Akun belum tertaut ke data guru</h1>
-            <p class="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+    <div class="app-canvas flex min-h-screen items-center justify-center p-4 text-base-content">
+        <div class="app-card w-full max-w-md animate-rise p-6 text-center">
+            <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-box bg-warning/15 text-2xl text-warning">
+                <i class="fas fa-link-slash"></i>
+            </div>
+            <h1 class="text-lg font-black text-base-content">Akun belum tertaut ke data guru</h1>
+            <p class="mt-2 text-sm text-base-content/70 leading-relaxed">
                 Akun <span class="font-semibold">{{ $user->email }}</span> sudah bisa masuk, tetapi belum
                 dihubungkan dengan data guru mana pun, sehingga jadwalnya belum bisa ditampilkan.
             </p>
-            <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            <p class="mt-3 text-xs text-base-content/60">
                 Hubungi admin untuk menautkan akun ini melalui menu Master Data.
             </p>
             <form method="POST" action="{{ route('logout') }}" class="mt-5">

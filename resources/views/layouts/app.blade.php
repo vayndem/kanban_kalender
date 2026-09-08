@@ -16,12 +16,12 @@
 </head>
 
 <body class="font-sans antialiased">
-    <div class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div class="min-h-screen app-canvas text-base-content">
         @include('layouts.navigation')
 
         <!-- Page Heading -->
         @isset($header)
-            <header class="border-b border-slate-200/80 bg-white/80 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/80">
+            <header class="border-b border-base-300 bg-base-100/80 backdrop-blur-xl">
                 <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
                     {{ $header }}
                 </div>

@@ -156,7 +156,7 @@
     <button
         type="button"
         @click="open = true"
-        class="group flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xl shadow-emerald-500/30 transition hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/40 focus:outline-none focus:ring-4 focus:ring-emerald-300 dark:focus:ring-emerald-900"
+        class="group flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-white shadow-xl shadow-success/20 transition hover:scale-105 hover:shadow-2xl hover:shadow-success/20 focus:outline-none focus:ring-4 focus:ring-primary dark:focus:ring-primary"
         aria-label="Buka panduan admin"
     >
         <span class="text-2xl font-black">?</span>
@@ -165,7 +165,7 @@
     <template x-if="open">
     <div
         x-transition.opacity
-        class="fixed inset-0 z-[121] flex items-end justify-end bg-slate-950/45 p-4 backdrop-blur-sm sm:items-center sm:justify-center"
+        class="fixed inset-0 z-[121] flex items-end justify-end bg-base-200/45 p-4 backdrop-blur-sm sm:items-center sm:justify-center"
     >
         <div @click="open = false" class="absolute inset-0"></div>
 
@@ -177,14 +177,14 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="translate-y-0 opacity-100 sm:scale-100"
             x-transition:leave-end="translate-y-4 opacity-0 sm:translate-y-0 sm:scale-95"
-            class="relative w-full max-w-xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+            class="relative w-full max-w-xl overflow-hidden rounded-3xl border border-base-300 bg-base-100 shadow-2xl"
         >
-            <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-5 text-white">
+            <div class="bg-gradient-to-r from-primary to-accent px-6 py-5 text-white">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-100">Pusat Bantuan</p>
+                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-success">Pusat Bantuan</p>
                         <h3 class="mt-2 text-xl font-black" x-text="content.title"></h3>
-                        <p class="mt-2 text-sm text-emerald-50/95" x-text="content.summary"></p>
+                        <p class="mt-2 text-sm text-success" x-text="content.summary"></p>
                     </div>
                     <button
                         type="button"
@@ -198,12 +198,12 @@
 
             <div class="max-h-[70vh] space-y-5 overflow-y-auto px-6 py-6">
                 <template x-for="section in content.sections" :key="section.title">
-                    <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/70">
-                        <h4 class="text-sm font-black uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400" x-text="section.title"></h4>
-                        <ul class="mt-3 space-y-2 text-sm text-slate-700 dark:text-slate-200">
+                    <section class="rounded-2xl border border-base-300 bg-base-200 p-4">
+                        <h4 class="text-sm font-black uppercase tracking-[0.18em] text-success" x-text="section.title"></h4>
+                        <ul class="mt-3 space-y-2 text-sm text-base-content/80">
                             <template x-for="item in section.items" :key="item">
                                 <li class="flex items-start gap-3">
-                                    <span class="mt-1 h-2 w-2 flex-none rounded-full bg-emerald-500"></span>
+                                    <span class="mt-1 h-2 w-2 flex-none rounded-full bg-success"></span>
                                     <span x-text="item"></span>
                                 </li>
                             </template>
