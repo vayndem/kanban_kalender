@@ -139,7 +139,7 @@
                             <label
                                 class="flex cursor-pointer items-center gap-3 rounded-field px-3 py-2 transition hover:bg-primary/10">
                                 <input type="checkbox" :value="s.id" x-model="filterSesis"
-                                    class="checkbox checkbox-primary checkbox-sm">
+                                    class="checkbox checkbox-primary">
                                 <div class="min-w-0">
                                     <p class="text-sm text-base-content font-medium"
                                         x-text="s.name || s.nama_sesi"></p>
@@ -176,7 +176,7 @@
                             <label
                                 class="flex cursor-pointer items-center gap-3 rounded-field px-3 py-2 transition hover:bg-primary/10">
                                 <input type="checkbox" :value="g.id" x-model="filterGurus"
-                                    class="checkbox checkbox-primary checkbox-sm">
+                                    class="checkbox checkbox-primary">
                                 <span class="text-sm text-base-content" x-text="g.name"></span>
                             </label>
                         </template>
@@ -208,7 +208,7 @@
                             <label
                                 class="flex cursor-pointer items-center gap-3 rounded-field px-3 py-2 transition hover:bg-primary/10">
                                 <input type="checkbox" :value="r.id" x-model="filterRuangs"
-                                    class="checkbox checkbox-primary checkbox-sm">
+                                    class="checkbox checkbox-primary">
                                 <span class="text-sm text-base-content" x-text="r.name"></span>
                             </label>
                         </template>
@@ -221,7 +221,7 @@
             <label
                 class="inline-flex items-center gap-2 text-xs font-bold text-base-content/70 cursor-pointer select-none">
                 <input type="checkbox" @change="toggleSelectAll($el.checked)" :checked="isAllSelected()"
-                    class="rounded border-base-300 text-primary focus:ring-primary w-4 h-4">
+                    class="checkbox checkbox-primary">
                 Pilih Semua yang Tampil
             </label>
             <button type="button" @click="exportExcel()" class="btn btn-export text-sm">
@@ -241,7 +241,7 @@
                         class="border-b border-base-300 bg-base-200 text-xs font-bold uppercase tracking-wider text-base-content/60 select-none">
                         <th class="p-4 w-10 text-center">
                             <input type="checkbox" @change="toggleSelectAll($el.checked)" :checked="isAllSelected()"
-                                class="checkbox checkbox-primary checkbox-sm">
+                                class="checkbox checkbox-primary">
                         </th>
                         <th class="p-4 cursor-pointer hover:bg-base-200 transition-colors"
                             @click="toggleSort('name')">
@@ -271,7 +271,7 @@
                             <td class="p-4 text-center">
                                 <label class="inline-flex p-3 -m-3 cursor-pointer">
                                     <input type="checkbox" :value="siswa.id" x-model="selectedSiswas"
-                                        class="checkbox checkbox-primary checkbox-sm">
+                                        class="checkbox checkbox-primary">
                                 </label>
                             </td>
                             <td class="p-4">
@@ -396,7 +396,7 @@
                     <div class="flex items-start gap-3">
                         <label class="inline-flex shrink-0 p-1 -m-1 pt-2 cursor-pointer">
                             <input type="checkbox" :value="siswa.id" x-model="selectedSiswas"
-                                class="checkbox checkbox-primary checkbox-sm">
+                                class="checkbox checkbox-primary">
                         </label>
                         <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-inner shrink-0 text-sm font-bold"
                             :class="getStatusJadwal(siswa).isKurang && viewMode === 'aktif' ?

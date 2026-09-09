@@ -8,6 +8,8 @@
     $kebersihan = $ringkasanData['kebersihan_data'];
     $bentrok = $ringkasanData['bentrok_tersembunyi'];
     $pengingatWa = $ringkasanData['pengingat_wa'];
+    $gajiBerjalan = $ringkasanData['gaji_berjalan'] ?? collect();
+    $totalGajiBerjalan = collect($gajiBerjalan)->sum('perkiraan_total');
 
     $periodeUrl = function (string $target) {
         return route('dashboard', array_merge(request()->query(), ['tab' => 'ringkasan', 'periode' => $target]));
@@ -128,11 +130,11 @@
             <h3 class="app-section-head mb-0">Statistik Operasional</h3>
             <div class="join">
                 <a href="{{ $periodeUrl('harian') }}"
-                    class="btn join-item btn-xs sm:btn-sm {{ $periode === 'harian' ? 'btn-primary' : 'btn-ghost border border-base-300' }}">
+                    class="btn join-item btn-sm {{ $periode === 'harian' ? 'btn-primary' : 'btn-ghost border border-base-300' }}">
                     Harian
                 </a>
                 <a href="{{ $periodeUrl('mingguan') }}"
-                    class="btn join-item btn-xs sm:btn-sm {{ $periode === 'mingguan' ? 'btn-primary' : 'btn-ghost border border-base-300' }}">
+                    class="btn join-item btn-sm {{ $periode === 'mingguan' ? 'btn-primary' : 'btn-ghost border border-base-300' }}">
                     Mingguan
                 </a>
             </div>
@@ -240,7 +242,7 @@
             </form>
         </div>
 
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             <x-list-panel title="Belum Ditagih Bulan Ini" icon="fa-file-invoice" tone="error"
                 :count="$finansial['belum_ditagih']->count()">
                 @forelse ($finansial['belum_ditagih'] as $item)
@@ -274,6 +276,19 @@
                     </x-list-row>
                 @empty
                     <p class="p-2 text-xs italic text-base-content/60">Tidak ada diskon menggantung.</p>
+                @endforelse
+            </x-list-panel>
+
+            <x-list-panel title="Gaji Guru Berjalan" icon="fa-money-check-dollar" tone="info"
+                :count="'Rp ' . number_format($totalGajiBerjalan, 0, ',', '.')"
+                hint="Kewajiban yang menumpuk sejak penggajian terakhir.">
+                @forelse ($gajiBerjalan as $g)
+                    <x-list-row icon="fa-chalkboard-user" tone="text-info">
+                        <span class="min-w-0 flex-1 truncate font-bold text-base-content">{{ $g['nama'] }}</span>
+                        <span class="ml-auto shrink-0 text-base-content/60">{{ $g['kehadiran_belum_dibayar'] }} hadir &middot; Rp {{ number_format($g['perkiraan_total'], 0, ',', '.') }}</span>
+                    </x-list-row>
+                @empty
+                    <p class="p-2 text-xs italic text-base-content/60">Tidak ada kehadiran yang menunggu digaji.</p>
                 @endforelse
             </x-list-panel>
         </div>

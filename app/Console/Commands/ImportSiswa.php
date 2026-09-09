@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Imports\SiswaImport;
+use Illuminate\Console\Command;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ImportSiswa extends Command
@@ -16,18 +16,20 @@ class ImportSiswa extends Command
     {
         $filePath = storage_path('app/2.xlsx');
 
-        if (!file_exists($filePath)) {
-            $this->error("FILE TIDAK ADA DI: " . $filePath);
+        if (! file_exists($filePath)) {
+            $this->error('FILE TIDAK ADA DI: '.$filePath);
+
             return 1;
         }
 
-        $this->info("Sedang memproses import data...");
+        $this->info('Sedang memproses import data...');
 
         try {
             Excel::import(new SiswaImport, $filePath);
-            $this->info("Berhasil mengimport data siswa, arsip, dan paket.");
+            $this->info('Berhasil mengimport data siswa, arsip, dan paket.');
         } catch (\Exception $e) {
-            $this->error("Terjadi kesalahan: " . $e->getMessage());
+            $this->error('Terjadi kesalahan: '.$e->getMessage());
+
             return 1;
         }
 

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 /**
@@ -35,8 +36,8 @@ class ProduksiTerlindungiTest extends TestCase
         }
 
         // Tabel harus tetap utuh setelah keempat perintah di atas ditolak.
-        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasTable('pembayarans'));
-        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasTable('siswas'));
+        $this->assertTrue(Schema::hasTable('pembayarans'));
+        $this->assertTrue(Schema::hasTable('siswas'));
     }
 
     public function test_guard_is_wired_into_the_application_bootstrap(): void

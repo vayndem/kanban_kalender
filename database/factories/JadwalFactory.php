@@ -9,7 +9,6 @@ use App\Models\MataPelajaran;
 use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
-
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class JadwalFactory extends Factory

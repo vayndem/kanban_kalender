@@ -6,6 +6,7 @@ use App\Models\Guru;
 use App\Models\Hari;
 use App\Models\Jadwal;
 use App\Models\MataPelajaran;
+use App\Models\Paket;
 use App\Models\Pembayaran;
 use App\Models\PembayaranDetail;
 use App\Models\Ruang;
@@ -216,7 +217,7 @@ class ScheduleAndPaymentTest extends TestCase
 
         $response = $this->actingAs($user)->getJson(route('admin.pembayaran.detailKeluarga', [
             'no_hp' => $student->no_hp,
-            'ids' => $first->id . ',' . $second->id,
+            'ids' => $first->id.','.$second->id,
         ]));
 
         $response->assertOk()->assertJsonPath('status', 'success');
@@ -234,7 +235,7 @@ class ScheduleAndPaymentTest extends TestCase
             'paket_pembayaran' => null,
         ]);
 
-        $paket = \App\Models\Paket::create([
+        $paket = Paket::create([
             'nama_paket' => 'Paket A',
             'harga' => 150000,
             'pertemuan' => 4,
@@ -263,7 +264,7 @@ class ScheduleAndPaymentTest extends TestCase
         // (3 Pertemuan)" vs "Tagihan Paket X - September 2026"), sehingga siswa
         // tertagih dua kali untuk paket dan bulan yang sama.
         $user = User::factory()->create();
-        $paket = \App\Models\Paket::create([
+        $paket = Paket::create([
             'nama_paket' => 'TKA SD/SMP 3X/Minggu',
             'harga' => 350000,
             'pertemuan' => 3,
@@ -289,7 +290,7 @@ class ScheduleAndPaymentTest extends TestCase
     public function test_manual_invoice_rejects_duplicate_package_in_same_period(): void
     {
         $user = User::factory()->create();
-        $paket = \App\Models\Paket::create([
+        $paket = Paket::create([
             'nama_paket' => 'Paket Duplikat',
             'harga' => 200000,
             'pertemuan' => 4,
@@ -392,7 +393,7 @@ class ScheduleAndPaymentTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user)->postJson(route('admin.pembayaran.penagihanMassal'))->assertOk();
 
-        $paket = \App\Models\Paket::create([
+        $paket = Paket::create([
             'nama_paket' => 'Paket Menyusul',
             'harga' => 120000,
             'pertemuan' => 4,
@@ -409,7 +410,7 @@ class ScheduleAndPaymentTest extends TestCase
 
     public function test_mass_billing_uses_bounded_queries_for_many_students(): void
     {
-        $package = \App\Models\Paket::create([
+        $package = Paket::create([
             'nama_paket' => 'Paket Batch',
             'harga' => 175000,
             'pertemuan' => 4,

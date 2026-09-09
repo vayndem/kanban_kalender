@@ -2,33 +2,35 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Jadwal;
-use App\Models\Hari;
-use App\Models\Sesi;
-use App\Models\Guru;
-use App\Models\MataPelajaran;
-use App\Models\Ruang;
-use App\Models\Siswa;
-use App\Models\Diskon;
-use App\Models\Pembayaran;
-use App\Models\Paket;
 use App\Models\Arsip;
+use App\Models\Diskon;
+use App\Models\Guru;
+use App\Models\Hari;
+use App\Models\Jadwal;
+use App\Models\MataPelajaran;
+use App\Models\Paket;
+use App\Models\Pembayaran;
+use App\Models\Ruang;
+use App\Models\Sesi;
+use App\Models\Siswa;
 use App\Models\TingkatKemampuan;
 use App\Services\PaymentBatchService;
+use App\Services\PayrollService;
 use App\Services\RingkasanService;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     public function __construct(
         private readonly RingkasanService $ringkasanService,
+        private readonly PayrollService $payrollService,
         private readonly PaymentBatchService $paymentBatchService,
     ) {}
 
     public function index()
     {
         $activeTab = request()->string('tab')->toString();
-        if (!in_array($activeTab, ['jadwal', 'data_siswa', 'pembayaran', 'ringkasan'], true)) {
+        if (! in_array($activeTab, ['jadwal', 'data_siswa', 'pembayaran', 'ringkasan'], true)) {
             $activeTab = 'ringkasan';
         }
 
@@ -60,10 +62,10 @@ class DashboardController extends Controller
                 ->with(['siswa:id,name,panggilan,kelas', 'siswa.tandas:id,siswa_id,keterangan,created_at', 'mataPelajaran:id,name', 'guru:id,name', 'ruang:id,name', 'hari:id,name', 'sesi:id,name,start_time,end_time'])
                 ->get();
             $jadwalsData = $jadwalsWithRelations
-                ->map(fn(Jadwal $jadwal) => ['siswa_id' => $jadwal->siswa_id])
+                ->map(fn (Jadwal $jadwal) => ['siswa_id' => $jadwal->siswa_id])
                 ->unique('siswa_id')
                 ->values();
-            $scheduleOccupancy = $jadwalsWithRelations->map(fn(Jadwal $jadwal) => [
+            $scheduleOccupancy = $jadwalsWithRelations->map(fn (Jadwal $jadwal) => [
                 'hari_id' => $jadwal->hari_id,
                 'sesi_id' => $jadwal->sesi_id,
                 'mapel_id' => $jadwal->mata_pelajaran_id,
@@ -83,8 +85,8 @@ class DashboardController extends Controller
                     $jadwal->siswa?->panggilan,
                     $jadwal->siswa?->kelas,
                 ])));
-                $scheduleSearchIndex['days'][$jadwal->hari_id] = trim(($scheduleSearchIndex['days'][$jadwal->hari_id] ?? '') . ' ' . $searchText);
-                $scheduleSearchIndex['sessions'][$jadwal->sesi_id] = trim(($scheduleSearchIndex['sessions'][$jadwal->sesi_id] ?? '') . ' ' . $searchText);
+                $scheduleSearchIndex['days'][$jadwal->hari_id] = trim(($scheduleSearchIndex['days'][$jadwal->hari_id] ?? '').' '.$searchText);
+                $scheduleSearchIndex['sessions'][$jadwal->sesi_id] = trim(($scheduleSearchIndex['sessions'][$jadwal->sesi_id] ?? '').' '.$searchText);
             }
         } elseif ($activeTab === 'data_siswa') {
             $haris = Hari::query()->select(['id', 'name'])->orderBy('id')->get();
@@ -99,7 +101,7 @@ class DashboardController extends Controller
                 ->select(['siswa_id', 'sesi_id', 'guru_id', 'ruang_id'])
                 ->get()
                 ->groupBy('siswa_id')
-                ->map(fn($schedules) => [
+                ->map(fn ($schedules) => [
                     'total' => $schedules->count(),
                     'sesi_ids' => $schedules->pluck('sesi_id')->unique()->values(),
                     'guru_ids' => $schedules->pluck('guru_id')->unique()->values(),
@@ -112,7 +114,7 @@ class DashboardController extends Controller
         } elseif ($activeTab === 'ringkasan') {
             $piutangBulan = max(1, (int) request()->integer('piutang_bulan', 2));
             $periode = request()->string('periode')->toString();
-            if (!in_array($periode, ['harian', 'mingguan'], true)) {
+            if (! in_array($periode, ['harian', 'mingguan'], true)) {
                 $periode = 'mingguan';
             }
 
@@ -126,6 +128,7 @@ class DashboardController extends Controller
                 'kebersihan_data' => $this->ringkasanService->kebersihanData(3),
                 'bentrok_tersembunyi' => $this->ringkasanService->bentrokTersembunyi(),
                 'pengingat_wa' => $this->ringkasanService->pengingatJadwalWa(),
+                'gaji_berjalan' => $this->payrollService->ringkasan()->where('kehadiran_belum_dibayar', '>', 0)->values(),
             ];
         }
 
@@ -133,12 +136,12 @@ class DashboardController extends Controller
         foreach ($jadwalsWithRelations as $jadwal) {
             $classKey = "{$jadwal->mata_pelajaran_id}_{$jadwal->guru_id}_{$jadwal->ruang_id}";
 
-            if (!isset($finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey])) {
+            if (! isset($finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey])) {
                 $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey] = [
                     'mapel' => $jadwal->mataPelajaran,
-                    'guru'  => $jadwal->guru,
+                    'guru' => $jadwal->guru,
                     'ruang' => $jadwal->ruang,
-                    'siswa_list' => collect()
+                    'siswa_list' => collect(),
                 ];
             }
             $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey]['siswa_list']->push($jadwal->siswa);
@@ -185,7 +188,7 @@ class DashboardController extends Controller
                     'status' => (int) $item->status,
                     'keterangan' => $item->keterangan,
                     'nama_paket' => $namaPaket ?: '-',
-                    'tanggal_pembayaran' => $item->tanggal_pembayaran ? \Carbon\Carbon::parse($item->tanggal_pembayaran)->translatedFormat('d F Y') : '-',
+                    'tanggal_pembayaran' => $item->tanggal_pembayaran ? Carbon::parse($item->tanggal_pembayaran)->translatedFormat('d F Y') : '-',
                     'pembayaran_via' => $item->pembayaran_via,
                     'no_hp' => $item->no_hp,
                     'total_sudah_dibayar' => (int) $item->total_sudah_dibayar,
@@ -195,7 +198,7 @@ class DashboardController extends Controller
             }) : collect();
 
         $batchStatus = $activeTab === 'pembayaran'
-            ? app(\App\Services\PaymentBatchService::class)->currentPeriodStatus()
+            ? app(PaymentBatchService::class)->currentPeriodStatus()
             : null;
 
         return view('admin.dashboard', [
@@ -223,7 +226,7 @@ class DashboardController extends Controller
 
     public function guestIndex()
     {
-        $dayOfWeek = \Carbon\Carbon::now()->isoFormat('E');
+        $dayOfWeek = Carbon::now()->isoFormat('E');
 
         $jadwalHariIni = Jadwal::with([
             'mataPelajaran:id,name',
@@ -238,7 +241,7 @@ class DashboardController extends Controller
         $stats = [
             'total_siswa' => Siswa::count(),
             'kelas_aktif' => $jadwalHariIni->groupBy(function ($q) {
-                return $q->mata_pelajaran_id . $q->guru_id . $q->sesi_id;
+                return $q->mata_pelajaran_id.$q->guru_id.$q->sesi_id;
             })->count(),
             'pengajar' => Guru::count(),
         ];
@@ -248,8 +251,8 @@ class DashboardController extends Controller
         })->map(function ($items) {
             $kelas = $items->first();
             $kelas->slot_students = $items
-                ->filter(fn($jadwal) => $jadwal->siswa !== null)
-                ->map(fn($jadwal) => [
+                ->filter(fn ($jadwal) => $jadwal->siswa !== null)
+                ->map(fn ($jadwal) => [
                     'name' => $jadwal->siswa->name,
                     'kelas' => $jadwal->siswa->kelas ?? 'N/A',
                 ])

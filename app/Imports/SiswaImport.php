@@ -2,18 +2,18 @@
 
 namespace App\Imports;
 
-use App\Models\Siswa;
 use App\Models\Arsip;
-use App\Models\Paket;
 use App\Models\Jadwal;
+use App\Models\Paket;
 use App\Models\Pembayaran;
+use App\Models\Siswa;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToModel;
-use Maatwebsite\Excel\Concerns\WithStartRow;
 use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithStartRow;
 use Maatwebsite\Excel\Events\BeforeImport;
 
-class SiswaImport implements ToModel, WithStartRow, WithEvents
+class SiswaImport implements ToModel, WithEvents, WithStartRow
 {
     public function startRow(): int
     {
@@ -57,36 +57,38 @@ class SiswaImport implements ToModel, WithStartRow, WithEvents
         $harga_N = isset($row[13]) ? trim($row[13]) : null;
         $pertemuan_O = isset($row[14]) ? trim($row[14]) : null;
 
-        if (empty($nama) || $nama == "Nama Lengkap Siswa" || $nama == "NO.") {
+        if (empty($nama) || $nama == 'Nama Lengkap Siswa' || $nama == 'NO.') {
             return null;
         }
 
-        if (!empty($idPaket_L) && !empty($namaPaket_M)) {
+        if (! empty($idPaket_L) && ! empty($namaPaket_M)) {
             Paket::updateOrCreate(
                 ['id' => (int) $idPaket_L],
                 [
                     'nama_paket' => $namaPaket_M,
-                    'harga'      => $harga_N,
-                    'pertemuan'  => $pertemuan_O
+                    'harga' => $harga_N,
+                    'pertemuan' => $pertemuan_O,
                 ]
             );
         }
 
         $data = [
-            'name'               => $nama,
-            'panggilan'          => $namaPanggilan,
-            'kelas'              => $kelas,
-            'no_hp'              => $rawPhone,
-            'paket_pembayaran'   => $paket1 !== '' ? $paket1 : null,
+            'name' => $nama,
+            'panggilan' => $namaPanggilan,
+            'kelas' => $kelas,
+            'no_hp' => $rawPhone,
+            'paket_pembayaran' => $paket1 !== '' ? $paket1 : null,
             'paket_pembayaran_2' => $paket2 !== '' ? $paket2 : null,
         ];
 
         if ($statusArsip == 2) {
-            dump("IMPORT KE ARSIP: " . $nama);
+            dump('IMPORT KE ARSIP: '.$nama);
+
             return new Arsip($data);
         }
 
-        dump("IMPORT KE SISWA: " . $nama);
+        dump('IMPORT KE SISWA: '.$nama);
+
         return new Siswa($data);
     }
 }

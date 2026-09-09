@@ -34,12 +34,12 @@ class NormalisasiNomorHp extends Command
         }
 
         foreach ($rencana->groupBy('tabel') as $tabel => $baris) {
-            $this->line("<fg=cyan>{$tabel}</> — " . $baris->count() . ' baris akan diubah');
+            $this->line("<fg=cyan>{$tabel}</> — ".$baris->count().' baris akan diubah');
             foreach ($baris->take(5) as $b) {
-                $this->line(sprintf('    #%-8s %-22s -> %s', $b['id'], '[' . $b['lama'] . ']', $b['baru']));
+                $this->line(sprintf('    #%-8s %-22s -> %s', $b['id'], '['.$b['lama'].']', $b['baru']));
             }
             if ($baris->count() > 5) {
-                $this->line('    ... dan ' . ($baris->count() - 5) . ' baris lainnya');
+                $this->line('    ... dan '.($baris->count() - 5).' baris lainnya');
             }
             $this->newLine();
         }
@@ -106,15 +106,15 @@ class NormalisasiNomorHp extends Command
             $peta[$baru][$siswa->no_hp][] = $siswa->name;
         }
 
-        $gabung = collect($peta)->filter(fn($bentuk) => count($bentuk) > 1);
+        $gabung = collect($peta)->filter(fn ($bentuk) => count($bentuk) > 1);
 
         if ($gabung->isEmpty()) {
             return;
         }
 
-        $this->warn('Perhatian: ' . $gabung->count() . ' grup keluarga akan MENYATU karena sebelumnya terpecah oleh beda format:');
+        $this->warn('Perhatian: '.$gabung->count().' grup keluarga akan MENYATU karena sebelumnya terpecah oleh beda format:');
         foreach ($gabung as $normal => $bentuk) {
-            $nama = collect($bentuk)->flatten()->map(fn($n) => mb_substr($n, 0, 26))->implode(' + ');
+            $nama = collect($bentuk)->flatten()->map(fn ($n) => mb_substr($n, 0, 26))->implode(' + ');
             $this->line("    {$normal} : {$nama}");
         }
         $this->newLine();
@@ -128,9 +128,9 @@ class NormalisasiNomorHp extends Command
             }
         });
 
-        $this->info('Selesai. ' . $rencana->count() . ' baris diperbarui dalam satu transaksi.');
+        $this->info('Selesai. '.$rencana->count().' baris diperbarui dalam satu transaksi.');
         foreach ($rencana->groupBy('tabel') as $tabel => $baris) {
-            $this->line("    {$tabel}: " . $baris->count() . ' baris');
+            $this->line("    {$tabel}: ".$baris->count().' baris');
         }
 
         $this->newLine();

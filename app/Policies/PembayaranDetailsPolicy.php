@@ -2,9 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\pembayaran_details;
-use Illuminate\Auth\Access\Response;
+use App\Models\User;
 
 class PembayaranDetailsPolicy
 {

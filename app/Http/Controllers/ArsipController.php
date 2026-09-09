@@ -23,8 +23,8 @@ class ArsipController extends Controller
     {
         $arsip = Arsip::find($id);
 
-        if (!$arsip) {
-            return $this->handleNotFound($request, "Arsip");
+        if (! $arsip) {
+            return $this->handleNotFound($request, 'Arsip');
         }
 
         if ($request->wantsJson()) {
@@ -38,8 +38,8 @@ class ArsipController extends Controller
     {
         $arsip = Arsip::find($id);
 
-        if (!$arsip) {
-            return $this->handleNotFound($request, "Arsip");
+        if (! $arsip) {
+            return $this->handleNotFound($request, 'Arsip');
         }
 
         try {
@@ -71,8 +71,8 @@ class ArsipController extends Controller
         try {
             $arsip = Arsip::find($id);
 
-            if (!$arsip) {
-                return $this->handleNotFound($request, "Arsip");
+            if (! $arsip) {
+                return $this->handleNotFound($request, 'Arsip');
             }
 
             $arsip->delete();
@@ -96,15 +96,17 @@ class ArsipController extends Controller
         if ($request->wantsJson()) {
             return response()->json(['status' => 'error', 'message' => $msg], 404);
         }
+
         return redirect()->back()->with('error', $msg);
     }
 
     private function handleException($request, $prefix, $e)
     {
-        $msg = $prefix . ': ' . $e->getMessage();
+        $msg = $prefix.': '.$e->getMessage();
         if ($request->wantsJson()) {
             return response()->json(['status' => 'error', 'message' => $msg], 500);
         }
+
         return redirect()->back()->withInput()->with('error', $msg);
     }
 }

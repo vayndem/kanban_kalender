@@ -14,7 +14,7 @@ class SesiFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => 'Sesi ' . $this->faker->randomDigitNotNull(),
+            'name' => 'Sesi '.$this->faker->randomDigitNotNull(),
             'start_time' => $this->faker->time('H:i:s'),
             'end_time' => $this->faker->time('H:i:s'),
         ];

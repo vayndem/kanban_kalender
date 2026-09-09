@@ -14,24 +14,24 @@ class DiskonController extends Controller
             'no_hp' => 'nullable|string',
             'diskon' => 'required|integer|min:0',
             'keterangan' => 'nullable|string|max:255',
-            'is_universal' => 'required|boolean'
+            'is_universal' => 'required|boolean',
         ]);
 
         try {
             $isUniversal = $request->boolean('is_universal');
             $noHp = $isUniversal ? null : $request->no_hp;
 
-            if (!$isUniversal && empty($noHp)) {
+            if (! $isUniversal && empty($noHp)) {
                 return response()->json(['status' => 'error', 'message' => 'Nomor HP wajib diisi untuk diskon spesifik.'], 422);
             }
 
-            if (!empty($request->id)) {
+            if (! empty($request->id)) {
                 $diskon = Diskon::find($request->id);
                 if ($diskon) {
                     $diskon->update([
                         'no_hp' => $noHp,
                         'diskon' => $request->diskon,
-                        'keterangan' => $request->keterangan ?? ($isUniversal ? 'Diskon Massal' : 'Potongan Diskon Keluarga')
+                        'keterangan' => $request->keterangan ?? ($isUniversal ? 'Diskon Massal' : 'Potongan Diskon Keluarga'),
                     ]);
                     $message = 'Diskon berhasil diperbarui.';
                 } else {
@@ -43,7 +43,7 @@ class DiskonController extends Controller
                         ['no_hp' => null],
                         [
                             'diskon' => $request->diskon,
-                            'keterangan' => $request->keterangan ?? 'Diskon Massal'
+                            'keterangan' => $request->keterangan ?? 'Diskon Massal',
                         ]
                     );
                     $message = 'Diskon universal berhasil diterapkan ke seluruh siswa.';
@@ -52,7 +52,7 @@ class DiskonController extends Controller
                         ['no_hp' => $noHp],
                         [
                             'diskon' => $request->diskon,
-                            'keterangan' => $request->keterangan ?? 'Potongan Diskon Keluarga'
+                            'keterangan' => $request->keterangan ?? 'Potongan Diskon Keluarga',
                         ]
                     );
                     $message = 'Diskon berhasil diterapkan pada nomor HP ini.';
@@ -63,15 +63,16 @@ class DiskonController extends Controller
                 return response()->json([
                     'status' => 'success',
                     'message' => $message,
-                    'data' => $diskon
+                    'data' => $diskon,
                 ]);
             }
 
             return redirect()->back()->with('success', 'Diskon berhasil diproses.');
         } catch (\Exception $e) {
             if ($request->wantsJson()) {
-                return response()->json(['status' => 'error', 'message' => 'Gagal memproses diskon: ' . $e->getMessage()], 500);
+                return response()->json(['status' => 'error', 'message' => 'Gagal memproses diskon: '.$e->getMessage()], 500);
             }
+
             return redirect()->back()->withInput()->with('error', 'Gagal memproses diskon.');
         }
     }
@@ -82,16 +83,17 @@ class DiskonController extends Controller
             'no_hp' => 'nullable|string',
             'diskon' => 'required|integer|min:0',
             'keterangan' => 'nullable|string|max:255',
-            'is_universal' => 'required|boolean'
+            'is_universal' => 'required|boolean',
         ]);
 
         try {
             $diskon = Diskon::find($id);
 
-            if (!$diskon) {
+            if (! $diskon) {
                 if ($request->wantsJson()) {
                     return response()->json(['status' => 'error', 'message' => 'Data diskon tidak ditemukan.'], 404);
                 }
+
                 return redirect()->back()->with('error', 'Data diskon tidak ditemukan.');
             }
 
@@ -101,22 +103,23 @@ class DiskonController extends Controller
             $diskon->update([
                 'no_hp' => $noHp,
                 'diskon' => $request->diskon,
-                'keterangan' => $request->keterangan ?? ($isUniversal ? 'Diskon Massal' : 'Potongan Diskon Keluarga')
+                'keterangan' => $request->keterangan ?? ($isUniversal ? 'Diskon Massal' : 'Potongan Diskon Keluarga'),
             ]);
 
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'success',
                     'message' => 'Diskon berhasil diperbarui.',
-                    'data' => $diskon
+                    'data' => $diskon,
                 ]);
             }
 
             return redirect()->back()->with('success', 'Diskon berhasil diperbarui.');
         } catch (\Exception $e) {
             if ($request->wantsJson()) {
-                return response()->json(['status' => 'error', 'message' => 'Gagal memperbarui diskon: ' . $e->getMessage()], 500);
+                return response()->json(['status' => 'error', 'message' => 'Gagal memperbarui diskon: '.$e->getMessage()], 500);
             }
+
             return redirect()->back()->with('error', 'Gagal memperbarui diskon.');
         }
     }
@@ -126,10 +129,11 @@ class DiskonController extends Controller
         try {
             $diskon = Diskon::find($id);
 
-            if (!$diskon) {
+            if (! $diskon) {
                 if ($request->wantsJson()) {
                     return response()->json(['status' => 'error', 'message' => 'Data diskon tidak ditemukan.'], 404);
                 }
+
                 return redirect()->back()->with('error', 'Data diskon tidak ditemukan.');
             }
 
@@ -138,15 +142,16 @@ class DiskonController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'success',
-                    'message' => 'Diskon berhasil dihapus, kalkulasi tagihan kembali normal.'
+                    'message' => 'Diskon berhasil dihapus, kalkulasi tagihan kembali normal.',
                 ]);
             }
 
             return redirect()->back()->with('success', 'Diskon berhasil dihapus.');
         } catch (\Exception $e) {
             if ($request->wantsJson()) {
-                return response()->json(['status' => 'error', 'message' => 'Gagal menghapus diskon: ' . $e->getMessage()], 500);
+                return response()->json(['status' => 'error', 'message' => 'Gagal menghapus diskon: '.$e->getMessage()], 500);
             }
+
             return redirect()->back()->with('error', 'Gagal menghapus diskon.');
         }
     }

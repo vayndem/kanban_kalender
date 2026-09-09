@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Tanda;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class TandaController extends Controller
@@ -23,20 +23,21 @@ class TandaController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         try {
             Tanda::create($validator->validated());
+
             return response()->json([
                 'status' => 'success',
-                'message' => 'Tanda/Catatan berhasil ditambahkan.'
+                'message' => 'Tanda/Catatan berhasil ditambahkan.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal menyimpan: ' . $e->getMessage()
+                'message' => 'Gagal menyimpan: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -56,21 +57,22 @@ class TandaController extends Controller
             return response()->json([
                 'status' => 'error',
                 'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         try {
             $tanda = Tanda::findOrFail($id);
             $tanda->update($validator->validated());
+
             return response()->json([
                 'status' => 'success',
-                'message' => 'Tanda/Catatan berhasil diperbarui.'
+                'message' => 'Tanda/Catatan berhasil diperbarui.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal memperbarui: ' . $e->getMessage()
+                'message' => 'Gagal memperbarui: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -80,14 +82,15 @@ class TandaController extends Controller
         try {
             $tanda = Tanda::findOrFail($id);
             $tanda->delete();
+
             return response()->json([
                 'status' => 'success',
-                'message' => 'Tanda/Catatan berhasil dihapus.'
+                'message' => 'Tanda/Catatan berhasil dihapus.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Gagal menghapus: ' . $e->getMessage()
+                'message' => 'Gagal menghapus: '.$e->getMessage(),
             ], 500);
         }
     }

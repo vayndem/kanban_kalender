@@ -7,9 +7,7 @@ use Illuminate\View\View;
 
 class AdminLayout extends Component
 {
-    public function __construct(public string $activeTab = 'ringkasan')
-    {
-    }
+    public function __construct(public string $activeTab = 'ringkasan') {}
 
     public function render(): View
     {

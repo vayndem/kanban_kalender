@@ -24,6 +24,9 @@
             <a href="{{ route('absen.index') }}" class="btn btn-ghost btn-sm text-xs">
                 <i class="fas fa-clipboard-user"></i><span class="hidden sm:inline"> Absen</span>
             </a>
+            <a href="{{ route('guru.gaji') }}" class="btn btn-ghost btn-sm text-xs">
+                <i class="fas fa-money-check-dollar"></i><span class="hidden sm:inline"> Gaji Saya</span>
+            </a>
         </x-portal-nav>
 
         <main class="py-6 sm:py-8">

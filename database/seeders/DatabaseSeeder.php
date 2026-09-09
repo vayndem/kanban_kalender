@@ -40,7 +40,6 @@ class DatabaseSeeder extends Seeder
             'end_time' => '17:30',
         ]);
 
-
         Sesi::create([
             'name' => 'Sesi 4',
             'start_time' => '18:30',

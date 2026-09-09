@@ -33,11 +33,11 @@ class MapelController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Gagal menyimpan: ' . $e->getMessage(),
+                    'message' => 'Gagal menyimpan: '.$e->getMessage(),
                 ], 500);
             }
 
-            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan: '.$e->getMessage());
         }
     }
 
@@ -46,7 +46,7 @@ class MapelController extends Controller
         $mapel = MataPelajaran::findOrFail($id);
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:mata_pelajarans,name,' . $id,
+            'name' => 'required|string|max:255|unique:mata_pelajarans,name,'.$id,
             'border_color' => 'nullable|string|max:20',
         ], [
             'name.required' => 'Nama mata pelajaran wajib diisi.',
@@ -69,11 +69,11 @@ class MapelController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Gagal memperbarui: ' . $e->getMessage(),
+                    'message' => 'Gagal memperbarui: '.$e->getMessage(),
                 ], 500);
             }
 
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui: '.$e->getMessage());
         }
     }
 
@@ -85,7 +85,7 @@ class MapelController extends Controller
             $jumlahJadwal = $mapel->jadwals()->count();
             if ($jumlahJadwal > 0) {
                 $msg = "Mata pelajaran {$mapel->name} tidak bisa dihapus: masih dipakai {$jumlahJadwal} baris jadwal. "
-                    . 'Hapus atau pindahkan jadwalnya dulu di tab Jadwal Pelajaran, baru mata pelajaran ini bisa dihapus.';
+                    .'Hapus atau pindahkan jadwalnya dulu di tab Jadwal Pelajaran, baru mata pelajaran ini bisa dihapus.';
 
                 return $request->wantsJson()
                     ? response()->json(['status' => 'error', 'message' => $msg], 422)
@@ -106,11 +106,11 @@ class MapelController extends Controller
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Gagal menghapus: ' . $e->getMessage(),
+                    'message' => 'Gagal menghapus: '.$e->getMessage(),
                 ], 500);
             }
 
-            return redirect()->back()->with('error', 'Gagal menghapus: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal menghapus: '.$e->getMessage());
         }
     }
 }

@@ -19,32 +19,49 @@ Tujuannya bukan untuk promosi, tapi untuk:
 - Organisasi: `E-Ling Course`
 - Framework: Laravel 12
 - Runtime target lokal: PHP 8.3
-- Frontend: Blade + Tailwind CSS + Alpine.js
+- Frontend: Blade + Tailwind CSS v4 + daisyUI v5 + Alpine.js
 - Interaction layer: SweetAlert2
-- Export engine: DomPDF
+- Export engine: DomPDF (PDF) + maatwebsite/excel (XLSX)
+- Otorisasi: spatie/laravel-permission (peran `admin` dan `guru`)
 
 Fungsi besar sistem:
 
 - kelola jadwal
 - kelola siswa aktif dan arsip
-- kelola paket dan tagihan
+- kelola paket, tagihan, dan tingkat kemampuan siswa
 - catat pembayaran
-- cetak dan export PDF
+- isi modul ajar per kelas, catat mengajar dan nilai siswa
+- hitung kehadiran guru dan terbitkan struk penggajian
+- cetak dan export PDF/Excel
 - tampilkan kalender publik
+- portal guru read-only (jadwal, modul ajar, absen, gaji sendiri)
 
 ---
 
 ## 2. Gambaran Arsitektur
 
-Secara kasar sistem dibagi jadi 3 domain admin:
+Domain admin (semua di balik `role:admin`):
 
-1. Jadwal
-2. Data Siswa
-3. Pembayaran
+1. Ringkasan — dashboard operasional, pengingat finansial, kebersihan data
+2. Jadwal
+3. Data Siswa
+4. Pembayaran
+5. Workshop — satu-satunya tempat CRUD data pokok (siswa, guru, ruang, sesi, mapel, paket, kemampuan)
+6. Payroll — tarif per guru, struk penggajian, tutup periode
+7. Akun Guru — khusus akun login guru
 
-Lalu ada 1 area publik:
+Dipakai bersama admin dan guru (`role:admin|guru`):
 
-4. Kalender publik
+8. Modul Ajar — kurikulum per kelas
+9. Absen — papan mengajar hari x sesi, penilaian siswa
+
+Khusus guru (`role:guru`):
+
+10. Portal Guru — jadwal sendiri, dan `/guru/gaji` untuk struk gajinya sendiri
+
+Area publik tanpa login:
+
+11. Kalender publik — sengaja tidak membocorkan data internal (paket, kemampuan, tagihan)
 
 Pola umum:
 
@@ -563,9 +580,21 @@ cmd /c npm run build
 
 ## 11. Testing Reference
 
+Total saat ini: **208 test PHPUnit** (SQLite in-memory, tidak pernah menyentuh MySQL lokal maupun produksi) + 3 test JS (`npm run test:js`).
+
 File test utama:
 
 - `tests/Feature/ScheduleAndPaymentTest.php`
+
+Suite pendukung yang perlu diketahui:
+
+- `PayrollTest` — aritmetika struk, hitungan kehadiran kembali nol tanpa menghapus riwayat, tarif dibekukan, guru tanpa kehadiran tetap dapat gaji bawaan, penjaga klik ganda, pembatalan melepas kehadiran, dan guru hanya bisa melihat/mengunduh struknya sendiri
+- `SesiWaktuTest` — jam sesi terbaca `HH:MM` (bukan ISO), urut menurut waktu, durasi tidak pernah negatif
+- `RaporSiswaTest` — agregasi kehadiran/nilai, filter tanggal, ambang 4 nilai sebelum tren muncul, unduh PDF, guru ditolak
+- `ModulAjarTest` — scoping admin vs guru, split izin create/update, `kode_kelas` bertahan melewati drag/edit/stash, alur mengajar-pengganti-nilai
+- `PeranDanPortalGuruTest`, `AkunGuruTest`, `WorkshopTest`, `SiswaImportTest`, `ExportPhoneNumberFormatTest`, `PerlindunganHapusDanUbahTest`, `AntiDoubleClickTest`, `RapikanDuplikatPembayaranTest`, `NormalisasiNomorHpTest`, `ProduksiTerlindungiTest`, `DemoSeederTest`, `RingkasanDashboardTest`
+
+Di luar PHPUnit, tampilan diverifikasi dengan menjalankan Chrome sungguhan lewat Playwright: kontras diukur pada setiap simpul teks di 10 layar untuk kedua tema, dan tata letak dicek di 375px/768px untuk overflow horizontal serta ukuran area sentuh.
 
 Coverage yang sudah ada:
 
@@ -595,6 +624,72 @@ Kalau menambah fitur di pembayaran, minimal cek lagi:
 
 ---
 
+## 11b. Modul Yang Ditambahkan Setelah Dokumen Ini Pertama Ditulis
+
+Bagian ini merangkum fitur yang lahir setelah versi awal FEED.md, supaya tidak ada lagi
+celah antara dokumen dan kode. Rincian invarian dan alasannya ada di `CLAUDE.md`.
+
+### Peran dan portal guru
+
+Dua peran lewat spatie/laravel-permission: `admin` dan `guru`. Dijaga di lapisan rute,
+bukan dengan menyembunyikan tombol. `users.guru_id` menautkan akun login ke entitas `Guru`;
+arahnya penting — `Guru` yang dirujuk `jadwals`, `User` hanya pintu masuk. Menghapus user
+tidak pernah menyentuh jadwal.
+
+### Tingkat Kemampuan
+
+Level 1..N dengan keterangan bebas, satu siswa satu kemampuan (`siswas.tingkat_kemampuan_id`).
+Penomorannya wajib berurutan: menghapus hanya boleh dari level tertinggi ke bawah. Data ini
+internal — tidak boleh bocor ke kalender publik.
+
+### Modul Ajar dan `kode_kelas`
+
+`jadwals.kode_kelas` (UUID) adalah identitas kelas yang bertahan walau kelas digeser hari/sesi
+atau diedit lewat modal. Kombinasi hari+sesi+mapel+guru+ruang **tidak** aman dipakai sebagai
+identitas jangka panjang. Satu `modul_ajars` per `kode_kelas`, punya banyak `modul_ajar_details`.
+Izinnya dipisah per kata kerja: admin dan guru pengampu boleh membuat, hanya admin boleh
+mengubah/menghapus.
+
+### Absen, penilaian, dan guru pengganti
+
+Tiap baris `modul_ajar_details` sekaligus menjadi peristiwa mengajar satu kali. Guru menandai
+dirinya tidak bisa hadir, slotnya langsung terbuka untuk semua guru (rebutan, siapa cepat).
+Kredit kehadiran mengikuti siapa yang benar-benar mengajar dan menilai, bukan pemilik jadwal.
+Satu baris `absensi_gurus` per detail yang dinilai, dihitung **per sesi**, bukan per hari —
+guru yang menyelesaikan 3 kelas dalam sehari mendapat 3.
+
+### Rapor Perkembangan Siswa
+
+`RaporService` mengagregasi `modul_ajar_absensis` per siswa: kehadiran, rata-rata/terendah/tertinggi,
+dan tren naik/turun/stabil. Tren baru muncul setelah minimal 4 nilai. Tersedia sebagai JSON di
+panel detail siswa dan sebagai PDF (`pdf/rapor.blade.php`).
+
+### Payroll
+
+Tarif ada di `gurus` (`gaji_bawaan`, `gaji_per_kehadiran`), struk di `penggajians`.
+
+- Penggajian dijalankan **ad-hoc**, bukan per bulan. Gaji bawaan dibayar **penuh setiap run**.
+  Guru tanpa kehadiran tetap menerima struk berisi gaji bawaan saja — itu memang disengaja.
+- Tombol "Siap Lakukan" **menutup periode, bukan menghapus**: semua `absensi_gurus` milik guru itu
+  yang `penggajian_id IS NULL` distempel dengan id struk. Penghitung berjalan membaca
+  `WHERE penggajian_id IS NULL`, jadi jatuh ke nol dengan sendirinya sementara riwayat utuh.
+  **Jangan pernah mengubah reset ini menjadi DELETE.**
+- Tarif dibekukan ke struk, sehingga kenaikan gaji di kemudian hari tidak mengubah struk lama.
+- Koreksi struk = batalkan lalu terbitkan baru, bukan edit. Pembatalan melepas kehadirannya kembali.
+- Penjaga klik ganda berbasis waktu (`PayrollService::JEDA_ANTI_GANDA`), bukan jumlah baris,
+  karena run tanpa kehadiran itu sah.
+- Guru bisa melihat gajinya sendiri di `/guru/gaji` (read-only) dan mengunduh struknya sendiri;
+  admin bisa mengunduh milik siapa pun. Penjagaan kepemilikan ada di `PayrollController`.
+
+### Design system
+
+Tailwind v4 + daisyUI v5, dikonfigurasi **CSS-first**. `tailwind.config.js` dan `postcss.config.js`
+sudah **tidak ada** — seluruh tema hidup di `resources/css/app.css`. Warna memakai token semantik
+(`base-100`, `base-content`, `primary`, dst), dark mode ikut preferensi sistem tanpa varian `dark:`.
+Tiap peran tombol punya warna sendiri; jangan menyeragamkannya jadi satu keluarga warna.
+
+---
+
 ## 12. Fragile Area Priority List
 
 Urutan area yang paling rawan kalau diubah:
@@ -606,6 +701,15 @@ Urutan area yang paling rawan kalau diubah:
 - auto-pelunasan salah nominal
 - struk salah item
 - diskon tidak sinkron
+
+### Prioritas 1b — Payroll
+
+Sama-sama uang, jadi setara rawannya dengan Pembayaran:
+
+- reset kehadiran diubah jadi DELETE (riwayat hilang, struk lama tidak bisa dipertanggungjawabkan)
+- tarif tidak dibekukan ke struk (kenaikan gaji diam-diam menulis ulang masa lalu)
+- penjaga klik ganda diganti berbasis jumlah baris (run tanpa kehadiran itu sah, jadi selalu lolos)
+- penjagaan kepemilikan di `strukPdf` dilonggarkan (guru bisa membaca gaji guru lain)
 
 ### Prioritas 2 — Jadwal
 
@@ -658,12 +762,13 @@ Sebelum ubah jadwal:
 Urutan baca paling cepat untuk refresh:
 
 1. `README.md`
-2. `FEED.md`
-3. `routes/web.php`
-4. `DashboardController.php`
-5. `PembayaranController.php`
-6. `JadwalController.php`
-7. `tests/Feature/ScheduleAndPaymentTest.php`
+2. `CLAUDE.md` — invarian, konvensi, dan jebakan yang sudah pernah menggigit
+3. `FEED.md`
+4. `routes/web.php`
+5. `DashboardController.php`
+6. `PembayaranController.php`
+7. `JadwalController.php`
+8. `tests/Feature/ScheduleAndPaymentTest.php`
 
 Kalau bug ada di pembayaran, langsung audit:
 

@@ -10,6 +10,7 @@ use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\MapelController;
 use App\Http\Controllers\ModulAjarController;
 use App\Http\Controllers\PaketController;
+use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RuangController;
@@ -28,7 +29,13 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 
 Route::middleware(['auth', 'role:guru'])->group(function () {
     Route::get('/guru', [GuruPortalController::class, 'index'])->name('guru.jadwal');
+    Route::get('/guru/gaji', [PayrollController::class, 'milikSaya'])->name('guru.gaji');
 });
+
+// Struk boleh dibuka admin (siapa pun) atau guru (hanya miliknya sendiri, dijaga di controller).
+Route::middleware(['auth', 'role:admin|guru'])
+    ->get('/penggajian/{penggajian}/struk-pdf', [PayrollController::class, 'strukPdf'])
+    ->name('penggajian.strukPdf');
 
 Route::middleware(['auth', 'role:admin|guru'])->prefix('modul-ajar')->name('modulAjar.')->group(function () {
     Route::get('/', [ModulAjarController::class, 'index'])->name('index');
@@ -129,6 +136,14 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/arsip', [ArsipController::class, 'index'])->name('admin.arsip.index');
     Route::put('/admin/arsip/{id}', [ArsipController::class, 'update'])->name('admin.arsip.restore');
     Route::delete('/admin/arsip/{id}', [ArsipController::class, 'destroy'])->name('admin.arsip.destroy');
+
+    // 9b. Payroll
+    Route::get('/admin/payroll', [PayrollController::class, 'index'])->name('admin.payroll.index');
+    Route::put('/admin/payroll/guru/{guru}/tarif', [PayrollController::class, 'updateTarif'])->name('admin.payroll.updateTarif');
+    Route::post('/admin/payroll/guru/{guru}/jalankan', [PayrollController::class, 'jalankan'])->name('admin.payroll.jalankan');
+    Route::post('/admin/payroll/jalankan-semua', [PayrollController::class, 'jalankanSemua'])->name('admin.payroll.jalankanSemua');
+    Route::get('/admin/payroll/struk/{penggajian}', [PayrollController::class, 'struk'])->name('admin.payroll.struk');
+    Route::post('/admin/payroll/struk/{penggajian}/batalkan', [PayrollController::class, 'batalkan'])->name('admin.payroll.batalkan');
 
     // 10. Diskon
     Route::post('/admin/diskon', [DiskonController::class, 'store'])->name('admin.diskon.store');

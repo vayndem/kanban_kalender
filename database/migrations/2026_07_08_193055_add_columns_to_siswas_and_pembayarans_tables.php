@@ -28,14 +28,14 @@ return new class extends Migration
                 'paket_pembayaran_2',
                 'paket_pembayaran_3',
                 'paket_pembayaran_4',
-                'paket_pembayaran_5'
+                'paket_pembayaran_5',
             ]);
         });
 
         Schema::table('pembayarans', function (Blueprint $table) {
             $table->dropColumn([
                 'no_hp',
-                'total_sudah_dibayar'
+                'total_sudah_dibayar',
             ]);
         });
     }

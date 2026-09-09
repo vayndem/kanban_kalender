@@ -1,7 +1,7 @@
 # Kanban Kalender - E-Ling Course
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=venom&color=0:065f46,50:059669,100:0d9488&height=240&section=header&text=Kanban%20Kalender&fontSize=60&fontColor=ffffff&animation=fadeIn&fontAlignY=42&stroke=ffffff&strokeWidth=1&desc=Admin%20Bimbel%20%7C%20Jadwal%20%7C%20Siswa%20%7C%20Pembayaran%20%7C%20Modul%20Ajar&descFontSize=18&descAlignY=64&descAlign=50&descFontColor=e2e8f0" alt="Kanban Kalender Header" />
+  <img src="https://capsule-render.vercel.app/api?type=venom&color=0:065f46,50:059669,100:0d9488&height=240&section=header&text=Kanban%20Kalender&fontSize=60&fontColor=ffffff&animation=fadeIn&fontAlignY=42&stroke=ffffff&strokeWidth=1&desc=Admin%20Bimbel%20%7C%20Jadwal%20%7C%20Siswa%20%7C%20Pembayaran%20%7C%20Payroll&descFontSize=18&descAlignY=64&descAlign=50&descFontColor=e2e8f0" alt="Kanban Kalender Header" />
 </p>
 
 <p align="center">
@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-183%20passing-16a34a?style=flat-square" alt="183 tests passing">
+  <img src="https://img.shields.io/badge/tests-201%20passing-16a34a?style=flat-square" alt="201 tests passing">
   <img src="https://img.shields.io/badge/static%20analysis-Larastan%20lv1-8b5cf6?style=flat-square" alt="Larastan level 1">
   <img src="https://img.shields.io/badge/style-Laravel%20Pint-f59e0b?style=flat-square" alt="Laravel Pint">
 </p>
@@ -58,7 +58,7 @@ This project is designed to keep day-to-day operations stable:
 
 ## Core Features
 
-- Multi-tab admin dashboard: **Ringkasan**, **Jadwal**, **Data Siswa**, **Pembayaran**, plus **Workshop**, **Modul Ajar**, **Absen**, and **Akun Guru**
+- Multi-tab admin dashboard: **Ringkasan**, **Jadwal**, **Data Siswa**, **Pembayaran**, plus **Workshop**, **Modul Ajar**, **Absen**, **Payroll**, and **Akun Guru**
 - Two roles (`admin` / `guru`) enforced at the route layer, with a dedicated teacher portal
 - Public, no-auth calendar that deliberately exposes **no** internal data (packages, ability levels, and billing stay private)
 - Conflict-safe scheduling for teacher, room, and student
@@ -70,8 +70,9 @@ This project is designed to keep day-to-day operations stable:
 - Daily WhatsApp schedule reminder on Ringkasan, with a record of who copied it and when
 - Student progress reports (**Rapor**) with attendance, score trend, and PDF export
 - Bulk student import/export via Excel, with phone numbers that survive the spreadsheet
+- Teacher payroll with per-guru rates, snapshotted payslips, and a void-and-reissue correction path
 - Formal PDF exports: jadwal, data siswa, pembayaran, struk pelunasan, rapor
-- Fully responsive, theme-aware UI (light/dark follows the operating system)
+- Responsive and theme-aware UI (light/dark follows the operating system), audited at 375px and 768px for overflow and tap-target size
 
 ---
 
@@ -133,7 +134,16 @@ This project is designed to keep day-to-day operations stable:
 - whoever actually teaches and grades gets the attendance credit
 - per-student attendance and 1–5 scoring per session
 
-### 8. Portal Guru
+### 8. Payroll
+
+- per-guru **gaji bawaan** (base salary) and **gaji per kehadiran** (per-session rate), editable inline
+- live preview of what each teacher is owed before anything is committed
+- **"Siap Lakukan"** per teacher and **"Siap Semua"** for everyone — issues a payslip and resets the running attendance counter to zero
+- the reset is a *period close*, not a delete: attendance rows are stamped with the payslip id, so history stays auditable
+- rates are snapshotted onto the payslip, so a later raise never rewrites an old one
+- payslip detail shows the log of classes that were actually taught, and can be voided (with a reason) to release its attendance back
+
+### 9. Portal Guru
 
 - read-only weekly schedule for the signed-in teacher
 - direct access to Modul Ajar and Absen for their own classes
@@ -146,7 +156,9 @@ The UI runs on **Tailwind CSS 4 + daisyUI 5**, configured CSS-first. There is no
 
 - **Semantic tokens, not hardcoded palettes.** Surfaces use `base-100` / `base-200` / `base-300`, text uses `base-content` with opacity steps, and meaning uses `primary` / `accent` / `success` / `warning` / `error` / `info`.
 - **Dark mode is automatic and OS-driven.** daisyUI injects the dark theme at `:root` under `@media (prefers-color-scheme: dark)`, so token-based classes flip on their own — the codebase deliberately has **no** `darkMode: 'class'` and no `dark:` variants layered on tokens.
-- **The brand is emerald green.** `primary` is emerald and `accent` is teal; `success` is a brighter green so "submit" and "settled" still read differently. No blue or purple chrome.
+- **The brand is emerald green, but every button role owns a distinct hue.** `primary` emerald = default action, `accent` violet = supporting/management dialog, `info` sky = record/backup, `success` green = safe confirm, `warning` amber = mass action, `btn-export` rose = generate a document, `btn-sacred` deep rose = destructive. An all-green toolbar was tried and rejected — crucial buttons have to be told apart at a glance.
+- **Contrast is measured, not eyeballed.** Every semantic token clears WCAG AA (>= 4.5:1) as text on `base-100` and `base-200` *and* against its own content colour, in both themes; solid button surfaces sit at 5.0-8.0:1 with white text. `text-base-content/60` is the opacity floor for readable text — `/40` and `/50` fail.
+- **Custom button/badge variants set daisyUI's `--btn-color` / `--btn-fg` and live outside any `@layer`.** The compiled layer order ends with `daisyui`, and a cascade layer beats specificity, so a rule inside `@layer components` can never override a daisyUI component.
 - **daisyUI wins name collisions.** Custom helpers in `resources/css/app.css` are prefixed `app-` (`app-card`, `app-stat`, `app-empty`, `app-tab`, `app-input`, `app-chip`, `app-table-wrap`, …), while `badge`, `stats`, `table`, `join`, `alert`, `modal`, and friends come straight from daisyUI.
 - Reusable Blade components: `x-list-panel` / `x-list-row` (Ringkasan's tinted list cards) and `x-portal-nav` (the shared top bar for Portal Guru, Absen, and Modul Ajar).
 
@@ -238,11 +250,13 @@ composer run dev
 ## Quality Gates
 
 ```bash
-vendor/bin/phpunit          # 183 feature/unit tests
+vendor/bin/phpunit          # 201 feature/unit tests
 npm run test:js             # plain Node test runner, no framework
 vendor/bin/phpstan analyse  # Larastan level 1 (Controllers + Models)
 vendor/bin/pint             # code style
 ```
+
+Beyond the suites, the UI is verified by driving a real Chrome via Playwright: contrast is measured on every rendered text node across 10 screens in both themes, and layout is checked at 375px/768px for horizontal overflow and small tap targets.
 
 Tests run against **SQLite in-memory**, so they never touch local MySQL or production — this is the safe way to verify a migration without running it anywhere real.
 
@@ -268,6 +282,7 @@ Example command for Windows with a project-local PHP 8.3:
 - `app/Http/Controllers/PembayaranController.php` — the most fragile controller in the codebase
 - `app/Http/Controllers/WorkshopController.php`
 - `app/Http/Controllers/ModulAjarController.php`
+- `app/Http/Controllers/PayrollController.php`
 - `app/Http/Controllers/GuruPortalController.php`
 
 ### Services
@@ -275,6 +290,7 @@ Example command for Windows with a project-local PHP 8.3:
 - `app/Services/PaymentBatchService.php` — mass billing and settlement
 - `app/Services/RingkasanService.php` — dashboard aggregation
 - `app/Services/RaporService.php` — student progress aggregation
+- `app/Services/PayrollService.php` — teacher rates, payslips, and the period close
 
 ### Views
 

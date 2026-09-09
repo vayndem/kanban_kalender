@@ -32,18 +32,18 @@ class GuruPortalController extends Controller
             ->get(['id', 'siswa_id', 'mata_pelajaran_id', 'guru_id', 'hari_id', 'ruang_id', 'sesi_id']);
 
         $kelas = $jadwals
-            ->groupBy(fn(Jadwal $j) => implode('-', [
+            ->groupBy(fn (Jadwal $j) => implode('-', [
                 $j->hari_id,
                 $j->sesi_id,
                 $j->mata_pelajaran_id,
                 $j->ruang_id,
             ]))
-            ->map(fn($rows) => [
+            ->map(fn ($rows) => [
                 'hari_id' => $rows->first()->hari_id,
                 'sesi_id' => $rows->first()->sesi_id,
                 'mata_pelajaran' => $rows->first()->mataPelajaran?->name ?? '-',
                 'ruang' => $rows->first()->ruang?->name ?? '-',
-                'siswa' => $rows->map(fn($r) => [
+                'siswa' => $rows->map(fn ($r) => [
                     'nama' => $r->siswa?->name ?? '-',
                     'panggilan' => $r->siswa?->panggilan,
                     'kelas' => $r->siswa?->kelas,

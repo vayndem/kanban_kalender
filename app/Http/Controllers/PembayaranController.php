@@ -4,21 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\BatchSudahDijalankanException;
 use App\Exports\PembayaranExport;
+use App\Http\Controllers\Concerns\MerespondKesalahanPembayaran;
 use App\Models\Diskon;
 use App\Models\Pembayaran;
 use App\Models\PembayaranDetail;
 use App\Models\Siswa;
 use App\Services\PaymentBatchService;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\StrukPembayaranService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 class PembayaranController extends Controller
 {
+    use MerespondKesalahanPembayaran;
+
     /**
      * Rentang waktu (detik) yang dianggap "klik ganda" untuk pencatatan
      * identik. Cukup lebar menutupi server lambat, cukup sempit agar setoran
@@ -26,7 +28,10 @@ class PembayaranController extends Controller
      */
     private const JEDA_ANTI_GANDA = 180;
 
-    public function __construct(private readonly PaymentBatchService $paymentBatchService) {}
+    public function __construct(
+        private readonly PaymentBatchService $paymentBatchService,
+        private readonly StrukPembayaranService $strukService,
+    ) {}
 
     public function store(Request $request)
     {
@@ -63,9 +68,9 @@ class PembayaranController extends Controller
 
                     throw ValidationException::withMessages([
                         'id_paket' => "Siswa {$siswa->name} sudah punya tagihan paket {$namaPaket} untuk periode {$periodeLabel} "
-                            . '(dibuat ' . $duplikat->created_at?->translatedFormat('d F Y') . '). '
-                            . 'Tagihan ganda dicegah otomatis. Gunakan "Catat Bayar" pada tagihan yang sudah ada, '
-                            . 'atau kosongkan pilihan paket bila ini memang tagihan tambahan di luar paket.',
+                            .'(dibuat '.$duplikat->created_at?->translatedFormat('d F Y').'). '
+                            .'Tagihan ganda dicegah otomatis. Gunakan "Catat Bayar" pada tagihan yang sudah ada, '
+                            .'atau kosongkan pilihan paket bila ini memang tagihan tambahan di luar paket.',
                     ]);
                 }
             }
@@ -84,9 +89,9 @@ class PembayaranController extends Controller
             if ($kembar) {
                 throw ValidationException::withMessages([
                     'harga' => 'Tagihan dengan nominal dan keterangan yang sama persis baru saja dibuat '
-                        . $kembar->created_at?->diffForHumans() . ' untuk siswa ini. '
-                        . 'Pembuatan ganda dicegah otomatis. Bila ini memang tagihan kedua yang berbeda, '
-                        . 'bedakan keterangannya terlebih dahulu.',
+                        .$kembar->created_at?->diffForHumans().' untuk siswa ini. '
+                        .'Pembuatan ganda dicegah otomatis. Bila ini memang tagihan kedua yang berbeda, '
+                        .'bedakan keterangannya terlebih dahulu.',
                 ]);
             }
 
@@ -131,7 +136,7 @@ class PembayaranController extends Controller
             if ((int) $validated['id_siswa'] !== (int) $pembayaran->id_siswa && $pembayaran->details()->exists()) {
                 throw ValidationException::withMessages([
                     'id_siswa' => 'Tagihan ini sudah punya riwayat setoran, jadi tidak bisa dipindah ke siswa lain. '
-                        . 'Buat tagihan baru untuk siswa yang benar, dan biarkan tagihan ini seperti semula.',
+                        .'Buat tagihan baru untuk siswa yang benar, dan biarkan tagihan ini seperti semula.',
                 ]);
             }
 
@@ -141,8 +146,8 @@ class PembayaranController extends Controller
             if ($validated['harga'] < (int) $pembayaran->total_sudah_dibayar) {
                 throw ValidationException::withMessages([
                     'harga' => 'Nominal tagihan tidak boleh diturunkan sampai di bawah Rp '
-                        . number_format((int) $pembayaran->total_sudah_dibayar, 0, ',', '.')
-                        . ' yang sudah dibayarkan.',
+                        .number_format((int) $pembayaran->total_sudah_dibayar, 0, ',', '.')
+                        .' yang sudah dibayarkan.',
                 ]);
             }
 
@@ -192,7 +197,7 @@ class PembayaranController extends Controller
 
             $message = $updatedCount === 0
                 ? 'Tidak ada tagihan aktif yang perlu diselesaikan.'
-                : $updatedCount . ' tagihan telah diselesaikan.';
+                : $updatedCount.' tagihan telah diselesaikan.';
 
             if ($request->wantsJson()) {
                 return response()->json(['status' => 'success', 'message' => $message]);
@@ -257,10 +262,10 @@ class PembayaranController extends Controller
                 $this->tolakBilaPencatatanGanda($request, $siswa);
 
                 $remaining = (int) $request->nominal;
-                $totalOutstanding = $pembayarans->sum(fn($item) => max(0, (int) $item->harga - (int) $item->total_sudah_dibayar));
+                $totalOutstanding = $pembayarans->sum(fn ($item) => max(0, (int) $item->harga - (int) $item->total_sudah_dibayar));
                 if ($remaining > $totalOutstanding) {
                     throw ValidationException::withMessages([
-                        'nominal' => 'Nominal melebihi sisa tagihan sebesar Rp ' . number_format($totalOutstanding, 0, ',', '.') . '.',
+                        'nominal' => 'Nominal melebihi sisa tagihan sebesar Rp '.number_format($totalOutstanding, 0, ',', '.').'.',
                     ]);
                 }
 
@@ -317,10 +322,10 @@ class PembayaranController extends Controller
             $updatedCount = $this->paymentBatchService->settleActive($siswa->no_hp);
 
             if ($request->wantsJson()) {
-                return response()->json(['status' => 'success', 'message' => $updatedCount . ' tagihan berhasil diubah menjadi lunas.']);
+                return response()->json(['status' => 'success', 'message' => $updatedCount.' tagihan berhasil diubah menjadi lunas.']);
             }
 
-            return redirect()->back()->with('success', $updatedCount . ' tagihan berhasil diubah menjadi lunas.');
+            return redirect()->back()->with('success', $updatedCount.' tagihan berhasil diubah menjadi lunas.');
         } catch (\Exception $e) {
             return $this->handleException($request, 'Gagal melunaskan', $e);
         }
@@ -349,85 +354,36 @@ class PembayaranController extends Controller
 
     public function printStruk($no_hp)
     {
-        $query = Pembayaran::with(['siswa', 'details'])
-            ->where('no_hp', $no_hp)
-            ->where('status', 2);
+        $idTerpilih = collect(explode(',', (string) request('ids')))
+            ->filter(fn ($id) => ctype_digit(trim($id)))
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
 
-        $selectedIds = collect(explode(',', (string) request('ids')))
-            ->filter(fn($id) => ctype_digit(trim($id)))
-            ->map(fn($id) => (int) $id)
-            ->values();
+        $pembayarans = $this->strukService->kumpulkanTagihanLunas(
+            $no_hp,
+            $idTerpilih,
+            request('bulan'),
+            request('search')
+        );
 
-        if ($selectedIds->isNotEmpty()) {
-            $query->whereIn('id', $selectedIds->all());
-        } else {
-            if (request()->filled('bulan') && request('bulan') !== 'all') {
-                $query->whereMonth('created_at', request('bulan'));
-            }
-
-            if (request()->filled('search')) {
-                $search = request('search');
-                $query->where(function ($q) use ($search) {
-                    $q->whereHas('siswa', function ($s) use ($search) {
-                        $s->where('name', 'like', "%$search%");
-                    })->orWhere('keterangan', 'like', "%$search%")
-                        ->orWhere('no_hp', 'like', "%$search%");
-                });
-            }
-        }
-
-        $pembayarans = $query->orderBy('created_at')->get();
         if ($pembayarans->isEmpty()) {
             abort(404, 'Data lunas tidak ditemukan.');
         }
 
-        $diskon = Diskon::where('no_hp', $no_hp)->first();
-        $diskonUniversal = Diskon::whereNull('no_hp')->first();
-        $nominalDiskon = $diskon ? (int) $diskon->diskon : 0;
-        $nominalDiskonUniversal = $diskonUniversal ? (int) $diskonUniversal->diskon : 0;
-        $totalNominalDiskon = $nominalDiskon + $nominalDiskonUniversal;
-        $logoPath = storage_path('app/public/Logo.png');
-        $logoDataUri = null;
-
-        if (! is_file($logoPath) || ! is_readable($logoPath)) {
-            $logoPath = storage_path('app/Logo.png');
-        }
-
-        if (is_file($logoPath) && is_readable($logoPath)) {
-            $binary = @file_get_contents($logoPath);
-            if ($binary !== false) {
-                $logoDataUri = 'data:image/png;base64,' . base64_encode($binary);
-            }
-        }
-
-        try {
-            return $this->renderStrukPdfResponse(
-                $pembayarans,
-                $no_hp,
-                $diskon,
-                $diskonUniversal,
-                $totalNominalDiskon,
-                $logoDataUri
-            );
-        } catch (\Throwable $e) {
-            report($e);
-
-            return $this->renderStrukPdfResponse(
-                $pembayarans,
-                $no_hp,
-                $diskon,
-                $diskonUniversal,
-                $totalNominalDiskon,
-                null
-            );
-        }
+        return $this->strukService->render(
+            $pembayarans,
+            $no_hp,
+            $this->strukService->diskonUntuk($no_hp),
+            $this->strukService->logoDataUri()
+        );
     }
 
     public function detailKeluarga(Request $request, $no_hp)
     {
         $selectedIds = collect(explode(',', (string) $request->query('ids')))
-            ->filter(fn($id) => ctype_digit(trim($id)))
-            ->map(fn($id) => (int) $id)
+            ->filter(fn ($id) => ctype_digit(trim($id)))
+            ->map(fn ($id) => (int) $id)
             ->values();
 
         $query = Pembayaran::select([
@@ -479,7 +435,7 @@ class PembayaranController extends Controller
         })->values();
 
         $paymentDetails = $pembayarans
-            ->flatMap(fn($item) => $item->details->map(function ($detail) {
+            ->flatMap(fn ($item) => $item->details->map(function ($detail) {
                 return [
                     'id' => $detail->id,
                     'id_pembayaran' => $detail->id_pembayaran,
@@ -499,16 +455,16 @@ class PembayaranController extends Controller
 
         $gabunganKetDiskon = collect([
             $diskon?->keterangan,
-            $diskonUniversal?->keterangan ? $diskonUniversal->keterangan . ' (Massal)' : null,
+            $diskonUniversal?->keterangan ? $diskonUniversal->keterangan.' (Massal)' : null,
         ])->filter()->implode(' + ');
 
         $totalHarga = (int) $pembayarans->sum('harga');
         $totalSudahDibayar = (int) $pembayarans->sum('total_sudah_dibayar');
         $totalAkhir = max(0, $totalHarga - $totalNominalDiskon);
-        $statuses = $pembayarans->pluck('status')->map(fn($status) => (int) $status);
-        $status = $statuses->every(fn($value) => $value === 2)
+        $statuses = $pembayarans->pluck('status')->map(fn ($status) => (int) $status);
+        $status = $statuses->every(fn ($value) => $value === 2)
             ? 2
-            : ($statuses->contains(fn($value) => in_array($value, [1, 2], true)) ? 1 : 0);
+            : ($statuses->contains(fn ($value) => in_array($value, [1, 2], true)) ? 1 : 0);
 
         return response()->json([
             'status' => 'success',
@@ -524,51 +480,6 @@ class PembayaranController extends Controller
                 'status' => $status,
             ],
         ]);
-    }
-
-    private function renderStrukPdfResponse(
-        $pembayarans,
-        string $no_hp,
-        ?Diskon $diskon,
-        ?Diskon $diskonUniversal,
-        int $nominalDiskon,
-        ?string $logoDataUri
-    ) {
-        $pdf = Pdf::loadView('pdf.struk', [
-            'pembayarans' => $pembayarans,
-            'no_hp' => $no_hp,
-            'diskon' => $diskon,
-            'diskonUniversal' => $diskonUniversal,
-            'nominalDiskon' => $nominalDiskon,
-            'logoDataUri' => $logoDataUri,
-        ])
-            ->setOptions($this->dompdfRuntimeOptions())
-            ->setPaper([0, 0, 226, 500], 'portrait');
-
-        return response($pdf->output(), 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="Struk-' . rawurlencode($no_hp) . '.pdf"',
-        ]);
-    }
-
-    private function dompdfRuntimeOptions(): array
-    {
-        $baseTmpPath = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'dompdf';
-        $fontPath = $baseTmpPath . DIRECTORY_SEPARATOR . 'fonts';
-
-        foreach ([$baseTmpPath, $fontPath] as $path) {
-            if (! File::exists($path)) {
-                File::makeDirectory($path, 0755, true, true);
-            }
-        }
-
-        return [
-            'tempDir' => $baseTmpPath,
-            'fontDir' => $fontPath,
-            'fontCache' => $fontPath,
-            'isRemoteEnabled' => false,
-            'chroot' => [realpath(base_path()), realpath(storage_path('app'))],
-        ];
     }
 
     /**
@@ -590,7 +501,7 @@ class PembayaranController extends Controller
         $tanggal = Carbon::parse($request->tanggal_pembayaran)->toDateString();
 
         $kembar = PembayaranDetail::query()
-            ->whereHas('pembayaran', fn($q) => $q->where('no_hp', $siswa->no_hp))
+            ->whereHas('pembayaran', fn ($q) => $q->where('no_hp', $siswa->no_hp))
             ->where('pembayaran', $nominal)
             ->where('keterangan', $keterangan)
             ->whereDate('created_at', $tanggal)
@@ -604,50 +515,11 @@ class PembayaranController extends Controller
 
         throw ValidationException::withMessages([
             'nominal' => 'Pembayaran dengan nominal, tanggal, dan keterangan yang sama persis baru saja dicatat '
-                . $kembar->updated_at?->diffForHumans()
-                . ' untuk keluarga ini. Pencatatan ganda dicegah otomatis. '
-                . 'Periksa dulu "Lihat Detail" untuk memastikan; bila ini memang setoran kedua yang berbeda, '
-                . 'ubah keterangannya agar tidak identik.',
+                .$kembar->updated_at?->diffForHumans()
+                .' untuk keluarga ini. Pencatatan ganda dicegah otomatis. '
+                .'Periksa dulu "Lihat Detail" untuk memastikan; bila ini memang setoran kedua yang berbeda, '
+                .'ubah keterangannya agar tidak identik.',
         ]);
-    }
-
-    private function handleNotFound($request, $item)
-    {
-        $msg = "Maaf, data $item tidak ditemukan. Silakan segarkan halaman.";
-
-        return $request->wantsJson()
-            ? response()->json(['status' => 'error', 'message' => $msg], 404)
-            : redirect()->back()->with('error', $msg);
-    }
-
-    private function handleException($request, $prefix, $e)
-    {
-        $msg = $prefix . ': ' . $e->getMessage();
-        if ($request->wantsJson()) {
-            return response()->json(['status' => 'error', 'message' => $msg], 500);
-        }
-
-        return redirect()->back()->withInput()->with('error', $msg);
-    }
-
-    private function handleValidationException($request, ValidationException $e)
-    {
-        $msg = implode(' ', $e->validator->errors()->all());
-
-        if ($request->wantsJson()) {
-            return response()->json(['status' => 'error', 'message' => $msg], 422);
-        }
-
-        return redirect()->back()->withInput()->with('error', $msg);
-    }
-
-    private function handleBatchLocked($request, BatchSudahDijalankanException $e)
-    {
-        if ($request->wantsJson()) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 409);
-        }
-
-        return redirect()->back()->with('error', $e->getMessage());
     }
 
     public function exportExcel(Request $request)
@@ -687,18 +559,18 @@ class PembayaranController extends Controller
 
         $filterSummary = [];
         if ($request->filled('search')) {
-            $filterSummary[] = 'Pencarian: "' . $request->search . '"';
+            $filterSummary[] = 'Pencarian: "'.$request->search.'"';
         }
         if ($request->filled('bulan') && $request->bulan !== 'all') {
-            $filterSummary[] = 'Bulan: ' . Carbon::create()->month((int) $request->bulan)->translatedFormat('F');
+            $filterSummary[] = 'Bulan: '.Carbon::create()->month((int) $request->bulan)->translatedFormat('F');
         }
         if ($requestedStatus !== null && isset($statuses[$requestedStatus])) {
-            $filterSummary[] = 'Status: ' . $statuses[$requestedStatus];
+            $filterSummary[] = 'Status: '.$statuses[$requestedStatus];
         }
 
         return Excel::download(
             new PembayaranExport($pembayarans, $diskons, $filterSummary ?: ['Semua data pembayaran sesuai status yang dipilih.']),
-            'Laporan-Pembayaran-' . now()->format('YmdHis') . '.xlsx'
+            'Laporan-Pembayaran-'.now()->format('YmdHis').'.xlsx'
         );
     }
 }
