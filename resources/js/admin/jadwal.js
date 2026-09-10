@@ -316,8 +316,16 @@ export const jadwalHandler = (data) => ({
                 const res = await response.json();
 
                 if (res.status === 'success') {
-                    Swal.fire('Berhasil!', res.message, 'success').then(() => window
-                        .location.reload());
+                    const tautan = res.unduh_kondisi_sebelumnya
+                        ? `<p class="mt-3 text-sm">Salah file? <a href="${res.unduh_kondisi_sebelumnya}" class="font-bold underline">Unduh kondisi sebelumnya</a>, lalu unggah lagi lewat Stash untuk mengembalikannya.</p>`
+                        : '';
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        html: `<p>${res.message}</p>${tautan}`,
+                        confirmButtonText: 'Tutup',
+                    }).then(() => window.location.reload());
                 } else {
                     Swal.fire('Gagal!', res.message, 'error');
                 }

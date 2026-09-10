@@ -164,13 +164,9 @@ class DashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($item) {
-                // Nama paket kini diambil dari relasi, bukan ditebak dari teks.
-                // Regex lama hanya cocok untuk format tagihan manual, sehingga
-                // tagihan hasil penagihan massal selalu tampil "-".
                 $namaPaket = $item->paket?->nama_paket;
 
                 if (! $namaPaket) {
-                    // Cadangan untuk baris lama yang belum sempat di-backfill.
                     if (preg_match('/(?:Pembayaran|Tagihan) Paket (.*?) \(/', $item->keterangan, $matches)) {
                         $namaPaket = $matches[1];
                     } elseif (preg_match('/(?:Pembayaran|Tagihan) Paket (.*?)(?: - |$)/', $item->keterangan, $matches)) {
@@ -226,7 +222,7 @@ class DashboardController extends Controller
 
     public function guestIndex()
     {
-        $dayOfWeek = Carbon::now()->isoFormat('E');
+        $dayOfWeek = Hari::idHariIni();
 
         $jadwalHariIni = Jadwal::with([
             'mataPelajaran:id,name',

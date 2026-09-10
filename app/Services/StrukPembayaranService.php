@@ -9,13 +9,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Throwable;
 
-/**
- * Perakitan dan perenderan struk pelunasan.
- *
- * Dipisah dari PembayaranController karena murni presentasi: ia tidak menyentuh
- * status pembayaran maupun ledger, sehingga aman dipindah tanpa menyentuh
- * invarian uang yang dijaga controller.
- */
 class StrukPembayaranService
 {
     /**
@@ -75,10 +68,6 @@ class StrukPembayaranService
         return null;
     }
 
-    /**
-     * Logo dimuat lewat percobaan kedua tanpa gambar: sebuah logo rusak tidak
-     * boleh sampai menggagalkan pencetakan bukti pembayaran.
-     */
     public function render(Collection $pembayarans, string $noHp, array $diskonInfo, ?string $logoDataUri)
     {
         try {

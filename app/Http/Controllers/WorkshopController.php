@@ -11,6 +11,7 @@ use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
 use App\Models\TingkatKemampuan;
+use App\Services\IrisanSesiService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -112,12 +113,18 @@ class WorkshopController extends Controller
 
         $peta = [];
 
+        $irisan = app(IrisanSesiService::class);
+
         foreach ($haris as $hari) {
             foreach ($sesis as $sesi) {
-                $diSlot = $jadwals->where('hari_id', $hari->id)->where('sesi_id', $sesi->id);
+                $diHari = $jadwals->where('hari_id', $hari->id);
+                $diSlot = $diHari->where('sesi_id', $sesi->id);
 
-                $ruangTerpakai = $diSlot->pluck('ruang_id')->unique();
-                $guruTerpakai = $diSlot->pluck('guru_id')->unique();
+                $beririsan = $irisan->idBeririsan($sesi->id);
+                $diWaktuIni = $diHari->whereIn('sesi_id', $beririsan);
+
+                $ruangTerpakai = $diWaktuIni->pluck('ruang_id')->unique();
+                $guruTerpakai = $diWaktuIni->pluck('guru_id')->unique();
 
                 $peta[] = [
                     'hari' => $hari->name,

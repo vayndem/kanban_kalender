@@ -7,7 +7,10 @@ use App\Models\Hari;
 use App\Models\Jadwal;
 use App\Models\JadwalTeksLog;
 use App\Models\Sesi;
+use App\Models\StashPemulihanLog;
 use App\Models\Tanda;
+use App\Services\IrisanSesiService;
+use App\Services\StashJadwalService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -17,6 +20,7 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
+use RuntimeException;
 
 class JadwalController extends Controller
 {
@@ -108,7 +112,7 @@ class JadwalController extends Controller
             }
         } catch (ValidationException $e) {
             return response()->json(['status' => 'error', 'message' => implode(' ', $e->validator->errors()->all())], 422);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
@@ -192,7 +196,7 @@ class JadwalController extends Controller
                 'status' => 'error',
                 'message' => implode(' ', $e->validator->errors()->all()),
             ], 422);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
 
             return response()->json(['status' => 'error', 'message' => 'Gagal menyimpan: '.$e->getMessage()], 500);
@@ -251,7 +255,7 @@ class JadwalController extends Controller
                 'status' => 'error',
                 'message' => implode(' ', $e->validator->errors()->all()),
             ], 422);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Gagal menyimpan jadwal: '.$e->getMessage(),
@@ -268,7 +272,9 @@ class JadwalController extends Controller
         array $studentIds,
         ?array $excludeClass = null
     ): void {
-        $query = Jadwal::where('hari_id', $hariId)->where('sesi_id', $sesiId);
+        $sesiBentrok = app(IrisanSesiService::class)->idBeririsan($sesiId);
+
+        $query = Jadwal::where('hari_id', $hariId)->whereIn('sesi_id', $sesiBentrok);
 
         if ($excludeClass) {
             $query->where(function ($q) use ($excludeClass) {
@@ -290,17 +296,32 @@ class JadwalController extends Controller
                     $conflictQuery->orWhereIn('siswa_id', $studentIds);
                 }
             })
-            ->get(['guru_id', 'ruang_id', 'siswa_id']);
+            ->with('sesi:id,name,start_time,end_time')
+            ->get(['guru_id', 'ruang_id', 'siswa_id', 'sesi_id']);
+
+        $sebut = function ($baris) use ($sesiId) {
+            $sesi = $baris?->sesi;
+            if (! $sesi) {
+                return 'sesi tersebut';
+            }
+
+            return $sesi->id === $sesiId
+                ? 'sesi '.$sesi->name
+                : 'sesi '.$sesi->label.' yang jamnya bertindih';
+        };
 
         $conflicts = [];
-        if ($occupied->contains('guru_id', $guruId)) {
-            $conflicts[] = 'Guru sudah mengajar pada hari dan sesi tersebut.';
+        if (($bentrokGuru = $occupied->firstWhere('guru_id', $guruId)) !== null) {
+            $conflicts[] = 'Guru sudah mengajar pada '.$sebut($bentrokGuru).'.';
         }
-        if ($occupied->contains('ruang_id', $ruangId)) {
-            $conflicts[] = 'Ruang sudah digunakan pada hari dan sesi tersebut.';
+        if (($bentrokRuang = $occupied->firstWhere('ruang_id', $ruangId)) !== null) {
+            $conflicts[] = 'Ruang sudah digunakan pada '.$sebut($bentrokRuang).'.';
         }
-        if ($studentIds !== [] && $occupied->pluck('siswa_id')->intersect($studentIds)->isNotEmpty()) {
-            $conflicts[] = 'Satu atau lebih siswa sudah memiliki jadwal pada waktu tersebut.';
+        if ($studentIds !== []) {
+            $bentrokSiswa = $occupied->first(fn ($b) => in_array((int) $b->siswa_id, $studentIds, true));
+            if ($bentrokSiswa !== null) {
+                $conflicts[] = 'Satu atau lebih siswa sudah punya jadwal pada '.$sebut($bentrokSiswa).'.';
+            }
         }
 
         if ($conflicts !== []) {
@@ -353,6 +374,7 @@ class JadwalController extends Controller
 
         $finalJadwals = [];
         $studentsWithNotes = collect();
+        $bolehLihatCatatan = auth()->check() && auth()->user()->hasRole('admin');
 
         foreach ($jadwalsData as $jadwal) {
             $jadwal->siswa->formatted_name_class = $jadwal->siswa->name.' - '.$jadwal->siswa->kelas;
@@ -368,7 +390,7 @@ class JadwalController extends Controller
             }
             $finalJadwals[$jadwal->hari_id][$jadwal->sesi_id][$classKey]['siswa_list']->push($jadwal->siswa);
 
-            if ($jadwal->siswa->tandas->isNotEmpty()) {
+            if ($bolehLihatCatatan && $jadwal->siswa->tandas->isNotEmpty()) {
                 if (! $studentsWithNotes->has($jadwal->siswa->id)) {
                     $studentsWithNotes->put($jadwal->siswa->id, $jadwal->siswa);
                 }
@@ -555,100 +577,69 @@ class JadwalController extends Controller
         return $text."\n━━━━━━━━━━━━━━\n_Simpan pesan ini sebagai pengingat jadwal._";
     }
 
-    public function downloadStash()
+    public function downloadStash(StashJadwalService $stash)
     {
-        // Ambil seluruh data jadwal mentah tanpa filter
-        $allJadwals = Jadwal::all()->map(function ($j) {
-            return [
-                'h' => $j->hari_id,
-                's' => $j->sesi_id,
-                'm' => $j->mata_pelajaran_id,
-                'g' => $j->guru_id,
-                'r' => $j->ruang_id,
-                'si' => $j->siswa_id,
-                'k' => $j->kode_kelas,
-            ];
-        });
-
-        $data = [
-            'app' => 'E-Ling-Course',
-            'version' => '1.0',
-            'timestamp' => now()->toDateTimeString(),
-            'content' => $allJadwals,
-        ];
-
-        // Encode ke Base64 agar user tidak bisa baca langsung isinya
-        $encodedData = base64_encode(json_encode($data));
+        $data = $stash->bungkus();
         $filename = 'JADWAL_STASH_'.date('Ymd_His').'.stash';
 
-        return Response::make($encodedData, 200, [
+        return Response::make($stash->encode($data), 200, [
             'Content-Type' => 'application/octet-stream',
             'Content-Disposition' => 'attachment; filename='.$filename,
         ]);
     }
 
-    public function uploadStash(Request $request)
+    public function uploadStash(Request $request, StashJadwalService $stash)
     {
         $request->validate([
             'file_stash' => 'required|file|max:10240',
+        ], [
+            'file_stash.required' => 'Pilih dulu file stash yang mau dipulihkan.',
+            'file_stash.max' => 'File stash terlalu besar (maksimal 10 MB).',
         ]);
 
         try {
-            $fileContent = file_get_contents($request->file('file_stash')->getRealPath());
-            $decodedData = json_decode(base64_decode($fileContent), true);
+            $baris = $stash->baca(file_get_contents($request->file('file_stash')->getRealPath()));
+        } catch (RuntimeException $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 422);
+        }
 
-            if (! $decodedData || ! isset($decodedData['app']) || $decodedData['app'] !== 'E-Ling-Course') {
-                return response()->json(['status' => 'error', 'message' => 'Format file stash tidak dikenali!'], 422);
-            }
-
-            $incomingJadwals = $decodedData['content'];
-
-            DB::beginTransaction();
-            Jadwal::query()->delete();
-
-            $insertData = [];
-            $now = now();
-            foreach ($incomingJadwals as $j) {
-                $insertData[] = [
-                    'hari_id' => $j['h'],
-                    'sesi_id' => $j['s'],
-                    'mata_pelajaran_id' => $j['m'],
-                    'guru_id' => $j['g'],
-                    'ruang_id' => $j['r'],
-                    'siswa_id' => $j['si'],
-                    'kode_kelas' => blank($j['k'] ?? null) ? null : $j['k'],
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-            }
-
-            // Chunk insert untuk performa
-            foreach (array_chunk($insertData, 500) as $chunk) {
-                Jadwal::insert($chunk);
-            }
-
-            $this->isiKodeKelasKosong();
-
-            DB::commit();
+        try {
+            $log = $stash->pulihkan($baris, $request->user(), fn () => $this->isiKodeKelasKosong());
+        } catch (RuntimeException $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 422);
+        } catch (\Throwable $e) {
+            report($e);
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'Seluruh jadwal berhasil direplace dengan data stash!',
-            ]);
-        } catch (\Exception $e) {
-            if (DB::transactionLevel() > 0) {
-                DB::rollBack();
-            }
-
-            return response()->json(['status' => 'error', 'message' => 'Gagal upload: '.$e->getMessage()], 500);
+                'status' => 'error',
+                'message' => 'Gagal memulihkan stash. Jadwal lama tidak diubah.',
+            ], 500);
         }
+
+        $pesan = "Jadwal dipulihkan: {$log->jumlah_sebelum} baris diganti dengan {$log->jumlah_sesudah} baris.";
+        if ($log->bentrok_masuk > 0) {
+            $pesan .= " Perhatian: {$log->bentrok_masuk} bentrok ikut masuk, cek panel Bentrok Tersembunyi di Ringkasan.";
+        }
+        $pesan .= ' Kondisi sebelumnya tersimpan dan bisa diunduh untuk dikembalikan.';
+
+        return response()->json([
+            'status' => 'success',
+            'message' => $pesan,
+            'pemulihan_id' => $log->id,
+            'unduh_kondisi_sebelumnya' => route('admin.jadwal.unduhCadanganStash', $log->id),
+        ]);
     }
 
-    /**
-     * File stash lama tidak membawa kode_kelas. Kelompokkan sisa baris yang
-     * masih kosong per kombinasi hari/sesi/mapel/guru/ruang dan beri kode baru,
-     * supaya Modul Ajar tetap bisa menempel setelah restore dari stash lama.
-     */
+    public function unduhCadanganStash(StashPemulihanLog $pemulihan)
+    {
+        $filename = 'SEBELUM_PEMULIHAN_'.$pemulihan->id.'_'.$pemulihan->created_at->format('Ymd_His').'.stash';
+
+        return Response::make($pemulihan->isi_sebelum, 200, [
+            'Content-Type' => 'application/octet-stream',
+            'Content-Disposition' => 'attachment; filename='.$filename,
+        ]);
+    }
+
     private function isiKodeKelasKosong(): void
     {
         Jadwal::query()

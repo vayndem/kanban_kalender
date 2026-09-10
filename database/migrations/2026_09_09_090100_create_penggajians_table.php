@@ -12,8 +12,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('guru_id')->constrained('gurus')->cascadeOnDelete();
 
-            // Tarif dibekukan saat struk terbit supaya perubahan gaji di kemudian hari
-            // tidak mengubah struk yang sudah dibayarkan.
             $table->unsignedInteger('jumlah_kehadiran')->default(0);
             $table->unsignedBigInteger('gaji_bawaan')->default(0);
             $table->unsignedBigInteger('gaji_per_kehadiran')->default(0);

@@ -23,9 +23,11 @@ class RingkasanService
 
     private const TANDA_LAMA_HARI = 14;
 
+    public function __construct(private readonly IrisanSesiService $irisanSesi) {}
+
     public function ringkasanHariIni(): array
     {
-        $dayOfWeek = Carbon::now()->isoFormat('E');
+        $dayOfWeek = Hari::idHariIni();
 
         $jadwalHariIni = Jadwal::query()
             ->select(['sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id', 'siswa_id'])
@@ -45,7 +47,7 @@ class RingkasanService
 
     public function kelasHariIni(): Collection
     {
-        $dayOfWeek = Carbon::now()->isoFormat('E');
+        $dayOfWeek = Hari::idHariIni();
 
         $jadwals = Jadwal::query()
             ->select(['id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id', 'siswa_id'])
@@ -87,11 +89,13 @@ class RingkasanService
     public function okupansiRuang(string $periode = 'mingguan'): array
     {
         $isHarian = $periode === 'harian';
-        $totalSlot = $isHarian ? Sesi::count() : Hari::count() * Sesi::count();
+
+        $kapasitasHarian = $this->irisanSesi->kapasitasSlotPerHari();
+        $totalSlot = $isHarian ? $kapasitasHarian : Hari::count() * $kapasitasHarian;
 
         $query = Jadwal::query()->select(['ruang_id', 'hari_id', 'sesi_id']);
         if ($isHarian) {
-            $query->where('hari_id', Carbon::now()->isoFormat('E'));
+            $query->where('hari_id', Hari::idHariIni());
         }
 
         $jadwals = $query->get();
@@ -107,7 +111,7 @@ class RingkasanService
                 'name' => $ruang->name,
                 'terpakai' => $terpakai,
                 'total_slot' => $totalSlot,
-                'persentase' => $totalSlot > 0 ? round($terpakai / $totalSlot * 100, 1) : 0,
+                'persentase' => $totalSlot > 0 ? min(100.0, round($terpakai / $totalSlot * 100, 1)) : 0,
             ];
         })->sortByDesc('persentase')->values();
 
@@ -140,7 +144,7 @@ class RingkasanService
 
         $query = Jadwal::query()->select(['hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id']);
         if ($isHarian) {
-            $query->where('hari_id', Carbon::now()->isoFormat('E'));
+            $query->where('hari_id', Hari::idHariIni());
         }
 
         $jadwals = $query->get()
@@ -164,22 +168,23 @@ class RingkasanService
                 $urutanTerpakai = $rowsPerHari
                     ->pluck('sesi_id')
                     ->unique()
-                    ->map(fn ($sesiId) => ['sesi_id' => $sesiId, 'posisi' => $urutanSesi->get($sesiId)])
-                    ->filter(fn ($item) => $item['posisi'] !== null)
-                    ->sortBy('posisi')
+                    ->map(fn ($sesiId) => ['sesi_id' => $sesiId, 'sesi' => $sesiById->get($sesiId)])
+                    ->filter(fn ($item) => $item['sesi'] !== null)
+                    ->sortBy(fn ($item) => $item['sesi']->start_time)
                     ->values();
 
                 $runSaatIni = collect();
                 $runTerpanjang = collect();
-                $posisiSebelumnya = null;
+                $selesaiSebelumnya = null;
                 foreach ($urutanTerpakai as $item) {
-                    $runSaatIni = ($posisiSebelumnya !== null && $item['posisi'] === $posisiSebelumnya + 1)
-                        ? $runSaatIni->push($item)
-                        : collect([$item]);
+                    $menyambung = $selesaiSebelumnya !== null
+                        && $item['sesi']->start_time <= $selesaiSebelumnya;
+
+                    $runSaatIni = $menyambung ? $runSaatIni->push($item) : collect([$item]);
                     if ($runSaatIni->count() > $runTerpanjang->count()) {
                         $runTerpanjang = $runSaatIni;
                     }
-                    $posisiSebelumnya = $item['posisi'];
+                    $selesaiSebelumnya = $item['sesi']->end_time;
                 }
 
                 if ($runTerpanjang->count() >= self::BACK_TO_BACK_THRESHOLD) {
@@ -320,6 +325,63 @@ class RingkasanService
             }
         }
 
+        $conflicts = $conflicts->merge($this->bentrokLintasSesiBeririsan($jadwals, $namaHari, $namaSesi, $namaGuru, $namaRuang, $namaSiswa));
+
         return $conflicts->unique()->values();
+    }
+
+    private function bentrokLintasSesiBeririsan(
+        Collection $jadwals,
+        Collection $namaHari,
+        Collection $namaSesi,
+        Collection $namaGuru,
+        Collection $namaRuang,
+        Collection $namaSiswa
+    ): Collection {
+        $peta = $this->irisanSesi->peta();
+        $conflicts = collect();
+
+        $terpakai = [];
+        foreach ($jadwals as $j) {
+            $terpakai[$j->hari_id][$j->sesi_id]['ruang'][$j->ruang_id] = true;
+            $terpakai[$j->hari_id][$j->sesi_id]['guru'][$j->guru_id] = true;
+            $terpakai[$j->hari_id][$j->sesi_id]['siswa'][$j->siswa_id] = true;
+        }
+
+        $label = [
+            'ruang' => ['Ruang', $namaRuang, 'dipakai'],
+            'guru' => ['Guru', $namaGuru, 'mengajar'],
+            'siswa' => ['Siswa', $namaSiswa, 'terjadwal'],
+        ];
+
+        foreach ($terpakai as $hariId => $perSesi) {
+            foreach ($perSesi as $sesiA => $isiA) {
+                foreach ($peta[$sesiA] ?? [] as $sesiB) {
+                    if ($sesiB <= $sesiA || ! isset($perSesi[$sesiB])) {
+                        continue;
+                    }
+
+                    foreach ($label as $jenis => [$sebutan, $nama, $kata]) {
+                        foreach (array_keys($isiA[$jenis] ?? []) as $id) {
+                            if (! isset($perSesi[$sesiB][$jenis][$id])) {
+                                continue;
+                            }
+
+                            $conflicts->push(sprintf(
+                                '%s %s %s di dua sesi yang jamnya bertindih pada %s: %s dan %s.',
+                                $sebutan,
+                                $nama->get($id, 'N/A'),
+                                $kata,
+                                $namaHari->get($hariId, 'N/A'),
+                                $namaSesi->get($sesiA, 'N/A'),
+                                $namaSesi->get($sesiB, 'N/A')
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        return $conflicts;
     }
 }

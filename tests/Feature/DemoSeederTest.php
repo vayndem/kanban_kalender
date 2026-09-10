@@ -7,6 +7,7 @@ use App\Models\Jadwal;
 use App\Models\Pembayaran;
 use App\Models\PembayaranDetail;
 use App\Models\Siswa;
+use App\Services\IrisanSesiService;
 use Carbon\Carbon;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -87,6 +88,46 @@ class DemoSeederTest extends TestCase
 
             $this->assertSame($harapan, (int) $tagihan->status, "Status tagihan #{$tagihan->id} tidak sesuai nominalnya.");
         }
+    }
+
+    public function test_seeder_menyediakan_sesi_yang_waktunya_bertindih(): void
+    {
+        $peta = app(IrisanSesiService::class)->peta();
+        $adaYangBertindih = collect($peta)->contains(fn (array $ids) => count($ids) > 1);
+
+        $this->assertTrue($adaYangBertindih, 'Data demo harus memuat sesi bertindih agar aturannya ikut teruji.');
+    }
+
+    public function test_jadwal_demo_tidak_bentrok_di_sesi_yang_waktunya_bertindih(): void
+    {
+        $peta = app(IrisanSesiService::class)->peta();
+
+        $terpakai = [];
+        foreach (Jadwal::all() as $j) {
+            $terpakai[$j->hari_id][$j->sesi_id]['ruang'][$j->ruang_id] = true;
+            $terpakai[$j->hari_id][$j->sesi_id]['guru'][$j->guru_id] = true;
+            $terpakai[$j->hari_id][$j->sesi_id]['siswa'][$j->siswa_id] = true;
+        }
+
+        $bentrok = [];
+        foreach ($terpakai as $hariId => $perSesi) {
+            foreach ($perSesi as $sesiA => $isiA) {
+                foreach ($peta[$sesiA] ?? [] as $sesiB) {
+                    if ($sesiB <= $sesiA || ! isset($perSesi[$sesiB])) {
+                        continue;
+                    }
+                    foreach (['ruang', 'guru', 'siswa'] as $jenis) {
+                        foreach (array_keys($isiA[$jenis] ?? []) as $id) {
+                            if (isset($perSesi[$sesiB][$jenis][$id])) {
+                                $bentrok[] = "{$jenis} #{$id} pada hari {$hariId} (sesi {$sesiA} vs {$sesiB})";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        $this->assertSame([], $bentrok, 'Data demo tidak boleh memakai ruang/guru/siswa yang sama di sesi bertindih.');
     }
 
     public function test_schedule_has_no_teacher_room_or_student_collision(): void

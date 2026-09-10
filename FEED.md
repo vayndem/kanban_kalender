@@ -690,6 +690,71 @@ Tiap peran tombol punya warna sendiri; jangan menyeragamkannya jadi satu keluarg
 
 ---
 
+## 11c. Aturan Waktu Sesi (wajib dibaca sebelum menyentuh jadwal)
+
+Sesi **bukan** slot yang saling eksklusif. Jam mulainya berjarak 30 menit sementara
+durasinya 60 menit, jadi jalur "jam" dan jalur "setengah jam" saling menyisip.
+Di produksi: 17 sesi, **11 pasangan beririsan**.
+
+Akibatnya ruang, guru, dan siswa yang terpakai di satu sesi ikut terkunci di sesi
+lain yang jamnya bertindih. `App\Services\IrisanSesiService` adalah satu-satunya
+definisi hal ini; **jangan pernah memfilter dengan `sesi_id = ?`** di:
+
+- `JadwalController::ensureNoConflicts()` (simpan, geser, edit kelas)
+- `WorkshopController::petaKetersediaan()` (Slot Kosong)
+- `RingkasanService::bentrokTersembunyi()` dan `okupansiRuang()`
+- `DemoSeeder` (penjaganya sendiri, dan dijaga `DemoSeederTest`)
+
+Bersentuhan tepat di ujung **bukan** bentrok: 13:00-14:00 dan 14:00-15:00 boleh
+berbagi ruang. Perbandingannya ketat: `a.start < b.end && b.start < a.end`.
+
+Okupansi ruang memakai `kapasitasSlotPerHari()` sebagai penyebut, bukan jumlah
+sesi — memakai satu sesi otomatis mematikan sesi yang bertindih, jadi kapasitas
+nyata lebih kecil daripada jumlah sesi terdaftar.
+
+Deteksi "mengajar beruntun" pada `bebanGuru()` diukur dari jam, bukan urutan sesi
+dalam daftar: sesi yang benar-benar menyambung berjarak dua posisi, sedangkan
+posisi bersebelahan justru biasanya berarti bertindih.
+
+## 11d. `hari_id` Bukan Nomor Hari ISO
+
+Beberapa tempat dulu menyaring "hari ini" dengan `where('hari_id', isoFormat('E'))`.
+Itu hanya benar selama baris `haris` kebetulan ber-id 1..7 berurutan. Hapus satu
+hari lalu buat ulang -- atau restore ke database yang memberi id berbeda -- dan
+Ringkasan diam-diam menampilkan hari yang salah atau kosong. Pakai
+`Hari::idHariIni()`, yang mencocokkan **nama** hari dan hanya jatuh ke nomor ISO
+sebagai cadangan.
+
+---
+
+## 11e. Dua Lubang Keamanan yang Sudah Ditutup
+
+**PDF jadwal publik membocorkan catatan internal siswa.** Rute
+`/jadwal-kalender/export` sengaja tanpa login (tombol Export PDF ada di kalender
+publik, dan dashboard admin memakai rute yang sama). Ia dulu ikut mengirim
+`studentsWithNotes`, sehingga `pdf/jadwal.blade.php` mencetak isi lengkap setiap
+`Tanda` -- catatan internal staf tentang siswa -- kepada siapa pun yang tahu URL-nya.
+Sekarang catatan hanya dikumpulkan bila `auth()->check() && hasRole('admin')`.
+Dijaga `KeamananEksporDanStashTest`, yang benar-benar membaca isi PDF-nya.
+
+**Stash rusak bisa menghapus seluruh jadwal.** `uploadStash()` menghapus semua baris
+`jadwals` lalu memasukkan ulang dari berkas. Sekarang ditangani `StashJadwalService`
+dengan empat jaminan, berurutan:
+
+1. Struktur berkas divalidasi **sebelum** apa pun dihapus (menyebut baris ke berapa).
+2. Id yang dirujuk dipastikan masih ada -- stash yang menyebut guru/ruang/siswa
+   terhapus ditolak dengan pesan jelas, bukan error SQL setelah data telanjur hilang.
+3. Kondisi sebelum pemulihan diarsipkan ke `stash_pemulihan_logs` (pola sama dengan
+   `koreksi_pembayaran_logs`): siapa, kapan, jumlah sebelum/sesudah, dan seluruh
+   jadwal lama dalam bentuk `.stash`. Bisa diunduh lewat
+   `admin/jadwal/cadangan-stash/{pemulihan}` -- salah pulih kini bisa dibatalkan.
+4. Bentrok yang ikut terbawa dihitung dan diberitahukan saat itu juga.
+
+`catch` diperluas ke `\Throwable`; `\Exception` saja tidak menangkap `TypeError`,
+yang dulu bisa membuat jadwal terhapus tanpa rollback.
+
+---
+
 ## 12. Fragile Area Priority List
 
 Urutan area yang paling rawan kalau diubah:

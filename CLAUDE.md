@@ -179,6 +179,28 @@ Built Sept 2026 as the first (and only) shared admin/guru write surface, and the
 - **The period close lives in Payroll, not here.** Monthly totals (`ModulAjarController::index()`) are computed by summing `absensi_gurus` rows in a date range, not from a running counter — this avoids drift when re-teaching changes who gets credit or when. `absensi_gurus.ditutup_pada` is no longer always null — Payroll (below) stamps it, together with the new `absensi_gurus.penggajian_id`, when a payslip closes a run. The monthly recap here is deliberately *not* filtered by that: "how many sessions did I teach this month" must not reset just because payroll ran.
 - This is the first real implementation of roadmap items 4/5 below (attendance + per-student scoring), though narrower than what was originally speculated: no formal "before/after" report field, and payroll payout itself is still untouched.
 
+### Sessions overlap in time — never compare `sesi_id` for equality
+
+`sesis` rows are **not** mutually exclusive slots. Start times are 30 minutes apart while each session runs 60 minutes, so an "hour" track and a "half-hour" track interleave: production has 17 sessions forming **11 overlapping pairs** (SESI 01.00 13:00-14:00 overlaps both Sesi 1 13:30-14:30 and, from the other side, SESI 02.00 14:00-15:00 overlaps Sesi 1 too).
+
+A room, a teacher, or a student occupied in one session is therefore **also occupied in every session whose clock time overlaps it**. `App\Services\IrisanSesiService` is the single definition of that; every surface must go through it and none may filter on `sesi_id = ?`:
+
+- `JadwalController::ensureNoConflicts()` — store, drag-move, and edit-class
+- `WorkshopController::petaKetersediaan()` — Slot Kosong must not offer a room busy in an overlapping session
+- `RingkasanService::bentrokTersembunyi()` — reports cross-session clashes alongside same-session ones
+- `RingkasanService::okupansiRuang()` — the denominator is `kapasitasSlotPerHari()`, the count of sessions that actually fit back-to-back, **not** `Sesi::count()`; using the raw session count overstates capacity because occupying one session kills the ones overlapping it
+- `DemoSeeder` — its own guard is overlap-aware, and `DemoSeederTest` asserts the seeded schedule is clean under this rule
+
+**Touching at the edge is not a conflict.** 13:00-14:00 and 14:00-15:00 may share a room; the comparison is strict (`a.start < b.end && b.start < a.end`). If the business ever needs a changeover gap, that single comparison is the only thing to change — `BentrokIrisanSesiTest` pins the current behaviour both ways.
+
+Collision messages name the *other* session (`"... pada sesi SESI 01.00 - 13:00–14:00 yang jamnya bertindih"`), because the clashing session is not the one the admin is filling in — without the name they cannot tell what to fix.
+
+**"Back-to-back" for teacher load is measured in clock time, not list position.** `RingkasanService::bebanGuru()` used to chain sessions by adjacent sort index; with the interleaved tracks that is wrong twice over — genuinely contiguous sessions sit two positions apart, while adjacent positions usually mean *overlapping*, which is now forbidden anyway.
+
+### `hari_id` is a row id, not the ISO weekday number
+
+Several places filtered "today" with `where('hari_id', Carbon::now()->isoFormat('E'))`, which silently assumes the `haris` rows are numbered 1..7 in weekday order. Delete and re-add one day, or restore into a database that assigns different ids, and Ringkasan quietly shows the wrong day or nothing at all. Use `Hari::idHariIni()`, which matches on the day *name* and only falls back to the ISO number when no name matches (older fixtures rely on that fallback).
+
 Avoid `COUNT(DISTINCT a, b)`: it is MySQL-only and breaks the SQLite test suite. Use `->distinct()->get()` and count in PHP.
 
 ### Workshop vs Akun Guru (Sept 2026 split)
@@ -191,6 +213,25 @@ What used to be a single "Master Data" screen is now two deliberately separate m
   - A Data Siswa row's "Detail & Catatan" panel links to `Workshop?edit_siswa={id}`, which pre-opens that student's edit form on load (`editSiswaId` in the Alpine payload).
   - Workshop's Siswa panel also has a bulk import (Sept 2026): "Download Kerangka" (`SiswaController::downloadImportTemplate`, via `App\Exports\SiswaTemplateExport`) gives a small `.xlsx` template with the columns `Nama Lengkap`/`Panggilan`/`Kelas`/`No. HP`/`Nama Paket`; uploading a filled copy (`SiswaController::import`, via `App\Imports\SiswaMassalImport`) matches rows to existing students **by exact trimmed name** — a match updates that student, no match creates a new one. A blank cell in an update row is left alone, not written as empty (so a staff member updating just one column can't accidentally wipe the others). `nama_paket` is resolved by an exact `Paket.nama_paket` lookup; an unrecognized package name is silently skipped (paket left unset), not an error. This is unrelated to the old `SiswaImport`/`siswa:import` command — that one is one-off legacy migration tooling that **truncates** `pakets`/`siswas`/`jadwals`/`pembayarans` before importing a fixed legacy spreadsheet layout; don't point anyone at it for routine data entry, and don't merge the two.
 - **`AkunGuruController`** (`/admin/akun-guru`) is scoped *only* to teacher login accounts (email + create/change login). It does not list or edit ruang/sesi/mapel/paket at all — that's Workshop's job now. Don't grow this controller back into a general reference-data page; that's the split the Sept 2026 refactor deliberately made.
+
+### The public schedule PDF must never carry internal notes
+
+`/jadwal-kalender/export` is deliberately **unauthenticated** — the public calendar page has an Export PDF button, and the admin dashboard reuses the same route. It used to attach `studentsWithNotes`, so `pdf/jadwal.blade.php` printed the full text of every `Tanda` (internal staff notes about students) to anyone who knew the URL. `JadwalController::exportPdf()` now collects notes only when `auth()->check() && hasRole('admin')`. `KeamananEksporDanStashTest` parses the produced PDF with `smalot/pdfparser` and asserts the note text is absent for guests and present for admins — a byte-level assertion cannot work here, DomPDF flate-compresses its streams.
+
+If anything else is ever added to that PDF, ask first whether a stranger may read it.
+
+### Restoring a stash is reversible, audited, and validated up front
+
+`uploadStash()` replaces **every** `jadwals` row, so it is the most destructive action an admin can take. `App\Services\StashJadwalService` now owns the whole flow and guarantees four things, in this order:
+
+1. **Structure is validated before anything is touched** — `content` present and an array, every row carrying numeric `h/s/m/g/r/si`, with the offending row number in the message.
+2. **Referenced ids are checked to still exist.** A stash naming a deleted guru/ruang/sesi/siswa used to blow up on the foreign key *after* the delete, surfacing a raw `SQLSTATE` string; it is now rejected with "File stash menunjuk data yang sudah tidak ada: Guru #12, …" and nothing is deleted.
+3. **The pre-restore state is archived** into `stash_pemulihan_logs` (same precedent as `koreksi_pembayaran_logs`): who restored, when, row counts before/after, and the whole previous schedule as a `.stash` payload. `GET admin/jadwal/cadangan-stash/{pemulihan}` downloads it, and the success dialog links to it — restoring the wrong file is now undoable instead of final.
+4. **Collisions the incoming data would create are counted and reported** so the admin is told at restore time, not left to discover them later in Ringkasan.
+
+Catch clauses here are `\Throwable`, not `\Exception`: a `TypeError` from a malformed file used to escape the handler and leave the schedule deleted with the transaction unrolled.
+
+Restore still deliberately bypasses collision *validation* — a real timetable may legitimately need to be reinstated as-is — which is why the count is surfaced and `RingkasanService::bentrokTersembunyi()` keeps reporting it afterwards.
 
 ### Deleting reference data that's in use
 
@@ -231,6 +272,8 @@ Supporting suites: `AntiDoubleClickTest` (server-side duplicate-submission guard
 
 **Watch for editor auto-reformatting breaking `assertSee`.** Something in this environment occasionally re-wraps long Blade lines, which can insert a newline + indentation between two pieces of text that used to be adjacent (e.g. `Rp` and the formatted number ending up on separate lines). The page still renders fine visually, but `assertSee('Rp 200.000')` then fails because that exact substring no longer appears in the raw HTML. If a previously-passing `assertSee` assertion starts failing with no logic change nearby, check whether the surrounding Blade got line-wrapped before assuming the data/logic is wrong.
 
+`phpunit.xml` raises `memory_limit` to 512M: parsing generated PDFs in `KeamananEksporDanStashTest` pushes the suite past PHP's 128M default, and without it the plain `vendor/bin/phpunit` documented above dies mid-run.
+
 Tests run on SQLite in-memory (`phpunit.xml`), so they never touch local MariaDB or production TiDB — this is the safe way to verify migrations without running `php artisan migrate` anywhere real.
 
-`database/seeders/DemoSeeder.php` builds a realistic working state (15 students in 10 families with siblings sharing a phone, 3 months of mixed-status invoices, installments, discounts, 17 collision-free classes, archived students). It is wired into `DatabaseSeeder` behind an `isProduction()` guard, so `php artisan migrate:fresh --seed` gives a ready local environment in one command. `DemoSeederTest` asserts the generated data satisfies the real invariants (details sum to `total_sudah_dibayar`, status matches amounts, no duplicate anchors, no schedule collisions) — keep it passing when changing the seeder, since misleading demo data produces misleading manual testing.
+`database/seeders/DemoSeeder.php` builds a realistic working state (15 students in 10 families with siblings sharing a phone, 3 months of mixed-status invoices, installments, discounts, collision-free classes, archived students) **plus the features that are otherwise easy to forget exist**: ability levels on every student, teacher login accounts (`bu.rina@eling.test` / `guru12345`) with payroll rates, curriculum + graded sessions feeding `absensi_gurus`, and one issued payslip. Its session list deliberately contains overlapping sessions so the timing rule above is exercised by the demo data itself. It is wired into `DatabaseSeeder` behind an `isProduction()` guard, so `php artisan migrate:fresh --seed` gives a ready local environment in one command. `DemoSeederTest` asserts the generated data satisfies the real invariants (details sum to `total_sudah_dibayar`, status matches amounts, no duplicate anchors, no schedule collisions) — keep it passing when changing the seeder, since misleading demo data produces misleading manual testing.

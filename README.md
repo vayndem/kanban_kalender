@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-201%20passing-16a34a?style=flat-square" alt="201 tests passing">
+  <img src="https://img.shields.io/badge/tests-235%20passing-16a34a?style=flat-square" alt="235 tests passing">
   <img src="https://img.shields.io/badge/static%20analysis-Larastan%20lv1-8b5cf6?style=flat-square" alt="Larastan level 1">
   <img src="https://img.shields.io/badge/style-Laravel%20Pint-f59e0b?style=flat-square" alt="Laravel Pint">
 </p>
@@ -61,7 +61,7 @@ This project is designed to keep day-to-day operations stable:
 - Multi-tab admin dashboard: **Ringkasan**, **Jadwal**, **Data Siswa**, **Pembayaran**, plus **Workshop**, **Modul Ajar**, **Absen**, **Payroll**, and **Akun Guru**
 - Two roles (`admin` / `guru`) enforced at the route layer, with a dedicated teacher portal
 - Public, no-auth calendar that deliberately exposes **no** internal data (packages, ability levels, and billing stay private)
-- Conflict-safe scheduling for teacher, room, and student
+- Conflict-safe scheduling for teacher, room, and student — aware that sessions **overlap in time**, so a room busy at 13:00-14:00 is blocked for the 13:30-14:30 session too
 - Student archive / restore / permanent-delete flow
 - Ability levels (**Kemampuan**) per student, with strictly sequential numbering
 - Payment packages, family discounts, universal discounts, and installment ledgers
@@ -91,9 +91,11 @@ This project is designed to keep day-to-day operations stable:
 
 - manage day, session, room, teacher, and subject slots
 - create and drag-move class groups
-- protect against schedule collisions
+- protect against schedule collisions, including across **overlapping sessions** (start times are 30 minutes apart while each session runs 60 minutes, so an hour track and a half-hour track interleave)
+- collision messages name the session that actually clashes, not just "this session"
 - export operational schedule PDF
 - copy WhatsApp-friendly schedule text
+- **Stash**: download the whole timetable as a file and restore it later — validated before it deletes, and the replaced state is archived so a wrong restore can be undone
 
 ### 3. Data Siswa
 
@@ -223,7 +225,9 @@ php artisan key:generate
 php artisan migrate --seed
 ```
 
-This seeds roles **and** a realistic demo dataset (students in families sharing a phone number, three months of mixed-status invoices, installments, discounts, collision-free classes, archived students). The demo seeder is guarded so it never runs in production.
+This seeds roles **and** a realistic demo dataset: students in families sharing a phone number, three months of mixed-status invoices, installments, discounts, archived students, **overlapping sessions** so the timing rule is exercised, ability levels, curriculum with graded sessions, teacher accounts with payroll rates, and one issued payslip — so every screen has something to show on a fresh install. The demo seeder is guarded so it never runs in production.
+
+Demo logins: `admin@example.com` / `12345678` (admin) and `bu.rina@eling.test` / `guru12345` (teacher portal).
 
 ### 4. Frontend build
 
@@ -250,7 +254,7 @@ composer run dev
 ## Quality Gates
 
 ```bash
-vendor/bin/phpunit          # 201 feature/unit tests
+vendor/bin/phpunit          # 235 feature/unit tests
 npm run test:js             # plain Node test runner, no framework
 vendor/bin/phpstan analyse  # Larastan level 1 (Controllers + Models)
 vendor/bin/pint             # code style

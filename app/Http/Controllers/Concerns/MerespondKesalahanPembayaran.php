@@ -5,12 +5,6 @@ namespace App\Http\Controllers\Concerns;
 use App\Exceptions\BatchSudahDijalankanException;
 use Illuminate\Validation\ValidationException;
 
-/**
- * Penerjemah kegagalan menjadi respons untuk layar pembayaran.
- *
- * Dipindahkan apa adanya dari PembayaranController: bentuk balasan, kode status,
- * dan bunyi pesannya sengaja tidak diubah, karena layar sudah bergantung padanya.
- */
 trait MerespondKesalahanPembayaran
 {
     private function handleNotFound($request, $item)

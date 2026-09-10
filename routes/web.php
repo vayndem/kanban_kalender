@@ -72,6 +72,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/jadwal/generate-text', [JadwalController::class, 'generateTextJadwal'])->name('admin.jadwal.generateText');
     Route::get('/admin/jadwal/download-stash', [JadwalController::class, 'downloadStash'])->name('admin.jadwal.downloadStash');
     Route::post('/admin/jadwal/upload-stash', [JadwalController::class, 'uploadStash'])->name('admin.jadwal.uploadStash');
+    Route::get('/admin/jadwal/cadangan-stash/{pemulihan}', [JadwalController::class, 'unduhCadanganStash'])->name('admin.jadwal.unduhCadanganStash');
 
     // 1. Mata Pelajaran
     Route::post('/admin/mapel', [MapelController::class, 'store'])->name('admin.mapel.store');

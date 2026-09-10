@@ -131,9 +131,6 @@ class PayrollController extends Controller
         ]);
     }
 
-    /**
-     * Portal guru: hanya boleh melihat penggajian miliknya sendiri, read-only.
-     */
     public function milikSaya(): View
     {
         $user = Auth::user();
@@ -163,9 +160,6 @@ class PayrollController extends Controller
         return $pdf->download("Struk-Gaji-{$nama}-{$penggajian->id}.pdf");
     }
 
-    /**
-     * Admin boleh membuka struk siapa pun; guru hanya struk atas namanya sendiri.
-     */
     private function pastikanBolehLihatStruk(Penggajian $penggajian): void
     {
         $user = Auth::user();

@@ -13,11 +13,6 @@ use RuntimeException;
 
 class PayrollService
 {
-    /**
-     * Jeda anti klik ganda, mengikuti pola PembayaranController::JEDA_ANTI_GANDA.
-     * Guru tanpa kehadiran tetap berhak atas gaji bawaan, jadi jumlah baris absen
-     * tidak bisa dipakai sebagai penjaga duplikat -- waktu yang dipakai.
-     */
     public const JEDA_ANTI_GANDA = 180;
 
     public function ringkasan(): Collection
@@ -73,8 +68,6 @@ class PayrollService
                 'dijalankan_pada' => $sekarang,
             ]);
 
-            // Klaim atomik: baris yang sudah diklaim run lain tidak akan terhitung dua kali,
-            // dan jumlah baris terpengaruh adalah angka kehadiran yang sah.
             $kehadiran = DB::table('absensi_gurus')
                 ->where('guru_id', $guru->id)
                 ->whereNull('penggajian_id')
@@ -119,8 +112,6 @@ class PayrollService
         }
 
         return DB::transaction(function () use ($struk, $aktor, $alasan) {
-            // Membatalkan berarti gurunya belum jadi dibayar, jadi kehadirannya dilepas
-            // kembali supaya ikut terhitung pada penggajian berikutnya.
             DB::table('absensi_gurus')
                 ->where('penggajian_id', $struk->id)
                 ->update([
@@ -139,9 +130,6 @@ class PayrollService
         });
     }
 
-    /**
-     * Ringkasan untuk satu guru saja, dipakai portal guru yang read-only.
-     */
     public function ringkasanGuru(Guru $guru): array
     {
         $kehadiran = AbsensiGuru::query()
