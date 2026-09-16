@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AbsensiGuru;
 use App\Models\AspekPenilaian;
 use App\Models\Guru;
 use App\Models\Hari;
@@ -594,7 +595,7 @@ class ModulAjarTest extends TestCase
         $this->assertNull($detail->fresh()->guru_pengganti_id);
     }
 
-    public function test_reteaching_a_detail_overwrites_the_previous_grades_instead_of_keeping_history(): void
+    public function test_reteaching_overwrites_grades_but_adds_a_new_teaching_credit(): void
     {
         [$guru, $user] = $this->guruDenganAkun();
         $siswa = Siswa::factory()->create();
@@ -616,7 +617,11 @@ class ModulAjarTest extends TestCase
         $absensi = ModulAjarAbsensi::where('siswa_id', $siswa->id)->firstOrFail();
         $this->assertSame(1, $absensi->nilaiAspeks()->count(), 'Ajar ulang menimpa, bukan menumpuk.');
         $this->assertDatabaseHas('nilai_aspeks', ['modul_ajar_absensi_id' => $absensi->id, 'skor' => 5]);
-        $this->assertDatabaseCount('absensi_gurus', 1);
+        $this->assertSame(
+            2,
+            AbsensiGuru::where('modul_ajar_detail_id', $detail->id)->count(),
+            'Mengajar ulang dihitung sebagai kehadiran mengajar tambahan.'
+        );
     }
 
     public function test_unrelated_guru_cannot_grade_a_detail_they_have_no_role_in(): void

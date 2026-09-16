@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ModulAjarDetail extends Model
 {
@@ -51,8 +50,8 @@ class ModulAjarDetail extends Model
         return $this->hasMany(ModulAjarAbsensi::class);
     }
 
-    public function absensiGuru(): HasOne
+    public function absensiGurus(): HasMany
     {
-        return $this->hasOne(AbsensiGuru::class);
+        return $this->hasMany(AbsensiGuru::class);
     }
 }

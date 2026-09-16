@@ -10,6 +10,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ResultController extends Controller
 {
@@ -96,16 +97,60 @@ class ResultController extends Controller
         ]);
     }
 
-    public function raporPdf(Siswa $siswa, Request $request)
+    public function cetakRapor(Siswa $siswa, Request $request)
     {
-        $request->validate(['dari' => 'nullable|date', 'sampai' => 'nullable|date']);
+        $data = $this->validasiCetak($request, $siswa);
 
         $pdf = Pdf::loadView('pdf.rapor', [
-            'rapor' => $this->rapor->untukSiswa($siswa, $request->query('dari'), $request->query('sampai')),
+            'rapor' => $this->rapor->untukSiswa($siswa, null, null, $data['pertemuan']),
+            'catatan' => [
+                'kekuatan' => $data['kekuatan'] ?? null,
+                'perbaikan' => $data['perbaikan'] ?? null,
+                'komentar' => $data['komentar'] ?? null,
+                'rencana' => $data['rencana'] ?? null,
+            ],
             'dicetakPada' => now()->translatedFormat('d F Y, H:i'),
-        ]);
+        ])->setPaper('a4', 'portrait');
 
         return $pdf->download('Rapor-'.Str::slug($siswa->name).'-'.now()->format('YmdHis').'.pdf');
+    }
+
+    public function cetakSertifikat(Siswa $siswa, Request $request)
+    {
+        $data = $this->validasiCetak($request, $siswa);
+
+        $pdf = Pdf::loadView('pdf.sertifikat', [
+            'rapor' => $this->rapor->untukSiswa($siswa, null, null, $data['pertemuan']),
+            'judul' => $data['judul_sertifikat'] ?? 'Certificate of Achievement',
+            'dicetakPada' => now()->translatedFormat('d F Y'),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('Sertifikat-'.Str::slug($siswa->name).'-'.now()->format('YmdHis').'.pdf');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validasiCetak(Request $request, Siswa $siswa): array
+    {
+        $milikSiswa = ModulAjarAbsensi::where('siswa_id', $siswa->id)
+            ->pluck('modul_ajar_detail_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        return $request->validate([
+            'pertemuan' => 'required|array|min:1',
+            'pertemuan.*' => ['required', 'integer', Rule::in($milikSiswa)],
+            'judul_sertifikat' => 'nullable|string|max:120',
+            'kekuatan' => 'nullable|string|max:2000',
+            'perbaikan' => 'nullable|string|max:2000',
+            'komentar' => 'nullable|string|max:2000',
+            'rencana' => 'nullable|string|max:2000',
+        ], [
+            'pertemuan.required' => 'Pilih dulu pertemuan mana yang mau dicetak.',
+            'pertemuan.min' => 'Pilih minimal satu pertemuan.',
+            'pertemuan.*.in' => 'Ada pertemuan yang bukan milik siswa ini.',
+        ]);
     }
 
     /**

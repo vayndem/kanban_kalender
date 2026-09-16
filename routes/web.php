@@ -106,7 +106,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::delete('/admin/result/aspek/{aspek}', [ResultController::class, 'hapusAspek'])->name('admin.result.hapusAspek');
     Route::put('/admin/result/aspek-urutan', [ResultController::class, 'urutkanAspek'])->name('admin.result.urutkanAspek');
     Route::get('/admin/result/siswa/{siswa}/rapor', [ResultController::class, 'rapor'])->name('admin.result.rapor');
-    Route::get('/admin/result/siswa/{siswa}/rapor/pdf', [ResultController::class, 'raporPdf'])->name('admin.result.raporPdf');
+    Route::post('/admin/result/siswa/{siswa}/rapor/cetak', [ResultController::class, 'cetakRapor'])->name('admin.result.cetakRapor');
+    Route::post('/admin/result/siswa/{siswa}/sertifikat/cetak', [ResultController::class, 'cetakSertifikat'])->name('admin.result.cetakSertifikat');
     Route::post('/admin/siswa', [SiswaController::class, 'store'])->name('admin.siswa.store');
     Route::put('/admin/siswa/{id}', [SiswaController::class, 'update'])->name('admin.siswa.update');
     Route::delete('/admin/siswa/{id}', [SiswaController::class, 'destroy'])->name('admin.siswa.destroy');

@@ -14,9 +14,14 @@ class RaporService
 
     private const AMBANG_TREN = 0.25;
 
-    public function untukSiswa(Siswa $siswa, ?string $dari = null, ?string $sampai = null): array
+    public const SKOR_MAKSIMAL = 5;
+
+    /**
+     * @param  array<int, int>  $detailIds
+     */
+    public function untukSiswa(Siswa $siswa, ?string $dari = null, ?string $sampai = null, array $detailIds = []): array
     {
-        $absensis = $this->ambilAbsensi($siswa, $dari, $sampai);
+        $absensis = $this->ambilAbsensi($siswa, $dari, $sampai, $detailIds);
         $kelasInfo = $this->infoKelas($absensis);
 
         return [
@@ -32,22 +37,32 @@ class RaporService
             'periode' => [
                 'dari' => $dari,
                 'sampai' => $sampai,
+                'label' => $this->labelPeriode($absensis),
             ],
+            'guru' => $this->daftarGuru($absensis),
+            'materi' => $this->materiDipelajari($absensis),
+            'daftar_pertemuan' => $this->daftarPertemuan($absensis),
             'ringkasan' => $this->ringkasan($absensis),
             'per_aspek' => $this->perAspek($absensis),
             'per_mapel' => $this->perMapel($absensis, $kelasInfo),
         ];
     }
 
-    private function ambilAbsensi(Siswa $siswa, ?string $dari, ?string $sampai): Collection
+    /**
+     * @param  array<int, int>  $detailIds
+     */
+    private function ambilAbsensi(Siswa $siswa, ?string $dari, ?string $sampai, array $detailIds = []): Collection
     {
+        $pilihan = array_values(array_filter(array_map('intval', $detailIds)));
+
         $awal = $dari ? Carbon::parse($dari)->startOfDay() : null;
         $akhir = $sampai ? Carbon::parse($sampai)->endOfDay() : null;
 
         return ModulAjarAbsensi::query()
             ->where('siswa_id', $siswa->id)
+            ->when($pilihan !== [], fn ($q) => $q->whereIn('modul_ajar_detail_id', $pilihan))
             ->with([
-                'modulAjarDetail:id,modul_ajar_id,materi,sub_materi,tanggal_diajarkan,diajarkan_oleh_guru_id',
+                'modulAjarDetail:id,modul_ajar_id,materi,sub_materi,hasil_akhir_pembelajaran,tanggal_diajarkan,diajarkan_oleh_guru_id',
                 'modulAjarDetail.modulAjar:id,kode_kelas',
                 'modulAjarDetail.diajarkanOlehGuru:id,name',
                 'nilaiAspeks.aspek:id,nama,indikator,urutan',
@@ -94,6 +109,93 @@ class RaporService
             ->values();
     }
 
+    public static function persen(?float $rata): ?int
+    {
+        return $rata === null ? null : (int) round($rata / self::SKOR_MAKSIMAL * 100);
+    }
+
+    public static function predikat(?int $persen): string
+    {
+        return match (true) {
+            $persen === null => '-',
+            $persen > 80 => 'Excellent',
+            $persen > 60 => 'Very Good',
+            $persen > 40 => 'Good Progress',
+            $persen > 20 => 'Beginning',
+            default => 'Needs Support',
+        };
+    }
+
+    private function labelPeriode(Collection $absensis): string
+    {
+        $tanggal = $absensis
+            ->map(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail->tanggal_diajarkan)
+            ->filter()
+            ->sort()
+            ->values();
+
+        if ($tanggal->isEmpty()) {
+            return '-';
+        }
+
+        $awal = $tanggal->first();
+        $akhir = $tanggal->last();
+
+        if ($awal->isSameMonth($akhir)) {
+            return $awal->translatedFormat('F Y');
+        }
+
+        return $awal->translatedFormat('d M Y').' - '.$akhir->translatedFormat('d M Y');
+    }
+
+    private function daftarGuru(Collection $absensis): string
+    {
+        $nama = $absensis
+            ->map(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail->diajarkanOlehGuru?->name)
+            ->filter()
+            ->unique()
+            ->values();
+
+        return $nama->isEmpty() ? '-' : $nama->implode(', ');
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function materiDipelajari(Collection $absensis): array
+    {
+        return $absensis
+            ->sortBy(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail->tanggal_diajarkan->toDateString())
+            ->map(fn (ModulAjarAbsensi $a) => [
+                'topik' => trim($a->modulAjarDetail->materi.' '.($a->modulAjarDetail->sub_materi ?? '')),
+                'hasil' => $a->modulAjarDetail->hasil_akhir_pembelajaran
+                    ?: ($a->hadir ? self::predikat(self::persen($a->rataAspek())) : 'Tidak hadir'),
+            ])
+            ->unique('topik')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function daftarPertemuan(Collection $absensis): array
+    {
+        return $absensis
+            ->sortByDesc(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail->tanggal_diajarkan->toDateString())
+            ->map(fn (ModulAjarAbsensi $a) => [
+                'detail_id' => $a->modulAjarDetail->id,
+                'tanggal' => $a->modulAjarDetail->tanggal_diajarkan->toDateString(),
+                'materi' => $a->modulAjarDetail->materi,
+                'hadir' => (bool) $a->hadir,
+                'nilai' => $a->rataAspek(),
+                'persen' => self::persen($a->rataAspek()),
+                'diajar_oleh' => $a->modulAjarDetail->diajarkanOlehGuru?->name ?? '-',
+            ])
+            ->values()
+            ->all();
+    }
+
     private function ringkasan(Collection $absensis): array
     {
         $hadir = $absensis->where('hadir', true);
@@ -109,6 +211,8 @@ class RaporService
             'nilai_terendah' => $nilai->isNotEmpty() ? round($nilai->min(), 2) : null,
             'nilai_tertinggi' => $nilai->isNotEmpty() ? round($nilai->max(), 2) : null,
             'tren' => $this->tren($nilai),
+            'persen' => self::persen($nilai->isNotEmpty() ? (float) $nilai->avg() : null),
+            'predikat' => self::predikat(self::persen($nilai->isNotEmpty() ? (float) $nilai->avg() : null)),
         ];
     }
 
@@ -155,6 +259,8 @@ class RaporService
                     'urutan' => $aspek->urutan,
                     'jumlah_dinilai' => $nilai->count(),
                     'rata' => round($nilai->avg(), 2),
+                    'persen' => self::persen((float) $nilai->avg()),
+                    'predikat' => self::predikat(self::persen((float) $nilai->avg())),
                     'terendah' => (int) $nilai->min(),
                     'tertinggi' => (int) $nilai->max(),
                     'tren' => $this->tren($rows->pluck('skor')->map(fn ($s) => (float) $s)->values()),

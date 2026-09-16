@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AbsensiGuru;
 use App\Models\AspekPenilaian;
 use App\Models\Guru;
 use App\Models\Hari;
@@ -15,6 +16,7 @@ use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Services\PayrollService;
 use App\Services\RaporService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -309,5 +311,179 @@ class AspekPenilaianTest extends TestCase
         $halaman->assertOk();
         $halaman->assertSee('fa-medal', false);
         $halaman->assertSee(route('admin.result.index'), false);
+    }
+
+    public function test_mengajar_ulang_menambah_kehadiran_mengajar(): void
+    {
+        $a = $this->aspek('Vocabulary');
+        [$guru, $user, $siswa, $detail] = $this->kelasSiapDinilai();
+
+        $nilai = fn (int $skor) => $this->actingAs($user)
+            ->postJson(route('modulAjar.simpanNilai', $detail->id), [
+                'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => [$a->id => $skor]]],
+            ]);
+
+        $nilai(3)->assertOk();
+        $this->assertSame(1, AbsensiGuru::where('guru_id', $guru->id)->count());
+
+        $this->actingAs($user)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
+        $nilai(5)->assertOk();
+
+        $this->assertSame(
+            2,
+            AbsensiGuru::where('guru_id', $guru->id)->count(),
+            'Kelas yang diulang harus menambah satu kehadiran mengajar.'
+        );
+        $this->assertSame(1, NilaiAspek::count(), 'Nilai anaknya tetap ditimpa, bukan ditumpuk.');
+    }
+
+    public function test_menilai_dua_kali_tanpa_mengajar_ulang_ditolak(): void
+    {
+        $a = $this->aspek('Vocabulary');
+        [$guru, $user, $siswa, $detail] = $this->kelasSiapDinilai();
+
+        $kirim = fn () => $this->actingAs($user)
+            ->postJson(route('modulAjar.simpanNilai', $detail->id), [
+                'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => [$a->id => 4]]],
+            ]);
+
+        $kirim()->assertOk();
+        $respon = $kirim();
+
+        $respon->assertStatus(422);
+        $this->assertStringContainsString('tidak sedang berlangsung', $respon->json('message'));
+        $this->assertSame(
+            1,
+            AbsensiGuru::where('guru_id', $guru->id)->count(),
+            'Kirim ganda tidak boleh menambah kehadiran, karena itu langsung jadi uang.'
+        );
+    }
+
+    public function test_kehadiran_tambahan_ikut_terhitung_di_penggajian_berikutnya(): void
+    {
+        $a = $this->aspek('Vocabulary');
+        [$guru, $user, $siswa, $detail] = $this->kelasSiapDinilai();
+        $guru->update(['gaji_bawaan' => 100000, 'gaji_per_kehadiran' => 20000]);
+
+        $nilai = fn () => $this->actingAs($user)
+            ->postJson(route('modulAjar.simpanNilai', $detail->id), [
+                'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => [$a->id => 4]]],
+            ]);
+
+        $nilai()->assertOk();
+        $this->actingAs($user)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
+        $nilai()->assertOk();
+
+        $baris = collect(app(PayrollService::class)->ringkasan())->firstWhere('id', $guru->id);
+
+        $this->assertSame(2, $baris['kehadiran_belum_dibayar']);
+        $this->assertSame(140000, $baris['perkiraan_total']);
+    }
+
+    public function test_cetak_rapor_wajib_memilih_pertemuan(): void
+    {
+        $siswa = Siswa::factory()->create();
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('admin.result.cetakRapor', $siswa->id), [])
+            ->assertSessionHasErrors('pertemuan');
+    }
+
+    public function test_cetak_rapor_menolak_pertemuan_milik_siswa_lain(): void
+    {
+        $a = $this->aspek('Vocabulary');
+        [, $user, $siswa, $detail] = $this->kelasSiapDinilai();
+        $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => [$a->id => 4]]],
+        ])->assertOk();
+
+        $siswaLain = Siswa::factory()->create();
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('admin.result.cetakRapor', $siswaLain->id), ['pertemuan' => [$detail->id]])
+            ->assertSessionHasErrors('pertemuan.0');
+    }
+
+    public function test_rapor_dan_sertifikat_bisa_diunduh_untuk_pertemuan_terpilih(): void
+    {
+        $a = $this->aspek('Vocabulary');
+        [, $user, $siswa, $detail] = $this->kelasSiapDinilai();
+        $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => [$a->id => 4]]],
+        ])->assertOk();
+
+        $admin = User::factory()->create();
+
+        $rapor = $this->actingAs($admin)
+            ->post(route('admin.result.cetakRapor', $siswa->id), [
+                'pertemuan' => [$detail->id],
+                'kekuatan' => 'Sudah berani bertanya.',
+            ]);
+        $rapor->assertOk();
+        $this->assertStringContainsString('application/pdf', $rapor->headers->get('content-type'));
+
+        $sertifikat = $this->actingAs($admin)
+            ->post(route('admin.result.cetakSertifikat', $siswa->id), ['pertemuan' => [$detail->id]]);
+        $sertifikat->assertOk();
+        $this->assertStringContainsString('application/pdf', $sertifikat->headers->get('content-type'));
+    }
+
+    public function test_rapor_memakai_persentase_bukan_skala_lima(): void
+    {
+        $a = $this->aspek('Vocabulary', 1);
+        $b = $this->aspek('Pronunciation', 2);
+        [, $user, $siswa, $detail] = $this->kelasSiapDinilai();
+
+        $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => [$a->id => 5, $b->id => 2]]],
+        ])->assertOk();
+
+        $rapor = app(RaporService::class)->untukSiswa($siswa->fresh(), null, null, [$detail->id]);
+
+        $this->assertSame(100, $rapor['per_aspek'][0]['persen']);
+        $this->assertSame('Excellent', $rapor['per_aspek'][0]['predikat']);
+        $this->assertSame(40, $rapor['per_aspek'][1]['persen']);
+        $this->assertSame('Beginning', $rapor['per_aspek'][1]['predikat']);
+        $this->assertSame(70, $rapor['ringkasan']['persen']);
+        $this->assertSame('Very Good', $rapor['ringkasan']['predikat']);
+    }
+
+    public function test_rapor_hanya_menghitung_pertemuan_yang_dipilih(): void
+    {
+        $a = $this->aspek('Vocabulary');
+        [, $user, $siswa, $detail] = $this->kelasSiapDinilai();
+
+        $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => [$a->id => 5]]],
+        ])->assertOk();
+
+        $detailKedua = ModulAjarDetail::create([
+            'modul_ajar_id' => $detail->modul_ajar_id,
+            'materi' => 'Materi 2',
+            'sedang_dipersiapkan' => true,
+        ]);
+        $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detailKedua->id), [
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => [$a->id => 1]]],
+        ])->assertOk();
+
+        $rapor = app(RaporService::class);
+
+        $this->assertSame(2, $rapor->untukSiswa($siswa->fresh())['ringkasan']['total_pertemuan']);
+        $this->assertSame(100, $rapor->untukSiswa($siswa->fresh(), null, null, [$detail->id])['ringkasan']['persen']);
+        $this->assertSame(20, $rapor->untukSiswa($siswa->fresh(), null, null, [$detailKedua->id])['ringkasan']['persen']);
+    }
+
+    public function test_menu_result_berada_tepat_setelah_pembayaran(): void
+    {
+        $halaman = $this->actingAs(User::factory()->create())->get(route('admin.result.index'));
+
+        $isi = $halaman->assertOk()->getContent();
+        $posisiPembayaran = strpos($isi, 'fa-wallet');
+        $posisiResult = strpos($isi, 'fa-medal');
+        $posisiWorkshop = strpos($isi, 'fa-toolbox');
+
+        $this->assertNotFalse($posisiResult);
+        $this->assertGreaterThan($posisiPembayaran, $posisiResult, 'Result harus di kanan Pembayaran.');
+        $this->assertLessThan($posisiWorkshop, $posisiResult, 'Result harus sebelum Workshop.');
     }
 }

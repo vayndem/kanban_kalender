@@ -374,10 +374,144 @@
                                     </div>
                                 </div>
 
-                                <a :href="tautanPdf(raporUntuk)" target="_blank"
-                                    class="btn btn-export w-full">
-                                    <i class="fas fa-file-pdf"></i> Download Rapor PDF
-                                </a>
+                                <div class="rounded-box border border-base-300 bg-base-200/50 p-3">
+                                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-black text-base-content">
+                                                <i class="fas fa-print text-primary"></i> Cetak Dokumen
+                                            </p>
+                                            <p class="mt-0.5 text-xs text-base-content/70">
+                                                Pilih dulu pertemuan mana yang mau dijadikan sertifikat atau rapor.
+                                            </p>
+                                        </div>
+                                        <button type="button" x-show="! modeCetak" @click="bukaModeCetak()"
+                                            class="btn btn-export btn-sm w-full shrink-0 sm:w-auto">
+                                            <i class="fas fa-file-arrow-down"></i> Siapkan Cetak
+                                        </button>
+                                    </div>
+
+                                    <div x-show="modeCetak" x-cloak x-transition class="mt-4 space-y-4">
+                                        <div>
+                                            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+                                                <p class="text-xs font-black uppercase tracking-wider text-base-content/60">
+                                                    Pertemuan
+                                                    <span class="text-primary" x-text="pertemuanDipilih.length"></span>
+                                                    dari <span x-text="daftarPertemuan.length"></span> dipilih
+                                                </p>
+                                                <div class="flex flex-wrap gap-1.5">
+                                                    <button type="button" @click="pilihBulanIni()"
+                                                        class="btn btn-ghost btn-xs">Bulan ini</button>
+                                                    <button type="button" @click="alihSemuaPertemuan()"
+                                                        class="btn btn-ghost btn-xs"
+                                                        x-text="semuaPertemuanDipilih ? 'Kosongkan' : 'Pilih semua'"></button>
+                                                </div>
+                                            </div>
+
+                                            <div class="max-h-56 space-y-1.5 overflow-y-auto rounded-field bg-base-100 p-2">
+                                                <template x-for="p in daftarPertemuan" :key="p.detail_id">
+                                                    <label class="flex cursor-pointer items-start gap-3 rounded-field px-2 py-2 transition hover:bg-primary/10">
+                                                        <input type="checkbox" :value="String(p.detail_id)"
+                                                            x-model="pertemuanDipilih"
+                                                            class="checkbox checkbox-primary mt-0.5 shrink-0 sm:checkbox-sm">
+                                                        <span class="min-w-0 flex-1">
+                                                            <span class="block truncate text-sm font-bold text-base-content"
+                                                                x-text="p.materi"></span>
+                                                            <span class="block text-[11px] text-base-content/60">
+                                                                <span x-text="p.tanggal"></span> ·
+                                                                <span x-text="p.diajar_oleh"></span>
+                                                            </span>
+                                                        </span>
+                                                        <span class="shrink-0 text-right">
+                                                            <template x-if="p.hadir">
+                                                                <span class="text-sm font-black"
+                                                                    :class="warnaNilai(p.nilai)"
+                                                                    x-text="p.persen + '%'"></span>
+                                                            </template>
+                                                            <template x-if="! p.hadir">
+                                                                <span class="badge badge-sm font-bold">Absen</span>
+                                                            </template>
+                                                        </span>
+                                                    </label>
+                                                </template>
+
+                                                <p x-show="daftarPertemuan.length === 0"
+                                                    class="px-2 py-4 text-center text-xs text-base-content/60">
+                                                    Belum ada pertemuan yang bisa dicetak.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p class="mb-2 text-xs font-black uppercase tracking-wider text-base-content/60">
+                                                Catatan Rapor <span class="font-normal normal-case text-base-content/50">(opsional)</span>
+                                            </p>
+                                            <div class="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                                                <label class="block">
+                                                    <span class="app-label">Student Strength</span>
+                                                    <textarea x-model="formCetak.kekuatan" rows="2" maxlength="2000"
+                                                        class="app-input" placeholder="Kelebihan anak bulan ini..."></textarea>
+                                                </label>
+                                                <label class="block">
+                                                    <span class="app-label">Area to Improve</span>
+                                                    <textarea x-model="formCetak.perbaikan" rows="2" maxlength="2000"
+                                                        class="app-input" placeholder="Yang masih perlu dilatih..."></textarea>
+                                                </label>
+                                                <label class="block">
+                                                    <span class="app-label">Teacher's Comment</span>
+                                                    <textarea x-model="formCetak.komentar" rows="2" maxlength="2000"
+                                                        class="app-input" placeholder="Pesan guru untuk orang tua..."></textarea>
+                                                </label>
+                                                <label class="block">
+                                                    <span class="app-label">Plan for Next Month</span>
+                                                    <textarea x-model="formCetak.rencana" rows="2" maxlength="2000"
+                                                        class="app-input" placeholder="Rencana kegiatan bulan depan..."></textarea>
+                                                </label>
+                                            </div>
+                                            <p class="mt-1.5 text-[11px] text-base-content/60">
+                                                Dibiarkan kosong akan tercetak sebagai garis titik-titik untuk diisi tangan.
+                                                Isian ini tidak disimpan, hanya ikut pada cetakan kali ini.
+                                            </p>
+                                        </div>
+
+                                        <label class="block">
+                                            <span class="app-label">Judul Sertifikat</span>
+                                            <input type="text" x-model="formCetak.judul_sertifikat" maxlength="120"
+                                                class="app-input" placeholder="Certificate of Achievement">
+                                        </label>
+
+                                        <form method="POST" x-ref="formCetak" target="_blank" class="contents">
+                                            @csrf
+                                            <template x-for="id in pertemuanDipilih" :key="id">
+                                                <input type="hidden" name="pertemuan[]" :value="id">
+                                            </template>
+                                            <input type="hidden" name="judul_sertifikat" :value="formCetak.judul_sertifikat">
+                                            <input type="hidden" name="kekuatan" :value="formCetak.kekuatan">
+                                            <input type="hidden" name="perbaikan" :value="formCetak.perbaikan">
+                                            <input type="hidden" name="komentar" :value="formCetak.komentar">
+                                            <input type="hidden" name="rencana" :value="formCetak.rencana">
+                                        </form>
+
+                                        <div class="flex flex-col gap-2 sm:flex-row">
+                                            <button type="button" @click="cetak('rapor')"
+                                                :disabled="pertemuanDipilih.length === 0"
+                                                :class="pertemuanDipilih.length === 0 ? 'opacity-50' : ''"
+                                                class="btn btn-export btn-sm flex-1">
+                                                <i class="fas fa-file-lines"></i> Cetak Rapor
+                                            </button>
+                                            <button type="button" @click="cetak('sertifikat')"
+                                                :disabled="pertemuanDipilih.length === 0"
+                                                :class="pertemuanDipilih.length === 0 ? 'opacity-50' : ''"
+                                                class="btn btn-accent btn-sm flex-1">
+                                                <i class="fas fa-award"></i> Cetak Sertifikat
+                                            </button>
+                                        </div>
+
+                                        <p x-show="pertemuanDipilih.length === 0"
+                                            class="text-center text-xs text-warning">
+                                            Centang minimal satu pertemuan dulu.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </template>
                     </div>

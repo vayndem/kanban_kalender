@@ -320,6 +320,13 @@ class ModulAjarController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Anda tidak berhak menilai pertemuan ini.'], 403);
         }
 
+        if (! $detail->sedang_dipersiapkan) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pertemuan ini tidak sedang berlangsung. Tekan Mulai Ajar atau Ajar Ulang dulu sebelum menilai.',
+            ], 422);
+        }
+
         $rosterIds = $kelas->pluck('siswa_id');
         $aspekAktif = AspekPenilaian::aktif()->pluck('id');
 
@@ -402,10 +409,11 @@ class ModulAjarController extends Controller
                 }
             }
 
-            AbsensiGuru::updateOrCreate(
-                ['modul_ajar_detail_id' => $detail->id],
-                ['guru_id' => $guruKredit, 'tanggal' => now()->toDateString()]
-            );
+            AbsensiGuru::create([
+                'modul_ajar_detail_id' => $detail->id,
+                'guru_id' => $guruKredit,
+                'tanggal' => now()->toDateString(),
+            ]);
 
             $detail->update([
                 'sedang_dipersiapkan' => false,

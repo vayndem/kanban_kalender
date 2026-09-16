@@ -206,12 +206,13 @@ class RaporSiswaTest extends TestCase
     {
         $siswa = Siswa::factory()->create(['name' => 'Budi Santoso']);
         $guru = $this->buatKelas('kode-1', $siswa);
-        $this->catatPertemuan('kode-1', $siswa, $guru, 'Perkalian', '2026-09-01', true, 4);
+        $detail = $this->catatPertemuan('kode-1', $siswa, $guru, 'Perkalian', '2026-09-01', true, 4);
 
-        $respon = $this->actingAs(User::factory()->create())->get(route('admin.result.raporPdf', $siswa->id));
+        $respon = $this->actingAs(User::factory()->create())
+            ->post(route('admin.result.cetakRapor', $siswa->id), ['pertemuan' => [$detail->id]]);
 
         $respon->assertOk();
-        $this->assertSame('application/pdf', $respon->headers->get('content-type'));
+        $this->assertStringContainsString('application/pdf', $respon->headers->get('content-type'));
     }
 
     public function test_guru_cannot_access_the_rapor_endpoints(): void
@@ -221,6 +222,11 @@ class RaporSiswaTest extends TestCase
         $userGuru = User::factory()->guru($guru)->create();
 
         $this->actingAs($userGuru)->getJson(route('admin.result.rapor', $siswa->id))->assertForbidden();
-        $this->actingAs($userGuru)->get(route('admin.result.raporPdf', $siswa->id))->assertForbidden();
+        $this->actingAs($userGuru)
+            ->post(route('admin.result.cetakRapor', $siswa->id), ['pertemuan' => [1]])
+            ->assertForbidden();
+        $this->actingAs($userGuru)
+            ->post(route('admin.result.cetakSertifikat', $siswa->id), ['pertemuan' => [1]])
+            ->assertForbidden();
     }
 }

@@ -17,6 +17,10 @@ export const resultHandler = ({ initialAspek, initialSiswa, routes }) => ({
     raporUntuk: null,
     isLoadingRapor: false,
 
+    pertemuanDipilih: [],
+    modeCetak: false,
+    formCetak: { judul_sertifikat: '', kekuatan: '', perbaikan: '', komentar: '', rencana: '' },
+
     get aspekAktif() {
         return this.aspekList.filter(a => a.aktif);
     },
@@ -182,6 +186,8 @@ export const resultHandler = ({ initialAspek, initialSiswa, routes }) => ({
 
             const hasil = await response.json();
             this.raporSiswa = hasil.data;
+            this.pertemuanDipilih = [];
+            this.modeCetak = false;
         } catch (e) {
             AppSwal.error(e.message || 'Rapor gagal dimuat.');
             this.raporUntuk = null;
@@ -193,10 +199,48 @@ export const resultHandler = ({ initialAspek, initialSiswa, routes }) => ({
     tutupRapor() {
         this.raporUntuk = null;
         this.raporSiswa = null;
+        this.modeCetak = false;
+        this.pertemuanDipilih = [];
+        this.formCetak = { judul_sertifikat: '', kekuatan: '', perbaikan: '', komentar: '', rencana: '' };
     },
 
-    tautanPdf(siswa) {
-        return `${this.routes.raporBase}/${siswa.id}/rapor/pdf`;
+    get daftarPertemuan() {
+        return this.raporSiswa?.daftar_pertemuan || [];
+    },
+
+    get semuaPertemuanDipilih() {
+        return this.daftarPertemuan.length > 0
+            && this.pertemuanDipilih.length === this.daftarPertemuan.length;
+    },
+
+    alihSemuaPertemuan() {
+        this.pertemuanDipilih = this.semuaPertemuanDipilih
+            ? []
+            : this.daftarPertemuan.map(p => String(p.detail_id));
+    },
+
+    pilihBulanIni() {
+        const kini = new Date().toISOString().slice(0, 7);
+        this.pertemuanDipilih = this.daftarPertemuan
+            .filter(p => String(p.tanggal).slice(0, 7) === kini)
+            .map(p => String(p.detail_id));
+    },
+
+    bukaModeCetak() {
+        this.modeCetak = true;
+        if (this.pertemuanDipilih.length === 0) this.pilihBulanIni();
+        if (this.pertemuanDipilih.length === 0) this.alihSemuaPertemuan();
+    },
+
+    cetak(jenis) {
+        if (this.pertemuanDipilih.length === 0) {
+            return AppSwal.error('Pilih dulu pertemuan mana yang mau dicetak.');
+        }
+
+        this.$refs.formCetak.action = jenis === 'sertifikat'
+            ? `${this.routes.raporBase}/${this.raporUntuk.id}/sertifikat/cetak`
+            : `${this.routes.raporBase}/${this.raporUntuk.id}/rapor/cetak`;
+        this.$refs.formCetak.submit();
     },
 
     labelTren(tren) {
