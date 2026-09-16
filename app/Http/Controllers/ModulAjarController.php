@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\AbsensiGuru;
+use App\Models\AspekPenilaian;
 use App\Models\Hari;
 use App\Models\Jadwal;
 use App\Models\ModulAjar;
 use App\Models\ModulAjarAbsensi;
 use App\Models\ModulAjarDetail;
+use App\Models\NilaiAspek;
 use App\Models\Sesi;
+use App\Models\Siswa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -101,6 +104,7 @@ class ModulAjarController extends Controller
                 'details.guruPengganti:id,name',
                 'details.diajarkanOlehGuru:id,name',
                 'details.absensis.siswa:id,name,panggilan',
+                'details.absensis.nilaiAspeks:id,modul_ajar_absensi_id,aspek_penilaian_id,skor',
             ])
             ->get()
             ->keyBy('kode_kelas');
@@ -145,6 +149,8 @@ class ModulAjarController extends Controller
             'kelasList' => $kelasList,
             'absenBulanIni' => $absenBulanIni,
             'rekapAbsenGuru' => $rekapAbsenGuru,
+            'aspekPenilaian' => AspekPenilaian::aktif()->orderBy('urutan')->orderBy('id')
+                ->get(['id', 'nama', 'indikator']),
         ]);
     }
 
@@ -315,19 +321,53 @@ class ModulAjarController extends Controller
         }
 
         $rosterIds = $kelas->pluck('siswa_id');
+        $aspekAktif = AspekPenilaian::aktif()->pluck('id');
+
+        if ($aspekAktif->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Aspek penilaian belum ditentukan. Minta admin mengisinya di menu Result dulu.',
+            ], 422);
+        }
 
         $validated = $request->validate([
             'absensi' => 'required|array|min:1',
             'absensi.*.siswa_id' => ['required', 'integer', Rule::in($rosterIds)],
             'absensi.*.hadir' => 'required|boolean',
-            'absensi.*.nilai' => 'nullable|integer|min:1|max:5',
+            'absensi.*.skor' => 'nullable|array',
+            'absensi.*.skor.*' => 'nullable|integer|min:1|max:5',
         ], [
             'absensi.*.siswa_id.in' => 'Ada siswa yang bukan bagian dari kelas ini.',
+            'absensi.*.skor.*.min' => 'Skor hanya boleh 1 sampai 5.',
+            'absensi.*.skor.*.max' => 'Skor hanya boleh 1 sampai 5.',
         ]);
 
+        $namaSiswa = Siswa::whereIn('id', $rosterIds)->pluck('name', 'id');
+
         foreach ($validated['absensi'] as $item) {
-            if ($item['hadir'] && blank($item['nilai'] ?? null)) {
-                return response()->json(['status' => 'error', 'message' => 'Nilai wajib diisi untuk siswa yang hadir.'], 422);
+            if (! $item['hadir']) {
+                continue;
+            }
+
+            $skor = collect($item['skor'] ?? [])->filter(fn ($nilai) => filled($nilai));
+
+            $asing = $skor->keys()->reject(fn ($id) => $aspekAktif->contains((int) $id));
+            if ($asing->isNotEmpty()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Ada aspek penilaian yang sudah tidak berlaku. Muat ulang halaman ini dulu.',
+                ], 422);
+            }
+
+            $belumDinilai = $aspekAktif->reject(fn ($id) => $skor->has((string) $id) || $skor->has($id));
+            if ($belumDinilai->isNotEmpty()) {
+                $nama = $namaSiswa[$item['siswa_id']] ?? 'Siswa';
+                $kurang = AspekPenilaian::whereIn('id', $belumDinilai)->pluck('nama')->implode(', ');
+
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Nilai {$nama} belum lengkap. Aspek yang kosong: {$kurang}.",
+                ], 422);
             }
         }
 
@@ -335,18 +375,32 @@ class ModulAjarController extends Controller
 
         DB::transaction(function () use ($detail, $validated, $guruKredit) {
             $now = now();
-            ModulAjarAbsensi::upsert(
-                collect($validated['absensi'])->map(fn ($item) => [
-                    'modul_ajar_detail_id' => $detail->id,
-                    'siswa_id' => $item['siswa_id'],
-                    'hadir' => $item['hadir'],
-                    'nilai' => $item['hadir'] ? $item['nilai'] : null,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ])->all(),
-                ['modul_ajar_detail_id', 'siswa_id'],
-                ['hadir', 'nilai', 'updated_at']
-            );
+            foreach ($validated['absensi'] as $item) {
+                $absensi = ModulAjarAbsensi::updateOrCreate(
+                    ['modul_ajar_detail_id' => $detail->id, 'siswa_id' => $item['siswa_id']],
+                    ['hadir' => $item['hadir'], 'nilai' => null]
+                );
+
+                $absensi->nilaiAspeks()->delete();
+
+                if (! $item['hadir']) {
+                    continue;
+                }
+
+                $baris = collect($item['skor'] ?? [])
+                    ->filter(fn ($nilai) => filled($nilai))
+                    ->map(fn ($nilai, $aspekId) => [
+                        'modul_ajar_absensi_id' => $absensi->id,
+                        'aspek_penilaian_id' => (int) $aspekId,
+                        'skor' => (int) $nilai,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ])->values()->all();
+
+                if ($baris !== []) {
+                    NilaiAspek::insert($baris);
+                }
+            }
 
             AbsensiGuru::updateOrCreate(
                 ['modul_ajar_detail_id' => $detail->id],

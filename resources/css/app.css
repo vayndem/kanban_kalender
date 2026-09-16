@@ -93,6 +93,10 @@
         border-color: var(--color-base-300);
     }
 
+    [x-cloak] {
+        display: none !important;
+    }
+
     html {
         scroll-behavior: smooth;
         -webkit-text-size-adjust: 100%;

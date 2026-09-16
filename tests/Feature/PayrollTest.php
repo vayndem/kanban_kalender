@@ -199,6 +199,48 @@ class PayrollTest extends TestCase
         $this->assertNull($baris['struk_terakhir']);
     }
 
+    public function test_perkiraan_berjalan_kembali_nol_setelah_periode_ditutup(): void
+    {
+        $guru = $this->guru(600_000, 0);
+        $this->catatKehadiran($guru, 1);
+
+        $sebelum = collect($this->payroll->ringkasan())->firstWhere('id', $guru->id);
+        $this->assertSame(600_000, $sebelum['perkiraan_total']);
+
+        $struk = $this->payroll->jalankan($guru);
+
+        $sesudah = collect($this->payroll->ringkasan())->firstWhere('id', $guru->id);
+        $this->assertSame(0, $sesudah['kehadiran_belum_dibayar']);
+        $this->assertSame(0, $sesudah['perkiraan_total'], 'Angka berjalan harus bersih setelah Siap Lakukan.');
+        $this->assertSame(600_000, $struk->total, 'Struk yang sudah terbit tidak boleh ikut berubah.');
+        $this->assertSame(600_000, $sesudah['struk_terakhir']['total']);
+    }
+
+    public function test_guru_tanpa_kehadiran_tidak_menambah_angka_berjalan(): void
+    {
+        $guru = $this->guru(600_000, 50_000);
+
+        $baris = collect($this->payroll->ringkasan())->firstWhere('id', $guru->id);
+
+        $this->assertSame(0, $baris['perkiraan_total']);
+        $this->assertSame(600_000, $baris['gaji_bawaan'], 'Tarifnya tetap tampil walau angka berjalan nol.');
+    }
+
+    public function test_pembatalan_struk_memunculkan_kembali_angka_berjalan(): void
+    {
+        $guru = $this->guru(600_000, 25_000);
+        $this->catatKehadiran($guru, 2);
+        $struk = $this->payroll->jalankan($guru);
+
+        $this->assertSame(0, collect($this->payroll->ringkasan())->firstWhere('id', $guru->id)['perkiraan_total']);
+
+        $this->payroll->batalkan($struk, null, 'salah tarif');
+
+        $baris = collect($this->payroll->ringkasan())->firstWhere('id', $guru->id);
+        $this->assertSame(2, $baris['kehadiran_belum_dibayar']);
+        $this->assertSame(650_000, $baris['perkiraan_total']);
+    }
+
     public function test_log_kelas_mencatat_materi_yang_masuk_struk(): void
     {
         $guru = $this->guru();

@@ -23,13 +23,24 @@ class SiswaTemplateExport implements FromArray, ShouldAutoSize, WithCustomValueB
 
     public function headings(): array
     {
-        return ['Nama Lengkap', 'Panggilan', 'Kelas', 'No. HP', 'Nama Paket'];
+        return [
+            'Nama Lengkap',
+            'Panggilan',
+            'Kelas',
+            'No. HP',
+            'Kemampuan',
+            'Nama Paket',
+            'Nama Paket 2',
+            'Nama Paket 3',
+            'Nama Paket 4',
+            'Nama Paket 5',
+        ];
     }
 
     public function array(): array
     {
         return [
-            ['Contoh Siswa Satu', 'Satu', '7A', '081234567890', ''],
+            ['Contoh Siswa Satu', 'Satu', '7A', '081234567890', '1', '', '', '', '', ''],
         ];
     }
 

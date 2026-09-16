@@ -2,11 +2,22 @@
 
 namespace Tests\Feature;
 
+use App\Models\AbsensiGuru;
+use App\Models\AspekPenilaian;
+use App\Models\BatchPembayaranLog;
 use App\Models\Diskon;
+use App\Models\Guru;
 use App\Models\Jadwal;
+use App\Models\JadwalTeksLog;
+use App\Models\ModulAjarAbsensi;
+use App\Models\ModulAjarDetail;
+use App\Models\NilaiAspek;
 use App\Models\Pembayaran;
 use App\Models\PembayaranDetail;
+use App\Models\Penggajian;
 use App\Models\Siswa;
+use App\Models\StashPemulihanLog;
+use App\Models\Tanda;
 use App\Services\IrisanSesiService;
 use Carbon\Carbon;
 use Database\Seeders\DemoSeeder;
@@ -240,5 +251,137 @@ class DemoSeederTest extends TestCase
         ])->count();
 
         $this->assertGreaterThan(0, $detailLama, 'Tidak ada detail setoran yang bertanggal 2 bulan lalu.');
+    }
+
+    public function test_demo_memuat_keadaan_mengajar_yang_sedang_berlangsung(): void
+    {
+        $this->assertGreaterThan(
+            0,
+            ModulAjarDetail::where('sedang_dipersiapkan', true)->count(),
+            'Harus ada kelas yang sedang dipersiapkan, kalau tidak kartu kuning di Absen tidak pernah terlihat.'
+        );
+
+        $this->assertGreaterThan(
+            0,
+            ModulAjarDetail::where('tidak_bisa_hadir', true)->count(),
+            'Harus ada slot terbuka supaya alur guru pengganti bisa dicoba.'
+        );
+
+        $this->assertGreaterThan(
+            0,
+            ModulAjarDetail::whereNotNull('guru_pengganti_id')->count(),
+            'Harus ada kelas yang sedang dipegang guru pengganti.'
+        );
+    }
+
+    public function test_kredit_kehadiran_ada_yang_jatuh_ke_guru_pengganti(): void
+    {
+        $adaBeda = ModulAjarDetail::whereNotNull('diajarkan_oleh_guru_id')
+            ->whereNotNull('tanggal_diajarkan')
+            ->get()
+            ->contains(function (ModulAjarDetail $detail) {
+                $pemilik = Jadwal::where('kode_kelas', $detail->modulAjar?->kode_kelas)->value('guru_id');
+                $kredit = AbsensiGuru::where('modul_ajar_detail_id', $detail->id)->value('guru_id');
+
+                return $pemilik && $kredit && (int) $pemilik !== (int) $kredit;
+            });
+
+        $this->assertTrue($adaBeda, 'Harus ada satu kelas yang kredit kehadirannya jatuh ke guru pengganti.');
+    }
+
+    public function test_demo_memuat_aspek_aktif_dan_aspek_yang_dipensiunkan(): void
+    {
+        $this->assertGreaterThanOrEqual(5, AspekPenilaian::where('aktif', true)->count());
+        $this->assertGreaterThan(
+            0,
+            AspekPenilaian::where('aktif', false)->count(),
+            'Harus ada aspek nonaktif supaya lencana Nonaktif dan rapor lama ikut teruji.'
+        );
+
+        $pensiun = AspekPenilaian::where('aktif', false)->first();
+        $this->assertGreaterThan(
+            0,
+            NilaiAspek::where('aspek_penilaian_id', $pensiun->id)->count(),
+            'Aspek yang dipensiunkan harus tetap menyimpan nilai lama.'
+        );
+    }
+
+    public function test_setiap_anak_yang_hadir_dinilai_di_semua_aspek_aktif(): void
+    {
+        $jumlahAktif = AspekPenilaian::where('aktif', true)->count();
+
+        $kurang = ModulAjarAbsensi::where('hadir', true)
+            ->withCount(['nilaiAspeks as aktif_count' => fn ($q) => $q->whereHas('aspek', fn ($a) => $a->where('aktif', true))])
+            ->get()
+            ->filter(fn ($a) => $a->aktif_count < $jumlahAktif);
+
+        $this->assertCount(0, $kurang, 'Ada anak hadir yang penilaiannya tidak lengkap di data demo.');
+    }
+
+    public function test_demo_memuat_struk_gaji_yang_dibatalkan(): void
+    {
+        $this->assertGreaterThan(
+            0,
+            Penggajian::whereNotNull('dibatalkan_pada')->count(),
+            'Alur batalkan-lalu-terbitkan-ulang harus terlihat di data demo.'
+        );
+
+        $dibatalkan = Penggajian::whereNotNull('dibatalkan_pada')->first();
+        $this->assertNotNull($dibatalkan->alasan_batal, 'Pembatalan wajib punya alasan.');
+        $this->assertSame(
+            0,
+            AbsensiGuru::where('penggajian_id', $dibatalkan->id)->count(),
+            'Kehadiran pada struk yang dibatalkan harus dilepas kembali.'
+        );
+    }
+
+    public function test_demo_memuat_guru_yang_belum_disiapkan_admin(): void
+    {
+        $this->assertGreaterThan(
+            0,
+            Guru::whereNull('email')->count(),
+            'Harus ada guru tanpa akun, karena itu keadaan mayoritas di produksi.'
+        );
+    }
+
+    public function test_demo_memuat_tagihan_di_luar_paket(): void
+    {
+        $bebas = Pembayaran::whereNull('id_paket')->get();
+
+        $this->assertGreaterThan(0, $bebas->count(), 'Tagihan buku/denda harus ada supaya jalur non-paket teruji.');
+        $this->assertTrue(
+            $bebas->contains(fn ($p) => (int) $p->status === 2),
+            'Setidaknya satu tagihan non-paket sudah lunas.'
+        );
+    }
+
+    public function test_demo_memuat_siswa_yang_belum_terjadwal_dan_paket_bertumpuk(): void
+    {
+        $belumTerjadwal = Siswa::whereDoesntHave('jadwals')->count();
+        $this->assertGreaterThan(0, $belumTerjadwal, 'Panel Kebersihan Data butuh siswa tanpa jadwal.');
+
+        $bertumpuk = Siswa::whereNotNull('paket_pembayaran')
+            ->whereNotNull('paket_pembayaran_3')
+            ->count();
+        $this->assertGreaterThan(0, $bertumpuk, 'Harus ada siswa dengan lebih dari dua paket.');
+    }
+
+    public function test_demo_memuat_catatan_yang_sudah_lewat_ambang_batas(): void
+    {
+        $this->assertGreaterThan(
+            0,
+            Tanda::where('created_at', '<', now()->subDays(14))->count(),
+            'Peringatan tanda lama di Ringkasan butuh catatan berumur lebih dari 14 hari.'
+        );
+    }
+
+    public function test_demo_memuat_jejak_operasional(): void
+    {
+        $this->assertGreaterThan(0, BatchPembayaranLog::count(), 'Kunci penagihan massal belum tercatat.');
+        $this->assertGreaterThan(0, JadwalTeksLog::count(), 'Log salin teks jadwal belum ada.');
+        $this->assertGreaterThan(0, StashPemulihanLog::count(), 'Catatan pemulihan stash belum ada.');
+
+        $stash = StashPemulihanLog::first();
+        $this->assertNotEmpty($stash->isi_sebelum, 'Cadangan stash harus berisi kondisi sebelumnya.');
     }
 }

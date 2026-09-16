@@ -13,6 +13,7 @@ import { workshopHandler } from './admin/workshop';
 import { modulAjarHandler } from './admin/modul-ajar';
 import { absenHandler } from './admin/absen';
 import { payrollHandler } from './admin/payroll';
+import { resultHandler } from './admin/result';
 import { calendarApp } from './components/calendar';
 import { installAlerts } from './core/alerts';
 import { salinTeksJadwal } from './core/http';
@@ -26,8 +27,10 @@ import {
     calculateScheduleStatus,
     filterStudents,
     indexById,
+    studentPackageIds,
 } from './domain/student-list';
 import { installButtonLoading } from './ui/button-loading';
+import { filterMulti } from './ui/filter-multi';
 import { installSearchableSelects } from './ui/searchable-select';
 
 window.Alpine = Alpine;
@@ -42,6 +45,7 @@ window.AppDomain = Object.freeze({
     filterStudents,
     indexById,
     normalizeStudentSchedules,
+    studentPackageIds,
 });
 
 installAlerts();
@@ -54,8 +58,10 @@ Alpine.data('pembayaranHandler', pembayaranHandler);
 Alpine.data('akunGuruHandler', akunGuruHandler);
 Alpine.data('workshopHandler', workshopHandler);
 Alpine.data('payrollHandler', payrollHandler);
+Alpine.data('resultHandler', resultHandler);
 Alpine.data('modulAjarHandler', modulAjarHandler);
 Alpine.data('absenHandler', absenHandler);
+Alpine.data('filterMulti', filterMulti);
 Alpine.start();
 
 installJadwalDragDrop();

@@ -13,6 +13,7 @@
         arsipBase: @js(url('admin/arsip')),
         tandaBase: @js(url('admin/tanda')),
         tandaStore: @js(route('admin.tanda.store')),
+        exportExcel: @js(route('admin.siswa.exportExcel')),
     },
 })">
 
@@ -82,139 +83,32 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-            <div>
-                <label class="app-label">Kelas</label>
-                <select x-model="filterKelas"
-                    class="select select-sm w-full">
-                    <option value="">Semua Kelas</option>
-                    <template x-for="k in kelasList" :key="k">
-                        <option :value="k" x-text="k"></option>
-                    </template>
-                </select>
-            </div>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <x-filter-multi label="Kelas" model="filterKelas" options="opsiKelas" noun="kelas"
+                search-placeholder="Cari kelas..." />
 
-            <div>
-                <label class="app-label">Paket</label>
-                <select x-model="filterPaket"
-                    class="select select-sm w-full">
-                    <option value="">Semua Paket</option>
-                    <template x-for="p in pakets" :key="p.id">
-                        <option :value="p.id" x-text="p.nama_paket"></option>
-                    </template>
-                </select>
-            </div>
+            <x-filter-multi label="Paket" model="filterPaket" options="opsiPaket" noun="paket"
+                search-placeholder="Cari nama paket..." />
 
-            <div>
-                <label class="app-label">Kemampuan</label>
-                <select x-model="filterKemampuan"
-                    class="select select-sm w-full">
-                    <option value="">Semua Kemampuan</option>
-                    <template x-for="k in kemampuans" :key="k.id">
-                        <option :value="k.id" x-text="'Level ' + k.level + ' — ' + k.keterangan"></option>
-                    </template>
-                </select>
-            </div>
+            <x-filter-multi label="Kemampuan" model="filterKemampuan" options="opsiKemampuan" noun="level"
+                search-placeholder="Cari level..." />
 
-            <div x-data="{ openSesi: false, searchSesi: '' }" class="relative">
-                <label class="app-label">Sesi</label>
-                <button type="button" @click="openSesi = !openSesi"
-                    class="searchable-select-trigger">
-                    <span x-text="filterSesis.length ? filterSesis.length + ' sesi dipilih' : 'Semua Sesi'"
-                        :class="filterSesis.length ? 'text-primary font-semibold' : ''"></span>
-                    <i class="fas fa-chevron-down text-xs text-base-content/60 transition-transform duration-200"
-                        :class="openSesi ? 'rotate-180' : ''"></i>
-                </button>
-                <template x-if="openSesi">
-                    <div @click.outside="openSesi = false"
-                        class="searchable-select-panel max-h-48 overflow-y-auto">
-                        <div
-                            class="searchable-select-search-wrap sticky top-0 z-10">
-                            <input type="search" x-model="searchSesi" placeholder="Cari sesi atau jam..."
-                                class="input input-xs w-full">
-                        </div>
-                        <template
-                            x-for="s in allSesis.filter(item => ((item.name || item.nama_sesi || '') + ' ' + (item.start_time || '') + ' ' + (item.end_time || '')).toLowerCase().includes(searchSesi.toLowerCase()))"
-                            :key="s.id">
-                            <label
-                                class="flex cursor-pointer items-center gap-3 rounded-field px-3 py-2 transition hover:bg-primary/10">
-                                <input type="checkbox" :value="s.id" x-model="filterSesis"
-                                    class="checkbox checkbox-primary">
-                                <div class="min-w-0">
-                                    <p class="text-sm text-base-content font-medium"
-                                        x-text="s.name || s.nama_sesi"></p>
-                                    <p class="text-[11px] text-base-content/60"
-                                        x-text="s.start_time ? s.start_time.substring(0,5) + ' - ' + s.end_time.substring(0,5) : ''">
-                                    </p>
-                                </div>
-                            </label>
-                        </template>
-                    </div>
-                </template>
-            </div>
+            <x-filter-multi label="Sesi" model="filterSesis" options="opsiSesi" noun="sesi"
+                search-placeholder="Cari sesi atau jam..." />
 
-            <div x-data="{ openGuru: false, searchGuru: '' }" class="relative">
-                <label class="app-label">Guru</label>
-                <button type="button" @click="openGuru = !openGuru"
-                    class="searchable-select-trigger">
-                    <span x-text="filterGurus.length ? filterGurus.length + ' guru dipilih' : 'Semua Guru'"
-                        :class="filterGurus.length ? 'text-primary font-semibold' : ''"></span>
-                    <i class="fas fa-chevron-down text-xs text-base-content/60 transition-transform duration-200"
-                        :class="openGuru ? 'rotate-180' : ''"></i>
-                </button>
-                <template x-if="openGuru">
-                    <div @click.outside="openGuru = false"
-                        class="searchable-select-panel max-h-48 overflow-y-auto">
-                        <div
-                            class="searchable-select-search-wrap sticky top-0 z-10">
-                            <input type="search" x-model="searchGuru" placeholder="Cari nama guru..."
-                                class="input input-xs w-full">
-                        </div>
-                        <template
-                            x-for="g in guruList.filter(item => item.name.toLowerCase().includes(searchGuru.toLowerCase()))"
-                            :key="g.id">
-                            <label
-                                class="flex cursor-pointer items-center gap-3 rounded-field px-3 py-2 transition hover:bg-primary/10">
-                                <input type="checkbox" :value="g.id" x-model="filterGurus"
-                                    class="checkbox checkbox-primary">
-                                <span class="text-sm text-base-content" x-text="g.name"></span>
-                            </label>
-                        </template>
-                    </div>
-                </template>
-            </div>
+            <x-filter-multi label="Guru" model="filterGurus" options="opsiGuru" noun="guru"
+                search-placeholder="Cari nama guru..." />
 
-            <div x-data="{ openRuang: false, searchRuang: '' }" class="relative">
-                <label
-                    class="app-label">Ruang</label>
-                <button type="button" @click="openRuang = !openRuang"
-                    class="searchable-select-trigger">
-                    <span x-text="filterRuangs.length ? filterRuangs.length + ' ruang dipilih' : 'Semua Ruang'"
-                        :class="filterRuangs.length ? 'text-primary font-semibold' : ''"></span>
-                    <i class="fas fa-chevron-down text-xs text-base-content/60 transition-transform duration-200"
-                        :class="openRuang ? 'rotate-180' : ''"></i>
-                </button>
-                <template x-if="openRuang">
-                    <div @click.outside="openRuang = false"
-                        class="searchable-select-panel max-h-48 overflow-y-auto">
-                        <div
-                            class="searchable-select-search-wrap sticky top-0 z-10">
-                            <input type="search" x-model="searchRuang" placeholder="Cari ruang..."
-                                class="input input-xs w-full">
-                        </div>
-                        <template
-                            x-for="r in ruangList.filter(item => item.name.toLowerCase().includes(searchRuang.toLowerCase()))"
-                            :key="r.id">
-                            <label
-                                class="flex cursor-pointer items-center gap-3 rounded-field px-3 py-2 transition hover:bg-primary/10">
-                                <input type="checkbox" :value="r.id" x-model="filterRuangs"
-                                    class="checkbox checkbox-primary">
-                                <span class="text-sm text-base-content" x-text="r.name"></span>
-                            </label>
-                        </template>
-                    </div>
-                </template>
-            </div>
+            <x-filter-multi label="Ruang" model="filterRuangs" options="opsiRuang" noun="ruang"
+                search-placeholder="Cari ruang..." />
+        </div>
+
+        <div x-show="hasActiveFilter" x-cloak
+            class="flex flex-wrap items-center gap-2 rounded-field bg-base-100 px-3 py-2">
+            <span class="text-[11px] font-black uppercase tracking-wider text-base-content/60">Filter aktif</span>
+            <template x-for="ringkas in ringkasanFilter" :key="ringkas.label">
+                <span class="badge badge-primary badge-sm font-bold" x-text="ringkas.teks"></span>
+            </template>
         </div>
 
         <div class="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-base-300">
@@ -226,7 +120,7 @@
             </label>
             <button type="button" @click="exportExcel()" class="btn btn-export text-sm">
                 <i class="fas fa-file-excel"></i> Export Excel <span x-show="hasActiveFilter"
-                    class="text-[11px] bg-red-500 px-1.5 py-0.5 rounded"
+                    class="rounded bg-black/20 px-1.5 py-0.5 text-[11px]"
                     x-text="'(' + filteredSiswa.length + ')'"></span>
             </button>
         </div>
@@ -299,12 +193,11 @@
                                         <i class="fas fa-id-badge opacity-60 text-[11px]"></i> <span
                                             x-text="siswa.kelas || 'N/A'"></span>
                                     </span>
-                                    <template x-if="siswa.paket_pembayaran">
-                                        <div class="text-[11px] font-bold uppercase tracking-wide truncate max-w-[150px]"
+                                    <template x-for="nama in paketSiswa(siswa)" :key="nama">
+                                        <div class="max-w-[150px] truncate text-[11px] font-bold uppercase tracking-wide"
                                             :class="getStatusJadwal(siswa).isKurang && viewMode === 'aktif' ?
-                                                'text-warning' : 'text-primary'">
-                                            <span x-text="getPaketName(siswa.paket_pembayaran)"></span>
-                                        </div>
+                                                'text-warning' : 'text-primary'"
+                                            x-text="nama"></div>
                                     </template>
                                 </div>
                             </td>
@@ -447,11 +340,11 @@
                             <i class="fas fa-id-badge opacity-60 text-[11px]"></i> <span
                                 x-text="siswa.kelas || 'N/A'"></span>
                         </span>
-                        <template x-if="siswa.paket_pembayaran">
-                            <span class="text-[11px] font-bold uppercase tracking-wide truncate max-w-[140px]"
+                        <template x-for="nama in paketSiswa(siswa)" :key="nama">
+                            <span class="max-w-[140px] truncate text-[11px] font-bold uppercase tracking-wide"
                                 :class="getStatusJadwal(siswa).isKurang && viewMode === 'aktif' ?
                                     'text-warning' : 'text-primary'"
-                                x-text="getPaketName(siswa.paket_pembayaran)"></span>
+                                x-text="nama"></span>
                         </template>
                         <span class="ml-auto flex items-center gap-1.5 text-xs text-base-content/70 font-medium">
                             <i class="fas fa-phone-alt text-[11px] text-base-content/60"></i>
@@ -628,90 +521,7 @@
                                 </template>
                             </div>
 
-                            <div class="pt-4 border-t border-base-300">
-                                <h4
-                                    class="text-xs font-bold text-base-content/80 uppercase tracking-wider flex items-center gap-2 mb-3">
-                                    <i class="fas fa-chart-line text-success"></i> Rapor Perkembangan
-                                </h4>
 
-                                <template x-if="isLoadingRapor">
-                                    <div class="flex items-center justify-center gap-2 py-6 text-sm text-base-content/60">
-                                        <i class="fas fa-spinner fa-spin text-success"></i>
-                                        <span>Memuat rapor...</span>
-                                    </div>
-                                </template>
-
-                                <template x-if="!isLoadingRapor && raporSiswa && raporSiswa.ringkasan.total_pertemuan === 0">
-                                    <div
-                                        class="text-center py-6 border border-dashed border-base-300 rounded-xl bg-base-100">
-                                        <i class="fas fa-chart-simple text-base-content/60 text-2xl mb-2"></i>
-                                        <p class="text-xs text-base-content/60">Belum ada pertemuan yang
-                                            dinilai untuk siswa ini.</p>
-                                    </div>
-                                </template>
-
-                                <template x-if="!isLoadingRapor && raporSiswa && raporSiswa.ringkasan.total_pertemuan > 0">
-                                    <div class="space-y-3">
-                                        <div class="grid grid-cols-2 gap-2">
-                                            <div
-                                                class="rounded-xl border border-base-300 bg-base-100 p-2.5 text-center">
-                                                <p class="text-lg font-black text-base-content"
-                                                    x-text="raporSiswa.ringkasan.total_pertemuan"></p>
-                                                <p class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">
-                                                    Pertemuan</p>
-                                            </div>
-                                            <div
-                                                class="rounded-xl border border-base-300 bg-base-100 p-2.5 text-center">
-                                                <p class="text-lg font-black text-base-content"
-                                                    x-text="raporSiswa.ringkasan.persen_kehadiran + '%'"></p>
-                                                <p class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">
-                                                    Kehadiran</p>
-                                            </div>
-                                            <div
-                                                class="rounded-xl border border-base-300 bg-base-100 p-2.5 text-center">
-                                                <p class="text-lg font-black text-base-content"
-                                                    x-text="raporSiswa.ringkasan.rata_nilai ?? '-'"></p>
-                                                <p class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">
-                                                    Rata-rata Nilai</p>
-                                            </div>
-                                            <div
-                                                class="rounded-xl border border-base-300 bg-base-100 p-2.5 text-center">
-                                                <p class="text-lg font-black"
-                                                    :class="{
-                                                        'text-success': raporSiswa.ringkasan.tren === 'naik',
-                                                        'text-error': raporSiswa.ringkasan.tren === 'turun',
-                                                        'text-primary': raporSiswa.ringkasan.tren === 'stabil',
-                                                        'text-base-content/60': !raporSiswa.ringkasan.tren
-                                                    }"
-                                                    x-text="labelTren(raporSiswa.ringkasan.tren)"></p>
-                                                <p class="text-[11px] font-bold uppercase tracking-wider text-base-content/60">
-                                                    Tren Nilai</p>
-                                            </div>
-                                        </div>
-
-                                        <div class="space-y-1.5">
-                                            <template x-for="m in raporSiswa.per_mapel" :key="m.mapel">
-                                                <div
-                                                    class="flex items-center justify-between gap-2 rounded-lg bg-base-100 border border-base-300 px-3 py-2">
-                                                    <div class="min-w-0">
-                                                        <p class="text-xs font-bold text-base-content truncate"
-                                                            x-text="m.mapel"></p>
-                                                        <p class="text-[11px] text-base-content/60"
-                                                            x-text="m.hadir + ' dari ' + m.jumlah_pertemuan + ' pertemuan hadir'">
-                                                        </p>
-                                                    </div>
-                                                    <span
-                                                        class="shrink-0 rounded-md bg-success/10 px-2 py-1 text-xs font-black text-success"
-                                                        x-text="'Nilai ' + (m.rata_nilai ?? '-')"></span>
-                                                </div>
-                                            </template>
-                                        </div>
-
-                                        <a :href="`${routes.siswaBase}/${detailSiswa.id}/rapor/pdf`" target="_blank"
-                                            class="btn btn-export text-xs w-full justify-center">
-                                            <i class="fas fa-file-pdf"></i> Download Rapor PDF
-                                        </a>
-                                    </div>
                                 </template>
                             </div>
                         </div>

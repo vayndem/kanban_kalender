@@ -27,8 +27,6 @@ export const siswaHandler = ({
     allRuangs: ruangData || [],
     isLoadingJadwal: false,
     editJadwalRequestKey: 0,
-    raporSiswa: null,
-    isLoadingRapor: false,
     viewMode: 'aktif',
     showDetailModal: false,
     detailSiswa: {},
@@ -38,9 +36,9 @@ export const siswaHandler = ({
     selectedSiswas: [],
     sortField: 'name',
     sortOrder: 'asc',
-    filterKelas: '',
-    filterPaket: '',
-    filterKemampuan: '',
+    filterKelas: [],
+    filterPaket: [],
+    filterKemampuan: [],
     filterSesis: [],
     filterGurus: [],
     filterRuangs: [],
@@ -70,10 +68,66 @@ export const siswaHandler = ({
         return [...this.allRuangs].sort((a, b) => a.name.localeCompare(b.name));
     },
 
+    get opsiKelas() {
+        return this.kelasList.map(kelas => ({ value: kelas, label: kelas }));
+    },
+
+    get opsiPaket() {
+        return this.pakets.map(paket => ({ value: paket.id, label: paket.nama_paket }));
+    },
+
+    get opsiKemampuan() {
+        return this.kemampuans.map(item => ({
+            value: item.id,
+            label: 'Level ' + item.level,
+            sub: item.keterangan || '',
+        }));
+    },
+
+    get opsiSesi() {
+        return this.allSesis.map(sesi => ({
+            value: sesi.id,
+            label: sesi.name || sesi.nama_sesi || '-',
+            sub: sesi.start_time && sesi.end_time
+                ? sesi.start_time.substring(0, 5) + ' - ' + sesi.end_time.substring(0, 5)
+                : '',
+        }));
+    },
+
+    get opsiGuru() {
+        return this.guruList.map(guru => ({ value: guru.id, label: guru.name }));
+    },
+
+    get opsiRuang() {
+        return this.ruangList.map(ruang => ({ value: ruang.id, label: ruang.name }));
+    },
+
+    get filterAktifTerpakai() {
+        return [
+            { label: 'Kelas', nilai: this.filterKelas },
+            { label: 'Paket', nilai: this.filterPaket },
+            { label: 'Kemampuan', nilai: this.filterKemampuan },
+            { label: 'Sesi', nilai: this.filterSesis },
+            { label: 'Guru', nilai: this.filterGurus },
+            { label: 'Ruang', nilai: this.filterRuangs },
+        ].filter(item => item.nilai.length > 0);
+    },
+
+    get ringkasanFilter() {
+        const daftar = this.filterAktifTerpakai.map(item => ({
+            label: item.label,
+            teks: item.label + ': ' + item.nilai.length,
+        }));
+
+        if (this.siswaSearch.trim() !== '') {
+            daftar.push({ label: 'Pencarian', teks: 'Cari: "' + this.siswaSearch.trim() + '"' });
+        }
+
+        return daftar;
+    },
+
     get hasActiveFilter() {
-        return this.filterKelas || this.filterPaket || this.filterKemampuan ||
-            this.filterSesis.length > 0 || this.filterGurus.length > 0 ||
-            this.filterRuangs.length > 0 || this.siswaSearch;
+        return this.filterAktifTerpakai.length > 0 || this.siswaSearch.trim() !== '';
     },
 
     get filteredSiswa() {
@@ -127,13 +181,19 @@ export const siswaHandler = ({
     },
 
     resetFilter() {
-        this.filterKelas = '';
-        this.filterPaket = '';
-        this.filterKemampuan = '';
+        this.filterKelas = [];
+        this.filterPaket = [];
+        this.filterKemampuan = [];
         this.filterSesis = [];
         this.filterGurus = [];
         this.filterRuangs = [];
         this.siswaSearch = '';
+    },
+
+    paketSiswa(siswa) {
+        return AppDomain.studentPackageIds(siswa)
+            .map(id => this.getPaketName(id))
+            .filter(nama => nama !== 'N/A');
     },
 
     getPaketName(id) {
@@ -172,8 +232,6 @@ export const siswaHandler = ({
         this.catatanForm = { keterangan: '' };
         this.showDetailModal = true;
         this.isLoadingJadwal = true;
-        this.raporSiswa = null;
-        this.muatRapor(siswa.id, requestKey);
 
         try {
             const response = await fetch(`${this.routes.siswaBase}/${siswa.id}/jadwal`, {
@@ -192,32 +250,6 @@ export const siswaHandler = ({
                 this.isLoadingJadwal = false;
             }
         }
-    },
-
-    async muatRapor(siswaId, requestKey) {
-        this.isLoadingRapor = true;
-
-        try {
-            const response = await fetch(`${this.routes.siswaBase}/${siswaId}/rapor`, {
-                headers: { Accept: 'application/json' },
-            });
-            if (!response.ok) throw new Error('Rapor perkembangan gagal dimuat.');
-
-            const result = await response.json();
-            if (requestKey !== this.editJadwalRequestKey) return;
-            this.raporSiswa = result.data;
-        } catch (error) {
-            if (requestKey !== this.editJadwalRequestKey) return;
-            AppSwal.error(error.message || 'Rapor perkembangan gagal dimuat.');
-        } finally {
-            if (requestKey === this.editJadwalRequestKey) {
-                this.isLoadingRapor = false;
-            }
-        }
-    },
-
-    labelTren(tren) {
-        return { naik: 'Naik', turun: 'Turun', stabil: 'Stabil' }[tren] || '-';
     },
 
     async simpanCatatan() {
@@ -346,14 +378,16 @@ export const siswaHandler = ({
     exportExcel() {
         ButtonLoading.pulseCurrent();
         const params = new URLSearchParams();
-        if (this.filterKelas) params.set('kelas', this.filterKelas);
-        if (this.filterPaket) params.set('paket_id', this.filterPaket);
-        if (this.filterKemampuan) params.set('kemampuan_id', this.filterKemampuan);
-        if (this.filterSesis.length) params.set('sesi_ids', this.filterSesis.join(','));
-        if (this.filterGurus.length) params.set('guru_ids', this.filterGurus.join(','));
-        if (this.filterRuangs.length) params.set('ruang_ids', this.filterRuangs.join(','));
-        if (this.siswaSearch) params.set('search', this.siswaSearch);
+        const tambah = (kunci, nilai) => nilai.forEach(item => params.append(`${kunci}[]`, item));
 
-        window.location.href = `/admin/siswa/export-excel?${params.toString()}`;
+        tambah('kelas', this.filterKelas);
+        tambah('paket_ids', this.filterPaket);
+        tambah('kemampuan_ids', this.filterKemampuan);
+        tambah('sesi_ids', this.filterSesis);
+        tambah('guru_ids', this.filterGurus);
+        tambah('ruang_ids', this.filterRuangs);
+        if (this.siswaSearch.trim() !== '') params.set('search', this.siswaSearch.trim());
+
+        window.location.href = `${this.routes.exportExcel}?${params.toString()}`;
     }
 });

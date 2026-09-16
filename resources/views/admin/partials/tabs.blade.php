@@ -10,6 +10,7 @@
         'workshop' => ['label' => 'Workshop', 'icon' => 'fa-toolbox', 'route' => 'admin.workshop.index'],
         'modul_ajar' => ['label' => 'Modul Ajar', 'icon' => 'fa-book-open-reader', 'route' => 'modulAjar.index'],
         'absen' => ['label' => 'Absen', 'icon' => 'fa-clipboard-user', 'route' => 'absen.index'],
+        'result' => ['label' => 'Result', 'icon' => 'fa-medal', 'route' => 'admin.result.index'],
         'payroll' => ['label' => 'Payroll', 'icon' => 'fa-money-check-dollar', 'route' => 'admin.payroll.index'],
         'akun_guru' => ['label' => 'Akun Guru', 'icon' => 'fa-user-shield', 'route' => 'admin.akunGuru.index'],
     ];

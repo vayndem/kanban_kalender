@@ -34,6 +34,7 @@ class RaporService
                 'sampai' => $sampai,
             ],
             'ringkasan' => $this->ringkasan($absensis),
+            'per_aspek' => $this->perAspek($absensis),
             'per_mapel' => $this->perMapel($absensis, $kelasInfo),
         ];
     }
@@ -49,6 +50,7 @@ class RaporService
                 'modulAjarDetail:id,modul_ajar_id,materi,sub_materi,tanggal_diajarkan,diajarkan_oleh_guru_id',
                 'modulAjarDetail.modulAjar:id,kode_kelas',
                 'modulAjarDetail.diajarkanOlehGuru:id,name',
+                'nilaiAspeks.aspek:id,nama,indikator,urutan',
             ])
             ->get()
             ->filter(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail?->tanggal_diajarkan !== null)
@@ -83,10 +85,19 @@ class RaporService
             ]);
     }
 
+    private function nilaiPertemuan(Collection $absensis): Collection
+    {
+        return $absensis
+            ->where('hadir', true)
+            ->map(fn (ModulAjarAbsensi $a) => $a->rataAspek())
+            ->filter(fn ($n) => $n !== null)
+            ->values();
+    }
+
     private function ringkasan(Collection $absensis): array
     {
         $hadir = $absensis->where('hadir', true);
-        $nilai = $hadir->pluck('nilai')->filter(fn ($n) => $n !== null)->values();
+        $nilai = $this->nilaiPertemuan($absensis);
         $total = $absensis->count();
 
         return [
@@ -95,8 +106,8 @@ class RaporService
             'tidak_hadir' => $total - $hadir->count(),
             'persen_kehadiran' => $total > 0 ? (int) round($hadir->count() / $total * 100) : 0,
             'rata_nilai' => $nilai->isNotEmpty() ? round($nilai->avg(), 2) : null,
-            'nilai_terendah' => $nilai->isNotEmpty() ? (int) $nilai->min() : null,
-            'nilai_tertinggi' => $nilai->isNotEmpty() ? (int) $nilai->max() : null,
+            'nilai_terendah' => $nilai->isNotEmpty() ? round($nilai->min(), 2) : null,
+            'nilai_tertinggi' => $nilai->isNotEmpty() ? round($nilai->max(), 2) : null,
             'tren' => $this->tren($nilai),
         ];
     }
@@ -117,13 +128,50 @@ class RaporService
         return $selisih < -self::AMBANG_TREN ? 'turun' : 'stabil';
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function perAspek(Collection $absensis): array
+    {
+        $skor = $absensis
+            ->where('hadir', true)
+            ->flatMap(fn (ModulAjarAbsensi $a) => $a->nilaiAspeks)
+            ->filter(fn ($n) => $n->aspek !== null);
+
+        if ($skor->isEmpty()) {
+            return [];
+        }
+
+        return $skor
+            ->groupBy('aspek_penilaian_id')
+            ->map(function (Collection $rows) {
+                $aspek = $rows->first()->aspek;
+                $nilai = $rows->pluck('skor');
+
+                return [
+                    'aspek_id' => $aspek->id,
+                    'nama' => $aspek->nama,
+                    'indikator' => $aspek->indikator,
+                    'urutan' => $aspek->urutan,
+                    'jumlah_dinilai' => $nilai->count(),
+                    'rata' => round($nilai->avg(), 2),
+                    'terendah' => (int) $nilai->min(),
+                    'tertinggi' => (int) $nilai->max(),
+                    'tren' => $this->tren($rows->pluck('skor')->map(fn ($s) => (float) $s)->values()),
+                ];
+            })
+            ->sortBy([['urutan', 'asc'], ['nama', 'asc']])
+            ->values()
+            ->all();
+    }
+
     private function perMapel(Collection $absensis, Collection $kelasInfo): array
     {
         return $absensis
             ->groupBy(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail->modulAjar?->kode_kelas ?? '-')
             ->map(function (Collection $rows, string $kodeKelas) use ($kelasInfo) {
                 $hadir = $rows->where('hadir', true);
-                $nilai = $hadir->pluck('nilai')->filter(fn ($n) => $n !== null);
+                $nilai = $this->nilaiPertemuan($rows);
 
                 return [
                     'mapel' => $kelasInfo[$kodeKelas]['mapel'] ?? '-',
@@ -131,12 +179,19 @@ class RaporService
                     'jumlah_pertemuan' => $rows->count(),
                     'hadir' => $hadir->count(),
                     'rata_nilai' => $nilai->isNotEmpty() ? round($nilai->avg(), 2) : null,
+                    'per_aspek' => $this->perAspek($rows),
                     'pertemuan' => $rows->map(fn (ModulAjarAbsensi $a) => [
                         'tanggal' => $a->modulAjarDetail->tanggal_diajarkan->toDateString(),
                         'materi' => $a->modulAjarDetail->materi,
                         'sub_materi' => $a->modulAjarDetail->sub_materi,
                         'hadir' => (bool) $a->hadir,
-                        'nilai' => $a->nilai,
+                        'nilai' => $a->rataAspek(),
+                        'skor_aspek' => $a->nilaiAspeks
+                            ->filter(fn ($n) => $n->aspek !== null)
+                            ->sortBy(fn ($n) => $n->aspek->urutan)
+                            ->map(fn ($n) => ['nama' => $n->aspek->nama, 'skor' => $n->skor])
+                            ->values()
+                            ->all(),
                         'diajar_oleh' => $a->modulAjarDetail->diajarkanOlehGuru?->name ?? '-',
                     ])->values()->all(),
                 ];

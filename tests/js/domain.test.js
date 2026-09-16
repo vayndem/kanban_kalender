@@ -6,7 +6,9 @@ import {
     calculateScheduleStatus,
     filterStudents,
     indexById,
+    studentPackageIds,
 } from '../../resources/js/domain/student-list.js';
+import { filterMulti } from '../../resources/js/ui/filter-multi.js';
 
 test('payment summary groups a family and applies specific plus universal discounts', () => {
     const summaries = [
@@ -65,4 +67,111 @@ test('student filtering does not mutate the original student order', () => {
 
     assert.deepEqual(result.map(student => student.name), ['Ana', 'Zaki']);
     assert.deepEqual(students.map(student => student.name), ['Zaki', 'Ana']);
+});
+
+test('multi-select filters keep a student that matches any chosen value', () => {
+    const students = [
+        { id: 1, name: 'Ana', kelas: '5', paket_pembayaran: 7 },
+        { id: 2, name: 'Budi', kelas: '6', paket_pembayaran: 8 },
+        { id: 3, name: 'Cici', kelas: '7', paket_pembayaran: 9 },
+    ];
+    const scheduleMeta = {
+        1: { sesi_ids: [100], guru_ids: [10], ruang_ids: [1] },
+        2: { sesi_ids: [200], guru_ids: [20], ruang_ids: [2] },
+        3: { sesi_ids: [300], guru_ids: [30], ruang_ids: [3] },
+    };
+
+    const jalankan = filters => filterStudents({
+        students,
+        archives: [],
+        mode: 'aktif',
+        search: '',
+        filters: { kelas: [], paket: [], kemampuan: [], sesiIds: [], guruIds: [], ruangIds: [], ...filters },
+        scheduleMeta,
+        sortField: 'name',
+        sortOrder: 'asc',
+    }).map(student => student.name);
+
+    assert.deepEqual(jalankan({}), ['Ana', 'Budi', 'Cici']);
+    assert.deepEqual(jalankan({ kelas: ['5', '7'] }), ['Ana', 'Cici']);
+    assert.deepEqual(jalankan({ sesiIds: ['100', '200'] }), ['Ana', 'Budi']);
+    assert.deepEqual(jalankan({ guruIds: ['30'] }), ['Cici']);
+    assert.deepEqual(jalankan({ ruangIds: ['2', '3'] }), ['Budi', 'Cici']);
+});
+
+test('checkbox ids arrive as strings but still match numeric ids from the server', () => {
+    const students = [{ id: 1, name: 'Ana', kelas: '5' }];
+    const scheduleMeta = { 1: { sesi_ids: [183714], guru_ids: [4], ruang_ids: [2] } };
+
+    const cocok = filterStudents({
+        students,
+        archives: [],
+        mode: 'aktif',
+        search: '',
+        filters: { kelas: [], paket: [], kemampuan: [], sesiIds: ['183714'], guruIds: [], ruangIds: [] },
+        scheduleMeta,
+        sortField: 'name',
+        sortOrder: 'asc',
+    });
+
+    assert.deepEqual(cocok.map(student => student.name), ['Ana']);
+});
+
+test('package filter finds a package held in any of the five slots', () => {
+    const students = [
+        { id: 1, name: 'Ana', paket_pembayaran: 1 },
+        { id: 2, name: 'Budi', paket_pembayaran: 9, paket_pembayaran_3: 1 },
+        { id: 3, name: 'Cici', paket_pembayaran: 9 },
+    ];
+
+    assert.deepEqual(studentPackageIds(students[1]), [9, 1]);
+
+    const cocok = filterStudents({
+        students,
+        archives: [],
+        mode: 'aktif',
+        search: '',
+        filters: { kelas: [], paket: [1], kemampuan: [], sesiIds: [], guruIds: [], ruangIds: [] },
+        scheduleMeta: {},
+        sortField: 'name',
+        sortOrder: 'asc',
+    });
+
+    assert.deepEqual(cocok.map(student => student.name), ['Ana', 'Budi']);
+});
+
+test('a student with no schedule disappears once a session filter is chosen', () => {
+    const students = [{ id: 1, name: 'Ana', kelas: '5' }];
+
+    const cocok = filterStudents({
+        students,
+        archives: [],
+        mode: 'aktif',
+        search: '',
+        filters: { kelas: [], paket: [], kemampuan: [], sesiIds: ['100'], guruIds: [], ruangIds: [] },
+        scheduleMeta: {},
+        sortField: 'name',
+        sortOrder: 'asc',
+    });
+
+    assert.deepEqual(cocok, []);
+});
+
+test('filterMulti searches label and subtitle, and adds only what is on screen', () => {
+    const komponen = filterMulti();
+    const opsi = [
+        { value: 1, label: 'SESI 01.00', sub: '13:00 - 14:00' },
+        { value: 2, label: 'Sesi 1', sub: '13:30 - 14:30' },
+        { value: 3, label: 'Sesi 7', sub: '19:30 - 20:30' },
+    ];
+
+    assert.equal(komponen.hasil(opsi).length, 3);
+
+    komponen.cari = '13:30';
+    assert.deepEqual(komponen.hasil(opsi).map(item => item.value), [2]);
+
+    assert.deepEqual(komponen.pilihSemua([], opsi), ['2']);
+
+    komponen.cari = '';
+    assert.deepEqual(komponen.pilihSemua(['2'], opsi), ['2', '1', '3']);
 });

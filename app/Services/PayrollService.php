@@ -40,7 +40,7 @@ class PayrollService
                 'gaji_bawaan' => $guru->gaji_bawaan,
                 'gaji_per_kehadiran' => $guru->gaji_per_kehadiran,
                 'kehadiran_belum_dibayar' => $kehadiran,
-                'perkiraan_total' => $this->hitungTotal($guru->gaji_bawaan, $guru->gaji_per_kehadiran, $kehadiran),
+                'perkiraan_total' => $this->perkiraanBerjalan($guru->gaji_bawaan, $guru->gaji_per_kehadiran, $kehadiran),
                 'struk_terakhir' => $terakhir ? [
                     'id' => $terakhir->id,
                     'total' => $terakhir->total,
@@ -142,7 +142,7 @@ class PayrollService
             'gaji_bawaan' => $guru->gaji_bawaan,
             'gaji_per_kehadiran' => $guru->gaji_per_kehadiran,
             'kehadiran_belum_dibayar' => $kehadiran,
-            'perkiraan_total' => $this->hitungTotal($guru->gaji_bawaan, $guru->gaji_per_kehadiran, $kehadiran),
+            'perkiraan_total' => $this->perkiraanBerjalan($guru->gaji_bawaan, $guru->gaji_per_kehadiran, $kehadiran),
             'riwayat' => Penggajian::query()
                 ->where('guru_id', $guru->id)
                 ->orderByDesc('dijalankan_pada')
@@ -182,6 +182,15 @@ class PayrollService
     private function hitungTotal(int $gajiBawaan, int $gajiPerKehadiran, int $kehadiran): int
     {
         return $gajiBawaan + ($gajiPerKehadiran * $kehadiran);
+    }
+
+    private function perkiraanBerjalan(int $gajiBawaan, int $gajiPerKehadiran, int $kehadiran): int
+    {
+        if ($kehadiran < 1) {
+            return 0;
+        }
+
+        return $this->hitungTotal($gajiBawaan, $gajiPerKehadiran, $kehadiran);
     }
 
     private function tolakJikaBaruSajaDijalankan(Guru $guru): void

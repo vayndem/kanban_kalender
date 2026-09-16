@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\AspekPenilaian;
 use App\Models\Guru;
 use App\Models\Hari;
 use App\Models\Jadwal;
 use App\Models\MataPelajaran;
 use App\Models\ModulAjar;
+use App\Models\ModulAjarAbsensi;
 use App\Models\ModulAjarDetail;
 use App\Models\Ruang;
 use App\Models\Sesi;
@@ -21,11 +23,27 @@ class ModulAjarTest extends TestCase
 {
     use RefreshDatabase;
 
+    private AspekPenilaian $aspek;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->seed(RoleSeeder::class);
+
+        $this->aspek = AspekPenilaian::create([
+            'nama' => 'Pemahaman',
+            'indikator' => 'Memahami materi yang diajarkan',
+            'urutan' => 1,
+        ]);
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private function skor(int $nilai): array
+    {
+        return [$this->aspek->id => $nilai];
     }
 
     private function admin(): User
@@ -415,8 +433,8 @@ class ModulAjarTest extends TestCase
 
         $respon = $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
             'absensi' => [
-                ['siswa_id' => $siswaHadir->id, 'hadir' => true, 'nilai' => 4],
-                ['siswa_id' => $siswaTidakHadir->id, 'hadir' => false, 'nilai' => null],
+                ['siswa_id' => $siswaHadir->id, 'hadir' => true, 'skor' => $this->skor(4)],
+                ['siswa_id' => $siswaTidakHadir->id, 'hadir' => false, 'skor' => []],
             ],
         ]);
         $respon->assertOk();
@@ -426,12 +444,20 @@ class ModulAjarTest extends TestCase
         $this->assertSame($guru->id, $detail->diajarkan_oleh_guru_id);
         $this->assertNotNull($detail->tanggal_diajarkan);
 
-        $this->assertDatabaseHas('modul_ajar_absensis', ['siswa_id' => $siswaHadir->id, 'hadir' => 1, 'nilai' => 4]);
-        $this->assertDatabaseHas('modul_ajar_absensis', ['siswa_id' => $siswaTidakHadir->id, 'hadir' => 0, 'nilai' => null]);
+        $absensiHadir = ModulAjarAbsensi::where('siswa_id', $siswaHadir->id)->firstOrFail();
+        $this->assertTrue((bool) $absensiHadir->hadir);
+        $this->assertDatabaseHas('nilai_aspeks', [
+            'modul_ajar_absensi_id' => $absensiHadir->id,
+            'aspek_penilaian_id' => $this->aspek->id,
+            'skor' => 4,
+        ]);
+        $absensiAbsen = ModulAjarAbsensi::where('siswa_id', $siswaTidakHadir->id)->firstOrFail();
+        $this->assertFalse((bool) $absensiAbsen->hadir);
+        $this->assertSame(0, $absensiAbsen->nilaiAspeks()->count(), 'Anak yang tidak hadir tidak boleh punya nilai.');
         $this->assertDatabaseHas('absensi_gurus', ['guru_id' => $guru->id, 'modul_ajar_detail_id' => $detail->id]);
     }
 
-    public function test_grading_requires_nilai_when_a_student_is_marked_present(): void
+    public function test_grading_requires_every_aspect_when_a_student_is_marked_present(): void
     {
         [$guru, $user] = $this->guruDenganAkun();
         $siswa = Siswa::factory()->create();
@@ -440,7 +466,7 @@ class ModulAjarTest extends TestCase
         $this->actingAs($user)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
 
         $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
-            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'nilai' => null]],
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => []]],
         ])->assertStatus(422);
     }
 
@@ -454,7 +480,7 @@ class ModulAjarTest extends TestCase
         $this->actingAs($user)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
 
         $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
-            'absensi' => [['siswa_id' => $siswaLuar->id, 'hadir' => true, 'nilai' => 5]],
+            'absensi' => [['siswa_id' => $siswaLuar->id, 'hadir' => true, 'skor' => $this->skor(5)]],
         ])->assertStatus(422);
     }
 
@@ -486,7 +512,7 @@ class ModulAjarTest extends TestCase
         $this->actingAs($userLain)->get(route('absen.index'))->assertOk()->assertDontSee('Penjumlahan');
 
         $this->actingAs($userPengganti)->postJson(route('modulAjar.simpanNilai', $detail->id), [
-            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'nilai' => 5]],
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => $this->skor(5)]],
         ])->assertOk();
 
         $detail->refresh();
@@ -518,7 +544,7 @@ class ModulAjarTest extends TestCase
         $detail = $this->buatModulDenganDetail('kode-1');
         $this->actingAs($user)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
         $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
-            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'nilai' => 4]],
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => $this->skor(4)]],
         ])->assertOk();
 
         $this->actingAs($user)->postJson(route('modulAjar.tandaiTidakBisaHadir', $detail->id))->assertStatus(422);
@@ -577,17 +603,19 @@ class ModulAjarTest extends TestCase
 
         $this->actingAs($user)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
         $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
-            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'nilai' => 2]],
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => $this->skor(2)]],
         ])->assertOk();
 
         // Ajar ulang: buka persiapan lagi, lalu nilai ulang dengan nilai berbeda.
         $this->actingAs($user)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
         $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
-            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'nilai' => 5]],
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => $this->skor(5)]],
         ])->assertOk();
 
         $this->assertDatabaseCount('modul_ajar_absensis', 1);
-        $this->assertDatabaseHas('modul_ajar_absensis', ['siswa_id' => $siswa->id, 'nilai' => 5]);
+        $absensi = ModulAjarAbsensi::where('siswa_id', $siswa->id)->firstOrFail();
+        $this->assertSame(1, $absensi->nilaiAspeks()->count(), 'Ajar ulang menimpa, bukan menumpuk.');
+        $this->assertDatabaseHas('nilai_aspeks', ['modul_ajar_absensi_id' => $absensi->id, 'skor' => 5]);
         $this->assertDatabaseCount('absensi_gurus', 1);
     }
 
@@ -600,7 +628,7 @@ class ModulAjarTest extends TestCase
         $detail = $this->buatModulDenganDetail('kode-1');
 
         $this->actingAs($userLain)->postJson(route('modulAjar.simpanNilai', $detail->id), [
-            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'nilai' => 3]],
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => $this->skor(3)]],
         ])->assertStatus(403);
     }
 
@@ -612,7 +640,7 @@ class ModulAjarTest extends TestCase
         $detail = $this->buatModulDenganDetail('kode-1');
         $this->actingAs($user)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
         $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
-            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'nilai' => 3]],
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => $this->skor(3)]],
         ])->assertOk();
 
         $this->actingAs($this->admin())->get(route('absen.index'))

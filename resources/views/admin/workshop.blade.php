@@ -152,16 +152,43 @@
                             </template>
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-semibold text-base-content/60">Paket
-                                Pembayaran</label>
-                            <select x-model="siswaForm.paket_pembayaran"
-                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
-                                <option value="">-- Pilih Paket --</option>
-                                <template x-for="p in pakets" :key="p.id">
-                                    <option :value="String(p.id)" x-text="formatPaketLabel(p)"></option>
-                                </template>
-                            </select>
+                        <div class="space-y-2">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <label class="block text-xs font-semibold text-base-content/60">Paket Pembayaran</label>
+                                <span class="text-[11px] text-base-content/60">Boleh sampai 5 paket</span>
+                            </div>
+
+                            <template x-for="(kunci, i) in slotPaketTampil" :key="kunci">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-6 shrink-0 text-center text-xs font-black text-base-content/50"
+                                        x-text="i + 1"></span>
+                                    <select :value="siswaForm[kunci]"
+                                        @change="siswaForm[kunci] = $event.target.value"
+                                        :aria-label="'Paket pembayaran ' + (i + 1)"
+                                        class="select select-sm w-full">
+                                        <option value="">-- Pilih Paket --</option>
+                                        <template x-for="p in pakets" :key="p.id">
+                                            <option :value="String(p.id)" x-text="formatPaketLabel(p)"></option>
+                                        </template>
+                                    </select>
+                                    <button type="button" x-show="siswaForm[kunci]" @click="hapusSlotPaket(kunci)"
+                                        class="icon-action-danger shrink-0" :title="'Hapus paket ' + (i + 1)">
+                                        <i class="fas fa-xmark"></i>
+                                    </button>
+                                </div>
+                            </template>
+
+                            <p class="text-[11px] text-base-content/60" x-show="pakets.length === 0">
+                                Belum ada paket — tambahkan dulu di tab <span class="font-bold">Paket</span>.
+                            </p>
+
+                            <div x-show="totalPertemuanPaket > 0"
+                                class="rounded-lg border border-primary/40 bg-primary/10 p-2.5 text-xs text-primary">
+                                <i class="fas fa-circle-info"></i>
+                                Total <span class="font-black" x-text="totalPertemuanPaket"></span> pertemuan per periode
+                                senilai <span class="font-black" x-text="formatRupiah(totalHargaPaket)"></span>.
+                                Angka pertemuan inilah yang dipakai sebagai kuota di tab Data Siswa.
+                            </div>
                         </div>
 
                         <div>
@@ -193,6 +220,11 @@
                             <p class="text-xs text-base-content/60 mb-2">
                                 Download kerangka, isi datanya, lalu upload lagi. Siswa dengan nama yang sudah ada akan diperbarui, yang belum ada akan ditambahkan baru.
                             </p>
+                            <ul class="mb-2 space-y-1 text-[11px] text-base-content/60">
+                                <li><span class="font-bold text-base-content/80">Kemampuan</span> diisi angka levelnya saja, misal <span class="font-bold">1</span>. Level yang belum ada di tab Kemampuan akan dilewati.</li>
+                                <li><span class="font-bold text-base-content/80">Nama Paket</span> sampai <span class="font-bold">Nama Paket 5</span> diisi persis seperti nama paket di tab Paket.</li>
+                                <li>Kolom yang dikosongkan tidak akan menimpa data lama siswa itu.</li>
+                            </ul>
                             <div class="flex flex-wrap gap-2">
                                 <a :href="routes.siswaImportTemplate" class="btn btn-export text-xs px-3 py-1.5 rounded-md">
                                     <i class="fas fa-download"></i> Download Kerangka

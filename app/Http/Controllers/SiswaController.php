@@ -13,17 +13,29 @@ use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
 use App\Models\TingkatKemampuan;
-use App\Services\RaporService;
 use App\Support\NomorHp;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
 class SiswaController extends Controller
 {
+    private const KOLOM_PAKET = [
+        'paket_pembayaran',
+        'paket_pembayaran_2',
+        'paket_pembayaran_3',
+        'paket_pembayaran_4',
+        'paket_pembayaran_5',
+    ];
+
+    private const FILTER_JADWAL = [
+        'sesi_ids' => 'sesi_id',
+        'guru_ids' => 'guru_id',
+        'ruang_ids' => 'ruang_id',
+    ];
+
     private static function aturanNoHp(): \Closure
     {
         return function (string $attribute, $value, \Closure $fail) {
@@ -55,28 +67,6 @@ class SiswaController extends Controller
         ]);
     }
 
-    public function rapor(Siswa $siswa, Request $request, RaporService $raporService): JsonResponse
-    {
-        $request->validate(['dari' => 'nullable|date', 'sampai' => 'nullable|date']);
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $raporService->untukSiswa($siswa, $request->query('dari'), $request->query('sampai')),
-        ]);
-    }
-
-    public function raporPdf(Siswa $siswa, Request $request, RaporService $raporService)
-    {
-        $request->validate(['dari' => 'nullable|date', 'sampai' => 'nullable|date']);
-
-        $pdf = Pdf::loadView('pdf.rapor', [
-            'rapor' => $raporService->untukSiswa($siswa, $request->query('dari'), $request->query('sampai')),
-            'dicetakPada' => now()->translatedFormat('d F Y, H:i'),
-        ]);
-
-        return $pdf->download('Rapor-'.Str::slug($siswa->name).'-'.now()->format('YmdHis').'.pdf');
-    }
-
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -85,6 +75,10 @@ class SiswaController extends Controller
             'kelas' => 'nullable|string|max:50',
             'no_hp' => ['nullable', 'string', 'max:20', self::aturanNoHp()],
             'paket_pembayaran' => 'nullable|integer|exists:pakets,id',
+            'paket_pembayaran_2' => 'nullable|integer|exists:pakets,id',
+            'paket_pembayaran_3' => 'nullable|integer|exists:pakets,id',
+            'paket_pembayaran_4' => 'nullable|integer|exists:pakets,id',
+            'paket_pembayaran_5' => 'nullable|integer|exists:pakets,id',
             'tingkat_kemampuan_id' => 'nullable|integer|exists:tingkat_kemampuans,id',
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
@@ -124,6 +118,10 @@ class SiswaController extends Controller
             'kelas' => 'nullable|string|max:50',
             'no_hp' => ['nullable', 'string', 'max:20', self::aturanNoHp()],
             'paket_pembayaran' => 'nullable|integer|exists:pakets,id',
+            'paket_pembayaran_2' => 'nullable|integer|exists:pakets,id',
+            'paket_pembayaran_3' => 'nullable|integer|exists:pakets,id',
+            'paket_pembayaran_4' => 'nullable|integer|exists:pakets,id',
+            'paket_pembayaran_5' => 'nullable|integer|exists:pakets,id',
             'tingkat_kemampuan_id' => 'nullable|integer|exists:tingkat_kemampuans,id',
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
@@ -271,37 +269,30 @@ class SiswaController extends Controller
             });
         }
 
-        if ($request->filled('kelas')) {
-            $query->where('kelas', $request->kelas);
+        $kelas = $this->daftarFilter($request, 'kelas');
+        if ($kelas !== []) {
+            $query->whereIn('kelas', $kelas);
         }
 
-        if ($request->filled('paket_id')) {
-            $query->where('paket_pembayaran', $request->paket_id);
-        }
-
-        if ($request->filled('kemampuan_id')) {
-            $query->where('tingkat_kemampuan_id', $request->kemampuan_id);
-        }
-
-        if ($request->filled('sesi_ids')) {
-            $sesiIds = array_filter(explode(',', $request->sesi_ids));
-            $query->whereHas('jadwals', function ($q) use ($sesiIds) {
-                $q->whereIn('sesi_id', $sesiIds);
+        $paketIds = $this->daftarFilter($request, 'paket_ids', 'paket_id');
+        if ($paketIds !== []) {
+            $query->where(function ($q) use ($paketIds) {
+                foreach (self::KOLOM_PAKET as $kolom) {
+                    $q->orWhereIn($kolom, $paketIds);
+                }
             });
         }
 
-        if ($request->filled('guru_ids')) {
-            $guruIds = array_filter(explode(',', $request->guru_ids));
-            $query->whereHas('jadwals', function ($q) use ($guruIds) {
-                $q->whereIn('guru_id', $guruIds);
-            });
+        $kemampuanIds = $this->daftarFilter($request, 'kemampuan_ids', 'kemampuan_id');
+        if ($kemampuanIds !== []) {
+            $query->whereIn('tingkat_kemampuan_id', $kemampuanIds);
         }
 
-        if ($request->filled('ruang_ids')) {
-            $ruangIds = array_filter(explode(',', $request->ruang_ids));
-            $query->whereHas('jadwals', function ($q) use ($ruangIds) {
-                $q->whereIn('ruang_id', $ruangIds);
-            });
+        foreach (self::FILTER_JADWAL as $parameter => $kolom) {
+            $ids = $this->daftarFilter($request, $parameter);
+            if ($ids !== []) {
+                $query->whereHas('jadwals', fn ($q) => $q->whereIn($kolom, $ids));
+            }
         }
 
         $siswas = $query->get();
@@ -310,40 +301,70 @@ class SiswaController extends Controller
         return Excel::download(new SiswaExport($siswas, $filterLabel), 'Data-Siswa-'.now()->format('YmdHis').'.xlsx');
     }
 
+    /**
+     * @return array<int, string>
+     */
+    private function daftarFilter(Request $request, string ...$kunci): array
+    {
+        foreach ($kunci as $nama) {
+            $nilai = $request->input($nama);
+
+            if (is_string($nilai)) {
+                $nilai = explode(',', $nilai);
+            }
+
+            if (! is_array($nilai)) {
+                $nilai = $nilai === null ? [] : [$nilai];
+            }
+
+            $bersih = array_values(array_filter(
+                array_map(fn ($item) => is_scalar($item) ? trim((string) $item) : '', $nilai),
+                fn ($item) => $item !== ''
+            ));
+
+            if ($bersih !== []) {
+                return $bersih;
+            }
+        }
+
+        return [];
+    }
+
     private function buildFilterLabel(Request $request): string
     {
         $parts = [];
 
-        if ($request->filled('kelas')) {
-            $parts[] = 'Kelas: '.$request->kelas;
+        $kelas = $this->daftarFilter($request, 'kelas');
+        if ($kelas !== []) {
+            $parts[] = 'Kelas: '.implode(', ', $kelas);
         }
 
-        if ($request->filled('paket_id')) {
-            $paket = Paket::find($request->paket_id);
-            $parts[] = 'Paket: '.($paket ? $paket->nama_paket : $request->paket_id);
+        $paketIds = $this->daftarFilter($request, 'paket_ids', 'paket_id');
+        if ($paketIds !== []) {
+            $parts[] = 'Paket: '.$this->namaAtauId(Paket::whereIn('id', $paketIds)->pluck('nama_paket', 'id'), $paketIds);
         }
 
-        if ($request->filled('kemampuan_id')) {
-            $kemampuan = TingkatKemampuan::find($request->kemampuan_id);
-            $parts[] = 'Kemampuan: '.($kemampuan ? 'Level '.$kemampuan->level.' — '.$kemampuan->keterangan : $request->kemampuan_id);
+        $kemampuanIds = $this->daftarFilter($request, 'kemampuan_ids', 'kemampuan_id');
+        if ($kemampuanIds !== []) {
+            $nama = TingkatKemampuan::whereIn('id', $kemampuanIds)
+                ->get()
+                ->mapWithKeys(fn ($item) => [$item->id => 'Level '.$item->level]);
+            $parts[] = 'Kemampuan: '.$this->namaAtauId($nama, $kemampuanIds);
         }
 
-        if ($request->filled('sesi_ids')) {
-            $ids = array_filter(explode(',', $request->sesi_ids));
-            $names = Sesi::whereIn('id', $ids)->pluck('name')->join(', ');
-            $parts[] = 'Sesi: '.$names;
+        $sesiIds = $this->daftarFilter($request, 'sesi_ids');
+        if ($sesiIds !== []) {
+            $parts[] = 'Sesi: '.$this->namaAtauId(Sesi::whereIn('id', $sesiIds)->pluck('name', 'id'), $sesiIds);
         }
 
-        if ($request->filled('guru_ids')) {
-            $ids = array_filter(explode(',', $request->guru_ids));
-            $names = Guru::whereIn('id', $ids)->pluck('name')->join(', ');
-            $parts[] = 'Guru: '.$names;
+        $guruIds = $this->daftarFilter($request, 'guru_ids');
+        if ($guruIds !== []) {
+            $parts[] = 'Guru: '.$this->namaAtauId(Guru::whereIn('id', $guruIds)->pluck('name', 'id'), $guruIds);
         }
 
-        if ($request->filled('ruang_ids')) {
-            $ids = array_filter(explode(',', $request->ruang_ids));
-            $names = Ruang::whereIn('id', $ids)->pluck('name')->join(', ');
-            $parts[] = 'Ruang: '.$names;
+        $ruangIds = $this->daftarFilter($request, 'ruang_ids');
+        if ($ruangIds !== []) {
+            $parts[] = 'Ruang: '.$this->namaAtauId(Ruang::whereIn('id', $ruangIds)->pluck('name', 'id'), $ruangIds);
         }
 
         if ($request->filled('search')) {
@@ -351,5 +372,16 @@ class SiswaController extends Controller
         }
 
         return $parts ? implode(' | ', $parts) : 'Semua Siswa';
+    }
+
+    /**
+     * @param  Collection<int|string, string>  $nama
+     * @param  array<int, string>  $ids
+     */
+    private function namaAtauId($nama, array $ids): string
+    {
+        return collect($ids)
+            ->map(fn ($id) => $nama[$id] ?? $nama[(int) $id] ?? $id)
+            ->implode(', ');
     }
 }

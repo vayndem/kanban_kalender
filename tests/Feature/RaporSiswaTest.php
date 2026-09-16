@@ -87,7 +87,7 @@ class RaporSiswaTest extends TestCase
         $this->catatPertemuan('kode-1', $siswa, $guru, 'Materi 3', '2026-09-03', false, null);
 
         $data = $this->actingAs(User::factory()->create())
-            ->getJson(route('admin.siswa.rapor', $siswa->id))
+            ->getJson(route('admin.result.rapor', $siswa->id))
             ->assertOk()
             ->json('data');
 
@@ -111,7 +111,7 @@ class RaporSiswaTest extends TestCase
         $this->catatPertemuan('kode-ing', $siswa, $guruIng, 'Vocabulary', '2026-09-03', true, 4);
 
         $data = $this->actingAs(User::factory()->create())
-            ->getJson(route('admin.siswa.rapor', $siswa->id))
+            ->getJson(route('admin.result.rapor', $siswa->id))
             ->assertOk()
             ->json('data');
 
@@ -136,7 +136,7 @@ class RaporSiswaTest extends TestCase
         $this->catatPertemuan('kode-1', $siswa, $guru, 'Baru', '2026-09-10', true, 5);
 
         $data = $this->actingAs(User::factory()->create())
-            ->getJson(route('admin.siswa.rapor', $siswa->id).'?dari=2026-09-01&sampai=2026-09-30')
+            ->getJson(route('admin.result.rapor', $siswa->id).'?dari=2026-09-01&sampai=2026-09-30')
             ->assertOk()
             ->json('data');
 
@@ -160,7 +160,7 @@ class RaporSiswaTest extends TestCase
         ]);
 
         $data = $this->actingAs(User::factory()->create())
-            ->getJson(route('admin.siswa.rapor', $siswa->id))
+            ->getJson(route('admin.result.rapor', $siswa->id))
             ->assertOk()
             ->json('data');
 
@@ -177,14 +177,14 @@ class RaporSiswaTest extends TestCase
         $this->catatPertemuan('kode-1', $siswa, $guru, 'M2', '2026-09-02', true, 2);
 
         $data = $this->actingAs(User::factory()->create())
-            ->getJson(route('admin.siswa.rapor', $siswa->id))->json('data');
+            ->getJson(route('admin.result.rapor', $siswa->id))->json('data');
         $this->assertNull($data['ringkasan']['tren'], 'Tren belum boleh muncul di bawah 4 nilai.');
 
         $this->catatPertemuan('kode-1', $siswa, $guru, 'M3', '2026-09-03', true, 5);
         $this->catatPertemuan('kode-1', $siswa, $guru, 'M4', '2026-09-04', true, 5);
 
         $data = $this->actingAs(User::factory()->create())
-            ->getJson(route('admin.siswa.rapor', $siswa->id))->json('data');
+            ->getJson(route('admin.result.rapor', $siswa->id))->json('data');
         $this->assertSame('naik', $data['ringkasan']['tren']);
     }
 
@@ -195,7 +195,7 @@ class RaporSiswaTest extends TestCase
         $this->buatKelas('kode-1', $siswa);
 
         $data = $this->actingAs(User::factory()->create())
-            ->getJson(route('admin.siswa.rapor', $siswa->id))
+            ->getJson(route('admin.result.rapor', $siswa->id))
             ->assertOk()
             ->json('data');
 
@@ -208,7 +208,7 @@ class RaporSiswaTest extends TestCase
         $guru = $this->buatKelas('kode-1', $siswa);
         $this->catatPertemuan('kode-1', $siswa, $guru, 'Perkalian', '2026-09-01', true, 4);
 
-        $respon = $this->actingAs(User::factory()->create())->get(route('admin.siswa.raporPdf', $siswa->id));
+        $respon = $this->actingAs(User::factory()->create())->get(route('admin.result.raporPdf', $siswa->id));
 
         $respon->assertOk();
         $this->assertSame('application/pdf', $respon->headers->get('content-type'));
@@ -220,7 +220,7 @@ class RaporSiswaTest extends TestCase
         $guru = Guru::create(['name' => 'Bu Rina', 'email' => 'rina@eling.test']);
         $userGuru = User::factory()->guru($guru)->create();
 
-        $this->actingAs($userGuru)->getJson(route('admin.siswa.rapor', $siswa->id))->assertForbidden();
-        $this->actingAs($userGuru)->get(route('admin.siswa.raporPdf', $siswa->id))->assertForbidden();
+        $this->actingAs($userGuru)->getJson(route('admin.result.rapor', $siswa->id))->assertForbidden();
+        $this->actingAs($userGuru)->get(route('admin.result.raporPdf', $siswa->id))->assertForbidden();
     }
 }

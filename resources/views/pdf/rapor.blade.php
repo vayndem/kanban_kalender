@@ -308,6 +308,39 @@
         </tr>
     </table>
 
+    @if (! empty($rapor['per_aspek']))
+        <div class="mapel-block">
+            <div class="mapel-header">
+                <div class="mapel-nama">Rincian Per Aspek Penilaian</div>
+                <div class="mapel-meta">Skala 1-5</div>
+            </div>
+            <table class="tabel">
+                <thead>
+                    <tr>
+                        <th>Aspek</th>
+                        <th>Indikator</th>
+                        <th class="col-nilai">Dinilai</th>
+                        <th class="col-nilai">Rata</th>
+                        <th class="col-nilai">Min</th>
+                        <th class="col-nilai">Maks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($rapor['per_aspek'] as $aspek)
+                        <tr>
+                            <td><strong>{{ $aspek['nama'] }}</strong></td>
+                            <td>{{ $aspek['indikator'] }}</td>
+                            <td class="col-nilai">{{ $aspek['jumlah_dinilai'] }}x</td>
+                            <td class="col-nilai"><strong>{{ $aspek['rata'] }}</strong></td>
+                            <td class="col-nilai">{{ $aspek['terendah'] }}</td>
+                            <td class="col-nilai">{{ $aspek['tertinggi'] }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+
     @if (empty($rapor['per_mapel']))
         <div class="no-data">
             Belum ada pertemuan yang tercatat untuk siswa ini pada periode tersebut.
@@ -361,7 +394,7 @@
     @endif
 
     <div class="footer-note">
-        Nilai memakai skala 1-5. Tren dihitung dengan membandingkan rata-rata nilai paruh awal dan paruh akhir periode,
+        Setiap pertemuan dinilai pada beberapa aspek dengan skala 1-5; nilai pertemuan adalah rata-rata aspeknya. Tren dihitung dengan membandingkan rata-rata nilai paruh awal dan paruh akhir periode,
         dan baru muncul setelah minimal 4 pertemuan dinilai.
     </div>
 

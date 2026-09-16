@@ -33,6 +33,7 @@
                 guruId: @js($guru?->id),
                 initialKelasList: @js($kelasList),
                 allHaris: @js($haris),
+                aspekList: @js($aspekPenilaian),
                 routes: {
                     detailBase: @js(url('modul-ajar/detail')),
                 },
@@ -214,10 +215,12 @@
                 {{-- Sub-panel: persiapan (roster) / nilai (grading) --}}
                 <template x-if="pengajaranDetail">
                     <div x-show="pengajaranDetail" x-transition.opacity class="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs" @click="tutupPengajaran()">
-                        <div @click.stop x-transition class="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-base-300 bg-base-100 shadow-2xl">
+                        <div @click.stop x-transition
+                            class="max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-base-300 bg-base-100 shadow-2xl"
+                            :class="pengajaranTahap === 'nilai' ? 'max-w-3xl' : 'max-w-lg'">
                             <div class="flex items-start justify-between gap-4 bg-gradient-to-r from-amber-500 to-orange-500 p-4 text-white sticky top-0">
                                 <div class="min-w-0">
-                                    <p class="text-[11px] font-black uppercase tracking-[0.2em] text-warning" x-text="pengajaranTahap === 'nilai' ? 'Penilaian' : 'Persiapan'"></p>
+                                    <p class="text-[11px] font-black uppercase tracking-[0.2em] text-white/75" x-text="pengajaranTahap === 'nilai' ? 'Penilaian' : 'Persiapan'"></p>
                                     <h3 class="mt-1 text-lg font-black truncate" x-text="pengajaranDetail.materi"></h3>
                                 </div>
                                 <button type="button" @click="tutupPengajaran()" class="shrink-0 rounded-full bg-white/15 px-3 py-2 text-sm font-bold hover:bg-white/25">Tutup</button>
@@ -241,30 +244,144 @@
                                     </div>
                                 </template>
 
-                                <template x-if="pengajaranTahap === 'nilai'">
-                                    <form @submit.prevent="simpanNilai()" class="space-y-3">
-                                        <template x-for="item in nilaiForm" :key="item.siswa_id">
-                                            <div class="flex items-center gap-2 rounded-lg border border-base-300 p-2.5">
-                                                <span class="flex-1 text-sm font-bold text-base-content" x-text="item.nama"></span>
-                                                <label class="flex items-center gap-1 text-xs font-semibold text-base-content/60">
-                                                    <input type="checkbox" x-model="item.hadir"> Hadir
-                                                </label>
-                                                <select x-show="item.hadir" x-model="item.nilai" :required="item.hadir"
-                                                    class="rounded-lg border border-base-300 p-1.5 bg-base-100 text-base-content text-xs focus:ring-2 focus:ring-primary focus:outline-hidden">
-                                                    <option value="">Nilai</option>
-                                                    <option value="1">1</option>
-                                                    <option value="2">2</option>
-                                                    <option value="3">3</option>
-                                                    <option value="4">4</option>
-                                                    <option value="5">5</option>
-                                                </select>
+                                <template x-if="pengajaranTahap === 'nilai' && ! adaAspek">
+                                    <div class="app-empty border-0">
+                                        <div class="app-empty-icon"><i class="fas fa-medal"></i></div>
+                                        <p class="app-empty-title">Aspek penilaian belum ditentukan.</p>
+                                        <p class="app-empty-text">
+                                            Admin perlu mengisi aspek dan indikatornya dulu di menu <span class="font-bold">Result</span>,
+                                            baru pertemuan ini bisa dinilai.
+                                        </p>
+                                    </div>
+                                </template>
+
+                                <template x-if="pengajaranTahap === 'nilai' && adaAspek">
+                                    <form @submit.prevent="simpanNilai()" class="space-y-4">
+                                        <div class="sticky top-0 z-10 -mx-4 -mt-4 mb-1 space-y-3 border-b border-base-300 bg-base-100/95 px-4 pb-3 pt-4 backdrop-blur">
+                                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                                <p class="text-xs font-black uppercase tracking-wider text-base-content/60">
+                                                    Anak <span class="text-primary" x-text="indexNilai + 1"></span>
+                                                    dari <span x-text="nilaiForm.length"></span>
+                                                </p>
+                                                <button type="button" x-show="jumlahBelumSelesai > 0" @click="lompatKeBelumSelesai()"
+                                                    class="btn btn-ghost btn-xs text-warning">
+                                                    <i class="fas fa-arrow-turn-down"></i>
+                                                    <span x-text="jumlahBelumSelesai"></span> belum lengkap
+                                                </button>
+                                                <span x-show="semuaSelesai" class="badge badge-success badge-sm font-bold">
+                                                    <i class="fas fa-check"></i> Semua terisi
+                                                </span>
+                                            </div>
+
+                                            <div class="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+                                                <template x-for="(anak, i) in nilaiForm" :key="anak.siswa_id">
+                                                    <button type="button" @click="keAnak(i)"
+                                                        class="flex min-h-9 shrink-0 items-center gap-1.5 rounded-field border px-3 text-xs font-bold transition"
+                                                        :class="i === indexNilai
+                                                            ? 'border-primary bg-primary/15 text-primary'
+                                                            : (anakSelesai(anak)
+                                                                ? 'border-success/40 bg-success/10 text-success'
+                                                                : 'border-base-300 bg-base-200 text-base-content/70')">
+                                                        <i class="fas text-[10px]"
+                                                            :class="anakSelesai(anak) ? 'fa-circle-check' : 'fa-circle-dot'"></i>
+                                                        <span x-text="anak.nama"></span>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                        <template x-if="anakSaatIni">
+                                            <div class="space-y-4">
+                                                <div class="flex flex-col gap-3 rounded-box border border-base-300 bg-base-200/60 p-3 sm:flex-row sm:items-center sm:justify-between">
+                                                    <div class="min-w-0">
+                                                        <p class="truncate text-lg font-black text-base-content" x-text="anakSaatIni.nama"></p>
+                                                        <p class="text-xs text-base-content/60">
+                                                            <span x-text="aspekTerisi(anakSaatIni)"></span> dari
+                                                            <span x-text="aspekPenilaian.length"></span> aspek terisi
+                                                        </p>
+                                                    </div>
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span x-show="rataAnak(anakSaatIni)"
+                                                            class="badge badge-primary font-black">
+                                                            Rata <span class="ml-1" x-text="rataAnak(anakSaatIni)"></span>
+                                                        </span>
+                                                        <label class="flex min-h-11 cursor-pointer items-center gap-2 rounded-field bg-base-100 px-3 text-sm font-bold text-base-content">
+                                                            <input type="checkbox" x-model="anakSaatIni.hadir"
+                                                                class="checkbox checkbox-primary">
+                                                            Hadir
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                <template x-if="! anakSaatIni.hadir">
+                                                    <div class="rounded-box border border-dashed border-base-300 p-4 text-center">
+                                                        <p class="text-sm font-bold text-base-content/70">Ditandai tidak hadir.</p>
+                                                        <p class="mt-1 text-xs text-base-content/60">Anak yang tidak hadir tidak perlu dinilai.</p>
+                                                    </div>
+                                                </template>
+
+                                                <template x-if="anakSaatIni.hadir">
+                                                    <div class="space-y-3">
+                                                        <template x-for="(aspek, nomor) in aspekPenilaian" :key="aspek.id">
+                                                            <div class="rounded-box border p-3 transition"
+                                                                :class="anakSaatIni.skor[aspek.id]
+                                                                    ? 'border-success/40 bg-success/5'
+                                                                    : 'border-base-300 bg-base-100'">
+                                                                <div class="mb-2 flex items-start gap-2">
+                                                                    <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-selector bg-base-200 text-[10px] font-black text-base-content/70"
+                                                                        x-text="nomor + 1"></span>
+                                                                    <div class="min-w-0">
+                                                                        <p class="text-sm font-black leading-tight text-base-content" x-text="aspek.nama"></p>
+                                                                        <p class="mt-0.5 text-xs leading-snug text-base-content/60" x-text="aspek.indikator"></p>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="grid grid-cols-5 gap-1.5">
+                                                                    <template x-for="n in 5" :key="n">
+                                                                        <button type="button" @click="pilihSkor(aspek.id, n)"
+                                                                            :aria-label="aspek.nama + ' skor ' + n"
+                                                                            class="flex min-h-11 items-center justify-center rounded-field border text-sm font-black transition"
+                                                                            :class="anakSaatIni.skor[aspek.id] === n
+                                                                                ? 'border-transparent bg-primary text-white shadow-sm'
+                                                                                : 'border-base-300 bg-base-100 text-base-content/70 hover:border-primary hover:bg-primary/10'"
+                                                                            x-text="n"></button>
+                                                                    </template>
+                                                                </div>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </template>
                                             </div>
                                         </template>
-                                        <button type="submit" class="btn btn-primary text-sm w-full" :disabled="isLoading">
-                                            <i class="fas fa-check"></i> Simpan Nilai & Selesaikan Pertemuan
-                                        </button>
+
+                                        <div class="sticky bottom-0 -mx-4 -mb-4 flex flex-col gap-2 border-t border-base-300 bg-base-100/95 px-4 pb-4 pt-3 backdrop-blur sm:flex-row sm:items-center">
+                                            <div class="flex gap-2 sm:flex-1">
+                                                <button type="button" @click="keAnak(indexNilai - 1)" :disabled="indexNilai === 0"
+                                                    class="btn btn-neutral btn-sm flex-1 sm:flex-none"
+                                                    :class="indexNilai === 0 ? 'opacity-40' : ''">
+                                                    <i class="fas fa-chevron-left"></i> Sebelumnya
+                                                </button>
+                                                <button type="button" @click="keAnak(indexNilai + 1)"
+                                                    x-show="indexNilai < nilaiForm.length - 1"
+                                                    class="btn btn-primary btn-sm flex-1 sm:flex-none">
+                                                    Selanjutnya <i class="fas fa-chevron-right"></i>
+                                                </button>
+                                            </div>
+
+                                            <button type="submit" class="btn btn-success btn-sm w-full sm:w-auto"
+                                                :disabled="isLoading || ! semuaSelesai"
+                                                :class="semuaSelesai ? '' : 'opacity-50'">
+                                                <i class="fas fa-check"></i> Simpan &amp; Selesaikan
+                                            </button>
+                                        </div>
+
+                                        <p x-show="! semuaSelesai" class="text-center text-xs text-warning">
+                                            Lengkapi penilaian <span class="font-bold" x-text="jumlahBelumSelesai"></span> anak lagi
+                                            sebelum pertemuan bisa diselesaikan.
+                                        </p>
                                     </form>
                                 </template>
+
                             </div>
                         </div>
                     </div>
@@ -272,6 +389,7 @@
             </div>
         </main>
     </div>
+    @include('layouts.admin-help')
 </body>
 
 </html>

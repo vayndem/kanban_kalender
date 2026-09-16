@@ -25,6 +25,23 @@ function rentangTumpangTindih(mulaiA, selesaiA, mulaiB, selesaiB) {
     return mulaiA < selesaiB && mulaiB < selesaiA;
 }
 
+const KUNCI_PAKET = [
+    'paket_pembayaran',
+    'paket_pembayaran_2',
+    'paket_pembayaran_3',
+    'paket_pembayaran_4',
+    'paket_pembayaran_5',
+];
+
+function siswaFormKosong() {
+    const kosong = { id: null, name: '', panggilan: '', kelas: '', no_hp: '', tingkat_kemampuan_id: '' };
+    KUNCI_PAKET.forEach(kunci => {
+        kosong[kunci] = '';
+    });
+
+    return kosong;
+}
+
 export const workshopHandler = ({
     initialMapels,
     initialGurus,
@@ -65,7 +82,8 @@ export const workshopHandler = ({
     ruangForm: { id: null, name: '' },
     sesiForm: { id: null, name: '', start_time: '', end_time: '' },
     kemampuanForm: { id: null, keterangan: '' },
-    siswaForm: { id: null, name: '', panggilan: '', kelas: '', no_hp: '', paket_pembayaran: '', tingkat_kemampuan_id: '' },
+    kunciPaket: KUNCI_PAKET,
+    siswaForm: siswaFormKosong(),
 
     init() {
         if (editSiswaId) {
@@ -217,9 +235,12 @@ export const workshopHandler = ({
         return p ? p.nama_paket : '-';
     },
 
+    formatRupiah(nilai) {
+        return 'Rp ' + Number(nilai || 0).toLocaleString('id-ID');
+    },
+
     formatPaketLabel(p) {
-        const harga = 'Rp ' + Number(p.harga || 0).toLocaleString('id-ID');
-        return `${p.nama_paket} — ${harga} · ${p.pertemuan}x pertemuan`;
+        return `${p.nama_paket} — ${this.formatRupiah(p.harga)} · ${p.pertemuan}x pertemuan`;
     },
 
     resetMapelForm() {
@@ -467,18 +488,57 @@ export const workshopHandler = ({
     },
 
     resetSiswaForm() {
-        this.siswaForm = { id: null, name: '', panggilan: '', kelas: '', no_hp: '', paket_pembayaran: '', tingkat_kemampuan_id: '' };
+        this.siswaForm = siswaFormKosong();
     },
     editSiswa(s) {
         this.siswaForm = {
+            ...siswaFormKosong(),
             id: s.id,
             name: s.name || '',
             panggilan: s.panggilan || '',
             kelas: s.kelas || '',
             no_hp: s.no_hp || '',
-            paket_pembayaran: s.paket_pembayaran == null ? '' : String(s.paket_pembayaran),
             tingkat_kemampuan_id: s.tingkat_kemampuan_id == null ? '' : String(s.tingkat_kemampuan_id),
         };
+
+        KUNCI_PAKET.forEach(kunci => {
+            this.siswaForm[kunci] = s[kunci] == null ? '' : String(s[kunci]);
+        });
+    },
+
+    get jumlahSlotPaket() {
+        let terakhirTerisi = -1;
+        KUNCI_PAKET.forEach((kunci, i) => {
+            if (this.siswaForm[kunci]) terakhirTerisi = i;
+        });
+
+        return Math.min(KUNCI_PAKET.length, terakhirTerisi + 2);
+    },
+
+    get slotPaketTampil() {
+        return KUNCI_PAKET.slice(0, this.jumlahSlotPaket);
+    },
+
+    paketTerpilih() {
+        return KUNCI_PAKET
+            .map(kunci => this.pakets.find(p => Number(p.id) === Number(this.siswaForm[kunci])))
+            .filter(Boolean);
+    },
+
+    get totalPertemuanPaket() {
+        return this.paketTerpilih().reduce((jumlah, p) => jumlah + Number(p.pertemuan || 0), 0);
+    },
+
+    get totalHargaPaket() {
+        return this.paketTerpilih().reduce((jumlah, p) => jumlah + Number(p.harga || 0), 0);
+    },
+
+    hapusSlotPaket(kunci) {
+        this.siswaForm[kunci] = '';
+        const sisa = KUNCI_PAKET.map(k => this.siswaForm[k]).filter(Boolean);
+        KUNCI_PAKET.forEach((k, i) => {
+            this.siswaForm[k] = sisa[i] ?? '';
+        });
     },
     async simpanSiswa() {
         this.isLoading = true;

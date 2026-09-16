@@ -32,10 +32,28 @@ export function buildStudentStatusIndex(students, scheduleMeta, packageIndex) {
     ]));
 }
 
+function toList(value) {
+    if (Array.isArray(value)) return value;
+    if (value === '' || value === null || value === undefined) return [];
+    return [value];
+}
+
+function isFilled(value) {
+    return value !== '' && value !== null && value !== undefined;
+}
+
+export function studentPackageIds(student) {
+    return PACKAGE_FIELDS.map(field => student[field]).filter(isFilled);
+}
+
 function includesAny(values, selectedValues) {
-    if (selectedValues.length === 0) return true;
-    const selected = new Set(selectedValues.map(Number));
-    return values.some(value => selected.has(Number(value)));
+    const selected = toList(selectedValues);
+    if (selected.length === 0) return true;
+
+    const wanted = new Set(selected.filter(isFilled).map(String));
+    if (wanted.size === 0) return true;
+
+    return values.filter(isFilled).some(value => wanted.has(String(value)));
 }
 
 function compareBy(field, order) {
@@ -74,9 +92,9 @@ export function filterStudents({
         if (!matchesSearch || mode !== 'aktif') return matchesSearch;
 
         const metadata = scheduleMeta[student.id] || {};
-        return (!filters.kelas || student.kelas === filters.kelas)
-            && (!filters.paket || Number(student.paket_pembayaran) === Number(filters.paket))
-            && (!filters.kemampuan || Number(student.tingkat_kemampuan_id) === Number(filters.kemampuan))
+        return includesAny([student.kelas], filters.kelas)
+            && includesAny(studentPackageIds(student), filters.paket)
+            && includesAny([student.tingkat_kemampuan_id], filters.kemampuan)
             && includesAny(metadata.sesi_ids || [], filters.sesiIds)
             && includesAny(metadata.guru_ids || [], filters.guruIds)
             && includesAny(metadata.ruang_ids || [], filters.ruangIds);

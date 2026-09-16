@@ -1,0 +1,173 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\AspekPenilaian;
+use App\Models\ModulAjarAbsensi;
+use App\Models\Siswa;
+use App\Services\RaporService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+
+class ResultController extends Controller
+{
+    public function __construct(private readonly RaporService $rapor) {}
+
+    public function index()
+    {
+        return view('admin.result', [
+            'aspekList' => AspekPenilaian::urut()->get(),
+            'siswaList' => $this->kartuSiswa(),
+        ]);
+    }
+
+    public function simpanAspek(Request $request): JsonResponse
+    {
+        $data = $this->validasiAspek($request);
+        $data['urutan'] = $data['urutan'] ?? ((int) AspekPenilaian::max('urutan') + 1);
+
+        $aspek = AspekPenilaian::create($data);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Aspek penilaian ditambahkan.',
+            'data' => $aspek,
+            'daftar' => AspekPenilaian::urut()->get(),
+        ]);
+    }
+
+    public function ubahAspek(Request $request, AspekPenilaian $aspek): JsonResponse
+    {
+        $aspek->update($this->validasiAspek($request, $aspek));
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Aspek penilaian diperbarui.',
+            'data' => $aspek->fresh(),
+            'daftar' => AspekPenilaian::urut()->get(),
+        ]);
+    }
+
+    public function hapusAspek(AspekPenilaian $aspek): JsonResponse
+    {
+        if ($aspek->sudahDipakai()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Aspek ini sudah dipakai menilai anak, jadi tidak bisa dihapus. Nonaktifkan saja supaya tidak muncul lagi saat menilai, sementara rapor lama tetap utuh.',
+            ], 422);
+        }
+
+        $aspek->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Aspek penilaian dihapus.',
+            'daftar' => AspekPenilaian::urut()->get(),
+        ]);
+    }
+
+    public function urutkanAspek(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'urutan' => 'required|array|min:1',
+            'urutan.*' => 'required|integer|exists:aspek_penilaians,id',
+        ]);
+
+        foreach ($data['urutan'] as $posisi => $id) {
+            AspekPenilaian::whereKey($id)->update(['urutan' => $posisi + 1]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Urutan aspek disimpan.',
+            'daftar' => AspekPenilaian::urut()->get(),
+        ]);
+    }
+
+    public function rapor(Siswa $siswa, Request $request): JsonResponse
+    {
+        $request->validate(['dari' => 'nullable|date', 'sampai' => 'nullable|date']);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $this->rapor->untukSiswa($siswa, $request->query('dari'), $request->query('sampai')),
+        ]);
+    }
+
+    public function raporPdf(Siswa $siswa, Request $request)
+    {
+        $request->validate(['dari' => 'nullable|date', 'sampai' => 'nullable|date']);
+
+        $pdf = Pdf::loadView('pdf.rapor', [
+            'rapor' => $this->rapor->untukSiswa($siswa, $request->query('dari'), $request->query('sampai')),
+            'dicetakPada' => now()->translatedFormat('d F Y, H:i'),
+        ]);
+
+        return $pdf->download('Rapor-'.Str::slug($siswa->name).'-'.now()->format('YmdHis').'.pdf');
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function kartuSiswa(): array
+    {
+        $absensis = ModulAjarAbsensi::query()
+            ->with(['nilaiAspeks:id,modul_ajar_absensi_id,skor', 'modulAjarDetail:id,tanggal_diajarkan'])
+            ->get()
+            ->filter(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail?->tanggal_diajarkan !== null)
+            ->groupBy('siswa_id');
+
+        return Siswa::query()
+            ->with('tingkatKemampuan:id,level,keterangan')
+            ->orderBy('name')
+            ->get(['id', 'name', 'panggilan', 'kelas', 'tingkat_kemampuan_id'])
+            ->map(function (Siswa $siswa) use ($absensis) {
+                $milik = $absensis->get($siswa->id, collect());
+                $hadir = $milik->where('hadir', true);
+                $nilai = $hadir->map(fn (ModulAjarAbsensi $a) => $a->rataAspek())->filter(fn ($n) => $n !== null);
+                $terakhir = $milik
+                    ->sortByDesc(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail->tanggal_diajarkan->toDateString())
+                    ->first();
+
+                return [
+                    'id' => $siswa->id,
+                    'nama' => $siswa->name,
+                    'panggilan' => $siswa->panggilan,
+                    'kelas' => $siswa->kelas,
+                    'kemampuan' => $siswa->tingkatKemampuan
+                        ? 'Level '.$siswa->tingkatKemampuan->level
+                        : null,
+                    'total_pertemuan' => $milik->count(),
+                    'hadir' => $hadir->count(),
+                    'persen_kehadiran' => $milik->count() > 0
+                        ? (int) round($hadir->count() / $milik->count() * 100)
+                        : 0,
+                    'rata_nilai' => $nilai->isNotEmpty() ? round($nilai->avg(), 2) : null,
+                    'terakhir_dinilai' => $terakhir?->modulAjarDetail->tanggal_diajarkan->toDateString(),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validasiAspek(Request $request, ?AspekPenilaian $aspek = null): array
+    {
+        $unik = 'unique:aspek_penilaians,nama'.($aspek ? ','.$aspek->id : '');
+
+        return $request->validate([
+            'nama' => ['required', 'string', 'max:120', $unik],
+            'indikator' => 'required|string|max:255',
+            'urutan' => 'nullable|integer|min:0|max:999',
+            'aktif' => 'nullable|boolean',
+        ], [
+            'nama.required' => 'Nama aspek wajib diisi.',
+            'nama.unique' => 'Sudah ada aspek dengan nama itu.',
+            'indikator.required' => 'Indikator wajib diisi supaya guru tahu yang dinilai apa.',
+        ]);
+    }
+}

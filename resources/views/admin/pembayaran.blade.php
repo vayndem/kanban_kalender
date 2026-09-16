@@ -218,22 +218,22 @@
             <div
                 class="flex flex-wrap items-center gap-2 bg-base-100 p-1.5 rounded-lg border">
                 <label
-                    class="flex-1 inline-flex items-center justify-center text-xs text-error font-bold cursor-pointer px-2 py-1 rounded md:hover:bg-red-50 dark:hover:bg-red-950/20 transition-all">
+                    class="flex-1 inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded px-2 py-1 text-xs font-bold text-error transition-all hover:bg-error/10">
                     <input type="radio" x-model="filterStatus" value="0"
-                        class="text-error focus:ring-0 w-3 h-3">
-                    <span class="ml-1.5">Belum</span>
+                        class="radio radio-error radio-sm">
+                    <span>Belum</span>
                 </label>
                 <label
-                    class="flex-1 inline-flex items-center justify-center text-xs text-warning font-bold cursor-pointer px-2 py-1 rounded md:hover:bg-orange-50 dark:hover:bg-orange-950/20 transition-all">
+                    class="flex-1 inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded px-2 py-1 text-xs font-bold text-warning transition-all hover:bg-warning/10">
                     <input type="radio" x-model="filterStatus" value="1"
-                        class="text-warning focus:ring-0 w-3 h-3">
-                    <span class="ml-1.5">Tertagih</span>
+                        class="radio radio-warning radio-sm">
+                    <span>Tertagih</span>
                 </label>
                 <label
-                    class="flex-1 inline-flex items-center justify-center text-xs text-success font-bold cursor-pointer px-2 py-1 rounded md:hover:bg-success/20 transition-all">
+                    class="flex-1 inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded px-2 py-1 text-xs font-bold text-success transition-all hover:bg-success/10">
                     <input type="radio" x-model="filterStatus" value="2"
-                        class="text-success focus:ring-0 w-3 h-3">
-                    <span class="ml-1.5">Lunas</span>
+                        class="radio radio-success radio-sm">
+                    <span>Lunas</span>
                 </label>
             </div>
         </div>

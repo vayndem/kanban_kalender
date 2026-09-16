@@ -101,6 +101,7 @@
             </div>
         </main>
     </div>
+    @include('layouts.admin-help')
 </body>
 
 </html>

@@ -4,6 +4,7 @@ namespace App\Imports;
 
 use App\Models\Paket;
 use App\Models\Siswa;
+use App\Models\TingkatKemampuan;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToCollection;
@@ -11,6 +12,14 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
 class SiswaMassalImport implements ToCollection, WithHeadingRow
 {
+    private const KOLOM_PAKET = [
+        'nama_paket' => 'paket_pembayaran',
+        'nama_paket_2' => 'paket_pembayaran_2',
+        'nama_paket_3' => 'paket_pembayaran_3',
+        'nama_paket_4' => 'paket_pembayaran_4',
+        'nama_paket_5' => 'paket_pembayaran_5',
+    ];
+
     public int $dibuat = 0;
 
     public int $diperbarui = 0;
@@ -35,11 +44,23 @@ class SiswaMassalImport implements ToCollection, WithHeadingRow
                     'no_hp' => $this->nilai($row['no_hp'] ?? null),
                 ], fn ($v) => $v !== null);
 
-                $namaPaket = trim((string) ($row['nama_paket'] ?? ''));
-                if ($namaPaket !== '') {
+                foreach (self::KOLOM_PAKET as $kolomBerkas => $kolomTabel) {
+                    $namaPaket = trim((string) ($row[$kolomBerkas] ?? ''));
+                    if ($namaPaket === '') {
+                        continue;
+                    }
+
                     $paket = Paket::where('nama_paket', $namaPaket)->first();
                     if ($paket) {
-                        $data['paket_pembayaran'] = $paket->id;
+                        $data[$kolomTabel] = $paket->id;
+                    }
+                }
+
+                $level = $this->nilai($row['kemampuan'] ?? null);
+                if ($level !== null && is_numeric($level)) {
+                    $kemampuan = TingkatKemampuan::where('level', (int) $level)->first();
+                    if ($kemampuan) {
+                        $data['tingkat_kemampuan_id'] = $kemampuan->id;
                     }
                 }
 

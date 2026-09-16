@@ -1,4 +1,4 @@
-const SELECTOR = 'select:not([multiple]):not([data-native-select="true"]):not(.swal2-select)';
+const SELECTOR = 'select:not([multiple]):not([data-native-select="true"]):not(.swal2-select):not([x-show]):not([x-transition])';
 
 function createElements(select) {
     const wrapper = document.createElement('div');
