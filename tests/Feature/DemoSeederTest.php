@@ -15,6 +15,8 @@ use App\Models\NilaiAspek;
 use App\Models\Pembayaran;
 use App\Models\PembayaranDetail;
 use App\Models\Penggajian;
+use App\Models\Pertemuan;
+use App\Models\RaporCetak;
 use App\Models\Siswa;
 use App\Models\StashPemulihanLog;
 use App\Models\Tanda;
@@ -255,10 +257,12 @@ class DemoSeederTest extends TestCase
 
     public function test_demo_memuat_keadaan_mengajar_yang_sedang_berlangsung(): void
     {
+        $this->assertGreaterThan(0, Pertemuan::count(), 'Harus ada pertemuan bertanggal.');
+
         $this->assertGreaterThan(
             0,
-            ModulAjarDetail::where('sedang_dipersiapkan', true)->count(),
-            'Harus ada kelas yang sedang dipersiapkan, kalau tidak kartu kuning di Absen tidak pernah terlihat.'
+            Pertemuan::whereNull('selesai_pada')->count(),
+            'Harus ada pertemuan yang sedang berlangsung, kalau tidak kartu kuning di Absen tidak pernah terlihat.'
         );
 
         $this->assertGreaterThan(
@@ -269,19 +273,20 @@ class DemoSeederTest extends TestCase
 
         $this->assertGreaterThan(
             0,
-            ModulAjarDetail::whereNotNull('guru_pengganti_id')->count(),
-            'Harus ada kelas yang sedang dipegang guru pengganti.'
+            Pertemuan::whereNotNull('guru_pengganti_id')->count(),
+            'Harus ada pertemuan yang dipegang guru pengganti.'
         );
     }
 
     public function test_kredit_kehadiran_ada_yang_jatuh_ke_guru_pengganti(): void
     {
-        $adaBeda = ModulAjarDetail::whereNotNull('diajarkan_oleh_guru_id')
-            ->whereNotNull('tanggal_diajarkan')
+        $adaBeda = Pertemuan::whereNotNull('selesai_pada')
+            ->with('modulAjarDetail.modulAjar')
             ->get()
-            ->contains(function (ModulAjarDetail $detail) {
-                $pemilik = Jadwal::where('kode_kelas', $detail->modulAjar?->kode_kelas)->value('guru_id');
-                $kredit = AbsensiGuru::where('modul_ajar_detail_id', $detail->id)->value('guru_id');
+            ->contains(function (Pertemuan $pertemuan) {
+                $kode = $pertemuan->modulAjarDetail?->modulAjar?->kode_kelas;
+                $pemilik = Jadwal::where('kode_kelas', $kode)->value('guru_id');
+                $kredit = AbsensiGuru::where('pertemuan_id', $pertemuan->id)->value('guru_id');
 
                 return $pemilik && $kredit && (int) $pemilik !== (int) $kredit;
             });
@@ -383,5 +388,64 @@ class DemoSeederTest extends TestCase
 
         $stash = StashPemulihanLog::first();
         $this->assertNotEmpty($stash->isi_sebelum, 'Cadangan stash harus berisi kondisi sebelumnya.');
+    }
+
+    public function test_demo_memuat_materi_yang_diajar_lebih_dari_sekali(): void
+    {
+        $berulang = Pertemuan::whereNotNull('selesai_pada')
+            ->get()
+            ->groupBy('modul_ajar_detail_id')
+            ->filter(fn ($p) => $p->count() > 1);
+
+        $this->assertGreaterThan(
+            0,
+            $berulang->count(),
+            'Harus ada materi yang diajar dua kali, supaya riwayat per pertemuan ikut teruji.'
+        );
+
+        $detailId = $berulang->keys()->first();
+        $tanggal = Pertemuan::where('modul_ajar_detail_id', $detailId)->pluck('tanggal');
+
+        $this->assertSame(
+            $tanggal->count(),
+            $tanggal->map(fn ($t) => $t->toDateString())->unique()->count(),
+            'Tiap pertemuan pada materi yang sama harus punya tanggal berbeda.'
+        );
+    }
+
+    public function test_setiap_pertemuan_selesai_punya_kredit_kehadiran_sendiri(): void
+    {
+        $selesai = Pertemuan::whereNotNull('selesai_pada')->pluck('id');
+
+        $this->assertSame(
+            $selesai->count(),
+            AbsensiGuru::whereIn('pertemuan_id', $selesai)->count(),
+            'Satu pertemuan selesai berarti satu kredit kehadiran mengajar.'
+        );
+    }
+
+    public function test_demo_memuat_riwayat_cetak_rapor_dengan_catatan(): void
+    {
+        $this->assertGreaterThan(0, RaporCetak::count(), 'Halaman rapor orang tua butuh catatan dari cetakan.');
+
+        $cetak = RaporCetak::first();
+
+        $this->assertTrue($cetak->adaCatatan());
+        $this->assertNotEmpty($cetak->pertemuan_ids);
+        $this->assertNotNull($cetak->periode_label);
+    }
+
+    public function test_ada_siswa_yang_raporya_bisa_dibuka_orang_tua(): void
+    {
+        $cetak = RaporCetak::with('siswa')->firstOrFail();
+        $siswa = $cetak->siswa;
+
+        $this->assertNotNull($siswa->no_hp, 'Orang tua butuh nomor HP terdaftar untuk membuka rapor.');
+
+        $empatDigit = substr(preg_replace('/\D/', '', $siswa->no_hp), -4);
+
+        $this->post(route('rapor.publik.cari'), ['nama' => $siswa->name, 'empat_digit' => $empatDigit])
+            ->assertOk()
+            ->assertSee($siswa->name, false);
     }
 }

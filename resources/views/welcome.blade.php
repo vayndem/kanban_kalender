@@ -21,8 +21,13 @@
                         Pantau aktivitas belajar mengajar dan jadwal kelas harian secara real-time di sini.
                     </p>
                     <div class="flex flex-col flex-wrap justify-center gap-3 sm:flex-row lg:justify-start">
-                        <a href="#jadwal" class="btn border-none bg-white text-primary shadow-lg hover:bg-white/90">
-                            <i class="fas fa-calendar-day"></i> Lihat Jadwal Hari Ini
+                        <a href="{{ route('rapor.publik') }}"
+                            class="btn border-none bg-white text-primary shadow-lg hover:bg-white/90">
+                            <i class="fas fa-medal"></i> Rapor Anak Saya
+                        </a>
+                        <a href="#jadwal"
+                            class="btn border-white/30 bg-white/10 text-white backdrop-blur-xs hover:border-white/50 hover:bg-white/20">
+                            <i class="fas fa-calendar-day"></i> Jadwal Hari Ini
                         </a>
                         @auth
                             <a href="{{ route('dashboard') }}"

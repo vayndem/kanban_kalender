@@ -10,6 +10,7 @@ use App\Models\ModulAjar;
 use App\Models\ModulAjarAbsensi;
 use App\Models\ModulAjarDetail;
 use App\Models\NilaiAspek;
+use App\Models\Pertemuan;
 use App\Models\Sesi;
 use App\Models\Siswa;
 use Illuminate\Http\Request;
@@ -48,10 +49,11 @@ class ModulAjarController extends Controller
             if ($sertakanSlotTerbuka) {
                 // Kelas yang sedang digantikan guru ini, plus kelas siapa pun yang
                 // gurunya menandai tidak bisa hadir (slot terbuka untuk semua guru).
-                $kodeKelasPengganti = ModulAjarDetail::where('guru_pengganti_id', $guru->id)
-                    ->with('modulAjar:id,kode_kelas')
+                $kodeKelasPengganti = Pertemuan::where('guru_pengganti_id', $guru->id)
+                    ->whereNull('selesai_pada')
+                    ->with('modulAjarDetail.modulAjar:id,kode_kelas')
                     ->get()
-                    ->pluck('modulAjar.kode_kelas')
+                    ->pluck('modulAjarDetail.modulAjar.kode_kelas')
                     ->filter();
 
                 $kodeKelasTerbuka = ModulAjarDetail::where('tidak_bisa_hadir', true)
@@ -101,10 +103,11 @@ class ModulAjarController extends Controller
             ->whereIn('kode_kelas', $kelasList->pluck('kode_kelas'))
             ->with([
                 'details' => fn ($q) => $q->orderBy('id'),
-                'details.guruPengganti:id,name',
-                'details.diajarkanOlehGuru:id,name',
-                'details.absensis.siswa:id,name,panggilan',
-                'details.absensis.nilaiAspeks:id,modul_ajar_absensi_id,aspek_penilaian_id,skor',
+                'details.pertemuans' => fn ($q) => $q->orderBy('tanggal'),
+                'details.pertemuans.guru:id,name',
+                'details.pertemuans.guruPengganti:id,name',
+                'details.pertemuans.absensis.siswa:id,name,panggilan',
+                'details.pertemuans.absensis.nilaiAspeks:id,modul_ajar_absensi_id,aspek_penilaian_id,skor',
             ])
             ->get()
             ->keyBy('kode_kelas');
@@ -240,22 +243,32 @@ class ModulAjarController extends Controller
 
         $user = Auth::user();
         $guruAktif = $user->isGuru() ? $user->guru : null;
+        $berjalan = $detail->pertemuanBerlangsung()->first();
 
-        if (! $user->isAdmin() && $detail->guru_pengganti_id
-            && (! $guruAktif || (int) $detail->guru_pengganti_id !== (int) $guruAktif->id)) {
+        if ($berjalan && ! $user->isAdmin() && $berjalan->guru_pengganti_id
+            && (! $guruAktif || (int) $berjalan->guru_pengganti_id !== (int) $guruAktif->id)) {
             return response()->json(['status' => 'error', 'message' => 'Kelas ini sedang diajar oleh guru pengganti. Tidak bisa diambil alih.'], 409);
         }
 
-        $detail->update([
-            'sedang_dipersiapkan' => true,
-            'tidak_bisa_hadir' => false,
-            'guru_pengganti_id' => null,
-        ]);
+        if ($berjalan) {
+            $berjalan->update([
+                'guru_pengganti_id' => null,
+                'guru_id' => $guruAktif?->id ?? $this->guruPemilik($detail),
+            ]);
+        } else {
+            Pertemuan::create([
+                'modul_ajar_detail_id' => $detail->id,
+                'tanggal' => now()->toDateString(),
+                'guru_id' => $guruAktif?->id ?? $this->guruPemilik($detail),
+            ]);
+        }
+
+        $detail->update(['tidak_bisa_hadir' => false]);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Persiapan pertemuan dimulai.',
-            'data' => $detail->fresh(),
+            'data' => $this->detailSegar($detail),
         ]);
     }
 
@@ -265,20 +278,17 @@ class ModulAjarController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Anda tidak berhak menandai pertemuan ini.'], 403);
         }
 
-        if ($detail->diajarkan_oleh_guru_id) {
+        if ($detail->pertemuanBerlangsung()->doesntExist() && $detail->pertemuans()->selesai()->exists()) {
             return response()->json(['status' => 'error', 'message' => 'Pertemuan ini sudah selesai diajarkan.'], 422);
         }
 
-        $detail->update([
-            'tidak_bisa_hadir' => true,
-            'sedang_dipersiapkan' => false,
-            'guru_pengganti_id' => null,
-        ]);
+        $detail->pertemuanBerlangsung()->delete();
+        $detail->update(['tidak_bisa_hadir' => true]);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Ditandai tidak bisa hadir. Kelas ini sekarang terbuka untuk guru lain.',
-            'data' => $detail->fresh(),
+            'data' => $this->detailSegar($detail),
         ]);
     }
 
@@ -293,34 +303,36 @@ class ModulAjarController extends Controller
         $baris = DB::table('modul_ajar_details')
             ->where('id', $detail->id)
             ->where('tidak_bisa_hadir', true)
-            ->whereNull('guru_pengganti_id')
-            ->update([
-                'guru_pengganti_id' => $user->guru->id,
-                'sedang_dipersiapkan' => true,
-                'tidak_bisa_hadir' => false,
-                'updated_at' => now(),
-            ]);
+            ->update(['tidak_bisa_hadir' => false, 'updated_at' => now()]);
 
         if ($baris === 0) {
             return response()->json(['status' => 'error', 'message' => 'Kelas ini sudah diambil guru lain, atau tidak lagi terbuka.'], 409);
         }
 
+        Pertemuan::create([
+            'modul_ajar_detail_id' => $detail->id,
+            'tanggal' => now()->toDateString(),
+            'guru_id' => $user->guru->id,
+            'guru_pengganti_id' => $user->guru->id,
+        ]);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Kelas berhasil diambil. Silakan mulai mengajar.',
-            'data' => $detail->fresh(['guruPengganti']),
+            'data' => $this->detailSegar($detail),
         ]);
     }
 
     public function simpanNilai(Request $request, ModulAjarDetail $detail)
     {
         $kelas = Jadwal::where('kode_kelas', $detail->modulAjar->kode_kelas)->get(['id', 'siswa_id', 'guru_id']);
+        $pertemuan = $detail->pertemuanBerlangsung()->first();
 
-        if (! $this->bolehNilai($detail, $kelas->first())) {
+        if (! $this->bolehNilai($detail, $pertemuan, $kelas->first())) {
             return response()->json(['status' => 'error', 'message' => 'Anda tidak berhak menilai pertemuan ini.'], 403);
         }
 
-        if (! $detail->sedang_dipersiapkan) {
+        if (! $pertemuan) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Pertemuan ini tidak sedang berlangsung. Tekan Mulai Ajar atau Ajar Ulang dulu sebelum menilai.',
@@ -378,13 +390,14 @@ class ModulAjarController extends Controller
             }
         }
 
-        $guruKredit = $detail->guru_pengganti_id ?: $kelas->first()?->guru_id;
+        $guruKredit = $pertemuan->guru_pengganti_id ?: ($pertemuan->guru_id ?: $kelas->first()?->guru_id);
 
-        DB::transaction(function () use ($detail, $validated, $guruKredit) {
+        DB::transaction(function () use ($pertemuan, $validated, $guruKredit) {
             $now = now();
+
             foreach ($validated['absensi'] as $item) {
                 $absensi = ModulAjarAbsensi::updateOrCreate(
-                    ['modul_ajar_detail_id' => $detail->id, 'siswa_id' => $item['siswa_id']],
+                    ['pertemuan_id' => $pertemuan->id, 'siswa_id' => $item['siswa_id']],
                     ['hadir' => $item['hadir'], 'nilai' => null]
                 );
 
@@ -409,24 +422,33 @@ class ModulAjarController extends Controller
                 }
             }
 
-            AbsensiGuru::create([
-                'modul_ajar_detail_id' => $detail->id,
-                'guru_id' => $guruKredit,
-                'tanggal' => now()->toDateString(),
-            ]);
+            AbsensiGuru::updateOrCreate(
+                ['pertemuan_id' => $pertemuan->id],
+                ['guru_id' => $guruKredit, 'tanggal' => $pertemuan->tanggal->toDateString()]
+            );
 
-            $detail->update([
-                'sedang_dipersiapkan' => false,
-                'guru_pengganti_id' => null,
-                'diajarkan_oleh_guru_id' => $guruKredit,
-                'tanggal_diajarkan' => now()->toDateString(),
-            ]);
+            $pertemuan->update(['guru_id' => $guruKredit, 'selesai_pada' => $now]);
         });
 
         return response()->json([
             'status' => 'success',
             'message' => 'Nilai berhasil disimpan.',
-            'data' => $detail->fresh(['absensis.siswa:id,name,panggilan', 'diajarkanOlehGuru:id,name']),
+            'data' => $this->detailSegar($detail),
+        ]);
+    }
+
+    private function guruPemilik(ModulAjarDetail $detail): ?int
+    {
+        return Jadwal::where('kode_kelas', $detail->modulAjar->kode_kelas)->value('guru_id');
+    }
+
+    private function detailSegar(ModulAjarDetail $detail): ModulAjarDetail
+    {
+        return $detail->fresh([
+            'pertemuans.guru:id,name',
+            'pertemuans.guruPengganti:id,name',
+            'pertemuans.absensis.siswa:id,name,panggilan',
+            'pertemuans.absensis.nilaiAspeks:id,modul_ajar_absensi_id,aspek_penilaian_id,skor',
         ]);
     }
 
@@ -462,7 +484,7 @@ class ModulAjarController extends Controller
         return $jadwal && $this->bolehKelola($jadwal);
     }
 
-    private function bolehNilai(ModulAjarDetail $detail, ?Jadwal $jadwalKelas = null): bool
+    private function bolehNilai(ModulAjarDetail $detail, ?Pertemuan $pertemuan = null, ?Jadwal $jadwalKelas = null): bool
     {
         $jadwalKelas ??= Jadwal::where('kode_kelas', $detail->modulAjar->kode_kelas)->first();
 
@@ -471,7 +493,8 @@ class ModulAjarController extends Controller
         }
 
         $user = Auth::user();
+        $pengganti = $pertemuan?->guru_pengganti_id;
 
-        return $user->isGuru() && $user->guru && (int) $detail->guru_pengganti_id === (int) $user->guru->id;
+        return $user->isGuru() && $user->guru && $pengganti && (int) $pengganti === (int) $user->guru->id;
     }
 }

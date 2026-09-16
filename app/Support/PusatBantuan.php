@@ -10,7 +10,7 @@ class PusatBantuan
     public static function untuk(?string $namaRute, string $tab = ''): array
     {
         $kunci = $namaRute === 'dashboard' && $tab !== ''
-            ? 'dashboard.'.$tab
+            ? 'dashboard.' . $tab
             : (string) $namaRute;
 
         return self::semua()[$kunci] ?? self::bawaan();
@@ -394,6 +394,9 @@ class PusatBantuan
                         'title' => 'Membaca Hasil Anak',
                         'items' => [
                             'Angka besar di kartu adalah rata-rata semua aspek dari semua pertemuan yang anak itu hadiri.',
+                            'Sebelum mencetak, pilih dulu pertemuan mana yang mau dimasukkan. Ada pintasan Bulan ini dan Pilih semua.',
+                            'Ada dua dokumen: Rapor untuk laporan lengkap, dan Sertifikat untuk penghargaan. Sertifikat tidak memakai catatan.',
+                            'Catatan yang Anda ketik tersimpan setiap kali mencetak, dan catatan terbaru itulah yang dibaca orang tua di halaman Rapor Anak.',
                             'Klik kartu anak untuk melihat rinciannya: rata-rata tiap aspek, nilai terendah dan tertinggi, serta tren naik atau turun.',
                             'Tren baru muncul setelah ada minimal 4 pertemuan yang dinilai, karena di bawah itu belum bisa disebut kecenderungan.',
                             'Tombol Download Rapor PDF di dalam rincian menghasilkan laporan siap cetak untuk orang tua.',

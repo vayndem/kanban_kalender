@@ -13,6 +13,7 @@ use App\Http\Controllers\PaketController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\PembayaranController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RaporOrangTuaController;
 use App\Http\Controllers\ResultController;
 use App\Http\Controllers\RuangController;
 use App\Http\Controllers\SesiController;
@@ -158,6 +159,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::put('/admin/diskon/{id}', [DiskonController::class, 'update'])->name('admin.diskon.update');
     Route::delete('/admin/diskon/{id}', [DiskonController::class, 'destroy'])->name('admin.diskon.destroy');
 });
+
+Route::get('/rapor-anak', [RaporOrangTuaController::class, 'form'])->name('rapor.publik');
+Route::post('/rapor-anak', [RaporOrangTuaController::class, 'cari'])->name('rapor.publik.cari');
 
 Route::get('/jadwal-kalender', [JadwalController::class, 'tampilKalender'])->name('jadwal.kalender');
 Route::get('/jadwal-kalender/export', [JadwalController::class, 'exportPdf'])->name('jadwal.kalender.export');

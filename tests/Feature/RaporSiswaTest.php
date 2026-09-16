@@ -9,6 +9,7 @@ use App\Models\MataPelajaran;
 use App\Models\ModulAjar;
 use App\Models\ModulAjarAbsensi;
 use App\Models\ModulAjarDetail;
+use App\Models\Pertemuan;
 use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
@@ -54,7 +55,7 @@ class RaporSiswaTest extends TestCase
         string $tanggal,
         bool $hadir,
         ?int $nilai
-    ): ModulAjarDetail {
+    ): Pertemuan {
         $modulAjar = ModulAjar::firstOrCreate(
             ['kode_kelas' => $kodeKelas],
             ['tujuan_pembelajaran' => 'x', 'kompetensi_awal' => 'x', 'model_pembelajaran' => 'x', 'sarana_media' => 'x']
@@ -63,18 +64,23 @@ class RaporSiswaTest extends TestCase
         $detail = ModulAjarDetail::create([
             'modul_ajar_id' => $modulAjar->id,
             'materi' => $materi,
-            'tanggal_diajarkan' => $tanggal,
-            'diajarkan_oleh_guru_id' => $guru->id,
+        ]);
+
+        $pertemuan = Pertemuan::create([
+            'modul_ajar_detail_id' => $detail->id,
+            'tanggal' => $tanggal,
+            'guru_id' => $guru->id,
+            'selesai_pada' => now(),
         ]);
 
         ModulAjarAbsensi::create([
-            'modul_ajar_detail_id' => $detail->id,
+            'pertemuan_id' => $pertemuan->id,
             'siswa_id' => $siswa->id,
             'hadir' => $hadir,
             'nilai' => $nilai,
         ]);
 
-        return $detail;
+        return $pertemuan;
     }
 
     public function test_rapor_summarises_attendance_and_scores(): void
@@ -206,10 +212,10 @@ class RaporSiswaTest extends TestCase
     {
         $siswa = Siswa::factory()->create(['name' => 'Budi Santoso']);
         $guru = $this->buatKelas('kode-1', $siswa);
-        $detail = $this->catatPertemuan('kode-1', $siswa, $guru, 'Perkalian', '2026-09-01', true, 4);
+        $pertemuan = $this->catatPertemuan('kode-1', $siswa, $guru, 'Perkalian', '2026-09-01', true, 4);
 
         $respon = $this->actingAs(User::factory()->create())
-            ->post(route('admin.result.cetakRapor', $siswa->id), ['pertemuan' => [$detail->id]]);
+            ->post(route('admin.result.cetakRapor', $siswa->id), ['pertemuan' => [$pertemuan->id]]);
 
         $respon->assertOk();
         $this->assertStringContainsString('application/pdf', $respon->headers->get('content-type'));

@@ -400,17 +400,17 @@
                                                 </p>
                                                 <div class="flex flex-wrap gap-1.5">
                                                     <button type="button" @click="pilihBulanIni()"
-                                                        class="btn btn-ghost btn-xs">Bulan ini</button>
+                                                        class="btn btn-ghost btn-sm sm:btn-xs">Bulan ini</button>
                                                     <button type="button" @click="alihSemuaPertemuan()"
-                                                        class="btn btn-ghost btn-xs"
+                                                        class="btn btn-ghost btn-sm sm:btn-xs"
                                                         x-text="semuaPertemuanDipilih ? 'Kosongkan' : 'Pilih semua'"></button>
                                                 </div>
                                             </div>
 
                                             <div class="max-h-56 space-y-1.5 overflow-y-auto rounded-field bg-base-100 p-2">
-                                                <template x-for="p in daftarPertemuan" :key="p.detail_id">
+                                                <template x-for="p in daftarPertemuan" :key="p.pertemuan_id">
                                                     <label class="flex cursor-pointer items-start gap-3 rounded-field px-2 py-2 transition hover:bg-primary/10">
-                                                        <input type="checkbox" :value="String(p.detail_id)"
+                                                        <input type="checkbox" :value="String(p.pertemuan_id)"
                                                             x-model="pertemuanDipilih"
                                                             class="checkbox checkbox-primary mt-0.5 shrink-0 sm:checkbox-sm">
                                                         <span class="min-w-0 flex-1">
@@ -469,8 +469,24 @@
                                             </div>
                                             <p class="mt-1.5 text-[11px] text-base-content/60">
                                                 Dibiarkan kosong akan tercetak sebagai garis titik-titik untuk diisi tangan.
-                                                Isian ini tidak disimpan, hanya ikut pada cetakan kali ini.
+                                                Setiap cetakan menyimpan catatannya sendiri, dan catatan terbaru inilah
+                                                yang dibaca orang tua di halaman Rapor Anak.
                                             </p>
+
+                                            <template x-if="riwayatCetak.length">
+                                                <div class="mt-2 rounded-field bg-base-100 px-3 py-2">
+                                                    <p class="mb-1 text-[11px] font-black uppercase tracking-wider text-base-content/60">
+                                                        Riwayat Cetak
+                                                    </p>
+                                                    <template x-for="r in riwayatCetak" :key="r.id">
+                                                        <p class="text-[11px] text-base-content/70">
+                                                            <span x-text="r.pada"></span> ·
+                                                            <span x-text="r.jumlah_pertemuan"></span> pertemuan ·
+                                                            <span x-text="r.oleh"></span>
+                                                        </p>
+                                                    </template>
+                                                </div>
+                                            </template>
                                         </div>
 
                                         <label class="block">
@@ -495,13 +511,13 @@
                                             <button type="button" @click="cetak('rapor')"
                                                 :disabled="pertemuanDipilih.length === 0"
                                                 :class="pertemuanDipilih.length === 0 ? 'opacity-50' : ''"
-                                                class="btn btn-export btn-sm flex-1">
+                                                class="btn btn-export w-full sm:btn-sm sm:flex-1">
                                                 <i class="fas fa-file-lines"></i> Cetak Rapor
                                             </button>
                                             <button type="button" @click="cetak('sertifikat')"
                                                 :disabled="pertemuanDipilih.length === 0"
                                                 :class="pertemuanDipilih.length === 0 ? 'opacity-50' : ''"
-                                                class="btn btn-accent btn-sm flex-1">
+                                                class="btn btn-accent w-full sm:btn-sm sm:flex-1">
                                                 <i class="fas fa-award"></i> Cetak Sertifikat
                                             </button>
                                         </div>

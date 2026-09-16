@@ -7,6 +7,7 @@ use App\Models\Guru;
 use App\Models\ModulAjar;
 use App\Models\ModulAjarDetail;
 use App\Models\Penggajian;
+use App\Models\Pertemuan;
 use App\Models\User;
 use App\Services\PayrollService;
 use Database\Seeders\RoleSeeder;
@@ -47,13 +48,18 @@ class PayrollTest extends TestCase
             $detail = ModulAjarDetail::create([
                 'modul_ajar_id' => $modulAjar->id,
                 'materi' => $materi.' '.($i + 1),
-                'tanggal_diajarkan' => now()->toDateString(),
-                'diajarkan_oleh_guru_id' => $guru->id,
+            ]);
+
+            $pertemuan = Pertemuan::create([
+                'modul_ajar_detail_id' => $detail->id,
+                'tanggal' => now()->toDateString(),
+                'guru_id' => $guru->id,
+                'selesai_pada' => now(),
             ]);
 
             AbsensiGuru::create([
                 'guru_id' => $guru->id,
-                'modul_ajar_detail_id' => $detail->id,
+                'pertemuan_id' => $pertemuan->id,
                 'tanggal' => now()->toDateString(),
             ]);
         }

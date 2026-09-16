@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AspekPenilaian;
 use App\Models\ModulAjarAbsensi;
+use App\Models\RaporCetak;
 use App\Models\Siswa;
 use App\Services\RaporService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -90,25 +91,46 @@ class ResultController extends Controller
     public function rapor(Siswa $siswa, Request $request): JsonResponse
     {
         $request->validate(['dari' => 'nullable|date', 'sampai' => 'nullable|date']);
+        $terakhir = RaporCetak::terakhirUntuk($siswa->id);
 
         return response()->json([
             'status' => 'success',
             'data' => $this->rapor->untukSiswa($siswa, $request->query('dari'), $request->query('sampai')),
+            'catatan_terakhir' => $terakhir?->only(['kekuatan', 'perbaikan', 'komentar', 'rencana']),
+            'riwayat_cetak' => RaporCetak::where('siswa_id', $siswa->id)
+                ->with('dicetakOleh:id,name')
+                ->latest('id')
+                ->limit(5)
+                ->get()
+                ->map(fn (RaporCetak $c) => [
+                    'id' => $c->id,
+                    'periode' => $c->periode_label,
+                    'jumlah_pertemuan' => count($c->pertemuan_ids ?? []),
+                    'oleh' => $c->dicetakOleh?->name ?? '-',
+                    'pada' => $c->created_at->translatedFormat('d M Y, H:i'),
+                ]),
         ]);
     }
 
     public function cetakRapor(Siswa $siswa, Request $request)
     {
         $data = $this->validasiCetak($request, $siswa);
+        $rapor = $this->rapor->untukSiswa($siswa, null, null, $data['pertemuan']);
+
+        $catatan = RaporCetak::create([
+            'siswa_id' => $siswa->id,
+            'dicetak_oleh' => $request->user()?->id,
+            'periode_label' => $rapor['periode']['label'],
+            'pertemuan_ids' => array_map('intval', $data['pertemuan']),
+            'kekuatan' => $data['kekuatan'] ?? null,
+            'perbaikan' => $data['perbaikan'] ?? null,
+            'komentar' => $data['komentar'] ?? null,
+            'rencana' => $data['rencana'] ?? null,
+        ]);
 
         $pdf = Pdf::loadView('pdf.rapor', [
-            'rapor' => $this->rapor->untukSiswa($siswa, null, null, $data['pertemuan']),
-            'catatan' => [
-                'kekuatan' => $data['kekuatan'] ?? null,
-                'perbaikan' => $data['perbaikan'] ?? null,
-                'komentar' => $data['komentar'] ?? null,
-                'rencana' => $data['rencana'] ?? null,
-            ],
+            'rapor' => $rapor,
+            'catatan' => $catatan->only(['kekuatan', 'perbaikan', 'komentar', 'rencana']),
             'dicetakPada' => now()->translatedFormat('d F Y, H:i'),
         ])->setPaper('a4', 'portrait');
 
@@ -134,7 +156,7 @@ class ResultController extends Controller
     private function validasiCetak(Request $request, Siswa $siswa): array
     {
         $milikSiswa = ModulAjarAbsensi::where('siswa_id', $siswa->id)
-            ->pluck('modul_ajar_detail_id')
+            ->pluck('pertemuan_id')
             ->map(fn ($id) => (int) $id)
             ->all();
 
@@ -159,9 +181,9 @@ class ResultController extends Controller
     private function kartuSiswa(): array
     {
         $absensis = ModulAjarAbsensi::query()
-            ->with(['nilaiAspeks:id,modul_ajar_absensi_id,skor', 'modulAjarDetail:id,tanggal_diajarkan'])
+            ->with(['nilaiAspeks:id,modul_ajar_absensi_id,skor', 'pertemuan:id,tanggal,selesai_pada'])
             ->get()
-            ->filter(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail?->tanggal_diajarkan !== null)
+            ->filter(fn (ModulAjarAbsensi $a) => $a->pertemuan?->selesai_pada !== null)
             ->groupBy('siswa_id');
 
         return Siswa::query()
@@ -173,7 +195,7 @@ class ResultController extends Controller
                 $hadir = $milik->where('hadir', true);
                 $nilai = $hadir->map(fn (ModulAjarAbsensi $a) => $a->rataAspek())->filter(fn ($n) => $n !== null);
                 $terakhir = $milik
-                    ->sortByDesc(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail->tanggal_diajarkan->toDateString())
+                    ->sortByDesc(fn (ModulAjarAbsensi $a) => $a->pertemuan->tanggal->toDateString())
                     ->first();
 
                 return [
@@ -190,7 +212,7 @@ class ResultController extends Controller
                         ? (int) round($hadir->count() / $milik->count() * 100)
                         : 0,
                     'rata_nilai' => $nilai->isNotEmpty() ? round($nilai->avg(), 2) : null,
-                    'terakhir_dinilai' => $terakhir?->modulAjarDetail->tanggal_diajarkan->toDateString(),
+                    'terakhir_dinilai' => $terakhir?->pertemuan->tanggal->toDateString(),
                 ];
             })
             ->values()

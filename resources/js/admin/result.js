@@ -20,6 +20,7 @@ export const resultHandler = ({ initialAspek, initialSiswa, routes }) => ({
     pertemuanDipilih: [],
     modeCetak: false,
     formCetak: { judul_sertifikat: '', kekuatan: '', perbaikan: '', komentar: '', rencana: '' },
+    riwayatCetak: [],
 
     get aspekAktif() {
         return this.aspekList.filter(a => a.aktif);
@@ -186,8 +187,16 @@ export const resultHandler = ({ initialAspek, initialSiswa, routes }) => ({
 
             const hasil = await response.json();
             this.raporSiswa = hasil.data;
+            this.riwayatCetak = hasil.riwayat_cetak || [];
             this.pertemuanDipilih = [];
             this.modeCetak = false;
+            this.formCetak = {
+                judul_sertifikat: '',
+                kekuatan: hasil.catatan_terakhir?.kekuatan || '',
+                perbaikan: hasil.catatan_terakhir?.perbaikan || '',
+                komentar: hasil.catatan_terakhir?.komentar || '',
+                rencana: hasil.catatan_terakhir?.rencana || '',
+            };
         } catch (e) {
             AppSwal.error(e.message || 'Rapor gagal dimuat.');
             this.raporUntuk = null;
@@ -202,6 +211,7 @@ export const resultHandler = ({ initialAspek, initialSiswa, routes }) => ({
         this.modeCetak = false;
         this.pertemuanDipilih = [];
         this.formCetak = { judul_sertifikat: '', kekuatan: '', perbaikan: '', komentar: '', rencana: '' };
+        this.riwayatCetak = [];
     },
 
     get daftarPertemuan() {
@@ -216,14 +226,14 @@ export const resultHandler = ({ initialAspek, initialSiswa, routes }) => ({
     alihSemuaPertemuan() {
         this.pertemuanDipilih = this.semuaPertemuanDipilih
             ? []
-            : this.daftarPertemuan.map(p => String(p.detail_id));
+            : this.daftarPertemuan.map(p => String(p.pertemuan_id));
     },
 
     pilihBulanIni() {
         const kini = new Date().toISOString().slice(0, 7);
         this.pertemuanDipilih = this.daftarPertemuan
             .filter(p => String(p.tanggal).slice(0, 7) === kini)
-            .map(p => String(p.detail_id));
+            .map(p => String(p.pertemuan_id));
     },
 
     bukaModeCetak() {

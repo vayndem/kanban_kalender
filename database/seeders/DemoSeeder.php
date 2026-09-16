@@ -20,6 +20,8 @@ use App\Models\Paket;
 use App\Models\Pembayaran;
 use App\Models\PembayaranDetail;
 use App\Models\Penggajian;
+use App\Models\Pertemuan;
+use App\Models\RaporCetak;
 use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
@@ -76,6 +78,8 @@ class DemoSeeder extends Seeder
         $this->aspekYangSudahDipensiunkan();
         $this->contohPenggajian();
         $this->tagihanDiLuarPaket($siswa);
+        $this->materiDiulang();
+        $this->riwayatCetakRapor();
         $this->jejakOperasional();
 
         $this->ringkasan();
@@ -618,8 +622,6 @@ class DemoSeeder extends Seeder
                     [
                         'sub_materi' => 'Bagian '.($i + 1),
                         'cara_mengajar' => 'Penjelasan singkat lalu latihan soal.',
-                        'tanggal_diajarkan' => $sudahDiajar ? now()->subDays((4 - $i) * 3)->toDateString() : null,
-                        'diajarkan_oleh_guru_id' => $sudahDiajar ? $pertama->guru_id : null,
                     ]
                 );
 
@@ -627,13 +629,18 @@ class DemoSeeder extends Seeder
                     continue;
                 }
 
+                $pertemuan = Pertemuan::firstOrCreate(
+                    ['modul_ajar_detail_id' => $detail->id, 'tanggal' => now()->subDays((4 - $i) * 3)->toDateString()],
+                    ['guru_id' => $pertama->guru_id, 'selesai_pada' => now()->subDays((4 - $i) * 3)]
+                );
+
                 $aspeks = AspekPenilaian::aktif()->orderBy('urutan')->get();
 
                 foreach ($baris as $j) {
                     $hadir = ($j->siswa_id + $i) % 7 !== 0;
 
                     $absensi = ModulAjarAbsensi::firstOrCreate(
-                        ['modul_ajar_detail_id' => $detail->id, 'siswa_id' => $j->siswa_id],
+                        ['pertemuan_id' => $pertemuan->id, 'siswa_id' => $j->siswa_id],
                         ['hadir' => $hadir, 'nilai' => null]
                     );
 
@@ -650,8 +657,8 @@ class DemoSeeder extends Seeder
                 }
 
                 AbsensiGuru::firstOrCreate(
-                    ['modul_ajar_detail_id' => $detail->id],
-                    ['guru_id' => $pertama->guru_id, 'tanggal' => $detail->tanggal_diajarkan]
+                    ['pertemuan_id' => $pertemuan->id],
+                    ['guru_id' => $pertama->guru_id, 'tanggal' => $pertemuan->tanggal->toDateString()]
                 );
             }
         }
@@ -705,7 +712,7 @@ class DemoSeeder extends Seeder
 
     private function alurMengajarHidup(): void
     {
-        $kelas = ModulAjar::with('details')->orderBy('id')->get()
+        $kelas = ModulAjar::with('details.pertemuans')->orderBy('id')->get()
             ->filter(fn (ModulAjar $m) => $m->details->isNotEmpty())
             ->values();
 
@@ -713,10 +720,13 @@ class DemoSeeder extends Seeder
             return;
         }
 
-        $belumDiajar = fn (ModulAjar $m) => $m->details->firstWhere('tanggal_diajarkan', null);
+        $belumDiajar = fn (ModulAjar $m) => $m->details->first(fn ($d) => $d->pertemuans->isEmpty());
 
         if ($d = $belumDiajar($kelas[0])) {
-            $d->update(['sedang_dipersiapkan' => true]);
+            Pertemuan::firstOrCreate(
+                ['modul_ajar_detail_id' => $d->id, 'tanggal' => now()->toDateString()],
+                ['guru_id' => $this->guruKelas($kelas[0])]
+            );
         }
 
         if ($d = $belumDiajar($kelas[1])) {
@@ -726,15 +736,25 @@ class DemoSeeder extends Seeder
         $pengganti = Guru::where('name', 'Pak Bagas')->first();
 
         if ($pengganti && ($d = $belumDiajar($kelas[2]))) {
-            $d->update(['sedang_dipersiapkan' => true, 'guru_pengganti_id' => $pengganti->id]);
+            Pertemuan::firstOrCreate(
+                ['modul_ajar_detail_id' => $d->id, 'tanggal' => now()->toDateString()],
+                ['guru_id' => $pengganti->id, 'guru_pengganti_id' => $pengganti->id]
+            );
         }
 
-        $sudahDiajar = $kelas[3]->details->firstWhere(fn ($d) => $d->tanggal_diajarkan !== null);
+        $sudahDiajar = $kelas[3]->details
+            ->flatMap(fn ($d) => $d->pertemuans)
+            ->first(fn (Pertemuan $p) => $p->selesai_pada !== null);
+
         if ($pengganti && $sudahDiajar) {
-            $sudahDiajar->update(['diajarkan_oleh_guru_id' => $pengganti->id]);
-            AbsensiGuru::where('modul_ajar_detail_id', $sudahDiajar->id)
-                ->update(['guru_id' => $pengganti->id]);
+            $sudahDiajar->update(['guru_id' => $pengganti->id, 'guru_pengganti_id' => $pengganti->id]);
+            AbsensiGuru::where('pertemuan_id', $sudahDiajar->id)->update(['guru_id' => $pengganti->id]);
         }
+    }
+
+    private function guruKelas(ModulAjar $modul): ?int
+    {
+        return Jadwal::where('kode_kelas', $modul->kode_kelas)->value('guru_id');
     }
 
     private function aspekYangSudahDipensiunkan(): void
@@ -786,6 +806,115 @@ class DemoSeeder extends Seeder
             if ($lunas && $tagihan->details()->count() === 0) {
                 $this->buatDetailPadaTanggal($tagihan, $harga, 'Pelunasan '.$keterangan, $saat);
             }
+        }
+    }
+
+    private function materiDiulang(): void
+    {
+        $aspeks = AspekPenilaian::aktif()->orderBy('urutan')->get();
+
+        if ($aspeks->isEmpty()) {
+            return;
+        }
+
+        $kandidat = Pertemuan::whereNotNull('selesai_pada')
+            ->with('modulAjarDetail.modulAjar')
+            ->orderBy('id')
+            ->get()
+            ->unique('modul_ajar_detail_id')
+            ->take(4);
+
+        foreach ($kandidat as $urutan => $awal) {
+            $kode = $awal->modulAjarDetail?->modulAjar?->kode_kelas;
+            if (! $kode) {
+                continue;
+            }
+
+            $tanggal = $awal->tanggal->copy()->addDays(7);
+
+            $ulang = Pertemuan::firstOrCreate(
+                ['modul_ajar_detail_id' => $awal->modul_ajar_detail_id, 'tanggal' => $tanggal->toDateString()],
+                ['guru_id' => $awal->guru_id, 'selesai_pada' => $tanggal]
+            );
+
+            if (! $ulang->wasRecentlyCreated) {
+                continue;
+            }
+
+            foreach (Jadwal::where('kode_kelas', $kode)->pluck('siswa_id')->unique() as $siswaId) {
+                $absensi = ModulAjarAbsensi::firstOrCreate(
+                    ['pertemuan_id' => $ulang->id, 'siswa_id' => $siswaId],
+                    ['hadir' => true, 'nilai' => null]
+                );
+
+                foreach ($aspeks as $i => $aspek) {
+                    NilaiAspek::firstOrCreate(
+                        ['modul_ajar_absensi_id' => $absensi->id, 'aspek_penilaian_id' => $aspek->id],
+                        ['skor' => min(5, 3 + (($siswaId + $i + $urutan) % 3))]
+                    );
+                }
+            }
+
+            AbsensiGuru::firstOrCreate(
+                ['pertemuan_id' => $ulang->id],
+                ['guru_id' => $awal->guru_id, 'tanggal' => $tanggal->toDateString()]
+            );
+        }
+    }
+
+    private function riwayatCetakRapor(): void
+    {
+        $admin = User::whereHas('roles', fn ($q) => $q->where('name', 'admin'))->first();
+
+        $catatan = [
+            ['Berani memulai percakapan tanpa diminta dan hafal kosakata tema keluarga.',
+                'Pengucapan bunyi th dan v masih tertukar, perlu latihan menirukan.',
+                'Perkembangannya konsisten. Mohon dibiasakan menyapa dengan English di rumah.',
+                'Bulan depan masuk ke tema hobi dan latihan percakapan dua arah.'],
+            ['Sangat teliti mengerjakan lembar kerja dan selalu menyelesaikan tugas.',
+                'Masih malu menjawab kalau ditanya mendadak di depan kelas.',
+                'Sudah ada kemajuan besar di bagian menulis. Terima kasih atas dukungannya.',
+                'Akan ditambah porsi speaking berpasangan supaya lebih percaya diri.'],
+            ['Cepat menangkap instruksi dan sering membantu teman sekelas.',
+                'Perlu konsisten mengerjakan PR agar kosakata barunya tidak cepat lupa.',
+                'Anak yang menyenangkan di kelas. Tinggal dijaga kebiasaan belajarnya.',
+                'Mulai latihan membaca cerita pendek dan menceritakan ulang.'],
+        ];
+
+        $siswaDinilai = ModulAjarAbsensi::where('hadir', true)
+            ->get()
+            ->groupBy('siswa_id')
+            ->sortByDesc(fn ($rows) => $rows->count())
+            ->take(3);
+
+        $urutan = 0;
+        foreach ($siswaDinilai as $siswaId => $absensis) {
+            $isi = $catatan[$urutan % count($catatan)];
+            $pertemuanIds = $absensis->pluck('pertemuan_id')->filter()->unique()->values();
+
+            if ($pertemuanIds->isEmpty()) {
+                continue;
+            }
+
+            $sudahAda = RaporCetak::where('siswa_id', $siswaId)->exists();
+            if ($sudahAda) {
+                continue;
+            }
+
+            $saat = Carbon::now()->subDays(6 - $urutan);
+
+            RaporCetak::create([
+                'siswa_id' => $siswaId,
+                'dicetak_oleh' => $admin?->id,
+                'periode_label' => $saat->translatedFormat('F Y'),
+                'pertemuan_ids' => $pertemuanIds->all(),
+                'kekuatan' => $isi[0],
+                'perbaikan' => $isi[1],
+                'komentar' => $isi[2],
+                'rencana' => $isi[3],
+            ])->forceFill(['created_at' => $saat, 'updated_at' => $saat])->save();
+
+            $urutan++;
         }
     }
 
@@ -841,7 +970,11 @@ class DemoSeeder extends Seeder
         $this->command?->line('  Kehadiran guru   : '.AbsensiGuru::count());
         $this->command?->line('  Struk penggajian : '.Penggajian::count().' ('.Penggajian::whereNotNull('dibatalkan_pada')->count().' dibatalkan)');
         $this->command?->line('  Guru tanpa akun  : '.Guru::whereNull('email')->count().' dari '.Guru::count());
-        $this->command?->line('  Sedang diajar    : '.ModulAjarDetail::where('sedang_dipersiapkan', true)->count().' kelas, slot terbuka '.ModulAjarDetail::where('tidak_bisa_hadir', true)->count());
+        $this->command?->line('  Pertemuan        : '.Pertemuan::count().' ('.Pertemuan::whereNull('selesai_pada')->count().' sedang berlangsung)');
+        $this->command?->line('  Slot terbuka     : '.ModulAjarDetail::where('tidak_bisa_hadir', true)->count());
+        $this->command?->line('  Materi diulang   : '.Pertemuan::selesai()->get()->groupBy('modul_ajar_detail_id')
+            ->filter(fn ($p) => $p->count() > 1)->count().' materi diajar lebih dari sekali');
+        $this->command?->line('  Rapor dicetak    : '.RaporCetak::count().' kali');
         $this->command?->newLine();
         $this->command?->line('Login admin: admin@example.com / 12345678');
         $this->command?->line('Login guru : bu.rina@eling.test / guru12345');

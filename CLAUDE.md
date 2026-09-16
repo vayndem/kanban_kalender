@@ -33,6 +33,7 @@ Domains, all routed from `routes/web.php`:
 2. **Data Siswa** (`SiswaController`, `ArsipController`) — listing, filter, archive/restore/permanent-delete, export. Create/edit moved to Workshop; this tab keeps lifecycle actions plus the `Tanda` notes panel.
 3. **Pembayaran** (`PembayaranController`, `PembayaranDetailsController`) — invoicing, mass billing, installments, discounts, settlement, receipts. The most fragile controller here.
 4. **Public calendar** (`jadwal-kalender`) — read-only, no auth.
+4b. **Rapor orang tua** (`RaporOrangTuaController`, `/rapor-anak`) — public, no auth, gated by full name + last 4 digits of the registered phone.
 5. **Workshop** (`WorkshopController`) — the only place to create/edit Mapel, Guru, Ruang, Sesi, Paket, Kemampuan, Siswa.
 6. **Modul Ajar** (`ModulAjarController`, `role:admin|guru`) — curriculum per class.
 7. **Absen** (`ModulAjarController::absen`, `role:admin|guru`) — day x session teaching board.
@@ -41,7 +42,7 @@ Domains, all routed from `routes/web.php`:
 
 `DashboardController` (`/dashboard`) loads data **per active tab**, never all at once — a full-payload version triggered `FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE` on Vercel. Check response size and eager-loading blast radius on any change here, and likewise for `GET /admin/pembayaran/keluarga/{no_hp}/detail`, which exists to avoid shipping full invoice history up front.
 
-**Domain model:** `Siswa`, `Jadwal`, `Hari`, `Sesi`, `Guru`, `Ruang`, `MataPelajaran`, `Paket`, `Pembayaran`, `PembayaranDetail`, `Diskon`, `Tanda`, `Arsip`, `BatchPembayaranLog`, `TingkatKemampuan`, `ModulAjar`, `ModulAjarDetail`, `ModulAjarAbsensi`, `AbsensiGuru`, `Penggajian`, `JadwalTeksLog`, `StashPemulihanLog`, `AspekPenilaian`, `NilaiAspek`.
+**Domain model:** `Siswa`, `Jadwal`, `Hari`, `Sesi`, `Guru`, `Ruang`, `MataPelajaran`, `Paket`, `Pembayaran`, `PembayaranDetail`, `Diskon`, `Tanda`, `Arsip`, `BatchPembayaranLog`, `TingkatKemampuan`, `ModulAjar`, `ModulAjarDetail`, `ModulAjarAbsensi`, `AbsensiGuru`, `Penggajian`, `JadwalTeksLog`, `StashPemulihanLog`, `AspekPenilaian`, `NilaiAspek`, `Pertemuan`, `RaporCetak`.
 
 - One class shows as a single card but is **many `jadwals` rows, one per student**. Collision checks and edits must cover every row, not a subset.
 - `Pembayaran` is the invoice header; `PembayaranDetail` is the **append-only** ledger. Status changes add a detail row, never overwrite totals.
@@ -156,6 +157,37 @@ Two roles via `spatie/laravel-permission`: `admin`, `guru`.
 - **Substitution never touches `jadwals.guru_id`.** Guru A names guru B as `guru_pengganti_id` on one detail; that is what lets B pass `bolehNilai()`. It resets to null after grading. `index()` therefore scopes a guru's kanban to their own classes **plus** any class where they are currently a substitute — without that, the substitute cannot reach the class.
 - **Attendance credit follows whoever actually taught.** `absensi_gurus` gets one row per graded detail (`unique(modul_ajar_detail_id)`, upserted so re-teaching moves credit rather than duplicating), crediting `guru_pengganti_id ?: jadwal.guru_id`. Counted **per graded session**, not per day — 3 classes in a day earns 3.
 - Monthly totals sum `absensi_gurus` over a date range, not a running counter, and are deliberately **not** filtered by `ditutup_pada`: "how many sessions did I teach this month" must not reset because payroll ran.
+
+### A meeting is a dated occurrence, not a syllabus item
+
+`pertemuans` is the record of one class actually being taught: `modul_ajar_detail_id`, `tanggal`, `guru_id`, `guru_pengganti_id`, `selesai_pada`. **One meeting covers exactly one syllabus item** — the owner chose that over multi-item meetings because it matches how teachers already work.
+
+- **Meetings are created when a teacher presses Mulai Ajar**, not generated ahead from the weekly schedule. The owner chose this: no phantom rows, no holiday handling. The Absen board still lists every class scheduled today, so a class with no meeting for today is simply one that has not been taught yet.
+- `modul_ajar_absensis.pertemuan_id` and `absensi_gurus.pertemuan_id` both point at the meeting. `modul_ajar_details` no longer carries `sedang_dipersiapkan`, `tanggal_diajarkan`, `diajarkan_oleh_guru_id` or `guru_pengganti_id` — those are **derived accessors** now, reading from the meetings. `tidak_bisa_hadir` stays on the detail, because it is declared before any meeting exists.
+- **Re-teaching now keeps both records.** Pressing Ajar Ulang opens a second meeting with its own date, its own student scores and its own teaching credit; the first meeting's grades survive. This reverses the old "grades are overwritten" rule — that rule existed only because there was nowhere else to put them. `AspekPenilaianTest` pins both meetings appearing in the rapor.
+- Teaching credit is **one `absensi_gurus` row per finished meeting**, keyed by `pertemuan_id`. That is what makes "ajar ulang counts as +1" fall out naturally instead of needing a special case.
+- Grading is refused unless a meeting is currently running (`selesai_pada IS NULL`). That single guard is what stops a double-submitted grading from paying twice.
+- An admin (or the owning guru) pressing Mulai Ajar on a meeting held by a substitute **takes it over and clears `guru_pengganti_id`** rather than creating a second meeting.
+
+### The public parent report
+
+`/rapor-anak` is unauthenticated. A parent types the child's **full name plus the last 4 digits of the registered phone**; both must match or the same generic "data tidak ditemukan" is returned, so the form cannot be used to confirm which names exist. `RateLimiter` allows 8 attempts per IP per 10 minutes and resets on success.
+
+The name alone was the original request, but **student full names are already listed on the public front page** (`guestIndex` loads `siswa:id,name,kelas` and `welcome.blade.php` renders them per class), so a name-only gate would have been no gate at all. The phone digits are what actually restrict it. If names are ever removed from the front page, this decision can be revisited — not before.
+
+The page shows attendance, per-aspect percentages, materials learned, and the teacher's notes **from the most recent print**. Scores are shown as percentages, never as the raw 1-5.
+
+### Report notes are archived per print
+
+`rapor_cetaks` stores one row **every time a rapor is printed**: who printed it, the period label, the chosen `pertemuan_ids`, and the four free-text sections. The owner chose per-print over per-month so nothing is ever overwritten. The print form pre-fills from the latest row for that student, and the parent page reads the latest row too. **Certificates deliberately save nothing** — they carry no notes.
+
+Blank sections print as dotted lines for handwriting, matching the original Word template.
+
+### Scores print as percentages, not stars
+
+The owner's template used 1-5 stars; we use the percentage instead. `RaporService::persen()` maps a 1-5 average to 0-100 and `predikat()` bands it: >80 Excellent, >60 Very Good, >40 Good Progress, >20 Beginning, else Needs Support. The rapor PDF (`pdf/rapor.blade.php`) follows the template's sections A-E plus Materials Learned; the certificate (`pdf/sertifikat.blade.php`) is free-form and decorated.
+
+**Printing requires choosing meetings first.** `ResultController::validasiCetak()` rejects an empty selection and rejects any meeting that does not belong to that student — it does not silently fall back to "all".
 
 ## Frontend conventions
 

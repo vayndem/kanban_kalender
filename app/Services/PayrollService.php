@@ -166,15 +166,16 @@ class PayrollService
         return AbsensiGuru::query()
             ->where('penggajian_id', $struk->id)
             ->with([
-                'modulAjarDetail:id,modul_ajar_id,materi',
-                'modulAjarDetail.modulAjar:id,kode_kelas',
+                'pertemuan:id,modul_ajar_detail_id,tanggal',
+                'pertemuan.modulAjarDetail:id,modul_ajar_id,materi',
+                'pertemuan.modulAjarDetail.modulAjar:id,kode_kelas',
             ])
             ->orderBy('tanggal')
             ->get()
             ->map(fn (AbsensiGuru $absen) => [
                 'tanggal' => $absen->tanggal?->toDateString(),
-                'materi' => $absen->modulAjarDetail?->materi ?? '-',
-                'kode_kelas' => $absen->modulAjarDetail?->modulAjar?->kode_kelas,
+                'materi' => $absen->pertemuan?->modulAjarDetail?->materi ?? '-',
+                'kode_kelas' => $absen->pertemuan?->modulAjarDetail?->modulAjar?->kode_kelas,
             ])
             ->values();
     }

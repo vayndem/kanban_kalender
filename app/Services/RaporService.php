@@ -60,28 +60,29 @@ class RaporService
 
         return ModulAjarAbsensi::query()
             ->where('siswa_id', $siswa->id)
-            ->when($pilihan !== [], fn ($q) => $q->whereIn('modul_ajar_detail_id', $pilihan))
+            ->when($pilihan !== [], fn ($q) => $q->whereIn('pertemuan_id', $pilihan))
             ->with([
-                'modulAjarDetail:id,modul_ajar_id,materi,sub_materi,hasil_akhir_pembelajaran,tanggal_diajarkan,diajarkan_oleh_guru_id',
-                'modulAjarDetail.modulAjar:id,kode_kelas',
-                'modulAjarDetail.diajarkanOlehGuru:id,name',
+                'pertemuan:id,modul_ajar_detail_id,tanggal,guru_id,selesai_pada',
+                'pertemuan.guru:id,name',
+                'pertemuan.modulAjarDetail:id,modul_ajar_id,materi,sub_materi,hasil_akhir_pembelajaran',
+                'pertemuan.modulAjarDetail.modulAjar:id,kode_kelas',
                 'nilaiAspeks.aspek:id,nama,indikator,urutan',
             ])
             ->get()
-            ->filter(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail?->tanggal_diajarkan !== null)
+            ->filter(fn (ModulAjarAbsensi $a) => $a->pertemuan?->selesai_pada !== null && $a->pertemuan?->tanggal !== null)
             ->filter(function (ModulAjarAbsensi $a) use ($awal, $akhir) {
-                $tanggal = $a->modulAjarDetail->tanggal_diajarkan;
+                $tanggal = $a->pertemuan->tanggal;
 
                 return ! ($awal && $tanggal->lt($awal)) && ! ($akhir && $tanggal->gt($akhir));
             })
-            ->sortBy(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail->tanggal_diajarkan->toDateString())
+            ->sortBy(fn (ModulAjarAbsensi $a) => $a->pertemuan->tanggal->toDateString())
             ->values();
     }
 
     private function infoKelas(Collection $absensis): Collection
     {
         $kodeKelas = $absensis
-            ->map(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail->modulAjar?->kode_kelas)
+            ->map(fn (ModulAjarAbsensi $a) => $a->pertemuan->modulAjarDetail?->modulAjar?->kode_kelas)
             ->filter()
             ->unique();
 
@@ -129,7 +130,7 @@ class RaporService
     private function labelPeriode(Collection $absensis): string
     {
         $tanggal = $absensis
-            ->map(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail->tanggal_diajarkan)
+            ->map(fn (ModulAjarAbsensi $a) => $a->pertemuan->tanggal)
             ->filter()
             ->sort()
             ->values();
@@ -151,7 +152,7 @@ class RaporService
     private function daftarGuru(Collection $absensis): string
     {
         $nama = $absensis
-            ->map(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail->diajarkanOlehGuru?->name)
+            ->map(fn (ModulAjarAbsensi $a) => $a->pertemuan->guru?->name)
             ->filter()
             ->unique()
             ->values();
@@ -165,10 +166,10 @@ class RaporService
     private function materiDipelajari(Collection $absensis): array
     {
         return $absensis
-            ->sortBy(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail->tanggal_diajarkan->toDateString())
+            ->sortBy(fn (ModulAjarAbsensi $a) => $a->pertemuan->tanggal->toDateString())
             ->map(fn (ModulAjarAbsensi $a) => [
-                'topik' => trim($a->modulAjarDetail->materi.' '.($a->modulAjarDetail->sub_materi ?? '')),
-                'hasil' => $a->modulAjarDetail->hasil_akhir_pembelajaran
+                'topik' => trim($a->pertemuan->modulAjarDetail->materi.' '.($a->pertemuan->modulAjarDetail->sub_materi ?? '')),
+                'hasil' => $a->pertemuan->modulAjarDetail->hasil_akhir_pembelajaran
                     ?: ($a->hadir ? self::predikat(self::persen($a->rataAspek())) : 'Tidak hadir'),
             ])
             ->unique('topik')
@@ -182,15 +183,15 @@ class RaporService
     private function daftarPertemuan(Collection $absensis): array
     {
         return $absensis
-            ->sortByDesc(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail->tanggal_diajarkan->toDateString())
+            ->sortByDesc(fn (ModulAjarAbsensi $a) => $a->pertemuan->tanggal->toDateString())
             ->map(fn (ModulAjarAbsensi $a) => [
-                'detail_id' => $a->modulAjarDetail->id,
-                'tanggal' => $a->modulAjarDetail->tanggal_diajarkan->toDateString(),
-                'materi' => $a->modulAjarDetail->materi,
+                'pertemuan_id' => $a->pertemuan->id,
+                'tanggal' => $a->pertemuan->tanggal->toDateString(),
+                'materi' => $a->pertemuan->modulAjarDetail->materi,
                 'hadir' => (bool) $a->hadir,
                 'nilai' => $a->rataAspek(),
                 'persen' => self::persen($a->rataAspek()),
-                'diajar_oleh' => $a->modulAjarDetail->diajarkanOlehGuru?->name ?? '-',
+                'diajar_oleh' => $a->pertemuan->guru?->name ?? '-',
             ])
             ->values()
             ->all();
@@ -274,7 +275,7 @@ class RaporService
     private function perMapel(Collection $absensis, Collection $kelasInfo): array
     {
         return $absensis
-            ->groupBy(fn (ModulAjarAbsensi $a) => $a->modulAjarDetail->modulAjar?->kode_kelas ?? '-')
+            ->groupBy(fn (ModulAjarAbsensi $a) => $a->pertemuan->modulAjarDetail?->modulAjar?->kode_kelas ?? '-')
             ->map(function (Collection $rows, string $kodeKelas) use ($kelasInfo) {
                 $hadir = $rows->where('hadir', true);
                 $nilai = $this->nilaiPertemuan($rows);
@@ -287,9 +288,9 @@ class RaporService
                     'rata_nilai' => $nilai->isNotEmpty() ? round($nilai->avg(), 2) : null,
                     'per_aspek' => $this->perAspek($rows),
                     'pertemuan' => $rows->map(fn (ModulAjarAbsensi $a) => [
-                        'tanggal' => $a->modulAjarDetail->tanggal_diajarkan->toDateString(),
-                        'materi' => $a->modulAjarDetail->materi,
-                        'sub_materi' => $a->modulAjarDetail->sub_materi,
+                        'tanggal' => $a->pertemuan->tanggal->toDateString(),
+                        'materi' => $a->pertemuan->modulAjarDetail->materi,
+                        'sub_materi' => $a->pertemuan->modulAjarDetail->sub_materi,
                         'hadir' => (bool) $a->hadir,
                         'nilai' => $a->rataAspek(),
                         'skor_aspek' => $a->nilaiAspeks
@@ -298,7 +299,7 @@ class RaporService
                             ->map(fn ($n) => ['nama' => $n->aspek->nama, 'skor' => $n->skor])
                             ->values()
                             ->all(),
-                        'diajar_oleh' => $a->modulAjarDetail->diajarkanOlehGuru?->name ?? '-',
+                        'diajar_oleh' => $a->pertemuan->guru?->name ?? '-',
                     ])->values()->all(),
                 ];
             })

@@ -9,7 +9,7 @@ class AbsensiGuru extends Model
 {
     protected $fillable = [
         'guru_id',
-        'modul_ajar_detail_id',
+        'pertemuan_id',
         'penggajian_id',
         'tanggal',
     ];
@@ -24,9 +24,9 @@ class AbsensiGuru extends Model
         return $this->belongsTo(Guru::class);
     }
 
-    public function modulAjarDetail(): BelongsTo
+    public function pertemuan(): BelongsTo
     {
-        return $this->belongsTo(ModulAjarDetail::class);
+        return $this->belongsTo(Pertemuan::class, 'pertemuan_id');
     }
 
     public function penggajian(): BelongsTo

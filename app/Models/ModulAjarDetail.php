@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ModulAjarDetail extends Model
 {
@@ -17,17 +18,18 @@ class ModulAjarDetail extends Model
         'tujuan',
         'hasil_akhir_pembelajaran',
         'keterangan',
-        'sedang_dipersiapkan',
         'tidak_bisa_hadir',
-        'guru_pengganti_id',
-        'diajarkan_oleh_guru_id',
-        'tanggal_diajarkan',
     ];
 
     protected $casts = [
-        'sedang_dipersiapkan' => 'boolean',
         'tidak_bisa_hadir' => 'boolean',
-        'tanggal_diajarkan' => 'date',
+    ];
+
+    protected $appends = [
+        'sedang_dipersiapkan',
+        'tanggal_diajarkan',
+        'diajarkan_oleh_guru_id',
+        'guru_pengganti_id',
     ];
 
     public function modulAjar(): BelongsTo
@@ -35,23 +37,53 @@ class ModulAjarDetail extends Model
         return $this->belongsTo(ModulAjar::class);
     }
 
-    public function guruPengganti(): BelongsTo
+    public function pertemuans(): HasMany
     {
-        return $this->belongsTo(Guru::class, 'guru_pengganti_id');
+        return $this->hasMany(Pertemuan::class, 'modul_ajar_detail_id');
     }
 
-    public function diajarkanOlehGuru(): BelongsTo
+    public function pertemuanBerlangsung(): HasOne
     {
-        return $this->belongsTo(Guru::class, 'diajarkan_oleh_guru_id');
+        return $this->hasOne(Pertemuan::class, 'modul_ajar_detail_id')->whereNull('selesai_pada');
     }
 
-    public function absensis(): HasMany
+    public function pertemuanTerakhir(): HasOne
     {
-        return $this->hasMany(ModulAjarAbsensi::class);
+        return $this->hasOne(Pertemuan::class, 'modul_ajar_detail_id')
+            ->whereNotNull('selesai_pada')
+            ->latestOfMany('tanggal');
     }
 
-    public function absensiGurus(): HasMany
+    private function pertemuanSelesaiTerbaru(): ?Pertemuan
     {
-        return $this->hasMany(AbsensiGuru::class);
+        return $this->pertemuans
+            ->filter(fn (Pertemuan $p) => $p->selesai_pada !== null)
+            ->sortByDesc(fn (Pertemuan $p) => $p->tanggal?->toDateString())
+            ->first();
+    }
+
+    public function getSedangDipersiapkanAttribute(): bool
+    {
+        return $this->pertemuans->contains(fn (Pertemuan $p) => $p->selesai_pada === null);
+    }
+
+    public function getTanggalDiajarkanAttribute(): ?string
+    {
+        return $this->pertemuanSelesaiTerbaru()?->tanggal?->toDateString();
+    }
+
+    public function getDiajarkanOlehGuruIdAttribute(): ?int
+    {
+        return $this->pertemuanSelesaiTerbaru()?->guru_id;
+    }
+
+    public function getGuruPenggantiIdAttribute(): ?int
+    {
+        return $this->pertemuans->firstWhere('selesai_pada', null)?->guru_pengganti_id;
+    }
+
+    public function getJumlahPertemuanAttribute(): int
+    {
+        return $this->pertemuans->filter(fn (Pertemuan $p) => $p->selesai_pada !== null)->count();
     }
 }

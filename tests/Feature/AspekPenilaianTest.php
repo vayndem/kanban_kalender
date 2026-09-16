@@ -12,6 +12,8 @@ use App\Models\ModulAjar;
 use App\Models\ModulAjarAbsensi;
 use App\Models\ModulAjarDetail;
 use App\Models\NilaiAspek;
+use App\Models\Pertemuan;
+use App\Models\RaporCetak;
 use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
@@ -192,7 +194,7 @@ class AspekPenilaianTest extends TestCase
         $this->assertStringContainsString('Aspek penilaian belum ditentukan', $respon->json('message'));
     }
 
-    public function test_menilai_ulang_menimpa_skor_lama_bukan_menumpuk(): void
+    public function test_menilai_ulang_menyimpan_nilai_tiap_pertemuan_terpisah(): void
     {
         $a = $this->aspek('Vocabulary');
         [, $user, $siswa, $detail] = $this->kelasSiapDinilai();
@@ -206,8 +208,12 @@ class AspekPenilaianTest extends TestCase
         $this->actingAs($user)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
         $kirim(5)->assertOk();
 
-        $this->assertSame(1, NilaiAspek::count());
-        $this->assertSame(5, NilaiAspek::first()->skor);
+        $this->assertSame(2, Pertemuan::where('modul_ajar_detail_id', $detail->id)->count(), 'Ajar ulang membuat pertemuan baru.');
+        $this->assertSame(
+            [2, 5],
+            NilaiAspek::orderBy('id')->pluck('skor')->all(),
+            'Tiap pertemuan menyimpan nilainya sendiri, jadi nilai lama tidak hilang.'
+        );
     }
 
     public function test_aspek_yang_sudah_dipakai_tidak_bisa_dihapus(): void
@@ -334,7 +340,7 @@ class AspekPenilaianTest extends TestCase
             AbsensiGuru::where('guru_id', $guru->id)->count(),
             'Kelas yang diulang harus menambah satu kehadiran mengajar.'
         );
-        $this->assertSame(1, NilaiAspek::count(), 'Nilai anaknya tetap ditimpa, bukan ditumpuk.');
+        $this->assertSame(2, NilaiAspek::count(), 'Tiap pertemuan menyimpan nilainya sendiri.');
     }
 
     public function test_menilai_dua_kali_tanpa_mengajar_ulang_ditolak(): void
@@ -400,7 +406,7 @@ class AspekPenilaianTest extends TestCase
         $siswaLain = Siswa::factory()->create();
 
         $this->actingAs(User::factory()->create())
-            ->post(route('admin.result.cetakRapor', $siswaLain->id), ['pertemuan' => [$detail->id]])
+            ->post(route('admin.result.cetakRapor', $siswaLain->id), ['pertemuan' => [Pertemuan::where('modul_ajar_detail_id', $detail->id)->value('id')]])
             ->assertSessionHasErrors('pertemuan.0');
     }
 
@@ -423,7 +429,7 @@ class AspekPenilaianTest extends TestCase
         $this->assertStringContainsString('application/pdf', $rapor->headers->get('content-type'));
 
         $sertifikat = $this->actingAs($admin)
-            ->post(route('admin.result.cetakSertifikat', $siswa->id), ['pertemuan' => [$detail->id]]);
+            ->post(route('admin.result.cetakSertifikat', $siswa->id), ['pertemuan' => [Pertemuan::where('modul_ajar_detail_id', $detail->id)->value('id')]]);
         $sertifikat->assertOk();
         $this->assertStringContainsString('application/pdf', $sertifikat->headers->get('content-type'));
     }
@@ -460,17 +466,20 @@ class AspekPenilaianTest extends TestCase
         $detailKedua = ModulAjarDetail::create([
             'modul_ajar_id' => $detail->modul_ajar_id,
             'materi' => 'Materi 2',
-            'sedang_dipersiapkan' => true,
         ]);
+        $this->actingAs($user)->postJson(route('modulAjar.mulaiPersiapan', $detailKedua->id))->assertOk();
         $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detailKedua->id), [
             'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => [$a->id => 1]]],
         ])->assertOk();
 
         $rapor = app(RaporService::class);
 
+        $pertama = Pertemuan::where('modul_ajar_detail_id', $detail->id)->value('id');
+        $kedua = Pertemuan::where('modul_ajar_detail_id', $detailKedua->id)->value('id');
+
         $this->assertSame(2, $rapor->untukSiswa($siswa->fresh())['ringkasan']['total_pertemuan']);
-        $this->assertSame(100, $rapor->untukSiswa($siswa->fresh(), null, null, [$detail->id])['ringkasan']['persen']);
-        $this->assertSame(20, $rapor->untukSiswa($siswa->fresh(), null, null, [$detailKedua->id])['ringkasan']['persen']);
+        $this->assertSame(100, $rapor->untukSiswa($siswa->fresh(), null, null, [$pertama])['ringkasan']['persen']);
+        $this->assertSame(20, $rapor->untukSiswa($siswa->fresh(), null, null, [$kedua])['ringkasan']['persen']);
     }
 
     public function test_menu_result_berada_tepat_setelah_pembayaran(): void
@@ -485,5 +494,142 @@ class AspekPenilaianTest extends TestCase
         $this->assertNotFalse($posisiResult);
         $this->assertGreaterThan($posisiPembayaran, $posisiResult, 'Result harus di kanan Pembayaran.');
         $this->assertLessThan($posisiWorkshop, $posisiResult, 'Result harus sebelum Workshop.');
+    }
+
+    public function test_pertemuan_tercatat_bertanggal_saat_guru_mulai_ajar(): void
+    {
+        [$guru, $user, , $detail] = $this->kelasSiapDinilai();
+
+        $pertemuan = Pertemuan::where('modul_ajar_detail_id', $detail->id)->firstOrFail();
+
+        $this->assertSame(now()->toDateString(), $pertemuan->tanggal->toDateString());
+        $this->assertSame($guru->id, $pertemuan->guru_id);
+        $this->assertNull($pertemuan->selesai_pada, 'Pertemuan baru berstatus sedang berlangsung.');
+        $this->assertTrue($detail->fresh()->sedang_dipersiapkan);
+    }
+
+    public function test_pertemuan_ditutup_setelah_dinilai(): void
+    {
+        $a = $this->aspek('Vocabulary');
+        [, $user, $siswa, $detail] = $this->kelasSiapDinilai();
+
+        $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => [$a->id => 4]]],
+        ])->assertOk();
+
+        $pertemuan = Pertemuan::where('modul_ajar_detail_id', $detail->id)->firstOrFail();
+
+        $this->assertNotNull($pertemuan->selesai_pada);
+        $this->assertFalse($detail->fresh()->sedang_dipersiapkan);
+        $this->assertSame(now()->toDateString(), $detail->fresh()->tanggal_diajarkan);
+    }
+
+    public function test_dua_pertemuan_materi_sama_tercatat_terpisah_dengan_tanggalnya(): void
+    {
+        $a = $this->aspek('Vocabulary');
+        [, $user, $siswa, $detail] = $this->kelasSiapDinilai();
+
+        $nilai = fn (int $skor) => $this->actingAs($user)
+            ->postJson(route('modulAjar.simpanNilai', $detail->id), [
+                'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => [$a->id => $skor]]],
+            ]);
+
+        $nilai(2)->assertOk();
+        $this->actingAs($user)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
+        $nilai(5)->assertOk();
+
+        $pertemuans = Pertemuan::where('modul_ajar_detail_id', $detail->id)->orderBy('id')->get();
+
+        $this->assertCount(2, $pertemuans);
+        $this->assertTrue($pertemuans->every(fn (Pertemuan $p) => $p->selesai_pada !== null));
+
+        $rapor = app(RaporService::class)->untukSiswa($siswa->fresh());
+        $this->assertSame(2, $rapor['ringkasan']['total_pertemuan'], 'Dua kali mengajar berarti dua pertemuan.');
+        $this->assertSame(70, $rapor['ringkasan']['persen'], 'Rata-rata dari kedua pertemuan, bukan hanya yang terakhir.');
+    }
+
+    public function test_rapor_bisa_dibatasi_ke_satu_pertemuan_saja(): void
+    {
+        $a = $this->aspek('Vocabulary');
+        [, $user, $siswa, $detail] = $this->kelasSiapDinilai();
+
+        $nilai = fn (int $skor) => $this->actingAs($user)
+            ->postJson(route('modulAjar.simpanNilai', $detail->id), [
+                'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => [$a->id => $skor]]],
+            ]);
+
+        $nilai(2)->assertOk();
+        $this->actingAs($user)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
+        $nilai(5)->assertOk();
+
+        $pertemuans = Pertemuan::where('modul_ajar_detail_id', $detail->id)->orderBy('id')->pluck('id');
+        $rapor = app(RaporService::class);
+
+        $this->assertSame(40, $rapor->untukSiswa($siswa->fresh(), null, null, [$pertemuans[0]])['ringkasan']['persen']);
+        $this->assertSame(100, $rapor->untukSiswa($siswa->fresh(), null, null, [$pertemuans[1]])['ringkasan']['persen']);
+    }
+
+    public function test_setiap_cetak_rapor_menyimpan_catatannya(): void
+    {
+        $a = $this->aspek('Vocabulary');
+        [, $user, $siswa, $detail] = $this->kelasSiapDinilai();
+        $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => [$a->id => 4]]],
+        ])->assertOk();
+
+        $pertemuan = Pertemuan::where('modul_ajar_detail_id', $detail->id)->value('id');
+        $admin = User::factory()->create();
+
+        $this->actingAs($admin)->post(route('admin.result.cetakRapor', $siswa->id), [
+            'pertemuan' => [$pertemuan],
+            'kekuatan' => 'Cepat menangkap kosakata baru.',
+            'komentar' => 'Pertahankan semangatnya.',
+        ])->assertOk();
+
+        $catatan = RaporCetak::where('siswa_id', $siswa->id)->firstOrFail();
+
+        $this->assertSame('Cepat menangkap kosakata baru.', $catatan->kekuatan);
+        $this->assertSame('Pertahankan semangatnya.', $catatan->komentar);
+        $this->assertSame([$pertemuan], $catatan->pertemuan_ids);
+        $this->assertSame($admin->id, $catatan->dicetak_oleh);
+    }
+
+    public function test_cetak_kedua_menyimpan_baris_baru_bukan_menimpa(): void
+    {
+        $a = $this->aspek('Vocabulary');
+        [, $user, $siswa, $detail] = $this->kelasSiapDinilai();
+        $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => [$a->id => 4]]],
+        ])->assertOk();
+
+        $pertemuan = Pertemuan::where('modul_ajar_detail_id', $detail->id)->value('id');
+        $admin = User::factory()->create();
+
+        foreach (['Catatan pertama', 'Catatan kedua'] as $isi) {
+            $this->actingAs($admin)->post(route('admin.result.cetakRapor', $siswa->id), [
+                'pertemuan' => [$pertemuan],
+                'kekuatan' => $isi,
+            ])->assertOk();
+        }
+
+        $this->assertSame(2, RaporCetak::where('siswa_id', $siswa->id)->count());
+        $this->assertSame('Catatan kedua', RaporCetak::terakhirUntuk($siswa->id)->kekuatan);
+    }
+
+    public function test_sertifikat_tidak_menyimpan_catatan(): void
+    {
+        $a = $this->aspek('Vocabulary');
+        [, $user, $siswa, $detail] = $this->kelasSiapDinilai();
+        $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => [$a->id => 4]]],
+        ])->assertOk();
+
+        $pertemuan = Pertemuan::where('modul_ajar_detail_id', $detail->id)->value('id');
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('admin.result.cetakSertifikat', $siswa->id), ['pertemuan' => [$pertemuan]])
+            ->assertOk();
+
+        $this->assertSame(0, RaporCetak::count(), 'Sertifikat tidak perlu catatan, jadi tidak menyimpan apa pun.');
     }
 }

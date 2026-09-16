@@ -11,7 +11,7 @@ class ModulAjarAbsensi extends Model
     protected $table = 'modul_ajar_absensis';
 
     protected $fillable = [
-        'modul_ajar_detail_id',
+        'pertemuan_id',
         'siswa_id',
         'hadir',
         'nilai',
@@ -21,9 +21,9 @@ class ModulAjarAbsensi extends Model
         'hadir' => 'boolean',
     ];
 
-    public function modulAjarDetail(): BelongsTo
+    public function pertemuan(): BelongsTo
     {
-        return $this->belongsTo(ModulAjarDetail::class);
+        return $this->belongsTo(Pertemuan::class, 'pertemuan_id');
     }
 
     public function siswa(): BelongsTo

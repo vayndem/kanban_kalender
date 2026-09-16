@@ -11,6 +11,7 @@ use App\Models\MataPelajaran;
 use App\Models\ModulAjar;
 use App\Models\ModulAjarAbsensi;
 use App\Models\ModulAjarDetail;
+use App\Models\Pertemuan;
 use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
@@ -96,7 +97,12 @@ class ModulAjarTest extends TestCase
         $siswa = Siswa::factory()->create();
         $this->buatKelasDenganSiswa($guruAsli, 'kode-1', [$siswa->id]);
         $detail = $this->buatModulDenganDetail('kode-1');
-        $detail->update(['guru_pengganti_id' => $guruPengganti->id]);
+        Pertemuan::create([
+            'modul_ajar_detail_id' => $detail->id,
+            'tanggal' => now()->toDateString(),
+            'guru_id' => $guruPengganti->id,
+            'guru_pengganti_id' => $guruPengganti->id,
+        ]);
 
         $this->actingAs($userPengganti)->get(route('absen.index'))
             ->assertOk()
@@ -455,7 +461,12 @@ class ModulAjarTest extends TestCase
         $absensiAbsen = ModulAjarAbsensi::where('siswa_id', $siswaTidakHadir->id)->firstOrFail();
         $this->assertFalse((bool) $absensiAbsen->hadir);
         $this->assertSame(0, $absensiAbsen->nilaiAspeks()->count(), 'Anak yang tidak hadir tidak boleh punya nilai.');
-        $this->assertDatabaseHas('absensi_gurus', ['guru_id' => $guru->id, 'modul_ajar_detail_id' => $detail->id]);
+        $this->assertSame(
+            1,
+            AbsensiGuru::where('guru_id', $guru->id)
+                ->whereIn('pertemuan_id', $detail->pertemuans()->pluck('id'))
+                ->count()
+        );
     }
 
     public function test_grading_requires_every_aspect_when_a_student_is_marked_present(): void
@@ -520,7 +531,12 @@ class ModulAjarTest extends TestCase
         $this->assertNull($detail->guru_pengganti_id, 'Guru pengganti harus otomatis lepas setelah dinilai.');
         $this->assertSame($guruPengganti->id, $detail->diajarkan_oleh_guru_id, 'Absen harus dikreditkan ke guru yang benar-benar mengajar.');
         $this->assertSame($guruAsli->id, Jadwal::where('kode_kelas', 'kode-1')->value('guru_id'), 'Jadwal asli tidak boleh berubah sama sekali.');
-        $this->assertDatabaseHas('absensi_gurus', ['guru_id' => $guruPengganti->id, 'modul_ajar_detail_id' => $detail->id]);
+        $this->assertSame(
+            1,
+            AbsensiGuru::where('guru_id', $guruPengganti->id)
+                ->whereIn('pertemuan_id', $detail->pertemuans()->pluck('id'))
+                ->count()
+        );
     }
 
     public function test_only_the_owning_guru_or_admin_can_mark_tidak_bisa_hadir(): void
@@ -595,7 +611,7 @@ class ModulAjarTest extends TestCase
         $this->assertNull($detail->fresh()->guru_pengganti_id);
     }
 
-    public function test_reteaching_overwrites_grades_but_adds_a_new_teaching_credit(): void
+    public function test_reteaching_keeps_each_meeting_and_adds_a_new_teaching_credit(): void
     {
         [$guru, $user] = $this->guruDenganAkun();
         $siswa = Siswa::factory()->create();
@@ -613,13 +629,17 @@ class ModulAjarTest extends TestCase
             'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => $this->skor(5)]],
         ])->assertOk();
 
-        $this->assertDatabaseCount('modul_ajar_absensis', 1);
-        $absensi = ModulAjarAbsensi::where('siswa_id', $siswa->id)->firstOrFail();
-        $this->assertSame(1, $absensi->nilaiAspeks()->count(), 'Ajar ulang menimpa, bukan menumpuk.');
-        $this->assertDatabaseHas('nilai_aspeks', ['modul_ajar_absensi_id' => $absensi->id, 'skor' => 5]);
+        $this->assertSame(2, $detail->pertemuans()->count(), 'Ajar ulang membuat pertemuan bertanggal baru.');
+        $this->assertDatabaseCount('modul_ajar_absensis', 2);
+
+        $terbaru = ModulAjarAbsensi::where('siswa_id', $siswa->id)->orderByDesc('id')->firstOrFail();
+        $terlama = ModulAjarAbsensi::where('siswa_id', $siswa->id)->orderBy('id')->firstOrFail();
+
+        $this->assertDatabaseHas('nilai_aspeks', ['modul_ajar_absensi_id' => $terlama->id, 'skor' => 2]);
+        $this->assertDatabaseHas('nilai_aspeks', ['modul_ajar_absensi_id' => $terbaru->id, 'skor' => 5]);
         $this->assertSame(
             2,
-            AbsensiGuru::where('modul_ajar_detail_id', $detail->id)->count(),
+            AbsensiGuru::whereIn('pertemuan_id', $detail->pertemuans()->pluck('id'))->count(),
             'Mengajar ulang dihitung sebagai kehadiran mengajar tambahan.'
         );
     }
