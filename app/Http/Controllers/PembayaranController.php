@@ -21,11 +21,6 @@ class PembayaranController extends Controller
 {
     use MerespondKesalahanPembayaran;
 
-    /**
-     * Rentang waktu (detik) yang dianggap "klik ganda" untuk pencatatan
-     * identik. Cukup lebar menutupi server lambat, cukup sempit agar setoran
-     * kedua yang sah beberapa menit kemudian tetap bisa dicatat.
-     */
     private const JEDA_ANTI_GANDA = 180;
 
     public function __construct(
@@ -48,8 +43,6 @@ class PembayaranController extends Controller
             $validated['status'] = 0;
             $validated['total_sudah_dibayar'] = 0;
 
-            // Tagihan yang merujuk paket ikut menanam anchor periode, supaya
-            // penagihan massal bulan ini mengenalinya dan tidak menagih ulang.
             $validated['periode'] = ! empty($validated['id_paket'])
                 ? Carbon::now()->format('Y-m')
                 : null;
@@ -75,9 +68,6 @@ class PembayaranController extends Controller
                 }
             }
 
-            // Tagihan bebas boleh berulang (buku, denda, kegiatan), jadi tidak
-            // bisa dikunci lewat anchor paket. Yang dijaga di sini khusus pola
-            // klik ganda: tagihan identik yang dibuat dalam hitungan menit.
             $kembar = Pembayaran::query()
                 ->where('id_siswa', $validated['id_siswa'])
                 ->where('harga', $validated['harga'])
@@ -129,10 +119,6 @@ class PembayaranController extends Controller
         ]);
 
         try {
-            // Invoice yang sudah punya riwayat setoran tidak boleh dipindah
-            // kepemilikannya -- setoran itu tetap menempel di ID invoice ini,
-            // jadi memindah id_siswa berarti riwayat uang siswa lama tercatat
-            // seolah milik siswa baru.
             if ((int) $validated['id_siswa'] !== (int) $pembayaran->id_siswa && $pembayaran->details()->exists()) {
                 throw ValidationException::withMessages([
                     'id_siswa' => 'Tagihan ini sudah punya riwayat setoran, jadi tidak bisa dipindah ke siswa lain. '
@@ -140,9 +126,6 @@ class PembayaranController extends Controller
                 ]);
             }
 
-            // Harga tidak boleh diturunkan sampai di bawah yang sudah dibayar --
-            // itu membuat sisa kewajiban jadi negatif dan status "lunas" jadi
-            // tidak jujur terhadap uang yang sebenarnya diterima.
             if ($validated['harga'] < (int) $pembayaran->total_sudah_dibayar) {
                 throw ValidationException::withMessages([
                     'harga' => 'Nominal tagihan tidak boleh diturunkan sampai di bawah Rp '
@@ -482,18 +465,6 @@ class PembayaranController extends Controller
         ]);
     }
 
-    /**
-     * Menolak pencatatan pembayaran yang identik dan berdekatan waktunya.
-     *
-     * Server lama (region Amerika) sering lambat merespons, sehingga admin
-     * menekan "Catat Bayar" dua kali dan satu setoran tercatat ganda. Overlay
-     * di layar sudah mencegah klik kedua, tapi refresh, tombol back, atau
-     * pengulangan permintaan oleh jaringan masih bisa lolos -- penjaga inilah
-     * yang menutup celah itu.
-     *
-     * Perbandingan memakai updated_at, bukan created_at, karena created_at pada
-     * detail pembayaran sengaja diisi tanggal bayar yang bisa dimundurkan.
-     */
     private function tolakBilaPencatatanGanda(Request $request, Siswa $siswa): void
     {
         $nominal = (int) $request->nominal;

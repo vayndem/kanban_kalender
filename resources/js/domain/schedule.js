@@ -1,4 +1,4 @@
-import { indexById } from './student-list';
+import { indexById } from './student-list.js';
 
 export function normalizeStudentSchedules(schedules, days, sessions) {
     const dayIndex = indexById(days);

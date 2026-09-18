@@ -20,12 +20,6 @@ use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
-/**
- * Excel/PhpSpreadsheet menebak tipe sel dari isinya -- tanpa penanda tegas,
- * "+6281234567890" dibaca sebagai angka, tanda "+" hilang, dan nomor panjang
- * berubah jadi notasi ilmiah (mis. 6,2851E+12). Tes ini mengunci bahwa setiap
- * kolom no_hp di semua file export tersimpan sebagai teks apa adanya.
- */
 class ExportPhoneNumberFormatTest extends TestCase
 {
     use RefreshDatabase;

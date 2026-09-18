@@ -23,11 +23,11 @@ class BentrokIrisanSesiTest extends TestCase
 
     private Hari $hari;
 
-    private Sesi $jam13;   // 13:00-14:00
+    private Sesi $jam13;
 
-    private Sesi $jam1330; // 13:30-14:30 -- bertindih dengan jam13
+    private Sesi $jam1330;
 
-    private Sesi $jam14;   // 14:00-15:00 -- hanya bersentuhan di ujung dengan jam13
+    private Sesi $jam14;
 
     protected function setUp(): void
     {

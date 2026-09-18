@@ -12,12 +12,6 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Pengembangan project ini menukar .env bolak-balik antara database
-        // lokal dan produksi. Satu kali salah tukar lalu menjalankan
-        // migrate:fresh / migrate:refresh / migrate:reset / db:wipe berarti
-        // seluruh pembukuan produksi terhapus. Penjaga ini memblokir perintah
-        // perusak itu selama APP_ENV=production, dan --force tidak bisa
-        // menembusnya.
         DB::prohibitDestructiveCommands($this->app->isProduction());
 
         if ($this->app->environment('production')) {

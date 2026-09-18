@@ -204,6 +204,11 @@ class SiswaController extends Controller
                         'kelas' => $siswa->kelas,
                         'no_hp' => $siswa->no_hp,
                         'paket_pembayaran' => $siswa->paket_pembayaran,
+                        'paket_pembayaran_2' => $siswa->paket_pembayaran_2,
+                        'paket_pembayaran_3' => $siswa->paket_pembayaran_3,
+                        'paket_pembayaran_4' => $siswa->paket_pembayaran_4,
+                        'paket_pembayaran_5' => $siswa->paket_pembayaran_5,
+                        'tingkat_kemampuan_id' => $siswa->tingkat_kemampuan_id,
                         'created_at' => $now,
                         'updated_at' => $now,
                     ])

@@ -27,11 +27,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
-/**
- * Data demo dipakai untuk mencoba fitur pembayaran dan jadwal. Kalau datanya
- * sendiri tidak konsisten, hasil percobaan jadi menyesatkan -- karena itu
- * aturan-aturan penting sistem diuji langsung pada data yang dihasilkannya.
- */
 class DemoSeederTest extends TestCase
 {
     use RefreshDatabase;
@@ -62,7 +57,6 @@ class DemoSeederTest extends TestCase
 
     public function test_it_never_creates_duplicate_package_invoices(): void
     {
-        // Aturan inti anti-tagihan-ganda: satu siswa, satu paket, satu periode.
         $ganda = DB::table('pembayarans')
             ->select('id_siswa', 'id_paket', 'periode', DB::raw('COUNT(*) as jml'))
             ->whereNotNull('id_paket')
@@ -76,8 +70,6 @@ class DemoSeederTest extends TestCase
 
     public function test_payment_details_always_match_the_invoice_total(): void
     {
-        // Buku besar (detail) harus cocok dengan header tagihan; kalau tidak,
-        // angka di layar akan berbeda dengan riwayat pembayarannya.
         foreach (Pembayaran::with('details')->get() as $tagihan) {
             $this->assertSame(
                 (int) $tagihan->total_sudah_dibayar,
@@ -153,8 +145,6 @@ class DemoSeederTest extends TestCase
                 ->get();
 
             if ($kolom === 'guru_id' || $kolom === 'ruang_id') {
-                // Guru & ruang boleh menangani beberapa siswa dalam satu kelas,
-                // tapi tidak boleh dua kelas berbeda pada slot yang sama.
                 foreach ($bentrok as $baris) {
                     $kelasBerbeda = DB::table('jadwals')
                         ->where('hari_id', $baris->hari_id)
@@ -215,12 +205,6 @@ class DemoSeederTest extends TestCase
         }
     }
 
-    /**
-     * created_at/updated_at bukan bagian $fillable Pembayaran/PembayaranDetail
-     * (sengaja, di seluruh app), jadi seeder harus membekukannya lewat
-     * forceFill setelah baris dibuat. Tanpa itu, riwayat 3 bulan yang jadi
-     * tujuan seeder ini semuanya jatuh ke tanggal seed dijalankan.
-     */
     public function test_invoice_history_actually_spans_three_months_in_the_past(): void
     {
         $duaBulanLalu = Carbon::now()->subMonths(2)->startOfMonth();

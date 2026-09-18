@@ -5,18 +5,6 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * Kunci terakhir anti-tagihan-ganda: UNIQUE(id_siswa, id_paket, periode).
- *
- * Dipisah dari migration penambahan kolom karena database produksi kemungkinan
- * SUDAH memuat duplikat lama. Kalau begitu, migration ini sengaja berhenti
- * dengan pesan yang jelas, bukan error SQL mentah -- bersihkan dulu datanya
- * dengan `php artisan pembayaran:audit-duplikat`, baru jalankan lagi.
- *
- * Catatan: baris dengan id_paket NULL (tagihan manual bebas, bukan paket)
- * tidak terkena batasan ini, karena MySQL/SQLite memperlakukan NULL sebagai
- * nilai yang selalu berbeda di unique index. Tagihan bebas tetap fleksibel.
- */
 return new class extends Migration
 {
     public function up(): void

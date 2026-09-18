@@ -34,7 +34,6 @@ Route::middleware(['auth', 'role:guru'])->group(function () {
     Route::get('/guru/gaji', [PayrollController::class, 'milikSaya'])->name('guru.gaji');
 });
 
-// Struk boleh dibuka admin (siapa pun) atau guru (hanya miliknya sendiri, dijaga di controller).
 Route::middleware(['auth', 'role:admin|guru'])
     ->get('/penggajian/{penggajian}/struk-pdf', [PayrollController::class, 'strukPdf'])
     ->name('penggajian.strukPdf');
@@ -66,7 +65,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::get('/admin/workshop', [WorkshopController::class, 'index'])->name('admin.workshop.index');
 
-    // --- Jadwal Transaksi / Operasional ---
     Route::post('/admin/jadwal/update-posisi', [JadwalController::class, 'updatePosisi'])->name('admin.jadwal.updatePosisi');
     Route::post('/admin/jadwal/update-kelas', [JadwalController::class, 'updateKelas'])->name('admin.jadwal.updateKelas');
     Route::post('/admin/jadwal/store', [JadwalController::class, 'store'])->name('admin.jadwal.store');
@@ -76,27 +74,22 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/admin/jadwal/upload-stash', [JadwalController::class, 'uploadStash'])->name('admin.jadwal.uploadStash');
     Route::get('/admin/jadwal/cadangan-stash/{pemulihan}', [JadwalController::class, 'unduhCadanganStash'])->name('admin.jadwal.unduhCadanganStash');
 
-    // 1. Mata Pelajaran
     Route::post('/admin/mapel', [MapelController::class, 'store'])->name('admin.mapel.store');
     Route::put('/admin/mapel/{id}', [MapelController::class, 'update'])->name('admin.mapel.update');
     Route::delete('/admin/mapel/{id}', [MapelController::class, 'destroy'])->name('admin.mapel.destroy');
 
-    // 2. Guru
     Route::post('/admin/guru', [GuruController::class, 'store'])->name('admin.guru.store');
     Route::put('/admin/guru/{id}', [GuruController::class, 'update'])->name('admin.guru.update');
     Route::delete('/admin/guru/{id}', [GuruController::class, 'destroy'])->name('admin.guru.destroy');
 
-    // 3. Ruang
     Route::post('/admin/ruang', [RuangController::class, 'store'])->name('admin.ruang.store');
     Route::put('/admin/ruang/{id}', [RuangController::class, 'update'])->name('admin.ruang.update');
     Route::delete('/admin/ruang/{id}', [RuangController::class, 'destroy'])->name('admin.ruang.destroy');
 
-    // 4. Sesi
     Route::post('/admin/sesi', [SesiController::class, 'store'])->name('admin.sesi.store');
     Route::put('/admin/sesi/{id}', [SesiController::class, 'update'])->name('admin.sesi.update');
     Route::delete('/admin/sesi/{id}', [SesiController::class, 'destroy'])->name('admin.sesi.destroy');
 
-    // 5. Siswa
     Route::get('/admin/siswa/export-excel', [SiswaController::class, 'exportExcel'])->name('admin.siswa.exportExcel');
     Route::get('/admin/siswa/import-template', [SiswaController::class, 'downloadImportTemplate'])->name('admin.siswa.importTemplate');
     Route::post('/admin/siswa/import', [SiswaController::class, 'import'])->name('admin.siswa.import');
@@ -113,12 +106,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::put('/admin/siswa/{id}', [SiswaController::class, 'update'])->name('admin.siswa.update');
     Route::delete('/admin/siswa/{id}', [SiswaController::class, 'destroy'])->name('admin.siswa.destroy');
 
-    // 6. Tanda / Catatan
     Route::post('/admin/tanda', [TandaController::class, 'store'])->name('admin.tanda.store');
     Route::put('/admin/tanda/{id}', [TandaController::class, 'update'])->name('admin.tanda.update');
     Route::delete('/admin/tanda/{id}', [TandaController::class, 'destroy'])->name('admin.tanda.destroy');
 
-    // 7. Pembayaran
     Route::post('/admin/pembayaran', [PembayaranController::class, 'store'])->name('admin.pembayaran.store');
     Route::put('/admin/pembayaran/{id}', [PembayaranController::class, 'update'])->name('admin.pembayaran.update');
     Route::delete('/admin/pembayaran/{id}', [PembayaranController::class, 'destroy'])->name('admin.pembayaran.destroy');
@@ -131,22 +122,18 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/pembayaran/struk/{no_hp}', [PembayaranController::class, 'printStruk'])->name('admin.pembayaran.struk');
     Route::get('/admin/pembayaran/export', [PembayaranController::class, 'exportExcel'])->name('admin.pembayaran.export');
 
-    // 8. Paket
     Route::post('/admin/paket', [PaketController::class, 'store'])->name('admin.paket.store');
     Route::put('/admin/paket/{id}', [PaketController::class, 'update'])->name('admin.paket.update');
     Route::delete('/admin/paket/{id}', [PaketController::class, 'destroy'])->name('admin.paket.destroy');
 
-    // 8b. Tingkat Kemampuan
     Route::post('/admin/kemampuan', [TingkatKemampuanController::class, 'store'])->name('admin.kemampuan.store');
     Route::put('/admin/kemampuan/{id}', [TingkatKemampuanController::class, 'update'])->name('admin.kemampuan.update');
     Route::delete('/admin/kemampuan/{id}', [TingkatKemampuanController::class, 'destroy'])->name('admin.kemampuan.destroy');
 
-    // 9. Arsip Siswa
     Route::get('/admin/arsip', [ArsipController::class, 'index'])->name('admin.arsip.index');
     Route::put('/admin/arsip/{id}', [ArsipController::class, 'update'])->name('admin.arsip.restore');
     Route::delete('/admin/arsip/{id}', [ArsipController::class, 'destroy'])->name('admin.arsip.destroy');
 
-    // 9b. Payroll
     Route::get('/admin/payroll', [PayrollController::class, 'index'])->name('admin.payroll.index');
     Route::put('/admin/payroll/guru/{guru}/tarif', [PayrollController::class, 'updateTarif'])->name('admin.payroll.updateTarif');
     Route::post('/admin/payroll/guru/{guru}/jalankan', [PayrollController::class, 'jalankan'])->name('admin.payroll.jalankan');
@@ -154,7 +141,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/payroll/struk/{penggajian}', [PayrollController::class, 'struk'])->name('admin.payroll.struk');
     Route::post('/admin/payroll/struk/{penggajian}/batalkan', [PayrollController::class, 'batalkan'])->name('admin.payroll.batalkan');
 
-    // 10. Diskon
     Route::post('/admin/diskon', [DiskonController::class, 'store'])->name('admin.diskon.store');
     Route::put('/admin/diskon/{id}', [DiskonController::class, 'update'])->name('admin.diskon.update');
     Route::delete('/admin/diskon/{id}', [DiskonController::class, 'destroy'])->name('admin.diskon.destroy');

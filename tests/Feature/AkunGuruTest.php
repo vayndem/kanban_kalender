@@ -92,9 +92,6 @@ class AkunGuruTest extends TestCase
 
     public function test_email_already_used_by_another_login_account_is_rejected(): void
     {
-        // Beda dari test di atas: di sini yang bentrok bukan gurus.email milik guru
-        // lain, tapi email login akun lain (mis. admin) yang tidak pernah muncul
-        // di tabel gurus sama sekali.
         User::factory()->create(['email' => 'admin.lain@eling.test']);
         $guru = Guru::create(['name' => 'Bu Melati']);
 

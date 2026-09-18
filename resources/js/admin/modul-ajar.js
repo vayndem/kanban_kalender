@@ -1,4 +1,4 @@
-import { csrfToken, kirim } from '../core/http';
+import { csrfToken, kirim } from '../core/http.js';
 
 const HEADER_KOSONG = { tujuan_pembelajaran: '', kompetensi_awal: '', model_pembelajaran: '', sarana_media: '' };
 const DETAIL_KOSONG = { materi: '', sub_materi: '', cara_mengajar: '', tugas: '', tujuan: '', hasil_akhir_pembelajaran: '', keterangan: '' };

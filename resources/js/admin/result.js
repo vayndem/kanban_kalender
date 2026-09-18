@@ -1,4 +1,4 @@
-import { kirim } from '../core/http';
+import { kirim } from '../core/http.js';
 
 export const resultHandler = ({ initialAspek, initialSiswa, routes }) => ({
     routes,

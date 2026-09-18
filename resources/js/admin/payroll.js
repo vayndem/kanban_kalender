@@ -1,4 +1,4 @@
-import { kirim } from '../core/http';
+import { kirim } from '../core/http.js';
 
 const rupiah = (nilai) => 'Rp ' + Number(nilai || 0).toLocaleString('id-ID');
 
@@ -53,6 +53,8 @@ export const payrollHandler = ({ initialRingkasan, initialRiwayat, routes }) => 
             } else {
                 AppSwal.error(res.message);
             }
+        } catch (e) {
+            AppSwal.error('Gagal menyimpan tarif guru.');
         } finally {
             this.isLoading = false;
         }
@@ -76,6 +78,8 @@ export const payrollHandler = ({ initialRingkasan, initialRiwayat, routes }) => 
             } else {
                 AppSwal.error(res.message);
             }
+        } catch (e) {
+            AppSwal.error('Gagal menerbitkan struk gaji.');
         } finally {
             this.isLoading = false;
         }
@@ -102,6 +106,8 @@ export const payrollHandler = ({ initialRingkasan, initialRiwayat, routes }) => 
             } else {
                 AppSwal.error(res.message);
             }
+        } catch (e) {
+            AppSwal.error('Gagal menerbitkan struk gaji untuk semua guru.');
         } finally {
             this.isLoading = false;
         }
@@ -158,6 +164,8 @@ export const payrollHandler = ({ initialRingkasan, initialRiwayat, routes }) => 
             } else {
                 AppSwal.error(res.message);
             }
+        } catch (e) {
+            AppSwal.error('Gagal membatalkan struk gaji.');
         } finally {
             this.isLoading = false;
         }

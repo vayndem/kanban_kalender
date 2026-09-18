@@ -9,15 +9,6 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * Mendeteksi tagihan ganda (satu siswa tertagih paket yang sama dua kali dalam
- * satu bulan) -- pola yang muncul ketika tagihan manual dan penagihan massal
- * dibuat untuk paket dan periode yang sama.
- *
- * Command ini SENGAJA hanya membaca dan melaporkan. Tidak ada penghapusan
- * otomatis: ini menyangkut uang dan bukti pembukuan, jadi keputusan koreksi
- * harus di tangan manusia.
- */
 class AuditPembayaranDuplikat extends Command
 {
     protected $signature = 'pembayaran:audit-duplikat';
@@ -81,9 +72,6 @@ class AuditPembayaranDuplikat extends Command
         return self::FAILURE;
     }
 
-    /**
-     * Deteksi setelah kolom anchor tersedia: langsung dari (id_siswa, id_paket, periode).
-     */
     private function detectByAnchor()
     {
         $duplicates = DB::table('pembayarans')
@@ -114,10 +102,6 @@ class AuditPembayaranDuplikat extends Command
         })->values();
     }
 
-    /**
-     * Deteksi sebelum migrasi anchor dijalankan: cocokkan nama paket di dalam
-     * teks keterangan, lalu kelompokkan per siswa + bulan pembuatan.
-     */
     private function detectByKeterangan()
     {
         $packages = Paket::query()->get(['id', 'nama_paket'])
@@ -141,8 +125,7 @@ class AuditPembayaranDuplikat extends Command
                     }
 
                     $matched = $packages->first(
-                        fn ($package) => $package->nama_paket !== null
-                            && $package->nama_paket !== ''
+                        fn ($package) => $package->nama_paket !== ''
                             && str_contains($keterangan, (string) $package->nama_paket)
                     );
 

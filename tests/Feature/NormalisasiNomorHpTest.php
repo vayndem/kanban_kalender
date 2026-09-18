@@ -9,21 +9,10 @@ use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
-/**
- * Sejak Siswa/Pembayaran/Arsip/Diskon punya mutator no_hp (MenormalisasiNoHp),
- * data yang lewat Eloquent otomatis rapi -- makanya tes di sini sengaja
- * menulis langsung ke tabel lewat DB::table() untuk mensimulasikan data lama
- * yang sudah ada di database sebelum mutator ini dipasang. Command ini masih
- * berguna untuk data seperti itu, atau data yang masuk lewat jalur di luar
- * Eloquent (mis. impor massal yang menulis mentah ke database).
- */
 class NormalisasiNomorHpTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * Bentuk-bentuk yang benar-benar ditemukan di database produksi.
-     */
     public static function nomorProvider(): array
     {
         return [
@@ -44,7 +33,6 @@ class NormalisasiNomorHpTest extends TestCase
 
     public function test_leaves_unrecognised_values_untouched(): void
     {
-        // null / kosong / bentuk aneh tidak ditebak-tebak, dibiarkan apa adanya.
         $this->assertNull(NormalisasiNomorHp::normalkan(null));
         $this->assertNull(NormalisasiNomorHp::normalkan(''));
         $this->assertNull(NormalisasiNomorHp::normalkan('   '));
@@ -53,8 +41,6 @@ class NormalisasiNomorHpTest extends TestCase
 
     public function test_new_records_are_normalized_automatically_by_the_model(): void
     {
-        // Ini yang berubah sejak mutator dipasang: lewat Eloquent, data kotor
-        // tidak pernah sempat tersimpan sama sekali.
         $siswa = Siswa::factory()->create(['no_hp' => '085234539034']);
 
         $this->assertSame('+6285234539034', $siswa->fresh()->no_hp);
@@ -72,8 +58,6 @@ class NormalisasiNomorHpTest extends TestCase
 
     public function test_force_updates_every_table_in_step(): void
     {
-        // Kalau siswas berubah tapi pembayarans tidak, kartu keluarga pecah dan
-        // tagihan kehilangan induknya -- ini yang dijaga tes ini.
         $siswa = Siswa::factory()->create();
         DB::table('siswas')->where('id', $siswa->id)->update(['no_hp' => '085234539034']);
 

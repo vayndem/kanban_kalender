@@ -15,11 +15,6 @@ class RapikanDuplikatPembayaranTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * Duplikat yang dirapikan command ini lahir SEBELUM kunci UNIQUE terpasang.
-     * Agar keadaan itu bisa ditirukan, kuncinya dilepas dulu di sini -- persis
-     * kondisi database produksi yang datanya menunggu dibereskan.
-     */
     protected function setUp(): void
     {
         parent::setUp();
@@ -29,11 +24,6 @@ class RapikanDuplikatPembayaranTest extends TestCase
         });
     }
 
-    /**
-     * Skenario nyata dari produksi: tagihan manual dibuat lebih dulu dan
-     * dibayar, lalu penagihan massal membuat tagihan kembar, dan setoran yang
-     * sama tercatat lagi di tagihan kembar itu akibat klik ganda.
-     */
     private function skenarioKlikGanda(): array
     {
         $paket = Paket::create(['nama_paket' => 'SD All Mapel 2X/Minggu', 'harga' => 275000, 'pertemuan' => 2]);
@@ -82,7 +72,6 @@ class RapikanDuplikatPembayaranTest extends TestCase
         $this->assertNotNull($induk->fresh(), 'Tagihan induk harus dipertahankan.');
         $this->assertNull($ganda->fresh(), 'Tagihan kembar harus dibuang.');
 
-        // Uang yang benar-benar masuk tetap satu kali, tidak berlipat.
         $this->assertSame(1, PembayaranDetail::count());
         $this->assertSame(275000, (int) $induk->fresh()->total_sudah_dibayar);
         $this->assertSame(2, (int) $induk->fresh()->status);
@@ -106,8 +95,6 @@ class RapikanDuplikatPembayaranTest extends TestCase
 
     public function test_moves_genuinely_different_payment_instead_of_dropping_it(): void
     {
-        // Setoran yang BEDA (bukan kembar) tidak boleh hilang -- harus pindah
-        // ke tagihan induk, karena itu uang nyata.
         [$induk, $ganda] = $this->skenarioKlikGanda();
         PembayaranDetail::create([
             'id_pembayaran' => $ganda->id, 'pembayaran' => 125000, 'keterangan' => 'Angsuran tambahan',
@@ -123,8 +110,6 @@ class RapikanDuplikatPembayaranTest extends TestCase
 
     public function test_leaves_a_genuine_shortfall_as_outstanding(): void
     {
-        // Kalau setelah dirapikan uangnya memang kurang, tagihan harus jujur
-        // menunjukkan tunggakan -- bukan ditutup seolah lunas.
         $paket = Paket::create(['nama_paket' => 'TKA', 'harga' => 350000, 'pertemuan' => 3]);
         $siswa = Siswa::factory()->create(['no_hp' => '+6285640121290', 'paket_pembayaran' => $paket->id]);
         $periode = now()->format('Y-m');

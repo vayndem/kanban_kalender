@@ -1,4 +1,4 @@
-import { isDarkMode } from './theme';
+import { isDarkMode } from './theme.js';
 
 const theme = () => {
     const dark = isDarkMode();

@@ -108,7 +108,6 @@ class ModulAjarTest extends TestCase
             ->assertOk()
             ->assertSee('Penjumlahan');
 
-        // Modul Ajar sekarang murni kurikulum -- tidak lagi memperhitungkan status pengganti.
         $this->actingAs($userPengganti)->get(route('modulAjar.index'))
             ->assertOk()
             ->assertDontSee('Penjumlahan');
@@ -505,22 +504,17 @@ class ModulAjarTest extends TestCase
         $this->buatKelasDenganSiswa($guruAsli, 'kode-1', [$siswa->id]);
         $detail = $this->buatModulDenganDetail('kode-1');
 
-        // Guru asli menandai dirinya tidak bisa hadir -- langsung terbuka untuk semua guru,
-        // tanpa perlu ACC siapa pun.
         $this->actingAs($userAsli)->postJson(route('modulAjar.tandaiTidakBisaHadir', $detail->id))->assertOk();
         $this->assertTrue($detail->fresh()->tidak_bisa_hadir);
 
-        // Muncul di halaman Absen guru lain yang sama sekali tidak terlibat di kelas ini.
         $this->actingAs($userLain)->get(route('absen.index'))->assertOk()->assertSee('Penjumlahan');
 
-        // Guru pengganti mengambil slot terbuka (war tiket -- siapa cepat dia dapat).
         $this->actingAs($userPengganti)->postJson(route('modulAjar.klaimSlotTerbuka', $detail->id))->assertOk();
         $detail->refresh();
         $this->assertSame($guruPengganti->id, $detail->guru_pengganti_id);
         $this->assertTrue($detail->sedang_dipersiapkan);
         $this->assertFalse($detail->tidak_bisa_hadir);
 
-        // Sudah diambil orang lain -- guru ketiga yang tidak terlibat tidak lagi melihat kelas ini.
         $this->actingAs($userLain)->get(route('absen.index'))->assertOk()->assertDontSee('Penjumlahan');
 
         $this->actingAs($userPengganti)->postJson(route('modulAjar.simpanNilai', $detail->id), [
@@ -606,7 +600,6 @@ class ModulAjarTest extends TestCase
 
         $this->actingAs($userAsli)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertStatus(409);
 
-        // Admin tetap bisa override kalau memang perlu.
         $this->actingAs($this->admin())->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
         $this->assertNull($detail->fresh()->guru_pengganti_id);
     }
@@ -623,7 +616,6 @@ class ModulAjarTest extends TestCase
             'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => $this->skor(2)]],
         ])->assertOk();
 
-        // Ajar ulang: buka persiapan lagi, lalu nilai ulang dengan nilai berbeda.
         $this->actingAs($user)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
         $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
             'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => $this->skor(5)]],

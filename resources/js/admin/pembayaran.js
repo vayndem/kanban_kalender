@@ -1,5 +1,5 @@
-import { csrfToken } from '../core/http';
-import { isDarkMode } from '../core/theme';
+import { csrfToken, kirim } from '../core/http.js';
+import { isDarkMode } from '../core/theme.js';
 
 export const pembayaranHandler = ({
     initialSummaries,
@@ -111,11 +111,6 @@ export const pembayaranHandler = ({
         return new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' });
     },
 
-    /**
-     * Peringatan dini tagihan ganda: dicek saat admin masih mengisi form,
-     * bukan setelah tombol simpan ditolak server. Anchor yang dipakai sama
-     * persis dengan yang dipakai penagihan massal (siswa + paket + periode).
-     */
     get peringatanDuplikat() {
         if (!this.form.id_siswa || !this.form.id_paket) return null;
 
@@ -222,9 +217,6 @@ export const pembayaranHandler = ({
     },
 
     applyPaket(paketId) {
-        // id_paket adalah anchor anti-tagihan-ganda: dengan ini penagihan massal
-        // tahu siswa ini sudah tertagih paket tsb bulan ini, walau teks
-        // keterangannya berbeda. Dikosongkan bila admin memilih "tanpa paket".
         if (!paketId) {
             this.form.id_paket = null;
             return;
@@ -374,17 +366,11 @@ export const pembayaranHandler = ({
     
         this.isLoading = true;
         try {
-            await fetch(`${this.routes.lunasSiswaBase}/${item.id_siswa}`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken(),
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            });
+            const res = await kirim(`${this.routes.lunasSiswaBase}/${item.id_siswa}`, 'POST', {});
+            if (res.status !== 'success') return AppSwal.error(res.message || 'Gagal menandai tagihan sebagai ditagih.');
             this.refreshToTab();
         } catch (e) {
-            console.error(e);
+            AppSwal.error('Gagal menandai tagihan sebagai ditagih.');
         } finally {
             this.isLoading = false;
         }
@@ -478,17 +464,9 @@ export const pembayaranHandler = ({
         if (formValues) {
             this.isLoading = true;
             try {
-                const response = await fetch(
-                    `${this.routes.bayarSiswaBase}/${item.id_siswa_trigger}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken(),
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify(formValues)
-                    });
-                if ((await response.json()).status === 'success') this.refreshToTab();
+                const res = await kirim(`${this.routes.bayarSiswaBase}/${item.id_siswa_trigger}`, 'POST', formValues);
+                if (res.status !== 'success') return AppSwal.error(res.message || 'Gagal mencatat pembayaran.');
+                this.refreshToTab();
             } catch (e) {
                 AppSwal.error('Gagal mencatat data transaksi kas masuk.');
             } finally {
@@ -507,15 +485,9 @@ export const pembayaranHandler = ({
         if (result.isConfirmed) {
             this.isLoading = true;
             try {
-                const response = await fetch(
-                    `${this.routes.keLunasMassalBase}/${item.id_siswa_trigger}`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': csrfToken(),
-                            'Accept': 'application/json'
-                        }
-                    });
-                if ((await response.json()).status === 'success') this.refreshToTab();
+                const res = await kirim(`${this.routes.keLunasMassalBase}/${item.id_siswa_trigger}`, 'POST', {});
+                if (res.status !== 'success') return AppSwal.error(res.message || 'Gagal menutup tagihan menjadi lunas.');
+                this.refreshToTab();
             } catch (e) {
                 AppSwal.error('Gagal memproses pembaruan status lunas massal.');
             } finally {
@@ -564,22 +536,10 @@ export const pembayaranHandler = ({
             this.routes.diskonStore;
         const method = isEdit ? 'PUT' : 'POST';
 
-        const payload = {
-            ...this.diskonForm,
-            _token: csrfToken()
-        };
-
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken(),
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-            if ((await response.json()).status === 'success') this.refreshToTab();
+            const res = await kirim(url, method, this.diskonForm);
+            if (res.status !== 'success') return AppSwal.error(res.message || 'Gagal memproses data diskon.');
+            this.refreshToTab();
         } catch (e) {
             AppSwal.error('Gagal memproses data pembaruan diskon.');
         } finally {
@@ -592,14 +552,9 @@ export const pembayaranHandler = ({
         if (!confirmation.isConfirmed) return;
         this.isLoading = true;
         try {
-            const response = await fetch(`${this.routes.diskonBase}/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken(),
-                    'Accept': 'application/json'
-                }
-            });
-            if ((await response.json()).status === 'success') this.refreshToTab();
+            const res = await kirim(`${this.routes.diskonBase}/${id}`, 'DELETE', {});
+            if (res.status !== 'success') return AppSwal.error(res.message || 'Gagal menghapus diskon.');
+            this.refreshToTab();
         } catch (e) {
             AppSwal.error('Gagal merestore status potongan diskon.');
         } finally {
@@ -686,16 +641,9 @@ export const pembayaranHandler = ({
             this.routes.paketStore;
         const method = this.paketForm.id ? 'PUT' : 'POST';
         try {
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken(),
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(this.paketForm)
-            });
-            if ((await response.json()).status === 'success') this.refreshToTab();
+            const res = await kirim(url, method, this.paketForm);
+            if (res.status !== 'success') return AppSwal.error(res.message || 'Gagal menyimpan paket.');
+            this.refreshToTab();
         } catch (e) {
             AppSwal.error('Gagal menyimpan aturan paket master.');
         } finally {
@@ -717,14 +665,9 @@ export const pembayaranHandler = ({
         if (!confirmation.isConfirmed) return;
         this.isLoading = true;
         try {
-            const response = await fetch(`${this.routes.paketBase}/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken(),
-                    'Accept': 'application/json'
-                }
-            });
-            if ((await response.json()).status === 'success') this.refreshToTab();
+            const res = await kirim(`${this.routes.paketBase}/${id}`, 'DELETE', {});
+            if (res.status !== 'success') return AppSwal.error(res.message || 'Gagal menghapus paket.');
+            this.refreshToTab();
         } catch (e) {
             AppSwal.error('Gagal menghapus komponen paket.');
         } finally {

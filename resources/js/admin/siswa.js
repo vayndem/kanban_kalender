@@ -1,4 +1,4 @@
-import { csrfToken } from '../core/http';
+import { csrfToken } from '../core/http.js';
 
 export const siswaHandler = ({
     initialSiswa,
@@ -334,15 +334,13 @@ export const siswaHandler = ({
         if (!confirmation.isConfirmed) return;
         try {
             const response = await fetch(`${this.routes.arsipBase}/${id}`, {
-                method: 'POST',
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrfToken(),
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({
-                    _method: 'PUT'
-                })
+                body: JSON.stringify({})
             });
             const res = await response.json();
             if (res.status === 'success') {

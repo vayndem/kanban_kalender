@@ -13,8 +13,6 @@ return new class extends Migration
             $table->foreignId('guru_id')->constrained('gurus');
             $table->foreignId('modul_ajar_detail_id')->unique()->constrained('modul_ajar_details')->cascadeOnDelete();
             $table->date('tanggal');
-            // Dipakai kelak oleh fitur "tutup kas" penggajian. Selalu null untuk sekarang --
-            // penghitungan absen tetap dilakukan dengan menjumlahkan baris per rentang tanggal.
             $table->timestamp('ditutup_pada')->nullable();
             $table->timestamps();
         });

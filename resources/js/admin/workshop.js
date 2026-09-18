@@ -1,4 +1,4 @@
-import { csrfToken, kirim } from '../core/http';
+import { csrfToken, kirim } from '../core/http.js';
 
 function normalizePhone(value) {
     if (!value) return '';

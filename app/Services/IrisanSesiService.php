@@ -7,15 +7,17 @@ use Illuminate\Support\Collection;
 
 class IrisanSesiService
 {
-    /** @var array<int, array<int, int>>|null */
+    /**
+     * @var array<int, array<int, int>>|null
+     */
     private ?array $peta = null;
 
-    /** @var Collection<int, Sesi>|null */
+    /**
+     * @var Collection<int, Sesi>|null
+     */
     private ?Collection $sesis = null;
 
     /**
-     * Sesi yang waktunya bertindih dengan sesi ini, termasuk dirinya sendiri.
-     *
      * @return array<int, int>
      */
     public function idBeririsan(int $sesiId): array
@@ -24,8 +26,6 @@ class IrisanSesiService
     }
 
     /**
-     * Peta lengkap: id sesi => daftar id sesi yang waktunya bertindih (termasuk dirinya).
-     *
      * @return array<int, array<int, int>>
      */
     public function peta(): array

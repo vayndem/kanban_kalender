@@ -37,6 +37,9 @@ class ModulAjarDetail extends Model
         return $this->belongsTo(ModulAjar::class);
     }
 
+    /**
+     * @return HasMany<Pertemuan, $this>
+     */
     public function pertemuans(): HasMany
     {
         return $this->hasMany(Pertemuan::class, 'modul_ajar_detail_id');

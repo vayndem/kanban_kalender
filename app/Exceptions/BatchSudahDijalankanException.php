@@ -6,11 +6,6 @@ use App\Models\BatchPembayaranLog;
 use Carbon\Carbon;
 use RuntimeException;
 
-/**
- * Dilempar ketika aksi massal (penagihan / pelunasan) sudah pernah dijalankan
- * pada periode yang sama. Membawa detail log lama supaya pesan ke admin bisa
- * menyebut tanggal dan pelakunya, bukan sekadar "tidak boleh".
- */
 class BatchSudahDijalankanException extends RuntimeException
 {
     public function __construct(public readonly BatchPembayaranLog $log)

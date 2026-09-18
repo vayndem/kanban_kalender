@@ -3,17 +3,22 @@ export function csrfToken() {
 }
 
 export async function kirim(url, method, payload) {
-    const response = await fetch(url, {
-        method: 'POST',
+    const request = {
+        method,
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRF-TOKEN': csrfToken(),
             Accept: 'application/json',
         },
-        body: JSON.stringify({ ...payload, _method: method }),
-    });
+    };
 
-    const data = await response.json();
+    if (method !== 'GET' && method !== 'HEAD') {
+        request.headers['Content-Type'] = 'application/json';
+        request.body = JSON.stringify(payload ?? {});
+    }
+
+    const response = await fetch(url, request);
+
+    const data = await response.json().catch(() => ({}));
 
     if (!response.ok && data.status !== 'error') {
         const pesan = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Terjadi kesalahan.');

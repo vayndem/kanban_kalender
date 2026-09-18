@@ -63,8 +63,6 @@ class SiswaImportTest extends TestCase
 
     public function test_import_leaves_blank_fields_untouched_on_an_existing_student(): void
     {
-        // Kalau baris impor cuma mau ubah kelas, kolom lain yang dikosongkan
-        // di file tidak boleh ikut menghapus data yang sudah ada.
         $siswa = Siswa::factory()->create(['name' => 'Bima Saputra', 'no_hp' => '+6281111111111', 'panggilan' => 'Bima']);
 
         $import = new SiswaMassalImport;

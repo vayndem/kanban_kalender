@@ -487,48 +487,6 @@ class JadwalController extends Controller
             'status' => 'success',
             'text' => $this->buildWhatsappScheduleText($query->get(), $request->string('search')->toString()),
         ]);
-
-        $jadwals = $query->get()->sortBy([['hari_id', 'asc'], ['sesi.start_time', 'asc']]);
-        $header = $request->filled('search') ? 'Filter: '.ucwords($request->search) : 'Jadwal Lengkap';
-        $textOutput = '*'.$header."*\n\n";
-
-        $groupedByHari = $jadwals->groupBy('hari.name');
-
-        foreach ($groupedByHari as $hariName => $jadwalsPerHari) {
-            $textOutput .= '🗓️ *'.strtoupper($hariName)."*\n";
-            $groupedBySesi = $jadwalsPerHari->groupBy('sesi.id');
-
-            foreach ($groupedBySesi as $sesiId => $items) {
-                $sesiInfo = $items->first()->sesi;
-                $jamMulai = Carbon::parse($sesiInfo->start_time)->format('H.i');
-                $jamSelesai = Carbon::parse($sesiInfo->end_time)->format('H.i');
-
-                $textOutput .= "\n".'🕰️ '.$jamMulai.' - '.$jamSelesai."\n";
-                $groupedByClass = $items->groupBy(function ($item) {
-                    return $item->guru->name.' - '.$item->mataPelajaran->name.' - '.$item->ruang->name;
-                });
-
-                foreach ($groupedByClass as $key => $classItems) {
-                    $guruName = $classItems->first()->guru->name;
-                    $ruangName = $classItems->first()->ruang->name;
-                    $mataPelajaranName = $classItems->first()->mataPelajaran->name;
-
-                    $studentDetails = $classItems->map(function ($j) {
-                        $displayName = $j->siswa->panggilan ?? explode(' ', trim($j->siswa->name))[0];
-
-                        return $displayName.' - '.$j->siswa->kelas;
-                    })->implode(', ');
-
-                    $textOutput .= "\n";
-                    $textOutput .= '📚 *'.$mataPelajaranName."*\n";
-                    $textOutput .= '👩‍🏫 Guru: '.$guruName."\n";
-                    $textOutput .= '🏠 Ruang: '.$ruangName."\n";
-                    $textOutput .= '🧑‍🎓 Siswa: '.$studentDetails."\n";
-                }
-            }
-        }
-
-        return response()->json(['status' => 'success', 'text' => $textOutput]);
     }
 
     private function buildWhatsappScheduleText($jadwals, string $search): string

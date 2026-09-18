@@ -1,4 +1,4 @@
-import { kirim } from '../core/http';
+import { kirim } from '../core/http.js';
 
 const DAY_NAMES = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 

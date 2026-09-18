@@ -48,7 +48,7 @@ class SiswaImport implements ToModel, WithEvents, WithStartRow
 
         if (str_contains((string) $paket1, ',')) {
             $exploded = explode(',', (string) $paket1);
-            $paket1 = isset($exploded[0]) ? trim($exploded[0]) : null;
+            $paket1 = trim($exploded[0]);
             $paket2 = isset($exploded[1]) ? trim($exploded[1]) : $paket2;
         }
 

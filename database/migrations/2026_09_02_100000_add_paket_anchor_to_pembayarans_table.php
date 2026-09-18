@@ -5,23 +5,10 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * Menambahkan "anchor" struktural pada tagihan: id_paket + periode.
- *
- * Sebelum ini, satu-satunya penanda bahwa sebuah tagihan adalah "tagihan paket X
- * untuk bulan Y" hanyalah teks bebas di kolom `keterangan`. Penagihan massal
- * mencocokkan teks itu persis, sehingga tagihan manual (yang formatnya berbeda)
- * tidak terdeteksi sebagai duplikat -> satu siswa bisa tertagih dua kali.
- *
- * Migration ini tidak menghapus atau mengubah data lama: hanya menambah kolom
- * dan mengisinya (backfill) berdasarkan keterangan + tanggal pembuatan.
- */
 return new class extends Migration
 {
     public function up(): void
     {
-        // Operasi dipecah satu per satu: TiDB menolak sebagian kombinasi
-        // perubahan skema bila digabung dalam satu statement ALTER.
         Schema::table('pembayarans', function (Blueprint $table) {
             $table->unsignedBigInteger('id_paket')->nullable()->after('id_siswa');
         });
@@ -50,14 +37,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Isi id_paket & periode untuk baris lama.
-     *
-     * Nama paket dicocokkan dari yang terpanjang lebih dulu supaya nama yang
-     * saling mengandung (mis. "TKA SD" vs "TKA SD/SMP") tidak salah tebak.
-     * Baris yang tidak cocok ke paket manapun sengaja dibiarkan NULL: itu
-     * tagihan bebas/manual yang memang tidak ikut aturan tagihan bulanan.
-     */
     private function backfillAnchors(): void
     {
         $packages = DB::table('pakets')->select('id', 'nama_paket')->get()

@@ -18,5 +18,10 @@ class Arsip extends Model
         'kelas',
         'no_hp',
         'paket_pembayaran',
+        'paket_pembayaran_2',
+        'paket_pembayaran_3',
+        'paket_pembayaran_4',
+        'paket_pembayaran_5',
+        'tingkat_kemampuan_id',
     ];
 }

@@ -1,5 +1,5 @@
-import { kirim } from '../core/http';
-import { isDarkMode } from '../core/theme';
+import { kirim } from '../core/http.js';
+import { isDarkMode } from '../core/theme.js';
 
 export const akunGuruHandler = ({ routes }) => ({
     routes,

@@ -23,14 +23,6 @@ class PaymentBatchService
         'paket_pembayaran_5',
     ];
 
-    /**
-     * Membuat tagihan bulanan untuk seluruh siswa yang punya paket aktif.
-     *
-     * Duplikat dicegah lewat anchor (id_siswa, id_paket, periode) -- bukan lagi
-     * kecocokan teks keterangan. Ini yang dulu bikin tagihan manual dan tagihan
-     * massal untuk paket yang sama tidak saling terdeteksi, sehingga satu siswa
-     * bisa tertagih dua kali dalam satu bulan.
-     */
     public function createMonthlyInvoices(): int
     {
         $packages = Paket::query()
@@ -104,11 +96,6 @@ class PaymentBatchService
         );
     }
 
-    /**
-     * Daftar tagihan paket yang belum dibuat untuk periode berjalan.
-     * Memakai anchor yang sama dengan createMonthlyInvoices supaya preview dan
-     * eksekusi tidak pernah berbeda hasil.
-     */
     public function previewMissingInvoices(): Collection
     {
         $packages = Paket::query()
@@ -160,14 +147,6 @@ class PaymentBatchService
         return $missing->values();
     }
 
-    /**
-     * Menutup tagihan aktif menjadi lunas, sambil tetap meninggalkan jejak
-     * PembayaranDetail untuk sisa yang ditutup sistem.
-     *
-     * Tanpa $phone berarti "tutup buku" seluruh sistem -- dikunci sekali per
-     * bulan. Dengan $phone berarti pelunasan satu keluarga, yang memang aksi
-     * harian dan tidak dikunci.
-     */
     public function settleActive(?string $phone = null, string $description = 'Selesai sistem'): int
     {
         if ($phone !== null) {
@@ -181,10 +160,6 @@ class PaymentBatchService
         );
     }
 
-    /**
-     * Log eksekusi massal terakhir per jenis, untuk ditampilkan di UI supaya
-     * admin tahu status periode berjalan sebelum menekan tombol.
-     */
     public function currentPeriodStatus(): array
     {
         $periode = Carbon::now()->format('Y-m');
@@ -269,15 +244,6 @@ class PaymentBatchService
         });
     }
 
-    /**
-     * Menjalankan aksi massal maksimal sekali per periode.
-     *
-     * Kunci diambil dengan menulis baris log lebih dulu; UNIQUE(jenis, periode)
-     * di database yang menjadi penjaminnya, sehingga dua klik bersamaan tidak
-     * bisa dua-duanya lolos. Kalau aksinya ternyata tidak memproses apa pun,
-     * kunci dilepas kembali supaya admin masih bisa mengulang setelah
-     * memperbaiki data paket.
-     */
     private function runOncePerPeriod(string $jenis, string $periode, callable $action): int
     {
         $log = $this->acquirePeriodLock($jenis, $periode);

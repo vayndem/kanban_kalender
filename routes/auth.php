@@ -10,11 +10,6 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
-// Pendaftaran publik sengaja ditutup: ini sistem admin internal, dan sejak
-// role diberlakukan, akun yang lolos daftar sendiri tanpa peran akan
-// terjebak 403 -- atau lebih buruk, naik jadi admin begitu RoleSeeder
-// dijalankan ulang. Akun guru dibuat admin lewat Master Data; akun admin
-// disiapkan lewat seeder/tinker, bukan formulir publik.
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');

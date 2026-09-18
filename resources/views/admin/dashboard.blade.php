@@ -53,7 +53,7 @@
                                 <i class="fas fa-file-export mr-2"></i> Export / Copy
                             </button>
 
-                            <a :href="pdfExportUrl" target="_blank" class="btn btn-primary text-base">
+                            <a :href="routes.jadwal.exportPdf" target="_blank" class="btn btn-primary text-base">
                                 <i class="fas fa-file-pdf mr-2"></i> Export PDF
                             </a>
 

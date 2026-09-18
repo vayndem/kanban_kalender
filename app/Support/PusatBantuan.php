@@ -10,7 +10,7 @@ class PusatBantuan
     public static function untuk(?string $namaRute, string $tab = ''): array
     {
         $kunci = $namaRute === 'dashboard' && $tab !== ''
-            ? 'dashboard.' . $tab
+            ? 'dashboard.'.$tab
             : (string) $namaRute;
 
         return self::semua()[$kunci] ?? self::bawaan();

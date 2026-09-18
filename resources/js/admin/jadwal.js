@@ -1,7 +1,7 @@
 import Sortable from 'sortablejs';
 
-import { csrfToken, salinTeksJadwal } from '../core/http';
-import { isDarkMode } from '../core/theme';
+import { csrfToken, salinTeksJadwal } from '../core/http.js';
+import { isDarkMode } from '../core/theme.js';
 
 const DAY_NAMES = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const DESKTOP_QUERY = '(min-width: 1024px)';

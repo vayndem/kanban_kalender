@@ -10,12 +10,6 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-/**
- * Server lama di region Amerika lambat merespons, sehingga admin kerap menekan
- * tombol dua kali dan satu setoran tercatat ganda. Tes ini mengunci perilaku
- * penjaga di sisi server -- lapisan yang tetap bekerja walau overlay di layar
- * dilewati (refresh, tombol back, atau permintaan yang diulang jaringan).
- */
 class AntiDoubleClickTest extends TestCase
 {
     use RefreshDatabase;
@@ -54,7 +48,6 @@ class AntiDoubleClickTest extends TestCase
 
     public function test_allows_second_payment_when_details_differ(): void
     {
-        // Setoran kedua yang memang berbeda tidak boleh ikut terblokir.
         $user = User::factory()->create();
         $siswa = Siswa::factory()->create(['no_hp' => '+6285640121283']);
         Pembayaran::create([
@@ -106,7 +99,6 @@ class AntiDoubleClickTest extends TestCase
             ->postJson(route('admin.pembayaran.bayarSiswa', $siswa->id), $payload)
             ->assertOk();
 
-        // Majukan waktu melewati jeda anti-ganda: setoran identik berikutnya sah.
         $this->travel(10)->minutes();
 
         $this->actingAs($user)
@@ -154,8 +146,6 @@ class AntiDoubleClickTest extends TestCase
 
     public function test_duplicate_guard_is_scoped_to_the_same_family(): void
     {
-        // Dua keluarga berbeda yang kebetulan menyetor nominal sama di hari yang
-        // sama tidak boleh saling memblokir.
         $user = User::factory()->create();
         $paket = Paket::create(['nama_paket' => 'Reguler', 'harga' => 300000, 'pertemuan' => 2]);
 

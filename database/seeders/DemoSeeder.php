@@ -36,23 +36,6 @@ use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
-/**
- * Data demo yang menggambarkan bimbel sedang berjalan.
- *
- * Jalankan: php artisan db:seed --class=DemoSeeder
- *
- * Isinya sengaja dibuat menyerupai keadaan nyata, bukan sekadar baris acak:
- *  - keluarga dengan kakak-adik yang berbagi satu nomor HP;
- *  - jadwal kelas berisi beberapa siswa sekaligus, tanpa bentrok guru/ruang/siswa;
- *  - riwayat tagihan tiga bulan dengan status bercampur (lunas, dicicil, belum bayar);
- *  - cicilan bertahap yang jumlahnya cocok dengan total_sudah_dibayar;
- *  - diskon keluarga dan diskon universal;
- *  - siswa yang sudah diarsipkan dan catatan pada beberapa siswa.
- *
- * Semua nomor HP memakai format +62 dan setiap tagihan paket memakai anchor
- * (id_paket + periode), sehingga data ini patuh pada kunci anti-tagihan-ganda.
- * Seeder bersifat menambah dan aman dijalankan ulang.
- */
 class DemoSeeder extends Seeder
 {
     public function run(): void
@@ -141,14 +124,9 @@ class DemoSeeder extends Seeder
         return compact('guru', 'ruang', 'mapel', 'paket');
     }
 
-    /**
-     * Siswa dikelompokkan per keluarga: satu nomor HP bisa dipakai beberapa
-     * anak, persis seperti data sebenarnya. Format nomor selalu +62.
-     */
     private function siswaDanKeluarga($paket): array
     {
         $keluarga = [
-            // [no_hp, [ [nama, panggilan, kelas, paket utama, paket kedua] ... ] ]
             ['+6281234500001', [
                 ['Nayla Kirana Putri', 'Nayla', '4', 'SD All Mapel 3X/Minggu', null],
                 ['Rafa Ardhito Putra', 'Rafa', '2', 'SD English Class 2X/Minggu', null],
@@ -205,12 +183,6 @@ class DemoSeeder extends Seeder
         return $hasil;
     }
 
-    /**
-     * Satu kelas = satu kombinasi hari/sesi/mapel/guru/ruang yang diisi
-     * beberapa siswa. Susunan di bawah sengaja dirancang agar tidak ada guru,
-     * ruang, maupun siswa yang terpakai dua kali pada hari & sesi yang sama --
-     * aturan yang sama dengan validasi bentrok di JadwalController.
-     */
     private function jadwalKelas(array $master, array $siswa): void
     {
         $kelas = [
@@ -301,7 +273,6 @@ class DemoSeeder extends Seeder
 
     private function diskonKeluarga(array $siswa): void
     {
-        // Diskon kakak-adik untuk dua keluarga.
         Diskon::firstOrCreate(
             ['no_hp' => '+6281234500002'],
             ['diskon' => 50000, 'keterangan' => 'Diskon kakak beradik']
@@ -311,25 +282,15 @@ class DemoSeeder extends Seeder
             ['diskon' => 50000, 'keterangan' => 'Diskon kakak beradik']
         );
 
-        // Satu diskon universal yang berlaku ke semua keluarga.
         Diskon::firstOrCreate(
             ['no_hp' => null],
             ['diskon' => 25000, 'keterangan' => 'Promo awal semester']
         );
     }
 
-    /**
-     * Tagihan tiga bulan terakhir.
-     *
-     * Dua bulan lalu sudah beres semua, bulan lalu mulai bercampur, dan bulan
-     * berjalan sengaja menyisakan tagihan belum dibayar serta cicilan yang baru
-     * separuh -- supaya progres bayar, tombol Catat Bayar, dan kunci penagihan
-     * massal semuanya bisa dicoba.
-     */
     private function riwayatPembayaran(array $siswa, $paket): void
     {
         $rencana = [
-            // bulan ke belakang => [nama siswa => [status, porsi dibayar]]
             2 => 'lunas_semua',
             1 => 'campur',
             0 => 'bulan_berjalan',
@@ -373,12 +334,6 @@ class DemoSeeder extends Seeder
                         ]
                     );
 
-                    // created_at/updated_at bukan bagian $fillable Pembayaran
-                    // (dijaga begitu di seluruh app supaya controller tidak
-                    // bisa memalsukan tanggal lewat mass-assignment), jadi
-                    // dibekukan lewat forceFill di sini, hanya untuk baris
-                    // yang baru dibuat -- reseed tidak boleh mengubah tanggal
-                    // baris yang sudah ada.
                     if ($tagihan->wasRecentlyCreated) {
                         $waktu = $saat->copy()->startOfMonth()->addDays(2)->setTime(9, 15);
                         $tagihan->forceFill(['created_at' => $waktu, 'updated_at' => $waktu])->save();
@@ -401,23 +356,18 @@ class DemoSeeder extends Seeder
 
         if ($mode === 'campur') {
             return match ($urutan % 4) {
-                0 => [1, (int) round($harga * 0.5)],   // baru separuh
-                default => [2, $harga],                 // sudah lunas
+                0 => [1, (int) round($harga * 0.5)],
+                default => [2, $harga],
             };
         }
 
-        // Bulan berjalan: sebagian belum bayar, sebagian dicicil, sebagian lunas.
         return match ($urutan % 3) {
-            0 => [0, 0],                                // belum bayar
-            1 => [1, (int) round($harga * 0.4)],        // dicicil sebagian
-            default => [2, $harga],                     // lunas
+            0 => [0, 0],
+            1 => [1, (int) round($harga * 0.4)],
+            default => [2, $harga],
         };
     }
 
-    /**
-     * Detail setoran dibuat agar jumlahnya persis sama dengan
-     * total_sudah_dibayar pada tagihan -- buku besar dan header harus cocok.
-     */
     private function catatanSetoran(Pembayaran $tagihan, Carbon $saat, int $dibayar, int $harga): void
     {
         if ($dibayar <= 0 || $tagihan->details()->exists()) {
@@ -432,7 +382,6 @@ class DemoSeeder extends Seeder
             return;
         }
 
-        // Pembayaran sebagian dipecah jadi dua angsuran supaya riwayatnya hidup.
         $pertama = (int) round($dibayar / 2);
         $kedua = $dibayar - $pertama;
 
@@ -443,10 +392,6 @@ class DemoSeeder extends Seeder
         }
     }
 
-    /**
-     * created_at/updated_at bukan bagian $fillable PembayaranDetail, jadi
-     * tanggal setoran dibekukan lewat forceFill setelah baris dibuat.
-     */
     private function buatDetailPadaTanggal(Pembayaran $tagihan, int $nominal, string $keterangan, Carbon $tanggal): void
     {
         $detail = PembayaranDetail::create([

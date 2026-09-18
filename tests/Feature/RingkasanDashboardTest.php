@@ -151,7 +151,6 @@ class RingkasanDashboardTest extends TestCase
         $ruangA = Ruang::factory()->create();
         $ruangB = Ruang::factory()->create();
 
-        // Simulasi hasil restore stash yang melewati ensureNoConflicts: guru sama, hari+sesi sama, kelas beda.
         Jadwal::create([
             'hari_id' => $hari->id, 'sesi_id' => $sesi->id, 'mata_pelajaran_id' => $mapelA->id,
             'guru_id' => $guru->id, 'ruang_id' => $ruangA->id, 'siswa_id' => Siswa::factory()->create()->id,

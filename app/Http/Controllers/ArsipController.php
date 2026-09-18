@@ -10,28 +10,11 @@ class ArsipController extends Controller
 {
     public function index(Request $request)
     {
-        $arsips = Arsip::orderBy('name')->get();
-
         if ($request->wantsJson()) {
-            return response()->json($arsips);
+            return response()->json(Arsip::orderBy('name')->get());
         }
 
-        return view('admin.arsip.index', compact('arsips'));
-    }
-
-    public function show(Request $request, $id)
-    {
-        $arsip = Arsip::find($id);
-
-        if (! $arsip) {
-            return $this->handleNotFound($request, 'Arsip');
-        }
-
-        if ($request->wantsJson()) {
-            return response()->json($arsip);
-        }
-
-        return view('admin.arsip.show', compact('arsip'));
+        return redirect()->route('dashboard', ['tab' => 'data_siswa']);
     }
 
     public function update(Request $request, $id)
@@ -49,6 +32,11 @@ class ArsipController extends Controller
                 'kelas' => $arsip->kelas,
                 'no_hp' => $arsip->no_hp,
                 'paket_pembayaran' => $arsip->paket_pembayaran,
+                'paket_pembayaran_2' => $arsip->paket_pembayaran_2,
+                'paket_pembayaran_3' => $arsip->paket_pembayaran_3,
+                'paket_pembayaran_4' => $arsip->paket_pembayaran_4,
+                'paket_pembayaran_5' => $arsip->paket_pembayaran_5,
+                'tingkat_kemampuan_id' => $arsip->tingkat_kemampuan_id,
             ]);
 
             $arsip->delete();

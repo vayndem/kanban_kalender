@@ -8,24 +8,6 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Merapikan tagihan ganda (siswa + paket + periode yang sama).
- *
- * Aturan yang dipakai:
- *  - Tagihan tertua dalam satu kelompok dipertahankan sebagai induk.
- *  - Detail pembayaran di tagihan ganda diperiksa satu per satu:
- *      * kembar persis (nominal + tanggal sama dengan yang sudah ada di induk)
- *        -> pencatatan ganda akibat klik dua kali, dibuang;
- *      * "Selesai sistem" -> penutupan otomatis tanpa uang masuk, dibuang;
- *      * selain itu -> pembayaran nyata yang berbeda, DIPINDAHKAN ke induk,
- *        tidak pernah dibuang.
- *  - Setelah itu total_sudah_dibayar dan status induk dihitung ulang dari
- *    detail yang benar-benar tersisa. Bila hasilnya kurang dari harga, tagihan
- *    memang menyisakan tunggakan -- itu keadaan yang jujur, bukan kesalahan.
- *
- * Seluruh baris yang dibuang diarsipkan utuh ke koreksi_pembayaran_logs.
- * Default hanya simulasi; --force untuk benar-benar menerapkan.
- */
 class RapikanDuplikatPembayaran extends Command
 {
     protected $signature = 'pembayaran:rapikan-duplikat {--force : Benar-benar terapkan perubahan}';
@@ -113,7 +95,6 @@ class RapikanDuplikatPembayaran extends Command
                         continue;
                     }
 
-                    // Pembayaran nyata yang berbeda -> jangan dibuang.
                     $dipindah[] = $d;
                     $sidikInduk[] = $this->sidik($d);
                 }
@@ -232,8 +213,6 @@ class RapikanDuplikatPembayaran extends Command
                         'updated_at' => now(),
                     ]);
 
-                    // Detail sisa ikut terhapus lewat cascade; isinya sudah
-                    // diarsipkan utuh pada baris log di atas.
                     DB::table('pembayarans')->where('id', $g->id)->delete();
                 }
 

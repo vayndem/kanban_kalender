@@ -47,8 +47,6 @@ class ModulAjarController extends Controller
             $kodeKelasTambahan = collect();
 
             if ($sertakanSlotTerbuka) {
-                // Kelas yang sedang digantikan guru ini, plus kelas siapa pun yang
-                // gurunya menandai tidak bisa hadir (slot terbuka untuk semua guru).
                 $kodeKelasPengganti = Pertemuan::where('guru_pengganti_id', $guru->id)
                     ->whereNull('selesai_pada')
                     ->with('modulAjarDetail.modulAjar:id,kode_kelas')

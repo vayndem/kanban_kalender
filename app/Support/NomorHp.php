@@ -4,11 +4,6 @@ namespace App\Support;
 
 class NomorHp
 {
-    /**
-     * Ubah satu nomor ke bentuk +62. Mengembalikan null bila nomor kosong atau
-     * bentuknya tidak dikenali -- baris seperti itu sengaja tidak disentuh
-     * daripada ditebak-tebak.
-     */
     public static function normalkan(?string $nilai): ?string
     {
         if ($nilai === null) {

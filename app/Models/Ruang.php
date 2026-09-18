@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ruang extends Model
 {
-    use HasFactory; // <-- DITAMBAHKAN
+    use HasFactory;
 
     protected $fillable = ['name'];
 

@@ -19,15 +19,6 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-/**
- * jadwals memakai onDelete('cascade') ke guru/ruang/mapel/sesi. Tanpa
- * penjagaan di controller, menghapus satu guru yang sedang mengajar berarti
- * seluruh baris jadwalnya ikut lenyap tanpa peringatan. Tes ini mengunci
- * penjaga yang mencegah itu, plus dua celah update/delete lain yang
- * ditemukan sekalian: harga tagihan bisa diturunkan di bawah yang sudah
- * dibayar, invoice bisa dipindah kepemilikan walau sudah punya riwayat
- * setoran, dan paket bisa dihapus walau masih dipakai siswa.
- */
 class PerlindunganHapusDanUbahTest extends TestCase
 {
     use RefreshDatabase;
@@ -83,9 +74,6 @@ class PerlindunganHapusDanUbahTest extends TestCase
 
     public function test_guru_with_teaching_attendance_history_cannot_be_deleted_even_without_a_schedule(): void
     {
-        // Guru bisa saja sudah ditarik dari semua jadwal (0 baris di jadwals),
-        // tapi masih punya riwayat absen mengajar di Modul Ajar -- absensi_gurus
-        // tidak punya onDelete cascade, jadi delete mentah akan gagal di level DB.
         $guru = Guru::factory()->create();
         $modulAjar = ModulAjar::create([
             'kode_kelas' => 'kode-riwayat',
@@ -148,8 +136,6 @@ class PerlindunganHapusDanUbahTest extends TestCase
 
     public function test_paket_used_only_as_secondary_package_still_blocks_deletion(): void
     {
-        // Kolom paket_pembayaran_2..5 bukan cuma paket_pembayaran utama --
-        // guard harus mengecek semuanya, bukan cuma kolom pertama.
         $paket = Paket::create(['nama_paket' => 'Tambahan', 'harga' => 50000, 'pertemuan' => 1]);
         Siswa::factory()->create(['paket_pembayaran_3' => $paket->id]);
 
@@ -226,8 +212,6 @@ class PerlindunganHapusDanUbahTest extends TestCase
 
     public function test_invoice_without_payment_history_can_still_be_reassigned(): void
     {
-        // Salah pilih siswa sebelum ada uang masuk sama sekali harus tetap
-        // bisa dikoreksi -- guard ini hanya menahan kasus yang sudah ada uang.
         $siswaLama = Siswa::factory()->create();
         $siswaBaru = Siswa::factory()->create();
         $tagihan = Pembayaran::create([
