@@ -121,9 +121,12 @@ class PaymentBatchService
             ->get();
 
         $existingKeys = $this->existingAnchorKeys($students->pluck('id'), $periode);
+        $tagihanBebas = $this->freeFormInvoiceCounts($students->pluck('id'));
 
         $missing = collect();
         foreach ($students as $student) {
+            $sisaBebas = (int) ($tagihanBebas[$student->id] ?? 0);
+
             foreach (self::PACKAGE_COLUMNS as $column) {
                 $package = $packages->get($student->{$column});
                 if (! $package) {
@@ -131,6 +134,12 @@ class PaymentBatchService
                 }
 
                 if ($existingKeys->has($this->anchorKey($student->id, $package->id, $periode))) {
+                    continue;
+                }
+
+                if ($sisaBebas > 0) {
+                    $sisaBebas--;
+
                     continue;
                 }
 
@@ -311,6 +320,24 @@ class PaymentBatchService
             ->mapWithKeys(fn (Pembayaran $payment) => [
                 $this->anchorKey($payment->id_siswa, $payment->id_paket, $periode) => true,
             ]);
+    }
+
+    /**
+     * @param  Collection<int, int>  $studentIds
+     * @return Collection<int, int>
+     */
+    private function freeFormInvoiceCounts($studentIds)
+    {
+        $awal = Carbon::now()->startOfMonth();
+        $akhir = Carbon::now()->endOfMonth();
+
+        return Pembayaran::query()
+            ->whereIn('id_siswa', $studentIds)
+            ->whereNull('id_paket')
+            ->whereBetween('created_at', [$awal, $akhir])
+            ->selectRaw('id_siswa, COUNT(*) as jumlah')
+            ->groupBy('id_siswa')
+            ->pluck('jumlah', 'id_siswa');
     }
 
     private function anchorKey(int $studentId, int $packageId, string $periode): string
