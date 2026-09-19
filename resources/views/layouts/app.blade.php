@@ -8,7 +8,6 @@
 
     <title>{{ config('app.name', 'Penjadwalan E-ling') }}</title>
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
 
@@ -19,7 +18,6 @@
     <div class="min-h-screen app-canvas text-base-content">
         @include('layouts.navigation')
 
-        <!-- Page Heading -->
         @isset($header)
             <header class="border-b border-base-300 bg-base-100/80 backdrop-blur-xl">
                 <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
@@ -28,7 +26,6 @@
             </header>
         @endisset
 
-        <!-- Page Content -->
         <main>
             {{ $slot }}
         </main>
@@ -36,7 +33,6 @@
         @include('layouts.admin-help')
     </div>
 
-    <!-- TAMBAHKAN BARIS INI -->
     @stack('scripts')
 
     @if (session('success') || session('error') || session('status'))

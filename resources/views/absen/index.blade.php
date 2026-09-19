@@ -139,7 +139,6 @@
                     </table>
                 </div>
 
-                {{-- Modal: daftar materi/pertemuan kelas ini --}}
                 <template x-if="selectedKelas">
                     <div x-show="selectedKelas" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs" @click="closeModal()">
                         <div @click.stop x-transition class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-base-300 bg-base-100 shadow-2xl">
@@ -172,7 +171,7 @@
                                             Diajarkan oleh <span x-text="d.diajarkan_oleh_guru?.name"></span> pada <span x-text="d.tanggal_diajarkan"></span>
                                         </p>
                                         <p x-show="d.tidak_bisa_hadir" class="text-xs font-bold text-error mt-1">
-                                            <i class="fas fa-bolt"></i> Terbuka untuk siapa saja — belum ada yang ambil.
+                                            <i class="fas fa-bolt"></i> Terbuka untuk siapa saja — belum ada yang ambil.<span x-show="d.diajarkan_oleh_guru_id"> Ini sesi ajar ulang.</span>
                                         </p>
                                         <p x-show="d.sedang_dipersiapkan" class="text-xs font-bold text-warning mt-1">
                                             <i class="fas fa-hourglass-half"></i> Sedang dipersiapkan<span x-show="d.guru_pengganti"> oleh <span x-text="d.guru_pengganti?.name"></span></span>.
@@ -184,7 +183,7 @@
                                                     <i class="fas fa-chalkboard-user"></i> Mulai Ajar
                                                 </button>
                                             </template>
-                                            <template x-if="!d.sedang_dipersiapkan && !d.tidak_bisa_hadir && !d.diajarkan_oleh_guru_id && isPemilikKelas(selectedKelas)">
+                                            <template x-if="!d.sedang_dipersiapkan && !d.tidak_bisa_hadir && isPemilikKelas(selectedKelas)">
                                                 <button type="button" @click="tandaiTidakBisaHadir(d)" class="btn btn-sacred text-xs px-2.5 py-1 rounded-md">
                                                     <i class="fas fa-user-slash"></i> Tidak Bisa Hadir
                                                 </button>
@@ -212,7 +211,6 @@
                     </div>
                 </template>
 
-                {{-- Sub-panel: persiapan (roster) / nilai (grading) --}}
                 <template x-if="pengajaranDetail">
                     <div x-show="pengajaranDetail" x-transition.opacity class="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs" @click="tutupPengajaran()">
                         <div @click.stop x-transition

@@ -160,8 +160,55 @@ class PembayaranController extends Controller
                 return $this->handleNotFound($request, 'Pembayaran');
             }
 
-            $pembayaran->details()->delete();
-            $pembayaran->delete();
+            $jumlahSetoran = $pembayaran->details()->lockForUpdate()->count();
+
+            if ($jumlahSetoran > 0) {
+                $pesan = 'Tagihan ini sudah punya '.$jumlahSetoran.' catatan pembayaran senilai Rp '
+                    .number_format((int) $pembayaran->total_sudah_dibayar, 0, ',', '.')
+                    .'. Menghapusnya akan menghilangkan bukti uang yang sudah diterima. '
+                    .'Kalau tagihannya salah, buat tagihan baru yang benar dan biarkan yang ini sebagai riwayat.';
+
+                if ($request->wantsJson()) {
+                    return response()->json(['status' => 'error', 'message' => $pesan], 422);
+                }
+
+                return redirect()->back()->with('error', $pesan);
+            }
+
+            $terkunci = DB::transaction(function () use ($pembayaran, $request) {
+                $detail = $pembayaran->details()->lockForUpdate()->get();
+
+                if ($detail->isNotEmpty()) {
+                    return $detail;
+                }
+
+                DB::table('koreksi_pembayaran_logs')->insert([
+                    'kelompok' => 'hapus-tagihan',
+                    'id_pembayaran_induk' => $pembayaran->id,
+                    'id_pembayaran_dibuang' => $pembayaran->id,
+                    'nilai_tagihan_dibuang' => (int) $pembayaran->harga,
+                    'nilai_detail_dibuang' => 0,
+                    'alasan' => 'Tagihan tanpa catatan pembayaran dihapus admin',
+                    'data_asli' => json_encode(['pembayaran' => $pembayaran->toArray()]),
+                    'user_id' => $request->user()?->id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $pembayaran->delete();
+
+                return null;
+            });
+
+            if ($terkunci !== null) {
+                $pesan = 'Pembayaran baru saja tercatat untuk tagihan ini, jadi batal dihapus. Muat ulang halaman untuk melihat kondisi terbarunya.';
+
+                if ($request->wantsJson()) {
+                    return response()->json(['status' => 'error', 'message' => $pesan], 409);
+                }
+
+                return redirect()->back()->with('error', $pesan);
+            }
 
             if ($request->wantsJson()) {
                 return response()->json(['status' => 'success', 'message' => 'Data pembayaran dihapus.']);

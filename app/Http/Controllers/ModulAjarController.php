@@ -228,6 +228,23 @@ class ModulAjarController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Hanya admin yang bisa menghapus detail modul ajar.'], 403);
         }
 
+        $pertemuans = $detail->pertemuans()->get(['id', 'selesai_pada']);
+
+        if ($pertemuans->isNotEmpty()) {
+            $selesai = $pertemuans->whereNotNull('selesai_pada')->count();
+            $berjalan = $pertemuans->count() - $selesai;
+
+            $pesan = $selesai > 0
+                ? "Materi ini tidak dihapus. Sudah pernah diajarkan {$selesai} kali, dan menghapusnya akan ikut melenyapkan nilai anak serta kehadiran mengajar gurunya, termasuk yang sudah masuk struk gaji."
+                : 'Materi ini tidak dihapus karena sedang diajarkan sekarang.';
+
+            if ($berjalan > 0 && $selesai > 0) {
+                $pesan .= ' Ada juga pertemuan yang sedang berlangsung.';
+            }
+
+            return response()->json(['status' => 'error', 'message' => $pesan], 422);
+        }
+
         $detail->delete();
 
         return response()->json(['status' => 'success', 'message' => 'Detail modul ajar berhasil dihapus.']);
@@ -276,16 +293,28 @@ class ModulAjarController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Anda tidak berhak menandai pertemuan ini.'], 403);
         }
 
-        if ($detail->pertemuanBerlangsung()->doesntExist() && $detail->pertemuans()->selesai()->exists()) {
-            return response()->json(['status' => 'error', 'message' => 'Pertemuan ini sudah selesai diajarkan.'], 422);
+        $user = Auth::user();
+        $guruAktif = $user->isGuru() ? $user->guru : null;
+        $berjalan = $detail->pertemuanBerlangsung()->first();
+
+        if ($berjalan && ! $user->isAdmin() && $berjalan->guru_pengganti_id
+            && (! $guruAktif || (int) $berjalan->guru_pengganti_id !== (int) $guruAktif->id)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Kelas ini sedang diajar oleh guru pengganti, jadi tidak bisa dibuka lagi dari sini.',
+            ], 409);
         }
+
+        $ajarUlang = $detail->pertemuans()->selesai()->exists();
 
         $detail->pertemuanBerlangsung()->delete();
         $detail->update(['tidak_bisa_hadir' => true]);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Ditandai tidak bisa hadir. Kelas ini sekarang terbuka untuk guru lain.',
+            'message' => $ajarUlang
+                ? 'Ditandai tidak bisa hadir. Sesi ajar ulang materi ini sekarang terbuka untuk guru lain.'
+                : 'Ditandai tidak bisa hadir. Kelas ini sekarang terbuka untuk guru lain.',
             'data' => $this->detailSegar($detail),
         ]);
     }

@@ -106,7 +106,6 @@
                     </table>
                 </div>
 
-                {{-- Modal isi modul ajar --}}
                 <template x-if="selectedKelas">
                     <div x-show="selectedKelas" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs" @click="closeModal()">
                         <div @click.stop x-transition class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-base-300 bg-base-100 shadow-2xl">
@@ -119,7 +118,6 @@
                             </div>
 
                             <div class="p-5 space-y-5">
-                                {{-- Header --}}
                                 <template x-if="bisaUbahHeader">
                                     <form @submit.prevent="simpanHeader" class="space-y-3">
                                         <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider">Modul Ajar</h4>
@@ -159,7 +157,6 @@
                                     </div>
                                 </template>
 
-                                {{-- Detail --}}
                                 <template x-if="selectedKelas.ada_header">
                                     <div class="space-y-3 border-t border-base-300 pt-4">
                                         <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider">Rincian Materi</h4>

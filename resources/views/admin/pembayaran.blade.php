@@ -20,9 +20,6 @@
         },
     })">
 
-    {{-- Penghalang klik selama permintaan berjalan. Dulu tombol tetap bisa
-         diklik saat server lambat merespons, sehingga admin menekan dua kali
-         dan pembayaran tercatat ganda. --}}
     <div x-show="isLoading" x-cloak
         class="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-[2px] cursor-wait">
         <div
@@ -195,7 +192,7 @@
                 class="block text-[11px] font-bold text-base-content/60 uppercase tracking-wider mb-1.5">Filter
                 Bulan</label>
             <select x-model="filterBulan"
-                class="w-full rounded-lg border-base-300 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all">
+                class="select w-full">
                 <option value="all">Semua Bulan</option>
                 <option value="01">Januari</option>
                 <option value="02">Februari</option>
@@ -796,7 +793,7 @@
                             <label class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1.5">Jenis
                                 Tagihan</label>
                             <select @change="applyPaket($event.target.value)"
-                                class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all focus:outline-hidden">
+                                class="select w-full">
                                 <option value="">-- Tanpa paket: buku, denda, kegiatan (boleh berulang) --
                                 </option>
                                 <template x-for="p in pakets" :key="p.id">

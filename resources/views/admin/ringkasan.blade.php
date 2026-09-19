@@ -9,6 +9,9 @@
     $bentrok = $ringkasanData['bentrok_tersembunyi'];
     $pengingatWa = $ringkasanData['pengingat_wa'];
     $gajiBerjalan = $ringkasanData['gaji_berjalan'] ?? collect();
+    $pengganti = $ringkasanData['kelas_pengganti'] ?? ['slot_terbuka' => collect(), 'sedang_diajar_pengganti' => collect()];
+    $slotTerbuka = collect($pengganti['slot_terbuka']);
+    $diajarPengganti = collect($pengganti['sedang_diajar_pengganti']);
     $totalGajiBerjalan = collect($gajiBerjalan)->sum('perkiraan_total');
 
     $periodeUrl = function (string $target) {
@@ -24,6 +27,97 @@
 @endphp
 
 <div class="space-y-8">
+
+    @if ($slotTerbuka->isNotEmpty() || $diajarPengganti->isNotEmpty())
+        <div class="app-card overflow-hidden border-warning/40">
+            <div class="flex items-start gap-3 bg-warning/10 px-4 py-3">
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-field bg-warning text-warning-content shadow-xs">
+                    <i class="fas fa-user-clock"></i>
+                </span>
+                <div class="min-w-0">
+                    <h3 class="text-sm font-black text-base-content">Kelas Pengganti</h3>
+                    <p class="text-xs text-base-content/60">Guru yang berhalangan sudah melepas kelasnya. Kelas yang
+                        belum diambil siapa pun perlu Anda carikan guru.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-px bg-base-300 md:grid-cols-2">
+                <div class="bg-base-100 p-4">
+                    <h4 class="mb-3 flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-wide text-base-content/70">
+                        <i class="fas fa-bolt text-error"></i>
+                        Belum ada yang ambil
+                        <span class="badge badge-error badge-sm">{{ $slotTerbuka->count() }}</span>
+                    </h4>
+
+                    @forelse ($slotTerbuka as $item)
+                        <div class="mb-2 overflow-hidden rounded-lg border border-error/30 last:mb-0">
+                            <div class="p-3">
+                                <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                    <span class="text-sm font-bold text-base-content">{{ $item['mapel'] }}</span>
+                                    @if ($item['ajar_ulang'])
+                                        <span class="badge badge-warning badge-sm">Ajar ulang</span>
+                                    @endif
+                                </div>
+                                <p class="mt-1 text-xs text-base-content/70">{{ $item['hari'] }} &middot; {{ $item['sesi'] }}</p>
+                                <p class="text-xs text-base-content/70">{{ $item['ruang'] }} &middot;
+                                    {{ $item['jumlah_siswa'] }} siswa menunggu</p>
+                                <p class="mt-1 truncate text-xs text-base-content/60" title="{{ $item['materi'] }}">
+                                    Materi: {{ $item['materi'] }}</p>
+                            </div>
+                            <div class="flex items-start gap-2 border-t border-error/20 bg-error/10 px-3 py-2">
+                                <i class="fas fa-user-slash mt-0.5 shrink-0 text-error"></i>
+                                <p class="text-xs text-base-content/80">
+                                    <span class="font-bold text-error">{{ $item['guru_asli'] }}</span> berhalangan
+                                    @if ($item['sejak_label'])
+                                        <span class="whitespace-nowrap text-base-content/60">&middot; {{ $item['sejak_label'] }}</span>
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="app-empty-text text-xs">Tidak ada kelas yang menggantung. Aman.</p>
+                    @endforelse
+                </div>
+
+                <div class="bg-base-100 p-4">
+                    <h4 class="mb-3 flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-wide text-base-content/70">
+                        <i class="fas fa-handshake-angle text-success"></i>
+                        Sudah diambil guru lain
+                        <span class="badge badge-success badge-sm">{{ $diajarPengganti->count() }}</span>
+                    </h4>
+
+                    @forelse ($diajarPengganti as $item)
+                        <div class="mb-2 overflow-hidden rounded-lg border border-success/30 last:mb-0">
+                            <div class="p-3">
+                                <p class="text-sm font-bold text-base-content">{{ $item['mapel'] }}</p>
+                                <p class="mt-1 text-xs text-base-content/70">{{ $item['hari'] }} &middot; {{ $item['sesi'] }}</p>
+                                <p class="text-xs text-base-content/70">{{ $item['ruang'] }} &middot;
+                                    {{ $item['jumlah_siswa'] }} siswa</p>
+                                <p class="mt-1 truncate text-xs text-base-content/60" title="{{ $item['materi'] }}">
+                                    Materi: {{ $item['materi'] }}</p>
+                            </div>
+                            <div class="flex items-start gap-2 border-t border-success/20 bg-success/10 px-3 py-2">
+                                <i class="fas fa-handshake-angle mt-0.5 shrink-0 text-success"></i>
+                                <div class="min-w-0">
+                                    <p class="text-xs text-base-content/80">
+                                        <span class="font-bold text-success">{{ $item['pengganti'] }}</span>
+                                        menggantikan {{ $item['guru_asli'] }}
+                                    </p>
+                                    @if ($item['tanggal_label'])
+                                        <p class="text-xs text-base-content/60">{{ $item['tanggal_label'] }}</p>
+                                    @endif
+                                    <p class="text-xs text-base-content/60">Kehadiran mengajarnya masuk ke
+                                        {{ $item['pengganti'] }}, gaji tidak perlu dikoreksi.</p>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="app-empty-text text-xs">Belum ada kelas yang sedang dipegang guru pengganti.</p>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    @endif
 
     @if ($bentrok->isNotEmpty())
         <div class="app-card overflow-hidden border-error/40">

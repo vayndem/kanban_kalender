@@ -319,7 +319,7 @@
                                             class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1.5">Mata
                                             Pelajaran</label>
                                         <select x-model="editingJadwal.mapel_id"
-                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
+                                            class="select w-full">
                                             <template x-for="mapel in allMapels" :key="mapel.id">
                                                 <option :value="mapel.id" x-text="mapel.name"></option>
                                             </template>
@@ -330,7 +330,7 @@
                                         <label
                                             class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1.5">Guru</label>
                                         <select x-model="editingJadwal.guru_id"
-                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
+                                            class="select w-full">
                                             <template x-for="guru in availableGurus(editingJadwal)"
                                                 :key="guru.id">
                                                 <option :value="guru.id" x-text="guru.name"></option>
@@ -342,7 +342,7 @@
                                         <label
                                             class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1.5">Ruang</label>
                                         <select x-model="editingJadwal.ruang_id"
-                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
+                                            class="select w-full">
                                             <template x-for="ruang in availableRuangs(editingJadwal)"
                                                 :key="ruang.id">
                                                 <option :value="ruang.id" x-text="ruang.name"></option>
@@ -559,7 +559,7 @@
                                             class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1.5">Mata
                                             Pelajaran</label>
                                         <select x-model.number="newJadwal.mata_pelajaran_id"
-                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
+                                            class="select w-full">
                                             <template x-for="mapel in allMapels" :key="mapel.id">
                                                 <option :value="mapel.id" x-text="mapel.name"></option>
                                             </template>
@@ -570,7 +570,7 @@
                                         <label
                                             class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1.5">Guru</label>
                                         <select x-model.number="newJadwal.guru_id"
-                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
+                                            class="select w-full">
                                             <template x-for="guru in availableGurus(newJadwal)"
                                                 :key="guru.id">
                                                 <option :value="guru.id" x-text="guru.name"></option>
@@ -582,7 +582,7 @@
                                         <label
                                             class="block text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1.5">Ruang</label>
                                         <select x-model.number="newJadwal.ruang_id"
-                                            class="w-full rounded-xl border border-base-300 p-2.5 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
+                                            class="select w-full">
                                             <template x-for="ruang in availableRuangs(newJadwal)"
                                                 :key="ruang.id">
                                                 <option :value="ruang.id" x-text="ruang.name"></option>

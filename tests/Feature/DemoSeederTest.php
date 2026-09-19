@@ -21,6 +21,7 @@ use App\Models\Siswa;
 use App\Models\StashPemulihanLog;
 use App\Models\Tanda;
 use App\Services\IrisanSesiService;
+use App\Services\RingkasanService;
 use Carbon\Carbon;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -395,6 +396,67 @@ class DemoSeederTest extends TestCase
             $tanggal->map(fn ($t) => $t->toDateString())->unique()->count(),
             'Tiap pertemuan pada materi yang sama harus punya tanggal berbeda.'
         );
+    }
+
+    public function test_demo_memuat_slot_terbuka_untuk_sesi_ajar_ulang(): void
+    {
+        $ajarUlang = ModulAjarDetail::where('tidak_bisa_hadir', true)
+            ->whereHas('pertemuans', fn ($q) => $q->whereNotNull('selesai_pada'))
+            ->count();
+
+        $this->assertGreaterThan(
+            0,
+            $ajarUlang,
+            'Harus ada materi yang sudah pernah diajarkan lalu dilepas lagi, karena itu keadaan yang dulu ditolak sistem.'
+        );
+    }
+
+    public function test_demo_memuat_kelas_yang_sedang_dipegang_guru_pengganti(): void
+    {
+        $this->assertGreaterThan(
+            0,
+            Pertemuan::whereNull('selesai_pada')->whereNotNull('guru_pengganti_id')->count(),
+            'Panel Kelas Pengganti butuh contoh kelas yang sedang diajar guru pengganti.'
+        );
+    }
+
+    public function test_demo_memuat_kelas_yang_kreditnya_terbagi_antara_dua_guru(): void
+    {
+        $terbagi = Pertemuan::whereNotNull('selesai_pada')
+            ->with('absensiGuru')
+            ->get()
+            ->groupBy('modul_ajar_detail_id')
+            ->first(function ($pertemuans) {
+                $guru = $pertemuans->map(fn (Pertemuan $p) => $p->absensiGuru?->guru_id)->filter()->unique();
+
+                return $pertemuans->count() >= 3 && $guru->count() > 1;
+            });
+
+        $this->assertNotNull(
+            $terbagi,
+            'Harus ada satu materi yang diajar tiga kali oleh dua guru berbeda, supaya pembagian gaji pengganti ikut terlihat.'
+        );
+
+        $guru = $terbagi->map(fn (Pertemuan $p) => $p->absensiGuru?->guru_id)->filter();
+
+        $this->assertSame(
+            $terbagi->count(),
+            $guru->count(),
+            'Tiap pertemuan pada rangkaian itu harus punya kredit kehadirannya sendiri.'
+        );
+    }
+
+    public function test_panel_kelas_pengganti_terisi_dari_data_demo(): void
+    {
+        $hasil = app(RingkasanService::class)->kelasPengganti();
+
+        $this->assertGreaterThan(0, $hasil['slot_terbuka']->count(), 'Dashboard harus punya contoh kelas menggantung.');
+        $this->assertGreaterThan(0, $hasil['sedang_diajar_pengganti']->count(), 'Dashboard harus punya contoh kelas yang sudah diambil.');
+        $this->assertTrue(
+            $hasil['slot_terbuka']->contains('ajar_ulang', true),
+            'Salah satu kelas menggantung harus berupa sesi ajar ulang.'
+        );
+        $this->assertNotSame('-', $hasil['slot_terbuka']->first()['guru_asli'], 'Kartu harus menyebut guru aslinya.');
     }
 
     public function test_setiap_pertemuan_selesai_punya_kredit_kehadiran_sendiri(): void

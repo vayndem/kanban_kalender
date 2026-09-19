@@ -18,7 +18,6 @@
             </div>
         </div>
 
-        {{-- Aspek penilaian --}}
         <div class="app-card app-card-pad mb-6">
             <div class="mb-5 flex flex-col gap-4 border-b border-base-300 pb-5 sm:flex-row sm:items-start sm:justify-between">
                 <div class="flex items-center gap-3">
@@ -45,7 +44,6 @@
                 </p>
             </div>
 
-            {{-- Form aspek --}}
             <div x-show="formTerbuka" x-cloak x-transition
                 class="mb-5 rounded-box border border-primary/40 bg-primary/5 p-4">
                 <p class="mb-3 text-xs font-black uppercase tracking-wider text-primary"
@@ -129,7 +127,6 @@
             </div>
         </div>
 
-        {{-- Hasil anak --}}
         <div class="app-card app-card-pad">
             <div class="mb-5 flex flex-col gap-4 border-b border-base-300 pb-5 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -246,7 +243,6 @@
             </div>
         </div>
 
-        {{-- Rapor per anak --}}
         <template x-if="raporUntuk">
             <div x-transition.opacity
                 class="fixed inset-0 z-[120] flex items-end justify-center bg-black/70 p-0 backdrop-blur-xs sm:items-center sm:p-4"

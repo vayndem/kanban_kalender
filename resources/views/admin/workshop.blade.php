@@ -82,7 +82,6 @@
                 @endforeach
             </div>
 
-            {{-- ===================== SISWA ===================== --}}
             <div x-show="activeSection === 'siswa'" x-cloak>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <form id="workshop-siswa-form" @submit.prevent="simpanSiswa" class="space-y-3">
@@ -194,7 +193,7 @@
                         <div>
                             <label class="block text-xs font-semibold text-base-content/60">Kemampuan</label>
                             <select x-model="siswaForm.tingkat_kemampuan_id"
-                                class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
+                                class="select mt-1 w-full">
                                 <option value="">-- Pilih Kemampuan --</option>
                                 <template x-for="k in kemampuans" :key="k.id">
                                     <option :value="String(k.id)" x-text="'Level ' + k.level + ' — ' + k.keterangan"></option>
@@ -263,7 +262,6 @@
                 </div>
             </div>
 
-            {{-- ===================== GURU ===================== --}}
             <div x-show="activeSection === 'guru'" x-cloak>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <form @submit.prevent="simpanGuru" class="space-y-3">
@@ -327,7 +325,6 @@
                 </div>
             </div>
 
-            {{-- ===================== RUANG ===================== --}}
             <div x-show="activeSection === 'ruang'" x-cloak>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <form @submit.prevent="simpanRuang" class="space-y-3">
@@ -388,7 +385,6 @@
                 </div>
             </div>
 
-            {{-- ===================== SESI ===================== --}}
             <div x-show="activeSection === 'sesi'" x-cloak>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <form @submit.prevent="simpanSesi" class="space-y-3">
@@ -476,7 +472,6 @@
                 </div>
             </div>
 
-            {{-- ===================== MAPEL ===================== --}}
             <div x-show="activeSection === 'mapel'" x-cloak>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <form @submit.prevent="simpanMapel" class="space-y-3">
@@ -538,7 +533,6 @@
                 </div>
             </div>
 
-            {{-- ===================== PAKET ===================== --}}
             <div x-show="activeSection === 'paket'" x-cloak>
                 <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1">Paket Pembayaran</h4>
                 <p class="text-xs text-base-content/60 mb-3">
@@ -562,7 +556,6 @@
                 </div>
             </div>
 
-            {{-- ===================== KEMAMPUAN ===================== --}}
             <div x-show="activeSection === 'kemampuan'" x-cloak>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <form @submit.prevent="simpanKemampuan" class="space-y-3">
@@ -622,7 +615,6 @@
                 </div>
             </div>
 
-            {{-- ===================== SLOT KOSONG ===================== --}}
             <div x-show="activeSection === 'ketersediaan'" x-cloak>
                 <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider mb-1">Slot Kosong per Hari &amp;
                     Sesi</h4>

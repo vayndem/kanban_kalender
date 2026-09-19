@@ -72,7 +72,6 @@
             </button>
         </div>
 
-        {{-- Mobile: daftar per hari agar tidak memaksa tabel horizontal. --}}
         <template x-if="!isDesktop">
             <div class="space-y-5">
                 @foreach ($haris as $hari)
@@ -126,7 +125,6 @@
             </div>
         </template>
 
-        {{-- Desktop/tablet: kalender matriks. --}}
         <template x-if="isDesktop">
             <div
                 class="app-table-wrap bg-base-100 shadow-xs">

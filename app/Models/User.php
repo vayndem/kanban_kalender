@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -11,9 +10,6 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /**
-     * @use HasFactory<UserFactory>
-     */
     use HasFactory, HasRoles, Notifiable;
 
     public const ROLE_ADMIN = 'admin';

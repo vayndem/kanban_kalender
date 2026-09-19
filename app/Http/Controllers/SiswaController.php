@@ -216,6 +216,7 @@ class SiswaController extends Controller
                 $studentIds = $siswas->pluck('id');
 
                 Arsip::query()->insert($archiveRows);
+                $this->arsipkanRiwayatUang($studentIds, $now);
                 Jadwal::query()->whereIn('siswa_id', $studentIds)->delete();
                 DB::table('tandas')->whereIn('siswa_id', $studentIds)->delete();
                 Siswa::query()->whereIn('id', $studentIds)->delete();
@@ -231,6 +232,43 @@ class SiswaController extends Controller
             return redirect()->back()->with('success', $siswas->count().' siswa berhasil diarsipkan.');
         } catch (\Exception $e) {
             return $this->handleException($request, 'Gagal memproses', $e);
+        }
+    }
+
+    /**
+     * @param  Collection<int, int>  $studentIds
+     */
+    private function arsipkanRiwayatUang($studentIds, $now): void
+    {
+        $tagihan = DB::table('pembayarans')->whereIn('id_siswa', $studentIds)->get();
+
+        if ($tagihan->isEmpty()) {
+            return;
+        }
+
+        $detail = DB::table('pembayaran_details')
+            ->whereIn('id_pembayaran', $tagihan->pluck('id'))
+            ->get()
+            ->groupBy('id_pembayaran');
+
+        $baris = $tagihan->map(fn ($t) => [
+            'kelompok' => 'arsip-siswa',
+            'id_pembayaran_induk' => $t->id,
+            'id_pembayaran_dibuang' => $t->id,
+            'nilai_tagihan_dibuang' => (int) $t->harga,
+            'nilai_detail_dibuang' => (int) ($detail[$t->id] ?? collect())->sum('pembayaran'),
+            'alasan' => 'Siswa diarsipkan, tagihan dan riwayat pembayarannya ikut terhapus',
+            'data_asli' => json_encode([
+                'pembayaran' => $t,
+                'details' => ($detail[$t->id] ?? collect())->values(),
+            ]),
+            'user_id' => auth()->id(),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ])->all();
+
+        foreach (array_chunk($baris, 200) as $bagian) {
+            DB::table('koreksi_pembayaran_logs')->insert($bagian);
         }
     }
 

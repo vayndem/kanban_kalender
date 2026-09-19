@@ -547,18 +547,51 @@ class ModulAjarTest extends TestCase
         $this->assertTrue($detail->fresh()->tidak_bisa_hadir);
     }
 
-    public function test_cannot_mark_tidak_bisa_hadir_for_a_detail_already_taught(): void
+    public function test_a_sick_guru_can_open_a_reteach_slot_and_the_substitute_earns_the_extra_credit(): void
     {
         [$guru, $user] = $this->guruDenganAkun();
+        [$pengganti, $userPengganti] = $this->guruDenganAkun('Pak Anwar');
         $siswa = Siswa::factory()->create();
         $this->buatKelasDenganSiswa($guru, 'kode-1', [$siswa->id]);
         $detail = $this->buatModulDenganDetail('kode-1');
+
         $this->actingAs($user)->postJson(route('modulAjar.mulaiPersiapan', $detail->id))->assertOk();
         $this->actingAs($user)->postJson(route('modulAjar.simpanNilai', $detail->id), [
             'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => $this->skor(4)]],
         ])->assertOk();
 
-        $this->actingAs($user)->postJson(route('modulAjar.tandaiTidakBisaHadir', $detail->id))->assertStatus(422);
+        $this->actingAs($user)->postJson(route('modulAjar.tandaiTidakBisaHadir', $detail->id))->assertOk();
+        $this->actingAs($userPengganti)->postJson(route('modulAjar.klaimSlotTerbuka', $detail->id))->assertOk();
+        $this->actingAs($userPengganti)->postJson(route('modulAjar.simpanNilai', $detail->id), [
+            'absensi' => [['siswa_id' => $siswa->id, 'hadir' => true, 'skor' => $this->skor(5)]],
+        ])->assertOk();
+
+        $this->assertSame(2, $detail->pertemuans()->count(), 'Sesi ajar ulang tercatat sebagai pertemuan sendiri.');
+        $this->assertSame(
+            1,
+            AbsensiGuru::where('guru_id', $pengganti->id)->count(),
+            'Guru pengganti dapat kehadiran mengajar dari sesi ajar ulang.'
+        );
+        $this->assertSame(
+            1,
+            AbsensiGuru::where('guru_id', $guru->id)->count(),
+            'Kehadiran guru asli dari pertemuan pertama tidak ikut berpindah.'
+        );
+    }
+
+    public function test_owning_guru_cannot_reopen_a_slot_an_active_substitute_is_holding(): void
+    {
+        [$guru, $user] = $this->guruDenganAkun();
+        [, $userPengganti] = $this->guruDenganAkun('Pak Anwar');
+        $siswa = Siswa::factory()->create();
+        $this->buatKelasDenganSiswa($guru, 'kode-1', [$siswa->id]);
+        $detail = $this->buatModulDenganDetail('kode-1');
+
+        $this->actingAs($user)->postJson(route('modulAjar.tandaiTidakBisaHadir', $detail->id))->assertOk();
+        $this->actingAs($userPengganti)->postJson(route('modulAjar.klaimSlotTerbuka', $detail->id))->assertOk();
+
+        $this->actingAs($user)->postJson(route('modulAjar.tandaiTidakBisaHadir', $detail->id))->assertStatus(409);
+        $this->actingAs($this->admin())->postJson(route('modulAjar.tandaiTidakBisaHadir', $detail->id))->assertOk();
     }
 
     public function test_claiming_an_open_slot_is_first_come_first_served(): void

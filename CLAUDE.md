@@ -133,7 +133,7 @@ The grading modal is a **per-student stepper**, not a student x aspect grid — 
 
 `RaporService` returns `per_aspek` (average, min, max and trend for each aspect) alongside `ringkasan` and `per_mapel`, and the rapor PDF prints it as its own table. A meeting's score is the **average of its aspects**, so `rata_nilai` is a float now, not an integer.
 
-**Rapor Perkembangan lives in Result, not Data Siswa.** The panel and its routes moved to `ResultController::rapor()` / `raporPdf()`; `SiswaController` no longer has them.
+**Rapor Perkembangan lives in Result, not Data Siswa.** The panel moved to `ResultController::rapor()` (read) plus `cetakRapor()` / `cetakSertifikat()` (both POST, both requiring a meeting selection); `SiswaController` no longer has any of them.
 
 **The help FAB sits at `z-30`, below every modal.** It used to be `z-[120]` and covered the save button of the grading modal on a phone. Its drawer is a sibling at `z-[210]`, deliberately *not* nested inside a positioned wrapper — nesting it would trap the drawer in the button's stacking context and push it under the sticky tab bar.
 
@@ -151,11 +151,12 @@ Two roles via `spatie/laravel-permission`: `admin`, `guru`.
 
 ### Modul Ajar, teaching and attendance
 
-- **Data shape:** `modul_ajars` (one per `kode_kelas`; `tujuan_pembelajaran`, `kompetensi_awal`, `model_pembelajaran`, `sarana_media`, all required) has many `modul_ajar_details` (`materi` required; `sub_materi`, `cara_mengajar`, `tugas`, `tujuan`, `hasil_akhir_pembelajaran`, `keterangan` optional; zero details is a normal state). The teaching columns live on the same rows: `sedang_dipersiapkan`, `guru_pengganti_id`, `diajarkan_oleh_guru_id`, `tanggal_diajarkan`.
+- **Data shape:** `modul_ajars` (one per `kode_kelas`; `tujuan_pembelajaran`, `kompetensi_awal`, `model_pembelajaran`, `sarana_media`, all required) has many `modul_ajar_details` (`materi` required; `sub_materi`, `cara_mengajar`, `tugas`, `tujuan`, `hasil_akhir_pembelajaran`, `keterangan` optional; zero details is a normal state). A detail is the syllabus item only — **when it was taught lives in `pertemuans`**, see "A meeting is a dated occurrence" below.
 - **Permissions split by verb, not just ownership.** Admin and the assigned guru can view and **create** header and details. Only admin can **update or delete** — a guru's `simpanHeader` is 403 if a header already exists, and `updateDetail`/`hapusDetail` reject non-admins. Deliberate; don't loosen without asking.
-- **Each detail row is the teaching event** — no dated "Pertemuan" entity. `mulaiPersiapan()` marks it in progress (card turns amber); `simpanNilai()` grades every student (`hadir` + `nilai` 1-5 in `modul_ajar_absensis`, unique per student per detail), completes the detail and clears `guru_pengganti_id`. Re-teaching **overwrites** grades rather than versioning them — a deliberate simplification, since this isn't money.
-- **Substitution never touches `jadwals.guru_id`.** Guru A names guru B as `guru_pengganti_id` on one detail; that is what lets B pass `bolehNilai()`. It resets to null after grading. `index()` therefore scopes a guru's kanban to their own classes **plus** any class where they are currently a substitute — without that, the substitute cannot reach the class.
-- **Attendance credit follows whoever actually taught.** `absensi_gurus` gets one row per graded detail (`unique(modul_ajar_detail_id)`, upserted so re-teaching moves credit rather than duplicating), crediting `guru_pengganti_id ?: jadwal.guru_id`. Counted **per graded session**, not per day — 3 classes in a day earns 3.
+- **A detail is taught through a meeting.** `mulaiPersiapan()` opens a `Pertemuan` dated today (card turns amber); `simpanNilai()` grades every student into `modul_ajar_absensis` (unique per student per **meeting**) and closes the meeting. Re-teaching opens a second meeting and **keeps both sets of grades**.
+- **"Tidak bisa hadir" is about the next session, not the syllabus item.** It used to 422 once the detail had any finished meeting, which silently contradicted Ajar Ulang: re-teaching is allowed and earns its own credit, so a guru who falls sick on a re-teach day must be able to open that slot too. The only thing that blocks it now is a **running meeting held by a substitute** (409), mirroring `mulaiPersiapan()` — a teacher cannot yank back a class someone else is already teaching, but an admin can. The button is rendered for the owner whether or not the materi was taught before.
+- **Substitution never touches `jadwals.guru_id`.** Guru B claims an open slot, which opens a meeting with `guru_pengganti_id` set on the **meeting**; that is what lets B pass `bolehNilai()`. `index()` therefore scopes a guru's kanban to their own classes **plus** any class where they hold a running substitute meeting. An admin pressing Mulai Ajar takes that meeting over and clears the substitute; the owning guru cannot.
+- **Attendance credit follows whoever actually taught.** `absensi_gurus` gets one row per **finished meeting** (`pertemuan_id`), crediting `guru_pengganti_id ?: pertemuan.guru_id`. Counted per graded session, not per day — 3 classes in a day earns 3, and re-teaching earns another.
 - Monthly totals sum `absensi_gurus` over a date range, not a running counter, and are deliberately **not** filtered by `ditutup_pada`: "how many sessions did I teach this month" must not reset because payroll ran.
 
 ### A meeting is a dated occurrence, not a syllabus item
@@ -167,7 +168,16 @@ Two roles via `spatie/laravel-permission`: `admin`, `guru`.
 - **Re-teaching now keeps both records.** Pressing Ajar Ulang opens a second meeting with its own date, its own student scores and its own teaching credit; the first meeting's grades survive. This reverses the old "grades are overwritten" rule — that rule existed only because there was nowhere else to put them. `AspekPenilaianTest` pins both meetings appearing in the rapor.
 - Teaching credit is **one `absensi_gurus` row per finished meeting**, keyed by `pertemuan_id`. That is what makes "ajar ulang counts as +1" fall out naturally instead of needing a special case.
 - Grading is refused unless a meeting is currently running (`selesai_pada IS NULL`). That single guard is what stops a double-submitted grading from paying twice.
-- An admin (or the owning guru) pressing Mulai Ajar on a meeting held by a substitute **takes it over and clears `guru_pengganti_id`** rather than creating a second meeting.
+- **Only an admin** can take over a meeting held by a substitute: pressing Mulai Ajar clears `guru_pengganti_id` and reassigns it rather than opening a second meeting. The owning guru gets a 409 — `mulaiPersiapan()` blocks every non-admin who is not the substitute, so a teacher cannot silently reclaim a class they handed off.
+
+### The dashboard surfaces classes whose teacher dropped out
+
+`RingkasanService::kelasPengganti()` feeds a panel at the top of the Ringkasan tab, next to Bentrok Tersembunyi. It returns two lists: `slot_terbuka` (details with `tidak_bisa_hadir = true`, nobody has claimed them) and `sedang_diajar_pengganti` (running meetings with a `guru_pengganti_id`). Each entry carries the class identity resolved from `kode_kelas`, so the admin reads "English, Senin, Sesi 1, Ruang Anggrek, guru aslinya Bu Rina" rather than an id.
+
+- **The left column is the actionable one.** A class sitting there has nobody teaching it, and nothing in the app will chase it — there is no notification and no expiry, by the owner's explicit decision (Sept 2026). The panel is the only place it surfaces, which is the whole point of it existing.
+- `ajar_ulang` flags an open slot whose materi already has a finished meeting, so the re-teach case reads differently from a first teaching.
+- **Time labels are built in the service with `->locale('id')`**, not in the view. `config('app.locale')` is `en` and nothing sets Carbon's locale globally; changing that would also swap Laravel's validation messages, so the localisation stays scoped to these strings.
+- The panel's `PusatBantuan` section is titled "Kelas Pengganti" too, and the help drawer renders on every Ringkasan page. **An `assertDontSee('Kelas Pengganti')` therefore always fails** — assert on panel-only text like "Belum ada yang ambil" instead. `KelasPenggantiRingkasanTest` pins both directions.
 
 ### The public parent report
 
@@ -217,6 +227,8 @@ Each of these was a real reported bug; regression tests pin the fixed markup.
 - **`@click.outside` belongs on the wrapper that contains the trigger, never on the panel.** Alpine registers it on `document` and skips only when `el.contains(e.target)`. On a panel created by `x-if`, the very click that opened the dropdown reaches `document` after the panel mounts and closes it instantly — the control looks dead. See `components/dropdown.blade.php` and `components/filter-multi.blade.php`.
 - **`[x-cloak] { display: none !important }` lives in `@layer base`.** 14 elements used `x-cloak` while nothing defined it. Don't delete the rule assuming it's unused.
 - **A `transform` on an ancestor makes `position: fixed` resolve against that ancestor.** An animated wrapper around the admin slot once pushed every modal off-screen. Keep entry animations on leaf cards, never on a wrapper containing a modal.
+- **The codebase carries no explanatory comments.** Every prose comment in `app/`, `database/`, `routes/`, `tests/`, `config/`, `bootstrap/` and the Blade views was removed on the owner's instruction (Sept 2026), including Laravel's stock `config/*` blocks — the tradeoff is that upgrading Laravel no longer diffs cleanly against those files. Docblocks carrying `@param`/`@return`/`@var` and friends stayed, because PHPStan reads them. Don't reintroduce narration; put the reasoning here in CLAUDE.md instead.
+- **No browser tooling is installed and none should be added** for a responsive check. Drive the Chrome already on the machine over the DevTools Protocol: launch it `--headless=new --remote-debugging-port=<port> --user-data-dir=<scratch>`, take `webSocketDebuggerUrl` from `http://127.0.0.1:<port>/json`, and speak CDP over Node's built-in `WebSocket`. `Emulation.setDeviceMetricsOverride` sets the width, `Emulation.setEmulatedMedia` with `prefers-color-scheme` covers both themes, and `Page.captureScreenshot` with a `clip` from the panel's bounding box gives a picture worth actually looking at. The user-data-dir keeps the login session, so a second run finds itself already authenticated — check for the password field before trying to log in.
 - **Responsive is verified by measurement**, at 375px and 768px, for horizontal overflow (`scrollWidth` vs `clientWidth`, ignoring own-`overflow-x` containers) and tap targets under 32px. Size controls **up** for touch and only shrink at `sm:` and above (`checkbox checkbox-primary sm:checkbox-sm`) — a `btn-xs sm:btn-sm` toggle that gave phones the smallest size was a real bug.
 
 ### Shared JS
@@ -320,12 +332,14 @@ Supporting suites:
 | `ModulAjarTest` | admin-sees-all vs guru-sees-own, create-yes/update-no split, `kode_kelas` surviving drag-move / edit-modal / stash round-trip, teaching + substitute + re-teach flow |
 | `RaporSiswaTest` | aggregation, date filtering, 4-score minimum before a trend, PDF download, guru denied |
 | `PusatBantuanTest` | every guide populated, no screen on the fallback, each route rendering its own |
+| `PenjagaanHapusBerantaiTest` | a taught or in-progress syllabus item refusing deletion while its grades and teaching credit survive, an invoice with recorded payments refusing deletion, and an unpaid one being archived into `koreksi_pembayaran_logs` before it goes |
 
 **Watch for editor auto-reformatting breaking `assertSee`.** Something here occasionally re-wraps long Blade lines, inserting a newline between text that used to be adjacent (e.g. `Rp` and the number). The page still renders fine but `assertSee('Rp 200.000')` fails. If a passing assertion starts failing with no nearby logic change, check for line-wrapping before suspecting the data.
 
 `database/seeders/DemoSeeder.php` builds a realistic state — 16 students in 10 families with siblings sharing a phone, 3 months of mixed-status invoices, installments, discounts, collision-free classes, archived students — **plus the states that are otherwise invisible until someone happens to be in them**:
 
-- a class **mid-lesson** (`sedang_dipersiapkan`), an **open slot** (`tidak_bisa_hadir`), a class held by a **substitute**, and one lesson whose attendance credit deliberately lands on the substitute rather than the schedule's owner
+- a class **mid-lesson**, an **open slot** nobody has claimed, a **second open slot on an already-taught materi** (the re-teach case, which the app used to refuse), a class **currently held by a substitute**, one lesson whose credit deliberately lands on the substitute, and one materi **taught three times across two teachers** so the split payroll is visible
+- `alurMengajarHidup()` guards on "this class already has a running meeting" rather than "this detail has never been taught" — the latter picked the *next* untaught detail on every rerun and quietly added a meeting each time
 - an **inactive assessment aspect** that still carries old scores, so the Nonaktif badge and the "old rapor survives deactivation" rule are both exercised
 - a **cancelled payslip** with its reason, its attendance released back, alongside two live ones dated into the past
 - a **teacher with no account and no rates** — the majority state in production
@@ -339,6 +353,6 @@ It also **creates `admin@example.com` itself** rather than relying on `DatabaseS
 
 ## Open design question
 
-Curriculum, the per-meeting before/after report, and both attendance types all conceptually hang off "a specific meeting of a specific class on a specific date" — but a `jadwals` row is a recurring weekly slot with no date, and Modul Ajar's `kode_kelas` anchor deliberately has no date dimension.
+The dated meeting model is **built** (`pertemuans`), so the old blocker is gone. What remains unbuilt from the original roadmap is a distinct **before/after** assessment pair: today a meeting carries one score per aspect, not a pair capturing improvement within the same session. Adding it means a second score column per `nilai_aspeks` row, and a decision about whether "before" is even meaningful for every aspect. Settle that with the owner before building it.
 
-Two roadmap items remain unbuilt because of this: a distinct **before/after** assessment pair (today there is one score, not a pair capturing improvement), scored per syllabus item rather than per calendar meeting. Designing the dated meeting/occurrence model is the prerequisite, and should be settled with the owner before either is started.
+Still open, unrelated to schema: **39 production invoices marked Lunas with no ledger rows, Rp 12.658.333 unaccounted**, all created July to 5 August and untouched since. `PembayaranController::destroy()` deleting details and then failing before deleting the invoice would produce exactly that shape — that path is now guarded and transactional. It is a candidate explanation, not a proven one, and the existing rows have never been reconciled.

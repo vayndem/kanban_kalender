@@ -126,6 +126,7 @@ class DashboardController extends Controller
                 'periode' => $periode,
                 'finansial' => $this->ringkasanService->pengingatFinansial($this->paymentBatchService, $piutangBulan),
                 'kebersihan_data' => $this->ringkasanService->kebersihanData(3),
+                'kelas_pengganti' => $this->ringkasanService->kelasPengganti(),
                 'bentrok_tersembunyi' => $this->ringkasanService->bentrokTersembunyi(),
                 'pengingat_wa' => $this->ringkasanService->pengingatJadwalWa(),
                 'gaji_berjalan' => $this->payrollService->ringkasan()->where('kehadiran_belum_dibayar', '>', 0)->values(),

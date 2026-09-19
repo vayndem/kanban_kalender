@@ -149,6 +149,17 @@ class PusatBantuan
                         ],
                     ],
                     [
+                        'title' => 'Kelas Pengganti',
+                        'items' => [
+                            'Muncul saat ada guru yang menekan "Tidak Bisa Hadir" di layar Absen, misalnya karena sakit.',
+                            'Kolom kiri berisi kelas yang belum diambil siapa pun. Selama masih di kolom ini, kelas itu belum ada yang mengajar, jadi hubungi guru lain agar mengambilnya di layar Absen.',
+                            'Tanda "Sesi ajar ulang" berarti materinya sudah pernah diajarkan dan hari itu dijadwalkan diulang. Nilai pertemuan sebelumnya tetap tersimpan.',
+                            'Kolom kanan berisi kelas yang sudah diambil guru lain. Kehadiran mengajarnya otomatis masuk ke guru pengganti, jadi gaji tidak perlu Anda koreksi manual.',
+                            'Keputusan "tidak bisa hadir" tidak bisa dibatalkan oleh gurunya sendiri. Kalau terlanjur salah tekan, kelas itu memang harus diambil guru lain.',
+                            'Jadwal aslinya tidak berubah sama sekali, jadi minggu berikutnya kelas kembali ke guru semula tanpa perlu diatur ulang.',
+                        ],
+                    ],
+                    [
                         'title' => 'Bentrok Tersembunyi',
                         'items' => [
                             'Panel ini menampilkan jadwal yang bertabrakan karena jam sesinya beririsan.',

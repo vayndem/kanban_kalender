@@ -9,7 +9,9 @@ use App\Models\Hari;
 use App\Models\Jadwal;
 use App\Models\JadwalTeksLog;
 use App\Models\MataPelajaran;
+use App\Models\ModulAjarDetail;
 use App\Models\Pembayaran;
+use App\Models\Pertemuan;
 use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
@@ -267,6 +269,98 @@ class RingkasanService
                 ->orderBy('created_at')
                 ->get(['id', 'siswa_id', 'keterangan', 'created_at']),
             'tanda_lama_hari' => self::TANDA_LAMA_HARI,
+        ];
+    }
+
+    public function kelasPengganti(): array
+    {
+        $terbuka = ModulAjarDetail::where('tidak_bisa_hadir', true)
+            ->with('modulAjar:id,kode_kelas')
+            ->withCount(['pertemuans as pertemuan_selesai_count' => fn ($q) => $q->whereNotNull('selesai_pada')])
+            ->get(['id', 'modul_ajar_id', 'materi', 'updated_at']);
+
+        $berjalan = Pertemuan::berlangsung()
+            ->whereNotNull('guru_pengganti_id')
+            ->with(['guruPengganti:id,name', 'modulAjarDetail:id,modul_ajar_id,materi', 'modulAjarDetail.modulAjar:id,kode_kelas'])
+            ->orderBy('tanggal')
+            ->get(['id', 'modul_ajar_detail_id', 'tanggal', 'guru_pengganti_id']);
+
+        $kodeKelas = $terbuka->pluck('modulAjar.kode_kelas')
+            ->merge($berjalan->pluck('modulAjarDetail.modulAjar.kode_kelas'))
+            ->filter()
+            ->unique();
+
+        $kelas = $this->petaKelasRingkas($kodeKelas);
+
+        return [
+            'slot_terbuka' => $terbuka
+                ->map(fn (ModulAjarDetail $d) => array_merge(
+                    $kelas[$d->modulAjar?->kode_kelas] ?? $this->kelasTidakDikenal(),
+                    [
+                        'materi' => $d->materi,
+                        'sejak' => $d->updated_at,
+                        'sejak_label' => $d->updated_at?->locale('id')->diffForHumans(),
+                        'ajar_ulang' => $d->pertemuan_selesai_count > 0,
+                    ]
+                ))
+                ->sortBy('sejak')
+                ->values(),
+            'sedang_diajar_pengganti' => $berjalan
+                ->map(fn (Pertemuan $p) => array_merge(
+                    $kelas[$p->modulAjarDetail?->modulAjar?->kode_kelas] ?? $this->kelasTidakDikenal(),
+                    [
+                        'materi' => $p->modulAjarDetail?->materi ?? '-',
+                        'pengganti' => $p->guruPengganti?->name ?? '-',
+                        'tanggal' => $p->tanggal,
+                        'tanggal_label' => $p->tanggal?->locale('id')->translatedFormat('d F Y'),
+                    ]
+                ))
+                ->values(),
+        ];
+    }
+
+    /**
+     * @param  Collection<int, string>  $kodeKelas
+     * @return array<string, array<string, mixed>>
+     */
+    private function petaKelasRingkas(Collection $kodeKelas): array
+    {
+        if ($kodeKelas->isEmpty()) {
+            return [];
+        }
+
+        return Jadwal::query()
+            ->whereIn('kode_kelas', $kodeKelas)
+            ->with(['hari:id,name', 'sesi:id,name,start_time,end_time', 'mataPelajaran:id,name', 'guru:id,name', 'ruang:id,name'])
+            ->get(['id', 'kode_kelas', 'hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id', 'siswa_id'])
+            ->groupBy('kode_kelas')
+            ->map(function (Collection $rows) {
+                $first = $rows->first();
+
+                return [
+                    'mapel' => $first->mataPelajaran?->name ?? '-',
+                    'hari' => $first->hari?->name ?? '-',
+                    'sesi' => $first->sesi?->label ?? ($first->sesi?->name ?? '-'),
+                    'guru_asli' => $first->guru?->name ?? '-',
+                    'ruang' => $first->ruang?->name ?? '-',
+                    'jumlah_siswa' => $rows->pluck('siswa_id')->unique()->count(),
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function kelasTidakDikenal(): array
+    {
+        return [
+            'mapel' => '-',
+            'hari' => '-',
+            'sesi' => '-',
+            'guru_asli' => '-',
+            'ruang' => '-',
+            'jumlah_siswa' => 0,
         ];
     }
 

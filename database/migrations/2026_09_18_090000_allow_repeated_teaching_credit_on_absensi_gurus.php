@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -20,8 +21,18 @@ return new class extends Migration
 
     public function down(): void
     {
+        $sisa = DB::table('absensi_gurus')
+            ->selectRaw('max(id) as id')
+            ->groupBy('modul_ajar_detail_id')
+            ->pluck('id');
+
+        DB::table('absensi_gurus')->whereNotIn('id', $sisa)->delete();
+
         Schema::table('absensi_gurus', function (Blueprint $table) {
             $table->dropForeign(['modul_ajar_detail_id']);
+        });
+
+        Schema::table('absensi_gurus', function (Blueprint $table) {
             $table->dropIndex('absensi_gurus_detail_index');
             $table->unique('modul_ajar_detail_id', 'absensi_gurus_modul_ajar_detail_id_unique');
             $table->foreign('modul_ajar_detail_id')
