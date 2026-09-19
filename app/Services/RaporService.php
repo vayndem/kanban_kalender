@@ -41,7 +41,7 @@ class RaporService
             ],
             'guru' => $this->daftarGuru($absensis),
             'materi' => $this->materiDipelajari($absensis),
-            'daftar_pertemuan' => $this->daftarPertemuan($absensis),
+            'daftar_pertemuan' => $this->daftarPertemuan($absensis, $kelasInfo),
             'ringkasan' => $this->ringkasan($absensis),
             'per_aspek' => $this->perAspek($absensis),
             'per_mapel' => $this->perMapel($absensis, $kelasInfo),
@@ -180,19 +180,25 @@ class RaporService
     /**
      * @return array<int, array<string, mixed>>
      */
-    private function daftarPertemuan(Collection $absensis): array
+    private function daftarPertemuan(Collection $absensis, Collection $kelasInfo): array
     {
         return $absensis
             ->sortByDesc(fn (ModulAjarAbsensi $a) => $a->pertemuan->tanggal->toDateString())
-            ->map(fn (ModulAjarAbsensi $a) => [
-                'pertemuan_id' => $a->pertemuan->id,
-                'tanggal' => $a->pertemuan->tanggal->toDateString(),
-                'materi' => $a->pertemuan->modulAjarDetail->materi,
-                'hadir' => (bool) $a->hadir,
-                'nilai' => $a->rataAspek(),
-                'persen' => self::persen($a->rataAspek()),
-                'diajar_oleh' => $a->pertemuan->guru?->name ?? '-',
-            ])
+            ->map(function (ModulAjarAbsensi $a) use ($kelasInfo) {
+                $kode = $a->pertemuan->modulAjarDetail?->modulAjar?->kode_kelas;
+
+                return [
+                    'pertemuan_id' => $a->pertemuan->id,
+                    'tanggal' => $a->pertemuan->tanggal->toDateString(),
+                    'tanggal_label' => $a->pertemuan->tanggal->locale('id')->translatedFormat('D, d M Y'),
+                    'materi' => $a->pertemuan->modulAjarDetail->materi,
+                    'mapel' => $kelasInfo[$kode]['mapel'] ?? '-',
+                    'hadir' => (bool) $a->hadir,
+                    'nilai' => $a->rataAspek(),
+                    'persen' => self::persen($a->rataAspek()),
+                    'diajar_oleh' => $a->pertemuan->guru?->name ?? '-',
+                ];
+            })
             ->values()
             ->all();
     }

@@ -6,6 +6,8 @@
     $periode = $ringkasanData['periode'];
     $finansial = $ringkasanData['finansial'];
     $kebersihan = $ringkasanData['kebersihan_data'];
+    $kelasSepi = collect($kebersihan['kelas_sepi'] ?? []);
+    $sepiMinimal = $kebersihan['kelas_sepi_minimal'] ?? 3;
     $bentrok = $ringkasanData['bentrok_tersembunyi'];
     $pengingatWa = $ringkasanData['pengingat_wa'];
     $gajiBerjalan = $ringkasanData['gaji_berjalan'] ?? collect();
@@ -390,6 +392,35 @@
 
     <section>
         <h3 class="app-section-head">Kebersihan Data</h3>
+
+        @if ($kelasSepi->isNotEmpty())
+            <div class="mb-4">
+                <x-list-panel title="Kelas Sepi — Kurang dari {{ $sepiMinimal }} Siswa" icon="fa-users-slash"
+                    tone="warning" scroll="max-h-64" :count="$kelasSepi->count()"
+                    hint="Kelas dengan sedikit anak biasanya rugi untuk dijalankan. Pertimbangkan menggabungnya dengan kelas lain atau menambah murid.">
+                    @foreach ($kelasSepi as $kelas)
+                        <x-list-row icon="fa-user-group" tone="text-warning" class="flex-wrap items-start">
+                            <span class="min-w-0 flex-1 font-bold text-base-content">
+                                {{ $kelas['mapel'] }}
+                                <span class="block font-normal text-base-content/60">
+                                    {{ $kelas['hari'] }} &middot; {{ $kelas['sesi'] }} &middot; {{ $kelas['ruang'] }}
+                                    &middot; {{ $kelas['guru_asli'] }}
+                                </span>
+                            </span>
+                            <span class="ml-auto shrink-0 text-right">
+                                <span class="badge badge-warning badge-sm font-bold">
+                                    {{ $kelas['jumlah_siswa'] }} siswa
+                                </span>
+                                <span class="mt-0.5 block text-[10px] text-base-content/60">
+                                    kurang {{ $kelas['kurang'] }} lagi
+                                </span>
+                            </span>
+                        </x-list-row>
+                    @endforeach
+                </x-list-panel>
+            </div>
+        @endif
+
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             <x-list-panel title="Siswa Tanpa Jadwal" icon="fa-calendar-xmark" tone="info" scroll="max-h-40"
                 :count="$kebersihan['siswa_tanpa_jadwal']->count()">

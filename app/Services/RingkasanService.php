@@ -25,6 +25,8 @@ class RingkasanService
 
     private const TANDA_LAMA_HARI = 14;
 
+    public const KELAS_SEPI_MINIMAL = 3;
+
     public function __construct(private readonly IrisanSesiService $irisanSesi) {}
 
     public function ringkasanHariIni(): array
@@ -269,7 +271,37 @@ class RingkasanService
                 ->orderBy('created_at')
                 ->get(['id', 'siswa_id', 'keterangan', 'created_at']),
             'tanda_lama_hari' => self::TANDA_LAMA_HARI,
+            'kelas_sepi' => $this->kelasSepi(),
+            'kelas_sepi_minimal' => self::KELAS_SEPI_MINIMAL,
         ];
+    }
+
+    /**
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function kelasSepi(): Collection
+    {
+        $jumlahPerKelas = Jadwal::query()
+            ->whereNotNull('kode_kelas')
+            ->where('kode_kelas', '!=', '')
+            ->get(['kode_kelas', 'siswa_id'])
+            ->groupBy('kode_kelas')
+            ->map(fn (Collection $rows) => $rows->pluck('siswa_id')->filter()->unique()->count())
+            ->filter(fn (int $jumlah) => $jumlah < self::KELAS_SEPI_MINIMAL);
+
+        if ($jumlahPerKelas->isEmpty()) {
+            return collect();
+        }
+
+        $kelas = $this->petaKelasRingkas($jumlahPerKelas->keys());
+
+        return $jumlahPerKelas
+            ->map(fn (int $jumlah, string $kode) => array_merge(
+                $kelas[$kode] ?? $this->kelasTidakDikenal(),
+                ['kode_kelas' => $kode, 'jumlah_siswa' => $jumlah, 'kurang' => self::KELAS_SEPI_MINIMAL - $jumlah]
+            ))
+            ->sortBy([['jumlah_siswa', 'asc'], ['hari', 'asc']])
+            ->values();
     }
 
     public function kelasPengganti(): array

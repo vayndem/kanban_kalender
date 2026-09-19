@@ -267,11 +267,46 @@
                             <span class="text-sm font-bold text-base-content/70">Memuat rapor...</span>
                         </div>
 
+                        <template x-if="! isLoadingRapor && raporSiswa">
+                            <div class="rounded-box border border-base-300 bg-base-200/50 p-3">
+                                <p class="mb-2 text-xs font-black uppercase tracking-wider text-base-content/60">
+                                    Rentang Tanggal
+                                </p>
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                                    <div class="flex-1">
+                                        <label class="app-label" for="rapor-dari">Dari tanggal</label>
+                                        <input id="rapor-dari" type="date" x-model="raporDari" class="app-input">
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="app-label" for="rapor-sampai">Sampai tanggal</label>
+                                        <input id="rapor-sampai" type="date" x-model="raporSampai" class="app-input">
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button type="button" @click="terapkanRentang()"
+                                            class="btn btn-primary btn-sm flex-1 sm:flex-none">
+                                            <i class="fas fa-filter"></i> Terapkan
+                                        </button>
+                                        <button type="button" @click="resetRentang()" x-show="adaRentang"
+                                            class="btn btn-neutral btn-sm">
+                                            <i class="fas fa-rotate-left"></i> Semua
+                                        </button>
+                                    </div>
+                                </div>
+                                <p class="mt-2 text-xs text-base-content/60">
+                                    Semua angka di bawah — kehadiran, nilai, dan log — mengikuti rentang ini.
+                                </p>
+                            </div>
+                        </template>
+
                         <template x-if="! isLoadingRapor && raporSiswa && raporSiswa.ringkasan.total_pertemuan === 0">
                             <div class="app-empty border-0">
                                 <div class="app-empty-icon"><i class="fas fa-clipboard-question"></i></div>
-                                <p class="app-empty-title">Belum ada pertemuan yang dinilai.</p>
-                                <p class="app-empty-text">Rapor akan terisi setelah guru menyelesaikan penilaian di menu Absen.</p>
+                                <p class="app-empty-title" x-text="adaRentang
+                                    ? 'Tidak ada pertemuan pada rentang tanggal ini.'
+                                    : 'Belum ada pertemuan yang dinilai.'"></p>
+                                <p class="app-empty-text" x-text="adaRentang
+                                    ? 'Coba lebarkan rentangnya, atau tekan Semua untuk melihat seluruh riwayat.'
+                                    : 'Rapor akan terisi setelah guru menyelesaikan penilaian di menu Absen.'"></p>
                             </div>
                         </template>
 
@@ -343,6 +378,51 @@
                                         </div>
                                     </div>
                                 </template>
+
+                                <div>
+                                    <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+                                        <p class="text-xs font-black uppercase tracking-wider text-base-content/60">
+                                            Log Kehadiran
+                                        </p>
+                                        <p class="text-xs text-base-content/60">
+                                            <span class="font-bold text-success"
+                                                x-text="raporSiswa.ringkasan.hadir"></span> hadir &middot;
+                                            <span class="font-bold text-error"
+                                                x-text="raporSiswa.ringkasan.tidak_hadir"></span> tidak hadir
+                                        </p>
+                                    </div>
+
+                                    <div class="max-h-72 space-y-1.5 overflow-y-auto pr-1">
+                                        <template x-for="log in logKehadiran" :key="log.pertemuan_id">
+                                            <div class="flex items-start gap-2.5 rounded-field border p-2.5"
+                                                :class="log.hadir
+                                                    ? 'border-success/30 bg-success/5'
+                                                    : 'border-error/30 bg-error/5'">
+                                                <i class="fas mt-0.5 shrink-0 text-xs"
+                                                    :class="log.hadir ? 'fa-circle-check text-success' : 'fa-circle-xmark text-error'"></i>
+                                                <div class="min-w-0 flex-1">
+                                                    <p class="text-xs font-bold text-base-content"
+                                                        x-text="log.tanggal_label"></p>
+                                                    <p class="truncate text-[11px] text-base-content/60"
+                                                        :title="log.materi">
+                                                        <span x-text="log.mapel"></span> &middot;
+                                                        <span x-text="log.materi"></span>
+                                                    </p>
+                                                    <p class="text-[11px] text-base-content/50"
+                                                        x-text="'Diajar ' + log.diajar_oleh"></p>
+                                                </div>
+                                                <div class="shrink-0 text-right">
+                                                    <span class="badge badge-sm font-bold"
+                                                        :class="log.hadir ? 'badge-success' : 'badge-error'"
+                                                        x-text="log.hadir ? 'Hadir' : 'Tidak hadir'"></span>
+                                                    <span class="mt-0.5 block text-[11px] font-bold"
+                                                        :class="warnaNilai(log.nilai)"
+                                                        x-text="log.nilai !== null ? 'Nilai ' + log.nilai : '—'"></span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
 
                                 <div>
                                     <p class="mb-2 text-xs font-black uppercase tracking-wider text-base-content/60">

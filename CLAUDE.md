@@ -76,10 +76,14 @@ php artisan pembayaran:normalisasi-hp      # normalize phones to +62
 
 Rates live on `gurus` (`gaji_bawaan`, `gaji_per_kehadiran`), payslips in `penggajians`. Payroll inherits the payment rules because it is money: recorded actor and timestamp, no hard deletes, idempotent against double submission.
 
-- **Runs are ad-hoc, not monthly, and the base salary is paid in full every run** — never prorated. A guru with zero attendance still gets a base-salary payslip; that is intended.
+- **A payslip has four components**: `gaji_bawaan` + `tunjangan_fungsional` + (`gaji_per_kehadiran` x attendance) − `potongan`. The first two and the last are **attached to the teacher** and applied in full on every run regardless of attendance; only the third varies. All four are snapshotted onto `penggajians`.
+- **On screen `gaji_bawaan` is called "Honor Tetap".** The owner renamed the label in Sept 2026 and deliberately left the column name alone, so the DB and the UI disagree by design — don't "fix" it with a migration, and don't reintroduce the words "gaji bawaan" into any view, PDF or help text.
+- **`potongan` is stored as a positive magnitude and subtracted.** Validation is `min:0`; a negative value is rejected with a message telling the admin to use the Potongan field instead. The UI renders it as `- Rp x` so nobody has to reason about sign conventions.
+- **A payslip total may legitimately be negative** (owner's decision, Sept 2026) when the potongan exceeds what was earned. `penggajians.total` is therefore a **signed** `bigInteger`, not unsigned — the migration that added these columns changed it, and its `down()` clamps negative totals to 0 *before* converting back, because MySQL rejects the narrowing otherwise. The UI switches the label to "Total (kurang bayar)" and colours it `error`; currency helpers render `-Rp 260.000`, not `Rp -260.000`.
+- **Runs are ad-hoc, not monthly, and the fixed components are paid in full every run** — never prorated. A guru with zero attendance still gets a payslip for the fixed components; that is intended.
 - **"Siap Lakukan" closes the period, it does not delete.** It stamps every `absensi_gurus` row with `penggajian_id IS NULL` with the new payslip id plus `ditutup_pada`. The running counter is `WHERE penggajian_id IS NULL`, so it falls to zero on its own while history survives. **Never implement the reset as a DELETE.**
 - The claim is a single atomic `UPDATE ... WHERE penggajian_id IS NULL` whose affected-row count **is** the authoritative attendance figure, so concurrent runs cannot double-pay.
-- **Rates are snapshotted onto the payslip.** Raising a rate later must not change an issued payslip.
+- **Rates are snapshotted onto the payslip.** Raising a rate, tunjangan or potongan later must not change an issued payslip. `Guru` and `Penggajian` both declare `$attributes` defaults for the money columns — without them a freshly created model reads `null` for a column whose default only exists in the DB, and the total arithmetic dies on a type error.
 - **Correcting a payslip is void-then-reissue, never edit.** `batalkan()` marks it cancelled (actor, timestamp, required reason) and releases its attendance rows back to `penggajian_id = null`.
 - **Double-submit guard is time-based** (`PayrollService::JEDA_ANTI_GANDA`, 180s), not row-count-based — a zero-attendance run is legitimate, so "no rows claimed" cannot detect a duplicate.
 - **`perkiraanBerjalan()` is "what is still owed", not "what a run would cost"** — it returns 0 when there is no unpaid attendance, so the tab goes clean after a close. It is deliberately separate from `hitungTotal()`, which computes the payslip; **do not merge them**. Consequence: a guru showing Rp 0 still gets a base-salary payslip if you run payroll on them.
@@ -170,6 +174,10 @@ Two roles via `spatie/laravel-permission`: `admin`, `guru`.
 - Grading is refused unless a meeting is currently running (`selesai_pada IS NULL`). That single guard is what stops a double-submitted grading from paying twice.
 - **Only an admin** can take over a meeting held by a substitute: pressing Mulai Ajar clears `guru_pengganti_id` and reassigns it rather than opening a second meeting. The owning guru gets a 409 — `mulaiPersiapan()` blocks every non-admin who is not the substitute, so a teacher cannot silently reclaim a class they handed off.
 
+### The dashboard warns about classes that are too small
+
+`RingkasanService::kelasSepi()` lists every `kode_kelas` whose distinct student count is below `KELAS_SEPI_MINIMAL` (3), and it renders as a full-width panel at the top of Kebersihan Data. The count is of students actually scheduled into the class, not room capacity. It is advisory only: the fix is merging or moving classes in Jadwal, and nothing here changes data. It reuses `petaKelasRingkas()`, so entries carry `guru_asli` — the key is shared with the substitute panel and just means "the teacher on the schedule".
+
 ### The dashboard surfaces classes whose teacher dropped out
 
 `RingkasanService::kelasPengganti()` feeds a panel at the top of the Ringkasan tab, next to Bentrok Tersembunyi. It returns two lists: `slot_terbuka` (details with `tidak_bisa_hadir = true`, nobody has claimed them) and `sedang_diajar_pengganti` (running meetings with a `guru_pengganti_id`). Each entry carries the class identity resolved from `kode_kelas`, so the admin reads "English, Senin, Sesi 1, Ruang Anggrek, guru aslinya Bu Rina" rather than an id.
@@ -196,6 +204,8 @@ Blank sections print as dotted lines for handwriting, matching the original Word
 ### Scores print as percentages, not stars
 
 The owner's template used 1-5 stars; we use the percentage instead. `RaporService::persen()` maps a 1-5 average to 0-100 and `predikat()` bands it: >80 Excellent, >60 Very Good, >40 Good Progress, >20 Beginning, else Needs Support. The rapor PDF (`pdf/rapor.blade.php`) follows the template's sections A-E plus Materials Learned; the certificate (`pdf/sertifikat.blade.php`) is free-form and decorated.
+
+**The rapor detail carries an attendance log and a date range.** `daftar_pertemuan` is the single source for both the print picker and the Log Kehadiran list, so it includes absences (`hadir = false`) alongside attended meetings, plus `tanggal_label` (built with `->locale('id')`) and `mapel`. The modal's Dari/Sampai inputs re-fetch through the existing `dari`/`sampai` query params on `ResultController::rapor()`, which means **the range re-computes the whole report** — attendance percentage, averages and every per-aspect figure — not just the log. An empty range renders a distinct "tidak ada pertemuan pada rentang ini" state rather than the "belum dinilai" one.
 
 **Printing requires choosing meetings first.** `ResultController::validasiCetak()` rejects an empty selection and rejects any meeting that does not belong to that student — it does not silently fall back to "all".
 
@@ -236,6 +246,7 @@ Each of these was a real reported bug; regression tests pin the fixed markup.
 - `resources/js/core/http.js`'s **`kirim(url, method, payload)`** is the shared POST/PUT/DELETE-via-`_method`-override fetch helper. It translates Laravel's validation-exception shape (`{message, errors}`) into this app's `{status, message}` by joining field messages — without it a `validate()` failure surfaces as a generic "The given data was invalid." toast instead of the controller's Indonesian message. New callers go through it.
 - **`installSearchableSelects()`** (`resources/js/ui/searchable-select.js`) auto-enhances every plain `<select>` (including ones Alpine renders later, via `MutationObserver`) unless it is `multiple`, `data-native-select="true"`, or inside a SweetAlert2 popup. You rarely need to hand-build a searchable picker.
 - **Multi-value filters use `<x-filter-multi>`**, not a hand-rolled dropdown per field: `label`, `model` (parent Alpine array, interpolated into `x-model` by Blade), `options` (expression yielding `{value, label, sub}`), `noun`. All six Data Siswa filters use it. Checkbox `value` is **always a string**, so `filterStudents` compares with `String()`, not `Number()` — production session ids look like `183714` and a mixed string/number array misses silently.
+- **A raw number input for money gets a formatted preview under it.** Staff type `1300000` and cannot tell at a glance whether that is 1,3 million or 13 million, so the payroll rate form echoes `Rp 1.300.000` below each field and shows a running "kalau dijalankan sekarang" breakdown with the computed total. The preview is presentation only — the input still submits the plain integer, so no parsing of formatted strings is needed on the server.
 - Use SweetAlert2 for all confirmations; never native `alert`/`confirm`.
 
 ## Data entry surfaces
@@ -326,12 +337,13 @@ Supporting suites:
 | `PerlindunganHapusDanUbahTest` | delete-in-use guards, Pembayaran update guards |
 | `FilterSiswaTest` | Data Siswa export accepting `kelas[]`/`paket_ids[]`/`sesi_ids[]`/`guru_ids[]`/`ruang_ids[]`, legacy comma and single-`paket_id` URLs, package in any slot, six checkbox dropdowns rendering |
 | `KontrolFormTampilanTest` | daisyUI classes on the Absen checkbox and payment radios, Nilai select opting out of the enhancer, `[x-cloak]` rule and `:not([x-show])` guard present |
-| `PayrollTest` | total arithmetic, counter resetting while attendance rows survive, rate snapshot surviving a raise, zero-attendance base salary, double-submit guard, void releasing attendance, running estimate clearing after close, page/route/validation |
+| `PayrollTest` | total arithmetic across all four components, tunjangan and potongan paid/deducted in full without attendance, a potongan larger than earnings storing a negative total, snapshot surviving a later rate change, counter resetting while attendance rows survive, double-submit guard, void releasing attendance, running estimate clearing after close, page/route/validation, and the struk PDF printing/omitting each component row and switching to "TOTAL (KURANG BAYAR)" |
 | `BentrokIrisanSesiTest`, `HariIniTest`, `SesiWaktuTest` | overlap rule both directions, "today" by day name, `HH:MM` round-trip and non-negative duration |
 | `StashJadwalTest`, `KeamananEksporDanStashTest` | restore log, download-and-restore round-trip, missing-reference rejection, collision warning; public PDF note leak |
 | `ModulAjarTest` | admin-sees-all vs guru-sees-own, create-yes/update-no split, `kode_kelas` surviving drag-move / edit-modal / stash round-trip, teaching + substitute + re-teach flow |
 | `RaporSiswaTest` | aggregation, date filtering, 4-score minimum before a trend, PDF download, guru denied |
 | `PusatBantuanTest` | every guide populated, no screen on the fallback, each route rendering its own |
+| `KelasSepiDanLogKehadiranTest` | the under-3-students threshold and its boundary, the panel appearing and disappearing in Ringkasan, the attendance log keeping absences, a date range re-computing attendance percentage, an empty range staying empty rather than erroring |
 | `PenjagaanHapusBerantaiTest` | a taught or in-progress syllabus item refusing deletion while its grades and teaching credit survive, an invoice with recorded payments refusing deletion, and an unpaid one being archived into `koreksi_pembayaran_logs` before it goes |
 
 **Watch for editor auto-reformatting breaking `assertSee`.** Something here occasionally re-wraps long Blade lines, inserting a newline between text that used to be adjacent (e.g. `Rp` and the number). The page still renders fine but `assertSee('Rp 200.000')` fails. If a passing assertion starts failing with no nearby logic change, check for line-wrapping before suspecting the data.
@@ -342,7 +354,7 @@ Supporting suites:
 - `alurMengajarHidup()` guards on "this class already has a running meeting" rather than "this detail has never been taught" — the latter picked the *next* untaught detail on every rerun and quietly added a meeting each time
 - an **inactive assessment aspect** that still carries old scores, so the Nonaktif badge and the "old rapor survives deactivation" rule are both exercised
 - a **cancelled payslip** with its reason, its attendance released back, alongside two live ones dated into the past
-- a **teacher with no account and no rates** — the majority state in production
+- a **teacher with no account and no rates** — the majority state in production — plus one teacher carrying a **tunjangan fungsional** and another carrying a **potongan**, so both payroll components render somewhere
 - **free-form invoices** with `id_paket = NULL` (buku, denda, tryout), one settled and one not
 - a student **not yet scheduled**, a student holding **three packages**, and a note older than `TANDA_LAMA_HARI` — the three things the Ringkasan cleanliness panel looks for
 - operational traces that normally only appear after real use: a `batch_pembayaran_logs` lock row, `jadwal_teks_logs` entries, and a `stash_pemulihan_logs` record carrying a real restorable payload

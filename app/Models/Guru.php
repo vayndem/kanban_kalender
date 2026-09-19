@@ -11,10 +11,19 @@ class Guru extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'email', 'gaji_bawaan', 'gaji_per_kehadiran'];
+    protected $fillable = ['name', 'email', 'gaji_bawaan', 'tunjangan_fungsional', 'potongan', 'gaji_per_kehadiran'];
+
+    protected $attributes = [
+        'gaji_bawaan' => 0,
+        'tunjangan_fungsional' => 0,
+        'potongan' => 0,
+        'gaji_per_kehadiran' => 0,
+    ];
 
     protected $casts = [
         'gaji_bawaan' => 'integer',
+        'tunjangan_fungsional' => 'integer',
+        'potongan' => 'integer',
         'gaji_per_kehadiran' => 'integer',
     ];
 

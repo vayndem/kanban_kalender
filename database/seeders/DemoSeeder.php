@@ -514,6 +514,8 @@ class DemoSeeder extends Seeder
             $guru->update([
                 'email' => $email,
                 'gaji_bawaan' => $bawaan,
+                'tunjangan_fungsional' => $nama === 'Bu Rina' ? 350_000 : 0,
+                'potongan' => $nama === 'Pak Anwar' ? 75_000 : 0,
                 'gaji_per_kehadiran' => $perHadir,
             ]);
 

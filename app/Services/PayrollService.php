@@ -38,9 +38,11 @@ class PayrollService
                 'id' => $guru->id,
                 'nama' => $guru->name,
                 'gaji_bawaan' => $guru->gaji_bawaan,
+                'tunjangan_fungsional' => $guru->tunjangan_fungsional,
+                'potongan' => $guru->potongan,
                 'gaji_per_kehadiran' => $guru->gaji_per_kehadiran,
                 'kehadiran_belum_dibayar' => $kehadiran,
-                'perkiraan_total' => $this->perkiraanBerjalan($guru->gaji_bawaan, $guru->gaji_per_kehadiran, $kehadiran),
+                'perkiraan_total' => $this->perkiraanBerjalan($guru, $kehadiran),
                 'struk_terakhir' => $terakhir ? [
                     'id' => $terakhir->id,
                     'total' => $terakhir->total,
@@ -62,8 +64,10 @@ class PayrollService
                 'guru_id' => $guru->id,
                 'jumlah_kehadiran' => 0,
                 'gaji_bawaan' => $guru->gaji_bawaan,
+                'tunjangan_fungsional' => $guru->tunjangan_fungsional,
+                'potongan' => $guru->potongan,
                 'gaji_per_kehadiran' => $guru->gaji_per_kehadiran,
-                'total' => $guru->gaji_bawaan,
+                'total' => $this->hitungTotal((int) $guru->gaji_bawaan, (int) $guru->tunjangan_fungsional, (int) $guru->potongan, (int) $guru->gaji_per_kehadiran, 0),
                 'dijalankan_oleh' => $aktor?->id,
                 'dijalankan_pada' => $sekarang,
             ]);
@@ -79,7 +83,7 @@ class PayrollService
 
             $struk->update([
                 'jumlah_kehadiran' => $kehadiran,
-                'total' => $this->hitungTotal($struk->gaji_bawaan, $struk->gaji_per_kehadiran, $kehadiran),
+                'total' => $this->hitungTotal((int) $struk->gaji_bawaan, (int) $struk->tunjangan_fungsional, (int) $struk->potongan, (int) $struk->gaji_per_kehadiran, $kehadiran),
             ]);
 
             return $struk->fresh();
@@ -140,9 +144,11 @@ class PayrollService
         return [
             'nama' => $guru->name,
             'gaji_bawaan' => $guru->gaji_bawaan,
+            'tunjangan_fungsional' => $guru->tunjangan_fungsional,
+            'potongan' => $guru->potongan,
             'gaji_per_kehadiran' => $guru->gaji_per_kehadiran,
             'kehadiran_belum_dibayar' => $kehadiran,
-            'perkiraan_total' => $this->perkiraanBerjalan($guru->gaji_bawaan, $guru->gaji_per_kehadiran, $kehadiran),
+            'perkiraan_total' => $this->perkiraanBerjalan($guru, $kehadiran),
             'riwayat' => Penggajian::query()
                 ->where('guru_id', $guru->id)
                 ->orderByDesc('dijalankan_pada')
@@ -152,6 +158,8 @@ class PayrollService
                     'id' => $p->id,
                     'jumlah_kehadiran' => $p->jumlah_kehadiran,
                     'gaji_bawaan' => $p->gaji_bawaan,
+                    'tunjangan_fungsional' => $p->tunjangan_fungsional,
+                    'potongan' => $p->potongan,
                     'gaji_per_kehadiran' => $p->gaji_per_kehadiran,
                     'total' => $p->total,
                     'dijalankan_pada' => $p->dijalankan_pada?->toDateTimeString(),
@@ -180,18 +188,24 @@ class PayrollService
             ->values();
     }
 
-    private function hitungTotal(int $gajiBawaan, int $gajiPerKehadiran, int $kehadiran): int
+    private function hitungTotal(int $gajiBawaan, int $tunjangan, int $potongan, int $gajiPerKehadiran, int $kehadiran): int
     {
-        return $gajiBawaan + ($gajiPerKehadiran * $kehadiran);
+        return $gajiBawaan + $tunjangan + ($gajiPerKehadiran * $kehadiran) - $potongan;
     }
 
-    private function perkiraanBerjalan(int $gajiBawaan, int $gajiPerKehadiran, int $kehadiran): int
+    private function perkiraanBerjalan(Guru $guru, int $kehadiran): int
     {
         if ($kehadiran < 1) {
             return 0;
         }
 
-        return $this->hitungTotal($gajiBawaan, $gajiPerKehadiran, $kehadiran);
+        return $this->hitungTotal(
+            (int) $guru->gaji_bawaan,
+            (int) $guru->tunjangan_fungsional,
+            (int) $guru->potongan,
+            (int) $guru->gaji_per_kehadiran,
+            $kehadiran
+        );
     }
 
     private function tolakJikaBaruSajaDijalankan(Guru $guru): void

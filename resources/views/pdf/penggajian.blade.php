@@ -213,7 +213,7 @@
         <div class="brand-body">
             <div class="brand-kicker">Bukti Penggajian</div>
             <div class="brand-name">E-Ling Course</div>
-            <div class="brand-subtitle">Gaji bawaan ditambah gaji per kehadiran yang belum pernah digaji.</div>
+            <div class="brand-subtitle">Honor tetap dan tunjangan fungsional, ditambah gaji per kehadiran yang belum pernah digaji, dikurangi potongan.</div>
         </div>
     </div>
 
@@ -258,20 +258,37 @@
         </thead>
         <tbody>
             <tr>
-                <td>Gaji bawaan</td>
+                <td>Honor tetap</td>
                 <td style="text-align: center;">1</td>
                 <td class="angka">Rp {{ number_format($struk->gaji_bawaan, 0, ',', '.') }}</td>
                 <td class="angka">Rp {{ number_format($struk->gaji_bawaan, 0, ',', '.') }}</td>
             </tr>
+            @if ($struk->tunjangan_fungsional > 0)
+                <tr>
+                    <td>Tunjangan fungsional</td>
+                    <td style="text-align: center;">1</td>
+                    <td class="angka">Rp {{ number_format($struk->tunjangan_fungsional, 0, ',', '.') }}</td>
+                    <td class="angka">Rp {{ number_format($struk->tunjangan_fungsional, 0, ',', '.') }}</td>
+                </tr>
+            @endif
             <tr>
                 <td>Gaji per kehadiran</td>
                 <td style="text-align: center;">{{ $struk->jumlah_kehadiran }}</td>
                 <td class="angka">Rp {{ number_format($struk->gaji_per_kehadiran, 0, ',', '.') }}</td>
                 <td class="angka">Rp {{ number_format($struk->jumlah_kehadiran * $struk->gaji_per_kehadiran, 0, ',', '.') }}</td>
             </tr>
+            @if ($struk->potongan > 0)
+                <tr>
+                    <td>Potongan</td>
+                    <td style="text-align: center;">1</td>
+                    <td class="angka">Rp {{ number_format($struk->potongan, 0, ',', '.') }}</td>
+                    <td class="angka">- Rp {{ number_format($struk->potongan, 0, ',', '.') }}</td>
+                </tr>
+            @endif
             <tr class="baris-total">
-                <td colspan="3">TOTAL DIBAYAR</td>
-                <td class="angka">Rp {{ number_format($struk->total, 0, ',', '.') }}</td>
+                <td colspan="3">{{ $struk->total < 0 ? 'TOTAL (KURANG BAYAR)' : 'TOTAL DIBAYAR' }}</td>
+                <td class="angka">{{ $struk->total < 0 ? '- ' : '' }}Rp
+                    {{ number_format(abs($struk->total), 0, ',', '.') }}</td>
             </tr>
         </tbody>
     </table>
@@ -279,7 +296,7 @@
     <div class="sub-judul">Log Kelas Yang Diajar ({{ count($logKelas) }})</div>
 
     @if (count($logKelas) === 0)
-        <div class="no-data">Tidak ada kehadiran pada struk ini &mdash; hanya gaji bawaan.</div>
+        <div class="no-data">Tidak ada kehadiran pada struk ini &mdash; hanya komponen tetap.</div>
     @else
         <table class="log">
             <thead>

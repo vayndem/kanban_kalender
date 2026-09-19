@@ -13,6 +13,7 @@ use App\Services\PayrollService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
+use Smalot\PdfParser\Parser;
 use Tests\TestCase;
 
 class PayrollTest extends TestCase
@@ -79,6 +80,133 @@ class PayrollTest extends TestCase
 
         $this->assertSame(7, $struk->jumlah_kehadiran);
         $this->assertSame(1_350_000, $struk->total, '1.000.000 + (7 x 50.000)');
+    }
+
+    public function test_tunjangan_fungsional_ditambahkan_penuh_seperti_honor_tetap(): void
+    {
+        $guru = $this->guru(1_000_000, 50_000);
+        $guru->update(['tunjangan_fungsional' => 350_000]);
+        $this->catatKehadiran($guru, 2);
+
+        $struk = $this->payroll->jalankan($guru);
+
+        $this->assertSame(1_450_000, $struk->total, '1.000.000 + 350.000 + (2 x 50.000)');
+        $this->assertSame(350_000, $struk->tunjangan_fungsional, 'Tunjangan ikut disalin ke struk.');
+    }
+
+    public function test_tunjangan_dibayar_penuh_walau_tanpa_kehadiran(): void
+    {
+        $guru = $this->guru(600_000, 20_000);
+        $guru->update(['tunjangan_fungsional' => 100_000]);
+
+        $struk = $this->payroll->jalankan($guru);
+
+        $this->assertSame(0, $struk->jumlah_kehadiran);
+        $this->assertSame(700_000, $struk->total, 'Tunjangan menempel, sama seperti honor tetap.');
+    }
+
+    public function test_potongan_dikurangkan_setiap_penggajian(): void
+    {
+        $guru = $this->guru(1_000_000, 50_000);
+        $guru->update(['potongan' => 75_000]);
+        $this->catatKehadiran($guru, 3);
+
+        $struk = $this->payroll->jalankan($guru);
+
+        $this->assertSame(1_075_000, $struk->total, '1.000.000 + (3 x 50.000) - 75.000');
+        $this->assertSame(75_000, $struk->potongan, 'Potongan ikut disalin ke struk.');
+    }
+
+    public function test_potongan_yang_melebihi_penerimaan_menghasilkan_struk_minus(): void
+    {
+        $guru = $this->guru(600_000, 20_000);
+        $guru->update(['tunjangan_fungsional' => 100_000, 'potongan' => 1_000_000]);
+        $this->catatKehadiran($guru, 2);
+
+        $struk = $this->payroll->jalankan($guru);
+
+        $this->assertSame(-260_000, $struk->total, '600.000 + 100.000 + 40.000 - 1.000.000');
+        $this->assertSame(-260_000, $struk->fresh()->total, 'Angka minus harus benar-benar tersimpan di database.');
+    }
+
+    public function test_tunjangan_dan_potongan_ikut_membeku_di_struk_lama(): void
+    {
+        $guru = $this->guru(1_000_000, 50_000);
+        $guru->update(['tunjangan_fungsional' => 200_000, 'potongan' => 50_000]);
+        $this->catatKehadiran($guru, 1);
+
+        $struk = $this->payroll->jalankan($guru);
+
+        $guru->update(['tunjangan_fungsional' => 9_000_000, 'potongan' => 0]);
+
+        $this->assertSame(200_000, $struk->fresh()->tunjangan_fungsional, 'Struk lama tidak boleh ikut berubah.');
+        $this->assertSame(50_000, $struk->fresh()->potongan);
+        $this->assertSame(1_200_000, $struk->fresh()->total, '1.000.000 + 200.000 + 50.000 - 50.000');
+    }
+
+    public function test_perkiraan_berjalan_ikut_memperhitungkan_tunjangan_dan_potongan(): void
+    {
+        $guru = $this->guru(600_000, 20_000);
+        $guru->update(['tunjangan_fungsional' => 100_000, 'potongan' => 50_000]);
+        $this->catatKehadiran($guru, 2);
+
+        $baris = $this->payroll->ringkasan()->firstWhere('id', $guru->id);
+
+        $this->assertSame(690_000, $baris['perkiraan_total'], '600.000 + 100.000 + 40.000 - 50.000');
+        $this->assertSame(100_000, $baris['tunjangan_fungsional']);
+        $this->assertSame(50_000, $baris['potongan']);
+    }
+
+    private function teksStruk(Penggajian $struk): string
+    {
+        $respon = $this->actingAs(User::factory()->create())
+            ->get(route('penggajian.strukPdf', $struk->id));
+
+        $respon->assertOk();
+
+        $berkas = tempnam(sys_get_temp_dir(), 'struk').'.pdf';
+        file_put_contents($berkas, $respon->getContent());
+        $teks = (new Parser)->parseFile($berkas)->getText();
+        @unlink($berkas);
+
+        return (string) preg_replace('/\s+/', ' ', $teks);
+    }
+
+    public function test_struk_pdf_merinci_tunjangan_dan_potongan(): void
+    {
+        $guru = $this->guru(1_000_000, 50_000);
+        $guru->update(['tunjangan_fungsional' => 200_000, 'potongan' => 50_000]);
+        $this->catatKehadiran($guru, 2);
+
+        $teks = $this->teksStruk($this->payroll->jalankan($guru));
+
+        $this->assertStringContainsString('Honor tetap', $teks, 'Struk memakai istilah Honor tetap, bukan gaji bawaan.');
+        $this->assertStringNotContainsString('Gaji bawaan', $teks);
+        $this->assertStringContainsString('Tunjangan fungsional', $teks);
+        $this->assertStringContainsString('Potongan', $teks);
+        $this->assertStringContainsString('TOTAL DIBAYAR', $teks);
+    }
+
+    public function test_struk_pdf_menyembunyikan_baris_yang_nilainya_nol(): void
+    {
+        $guru = $this->guru(1_000_000, 50_000);
+        $this->catatKehadiran($guru, 1);
+
+        $teks = $this->teksStruk($this->payroll->jalankan($guru));
+
+        $this->assertStringNotContainsString('Tunjangan fungsional', $teks, 'Tanpa tunjangan, barisnya tidak usah dicetak.');
+        $this->assertStringNotContainsString('Potongan', $teks);
+    }
+
+    public function test_struk_pdf_menandai_total_minus_sebagai_kurang_bayar(): void
+    {
+        $guru = $this->guru(600_000, 20_000);
+        $guru->update(['potongan' => 1_000_000]);
+
+        $teks = $this->teksStruk($this->payroll->jalankan($guru));
+
+        $this->assertStringContainsString('TOTAL (KURANG BAYAR)', $teks);
+        $this->assertStringNotContainsString('TOTAL DIBAYAR', $teks);
     }
 
     public function test_menjalankan_penggajian_mereset_hitungan_kehadiran_ke_nol(): void

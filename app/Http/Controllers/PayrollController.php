@@ -31,15 +31,24 @@ class PayrollController extends Controller
     {
         $data = $request->validate([
             'gaji_bawaan' => 'required|integer|min:0',
+            'tunjangan_fungsional' => 'nullable|integer|min:0',
+            'potongan' => 'nullable|integer|min:0',
             'gaji_per_kehadiran' => 'required|integer|min:0',
         ], [
-            'gaji_bawaan.required' => 'Gaji bawaan wajib diisi.',
-            'gaji_bawaan.integer' => 'Gaji bawaan harus berupa angka.',
-            'gaji_bawaan.min' => 'Gaji bawaan tidak boleh negatif.',
+            'gaji_bawaan.required' => 'Honor tetap wajib diisi.',
+            'gaji_bawaan.integer' => 'Honor tetap harus berupa angka.',
+            'gaji_bawaan.min' => 'Honor tetap tidak boleh negatif.',
+            'tunjangan_fungsional.integer' => 'Tunjangan fungsional harus berupa angka.',
+            'tunjangan_fungsional.min' => 'Tunjangan fungsional tidak boleh negatif. Untuk mengurangi gaji, isi kolom Potongan.',
+            'potongan.integer' => 'Potongan harus berupa angka.',
+            'potongan.min' => 'Potongan diisi angka positif, nanti otomatis dikurangkan dari gaji.',
             'gaji_per_kehadiran.required' => 'Gaji per kehadiran wajib diisi.',
             'gaji_per_kehadiran.integer' => 'Gaji per kehadiran harus berupa angka.',
             'gaji_per_kehadiran.min' => 'Gaji per kehadiran tidak boleh negatif.',
         ]);
+
+        $data['tunjangan_fungsional'] = (int) ($data['tunjangan_fungsional'] ?? 0);
+        $data['potongan'] = (int) ($data['potongan'] ?? 0);
 
         $guru->update($data);
 
@@ -96,6 +105,8 @@ class PayrollController extends Controller
                 'guru' => $penggajian->guru?->name ?? '-',
                 'jumlah_kehadiran' => $penggajian->jumlah_kehadiran,
                 'gaji_bawaan' => $penggajian->gaji_bawaan,
+                'tunjangan_fungsional' => $penggajian->tunjangan_fungsional,
+                'potongan' => $penggajian->potongan,
                 'gaji_per_kehadiran' => $penggajian->gaji_per_kehadiran,
                 'total' => $penggajian->total,
                 'dijalankan_pada' => $penggajian->dijalankan_pada?->toDateTimeString(),

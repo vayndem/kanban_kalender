@@ -15,7 +15,7 @@
 </head>
 
 @php
-    $rupiah = fn ($n) => 'Rp ' . number_format((int) $n, 0, ',', '.');
+    $rupiah = fn ($n) => ((int) $n < 0 ? '-Rp ' : 'Rp ') . number_format(abs((int) $n), 0, ',', '.');
 @endphp
 
 <body class="font-sans antialiased">
@@ -43,7 +43,8 @@
                             <div class="app-stat-label">Per Kehadiran</div>
                         </div>
                         <div class="app-stat">
-                            <div class="app-stat-value text-primary">{{ $rupiah($gaji['perkiraan_total']) }}</div>
+                            <div class="app-stat-value {{ $gaji['perkiraan_total'] < 0 ? 'text-error' : 'text-primary' }}">
+                                {{ $rupiah($gaji['perkiraan_total']) }}</div>
                             <div class="app-stat-label">Perkiraan Total</div>
                         </div>
                     </div>
@@ -51,8 +52,17 @@
                     <div class="mt-4 flex items-start gap-2.5 rounded-box border border-base-300 bg-base-200/60 p-3">
                         <i class="fas fa-circle-info mt-0.5 text-info"></i>
                         <p class="text-xs leading-relaxed text-base-content/70">
-                            Angka ini <span class="font-bold">perkiraan</span>, dihitung dari gaji bawaan
-                            {{ $rupiah($gaji['gaji_bawaan']) }} ditambah kehadiran yang belum pernah digaji.
+                            @php
+                                $rincian = 'honor tetap ' . $rupiah($gaji['gaji_bawaan']);
+                                if ($gaji['tunjangan_fungsional'] > 0) {
+                                    $rincian .= ' ditambah tunjangan fungsional ' . $rupiah($gaji['tunjangan_fungsional']);
+                                }
+                                $rincian .= ', ditambah kehadiran yang belum pernah digaji';
+                                if ($gaji['potongan'] > 0) {
+                                    $rincian .= ', lalu dikurangi potongan ' . $rupiah($gaji['potongan']);
+                                }
+                            @endphp
+                            Angka ini <span class="font-bold">perkiraan</span>, dihitung dari {{ $rincian }}.
                             Yang berlaku adalah struk resmi yang diterbitkan admin di bawah ini.
                         </p>
                     </div>
@@ -82,8 +92,14 @@
                                         </div>
                                         <p class="mt-1 text-xs text-base-content/70">
                                             {{ $struk['jumlah_kehadiran'] }} kehadiran ×
-                                            {{ $rupiah($struk['gaji_per_kehadiran']) }} + bawaan
+                                            {{ $rupiah($struk['gaji_per_kehadiran']) }} + honor tetap
                                             {{ $rupiah($struk['gaji_bawaan']) }}
+                                            @if ($struk['tunjangan_fungsional'] > 0)
+                                                + tunjangan {{ $rupiah($struk['tunjangan_fungsional']) }}
+                                            @endif
+                                            @if ($struk['potongan'] > 0)
+                                                &minus; potongan {{ $rupiah($struk['potongan']) }}
+                                            @endif
                                         </p>
                                         <p class="text-xs text-base-content/60">{{ $struk['dijalankan_pada'] }}</p>
                                     </div>

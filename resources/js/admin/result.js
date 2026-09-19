@@ -16,6 +16,8 @@ export const resultHandler = ({ initialAspek, initialSiswa, routes }) => ({
     raporSiswa: null,
     raporUntuk: null,
     isLoadingRapor: false,
+    raporDari: '',
+    raporSampai: '',
 
     pertemuanDipilih: [],
     modeCetak: false,
@@ -177,10 +179,38 @@ export const resultHandler = ({ initialAspek, initialSiswa, routes }) => ({
     async bukaRapor(siswa) {
         this.raporUntuk = siswa;
         this.raporSiswa = null;
+        this.raporDari = '';
+        this.raporSampai = '';
+        await this.muatRapor();
+    },
+
+    async terapkanRentang() {
+        if (this.raporDari && this.raporSampai && this.raporDari > this.raporSampai) {
+            AppSwal.error('Tanggal awal tidak boleh lewat dari tanggal akhir.');
+            return;
+        }
+        await this.muatRapor();
+    },
+
+    resetRentang() {
+        this.raporDari = '';
+        this.raporSampai = '';
+        return this.muatRapor();
+    },
+
+    async muatRapor() {
+        const siswa = this.raporUntuk;
+        if (!siswa) return;
+
         this.isLoadingRapor = true;
 
         try {
-            const response = await fetch(`${this.routes.raporBase}/${siswa.id}/rapor`, {
+            const params = new URLSearchParams();
+            if (this.raporDari) params.set('dari', this.raporDari);
+            if (this.raporSampai) params.set('sampai', this.raporSampai);
+            const kueri = params.toString() ? `?${params.toString()}` : '';
+
+            const response = await fetch(`${this.routes.raporBase}/${siswa.id}/rapor${kueri}`, {
                 headers: { Accept: 'application/json' },
             });
             if (!response.ok) throw new Error('Rapor gagal dimuat.');
@@ -208,6 +238,8 @@ export const resultHandler = ({ initialAspek, initialSiswa, routes }) => ({
     tutupRapor() {
         this.raporUntuk = null;
         this.raporSiswa = null;
+        this.raporDari = '';
+        this.raporSampai = '';
         this.modeCetak = false;
         this.pertemuanDipilih = [];
         this.formCetak = { judul_sertifikat: '', kekuatan: '', perbaikan: '', komentar: '', rencana: '' };
@@ -216,6 +248,14 @@ export const resultHandler = ({ initialAspek, initialSiswa, routes }) => ({
 
     get daftarPertemuan() {
         return this.raporSiswa?.daftar_pertemuan || [];
+    },
+
+    get logKehadiran() {
+        return [...this.daftarPertemuan].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+    },
+
+    get adaRentang() {
+        return Boolean(this.raporDari || this.raporSampai);
     },
 
     get semuaPertemuanDipilih() {

@@ -25,8 +25,8 @@
                     <div>
                         <h3 class="text-xl font-black tracking-tight text-base-content sm:text-2xl">Payroll Guru</h3>
                         <p class="mt-0.5 text-xs text-base-content/70 sm:text-sm">
-                            Gaji bawaan dibayar penuh setiap kali dijalankan, ditambah gaji per kehadiran yang belum
-                            pernah digaji.
+                            Honor tetap dan tunjangan fungsional dibayar penuh setiap kali dijalankan, ditambah gaji
+                            per kehadiran yang belum pernah digaji, lalu dikurangi potongan.
                         </p>
                     </div>
                 </div>
@@ -76,8 +76,16 @@
                             <template x-if="editId !== guru.id">
                                 <div class="space-y-2 text-sm">
                                     <div class="flex items-center justify-between gap-2">
-                                        <span class="text-base-content/70">Gaji bawaan</span>
+                                        <span class="text-base-content/70">Honor tetap</span>
                                         <span class="font-bold text-base-content" x-text="rupiah(guru.gaji_bawaan)"></span>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-2" x-show="guru.tunjangan_fungsional > 0">
+                                        <span class="text-base-content/70">Tunjangan fungsional</span>
+                                        <span class="font-bold text-success" x-text="'+ ' + rupiah(guru.tunjangan_fungsional)"></span>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-2" x-show="guru.potongan > 0">
+                                        <span class="text-base-content/70">Potongan</span>
+                                        <span class="font-bold text-error" x-text="'- ' + rupiah(guru.potongan)"></span>
                                     </div>
                                     <div class="flex items-center justify-between gap-2">
                                         <span class="text-base-content/70">Per kehadiran</span>
@@ -89,15 +97,80 @@
                             <template x-if="editId === guru.id">
                                 <div class="space-y-3">
                                     <div>
-                                        <label class="app-label">Gaji Bawaan</label>
+                                        <label class="app-label">Honor Tetap</label>
                                         <input type="number" min="0" x-model.number="formTarif.gaji_bawaan"
                                             class="app-input">
+                                        <p class="mt-1 text-sm font-black text-primary"
+                                            x-text="rupiah(formTarif.gaji_bawaan)"></p>
+                                    </div>
+                                    <div>
+                                        <label class="app-label">Tunjangan Fungsional</label>
+                                        <input type="number" min="0" x-model.number="formTarif.tunjangan_fungsional"
+                                            class="app-input">
+                                        <p class="mt-1 text-sm font-black text-success"
+                                            x-text="'+ ' + rupiah(formTarif.tunjangan_fungsional)"></p>
+                                        <p class="text-xs text-base-content/60">Ditambahkan tiap penggajian, sama
+                                            seperti honor tetap.</p>
+                                    </div>
+                                    <div>
+                                        <label class="app-label">Potongan</label>
+                                        <input type="number" min="0" x-model.number="formTarif.potongan"
+                                            class="app-input">
+                                        <p class="mt-1 text-sm font-black text-error"
+                                            x-text="'- ' + rupiah(formTarif.potongan)"></p>
+                                        <p class="text-xs text-base-content/60">Isi angka positif. Nilainya
+                                            dikurangkan tiap penggajian.</p>
                                     </div>
                                     <div>
                                         <label class="app-label">Gaji Per Kehadiran</label>
                                         <input type="number" min="0" x-model.number="formTarif.gaji_per_kehadiran"
                                             class="app-input">
+                                        <p class="mt-1 text-sm font-black text-base-content"
+                                            x-text="rupiah(formTarif.gaji_per_kehadiran)"></p>
                                     </div>
+
+                                    <div class="rounded-box border border-base-300 bg-base-200/60 p-3">
+                                        <p class="mb-2 text-xs font-black uppercase tracking-wider text-base-content/60">
+                                            Kalau dijalankan sekarang
+                                        </p>
+                                        <div class="space-y-1 text-xs">
+                                            <div class="flex justify-between gap-2">
+                                                <span class="text-base-content/70">Honor tetap</span>
+                                                <span class="font-bold" x-text="rupiah(formTarif.gaji_bawaan)"></span>
+                                            </div>
+                                            <div class="flex justify-between gap-2"
+                                                x-show="angka(formTarif.tunjangan_fungsional) > 0">
+                                                <span class="text-base-content/70">Tunjangan fungsional</span>
+                                                <span class="font-bold text-success"
+                                                    x-text="'+ ' + rupiah(formTarif.tunjangan_fungsional)"></span>
+                                            </div>
+                                            <div class="flex justify-between gap-2">
+                                                <span class="text-base-content/70">
+                                                    <span x-text="guru.kehadiran_belum_dibayar"></span> kehadiran &times;
+                                                    <span x-text="rupiah(formTarif.gaji_per_kehadiran)"></span>
+                                                </span>
+                                                <span class="font-bold" x-text="rupiah(pratinjauKehadiran(guru))"></span>
+                                            </div>
+                                            <div class="flex justify-between gap-2"
+                                                x-show="angka(formTarif.potongan) > 0">
+                                                <span class="text-base-content/70">Potongan</span>
+                                                <span class="font-bold text-error"
+                                                    x-text="'- ' + rupiah(formTarif.potongan)"></span>
+                                            </div>
+                                            <div class="mt-1 flex justify-between gap-2 border-t border-base-300 pt-1.5">
+                                                <span class="font-black text-base-content"
+                                                    x-text="pratinjauTotal(guru) < 0 ? 'Total (kurang bayar)' : 'Total'"></span>
+                                                <span class="text-sm font-black"
+                                                    :class="pratinjauTotal(guru) < 0 ? 'text-error' : 'text-primary'"
+                                                    x-text="rupiah(pratinjauTotal(guru))"></span>
+                                            </div>
+                                        </div>
+                                        <p class="mt-2 text-xs text-base-content/60">
+                                            Angka ini belum disimpan. Tekan Simpan dulu, lalu Siap Lakukan untuk
+                                            menerbitkan struknya.
+                                        </p>
+                                    </div>
+
                                     <div class="flex gap-2">
                                         <button type="button" @click="simpanTarif(guru)" class="btn btn-primary btn-sm flex-1">
                                             <i class="fas fa-floppy-disk"></i> Simpan
@@ -222,8 +295,13 @@
 
                         <div class="space-y-2 rounded-box border border-base-300 p-4 text-sm">
                             <div class="flex justify-between gap-2">
-                                <span class="text-base-content/70">Gaji bawaan</span>
+                                <span class="text-base-content/70">Honor tetap</span>
                                 <span class="font-bold" x-text="rupiah(strukTerbuka.gaji_bawaan)"></span>
+                            </div>
+                            <div class="flex justify-between gap-2" x-show="strukTerbuka.tunjangan_fungsional > 0">
+                                <span class="text-base-content/70">Tunjangan fungsional</span>
+                                <span class="font-bold text-success"
+                                    x-text="'+ ' + rupiah(strukTerbuka.tunjangan_fungsional)"></span>
                             </div>
                             <div class="flex justify-between gap-2">
                                 <span class="text-base-content/70">
@@ -233,9 +311,17 @@
                                 <span class="font-bold"
                                     x-text="rupiah(strukTerbuka.jumlah_kehadiran * strukTerbuka.gaji_per_kehadiran)"></span>
                             </div>
+                            <div class="flex justify-between gap-2" x-show="strukTerbuka.potongan > 0">
+                                <span class="text-base-content/70">Potongan</span>
+                                <span class="font-bold text-error"
+                                    x-text="'- ' + rupiah(strukTerbuka.potongan)"></span>
+                            </div>
                             <div class="mt-2 flex justify-between gap-2 border-t border-base-300 pt-2">
-                                <span class="font-black text-base-content">Total Dibayar</span>
-                                <span class="font-black text-primary" x-text="rupiah(strukTerbuka.total)"></span>
+                                <span class="font-black text-base-content"
+                                    x-text="strukTerbuka.total < 0 ? 'Total (kurang bayar)' : 'Total Dibayar'"></span>
+                                <span class="font-black"
+                                    :class="strukTerbuka.total < 0 ? 'text-error' : 'text-primary'"
+                                    x-text="rupiah(strukTerbuka.total)"></span>
                             </div>
                         </div>
 
@@ -245,7 +331,7 @@
 
                         <template x-if="strukTerbuka.log_kelas.length === 0">
                             <p class="p-2 text-xs italic text-base-content/60">Tidak ada kehadiran pada struk ini —
-                                hanya gaji bawaan.</p>
+                                hanya komponen tetap.</p>
                         </template>
 
                         <div class="space-y-1.5">

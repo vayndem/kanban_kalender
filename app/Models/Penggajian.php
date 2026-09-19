@@ -13,6 +13,8 @@ class Penggajian extends Model
         'guru_id',
         'jumlah_kehadiran',
         'gaji_bawaan',
+        'tunjangan_fungsional',
+        'potongan',
         'gaji_per_kehadiran',
         'total',
         'dijalankan_oleh',
@@ -22,9 +24,20 @@ class Penggajian extends Model
         'alasan_batal',
     ];
 
+    protected $attributes = [
+        'jumlah_kehadiran' => 0,
+        'gaji_bawaan' => 0,
+        'tunjangan_fungsional' => 0,
+        'potongan' => 0,
+        'gaji_per_kehadiran' => 0,
+        'total' => 0,
+    ];
+
     protected $casts = [
         'jumlah_kehadiran' => 'integer',
         'gaji_bawaan' => 'integer',
+        'tunjangan_fungsional' => 'integer',
+        'potongan' => 'integer',
         'gaji_per_kehadiran' => 'integer',
         'total' => 'integer',
         'dijalankan_pada' => 'datetime',

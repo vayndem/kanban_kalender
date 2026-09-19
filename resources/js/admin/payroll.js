@@ -1,6 +1,9 @@
 import { kirim } from '../core/http.js';
 
-const rupiah = (nilai) => 'Rp ' + Number(nilai || 0).toLocaleString('id-ID');
+const rupiah = (nilai) => {
+    const angka = Number(nilai || 0);
+    return (angka < 0 ? '-Rp ' : 'Rp ') + Math.abs(angka).toLocaleString('id-ID');
+};
 
 export const payrollHandler = ({ initialRingkasan, initialRiwayat, routes }) => ({
     routes,
@@ -9,7 +12,7 @@ export const payrollHandler = ({ initialRingkasan, initialRiwayat, routes }) => 
     isLoading: false,
     cari: '',
     editId: null,
-    formTarif: { gaji_bawaan: 0, gaji_per_kehadiran: 0 },
+    formTarif: { gaji_bawaan: 0, tunjangan_fungsional: 0, potongan: 0, gaji_per_kehadiran: 0 },
     strukTerbuka: null,
     isLoadingStruk: false,
     strukRequestKey: 0,
@@ -30,10 +33,28 @@ export const payrollHandler = ({ initialRingkasan, initialRiwayat, routes }) => 
         return this.ringkasan.some((g) => g.kehadiran_belum_dibayar > 0);
     },
 
+    angka(nilai) {
+        const n = Number(nilai);
+        return Number.isFinite(n) ? n : 0;
+    },
+
+    pratinjauKehadiran(guru) {
+        return this.angka(this.formTarif.gaji_per_kehadiran) * this.angka(guru?.kehadiran_belum_dibayar);
+    },
+
+    pratinjauTotal(guru) {
+        return this.angka(this.formTarif.gaji_bawaan)
+            + this.angka(this.formTarif.tunjangan_fungsional)
+            + this.pratinjauKehadiran(guru)
+            - this.angka(this.formTarif.potongan);
+    },
+
     bukaEdit(guru) {
         this.editId = guru.id;
         this.formTarif = {
             gaji_bawaan: guru.gaji_bawaan,
+            tunjangan_fungsional: guru.tunjangan_fungsional || 0,
+            potongan: guru.potongan || 0,
             gaji_per_kehadiran: guru.gaji_per_kehadiran,
         };
     },

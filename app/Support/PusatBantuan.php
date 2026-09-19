@@ -149,6 +149,14 @@ class PusatBantuan
                         ],
                     ],
                     [
+                        'title' => 'Kelas Sepi',
+                        'items' => [
+                            'Panel ini menampilkan kelas yang muridnya kurang dari 3 orang. Kelas sebegitu biasanya rugi untuk tetap dijalankan.',
+                            'Jumlahnya dihitung dari murid yang benar-benar terjadwal di kelas itu, bukan dari kapasitas ruangan.',
+                            'Tindakannya ada di tab Jadwal Pelajaran: gabungkan dengan kelas lain di jam yang sama, atau pindahkan muridnya. Panel ini hanya memberi tahu, tidak mengubah apa pun.',
+                        ],
+                    ],
+                    [
                         'title' => 'Kelas Pengganti',
                         'items' => [
                             'Muncul saat ada guru yang menekan "Tidak Bisa Hadir" di layar Absen, misalnya karena sakit.',
@@ -179,12 +187,15 @@ class PusatBantuan
 
             'dashboard.payroll' => [
                 'title' => 'Panduan Payroll Guru',
-                'summary' => 'Menghitung dan menutup gaji guru. Gaji terdiri dari gaji bawaan yang dibayar penuh setiap kali dijalankan, ditambah gaji per kehadiran mengajar yang belum pernah digaji.',
+                'summary' => 'Menghitung dan menutup gaji guru. Gaji terdiri dari honor tetap dan tunjangan fungsional yang dibayar penuh setiap kali dijalankan, ditambah gaji per kehadiran mengajar yang belum pernah digaji, lalu dikurangi potongan.',
                 'sections' => [
                     [
                         'title' => 'Sebelum Menjalankan',
                         'items' => [
-                            'Isi dulu Ubah Tarif untuk setiap guru: gaji bawaan dan gaji per kehadiran. Tarif yang masih Rp 0 akan menghasilkan struk Rp 0.',
+                            'Isi dulu Ubah Tarif untuk setiap guru: honor tetap, tunjangan fungsional, potongan, dan gaji per kehadiran. Tarif yang masih Rp 0 akan menghasilkan struk Rp 0.',
+                            'Honor tetap dan tunjangan fungsional sama-sama menempel pada guru: keduanya dibayar penuh setiap penggajian, tidak peduli berapa kali dia mengajar.',
+                            'Potongan diisi angka positif, misalnya 50000, bukan -50000. Sistem yang mengurangkannya. Potongan juga menempel, jadi ikut terpotong setiap penggajian sampai Anda mengubahnya kembali ke 0.',
+                            'Kalau potongannya lebih besar daripada yang diterima, total struk akan menjadi minus dan ditandai "Total (kurang bayar)". Itu memang dibiarkan, artinya guru tercatat berutang pada struk tersebut.',
                             'Angka Kehadiran Belum Digaji berasal dari kelas yang sudah selesai dinilai di menu Absen, bukan dari jumlah jadwal.',
                             'Perkiraan Total Berjalan adalah uang yang belum dibayarkan. Setelah periode ditutup, angka ini kembali ke Rp 0 dengan sendirinya.',
                         ],
@@ -194,7 +205,7 @@ class PusatBantuan
                         'items' => [
                             'Siap Lakukan menerbitkan struk untuk satu guru dan menutup semua kehadirannya yang belum digaji. Siap Semua melakukannya untuk semua guru sekaligus.',
                             'Penggajian tidak menghapus apa pun. Kehadiran lama tetap tersimpan dan tetap terhitung pada rekap bulanan guru.',
-                            'Tarif disalin ke dalam struk saat diterbitkan. Menaikkan tarif besok tidak akan mengubah struk yang sudah terbit.',
+                            'Keempat angka tarif disalin ke dalam struk saat diterbitkan. Mengubah tarif, tunjangan, atau potongan besok tidak akan mengubah struk yang sudah terbit.',
                         ],
                     ],
                     [
@@ -202,7 +213,7 @@ class PusatBantuan
                         'items' => [
                             'Struk tidak bisa diedit. Kalau keliru, batalkan struknya beserta alasannya, lalu jalankan ulang.',
                             'Membatalkan struk melepas kembali kehadirannya sehingga ikut terhitung pada penggajian berikutnya.',
-                            'Guru tanpa kehadiran tetap menerima struk berisi gaji bawaan kalau dijalankan, karena gaji bawaan memang dibayar penuh setiap kali.',
+                            'Guru tanpa kehadiran tetap menerima struk berisi honor tetap dan tunjangan fungsional kalau dijalankan, karena keduanya memang dibayar penuh setiap kali.',
                         ],
                     ],
                 ],
@@ -363,7 +374,7 @@ class PusatBantuan
                     [
                         'title' => 'Membaca Angkanya',
                         'items' => [
-                            'Gaji bawaan dibayarkan penuh setiap kali penggajian dijalankan, tidak dipotong berdasarkan jumlah mengajar.',
+                            'Honor tetap dan tunjangan fungsional dibayarkan penuh setiap kali penggajian dijalankan, tidak dipotong berdasarkan jumlah mengajar. Potongan, kalau diisi, juga ikut dikurangkan setiap kali.',
                             'Gaji per kehadiran dikalikan jumlah kelas yang sudah Anda selesaikan penilaiannya di menu Absen.',
                             'Perkiraan berjalan adalah yang belum dibayarkan. Angkanya kembali nol setelah admin menutup periode, lalu naik lagi seiring Anda mengajar.',
                         ],
@@ -411,6 +422,16 @@ class PusatBantuan
                             'Klik kartu anak untuk melihat rinciannya: rata-rata tiap aspek, nilai terendah dan tertinggi, serta tren naik atau turun.',
                             'Tren baru muncul setelah ada minimal 4 pertemuan yang dinilai, karena di bawah itu belum bisa disebut kecenderungan.',
                             'Tombol Download Rapor PDF di dalam rincian menghasilkan laporan siap cetak untuk orang tua.',
+                        ],
+                    ],
+                    [
+                        'title' => 'Log Kehadiran dan Rentang Tanggal',
+                        'items' => [
+                            'Log Kehadiran di bagian bawah rincian mencatat setiap pertemuan satu per satu: tanggalnya, mata pelajarannya, materinya, siapa yang mengajar, hadir atau tidak, dan nilainya.',
+                            'Baris hijau berarti anak hadir, baris merah berarti tidak hadir. Pertemuan yang tidak dihadiri tetap ditampilkan supaya kelihatan bolongnya di tanggal berapa.',
+                            'Isi Dari tanggal dan Sampai tanggal lalu tekan Terapkan untuk membatasi rapor pada satu periode, misalnya satu bulan atau satu semester.',
+                            'Rentang itu berlaku untuk seluruh isi rincian, bukan hanya lognya: jumlah pertemuan, persen kehadiran, rata-rata nilai, dan semua angka per aspek ikut dihitung ulang.',
+                            'Tekan Semua untuk kembali melihat seluruh riwayat. Kalau sebuah rentang tidak berisi pertemuan apa pun, akan muncul pemberitahuan, bukan halaman kosong.',
                         ],
                     ],
                 ],
