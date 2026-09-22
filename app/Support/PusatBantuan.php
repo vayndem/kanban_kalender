@@ -221,7 +221,7 @@ class PusatBantuan
 
             'admin.workshop.index' => [
                 'title' => 'Panduan Workshop',
-                'summary' => 'Satu-satunya tempat menambah dan mengubah data pokok: mata pelajaran, guru, ruang, sesi waktu, paket, tingkat kemampuan, dan siswa. Setiap form langsung menunjukkan data mirip yang sudah ada, supaya tidak perlu bolak-balik memeriksa halaman lain.',
+                'summary' => 'Satu-satunya tempat menambah dan mengubah data pokok: mata pelajaran, guru, ruang, sesi waktu, paket, kemampuan, dan siswa. Setiap form langsung menunjukkan data mirip yang sudah ada, supaya tidak perlu bolak-balik memeriksa halaman lain.',
                 'sections' => [
                     [
                         'title' => 'Menambah dan Mengubah Siswa',
@@ -236,7 +236,8 @@ class PusatBantuan
                         'title' => 'Import Massal Siswa',
                         'items' => [
                             'Tekan Download Kerangka, isi berkasnya, lalu unggah kembali. Nama yang sudah ada akan diperbarui, nama baru akan ditambahkan.',
-                            'Kolom Kemampuan diisi angka levelnya saja, misalnya 1. Level yang belum terdaftar akan dilewati tanpa membatalkan barisnya.',
+                            'Kolom Kemampuan diisi sebutannya persis seperti yang terdaftar di tab Kemampuan, misalnya Mahir. Besar kecil huruf dan spasi berlebih tidak masalah.',
+                            'Sebutan yang belum terdaftar akan dilewati tanpa membatalkan barisnya, dan tidak ikut menambah daftar. Jadi salah ketik di Excel tidak akan mengotori daftar kemampuan Anda.',
                             'Kolom Nama Paket sampai Nama Paket 5 harus ditulis persis sama dengan nama paket di tab Paket.',
                             'Kolom yang dikosongkan tidak menimpa data lama, jadi aman untuk memperbarui satu kolom saja.',
                         ],

@@ -79,8 +79,7 @@ export const siswaHandler = ({
     get opsiKemampuan() {
         return this.kemampuans.map(item => ({
             value: item.id,
-            label: 'Level ' + item.level,
-            sub: item.keterangan || '',
+            label: item.keterangan || '-',
         }));
     },
 

@@ -196,11 +196,11 @@
                                 class="select mt-1 w-full">
                                 <option value="">-- Pilih Kemampuan --</option>
                                 <template x-for="k in kemampuans" :key="k.id">
-                                    <option :value="String(k.id)" x-text="'Level ' + k.level + ' — ' + k.keterangan"></option>
+                                    <option :value="String(k.id)" x-text="k.keterangan"></option>
                                 </template>
                             </select>
                             <p class="mt-1 text-xs text-base-content/60" x-show="kemampuans.length === 0">
-                                Belum ada level kemampuan — tambahkan dulu di tab <span class="font-bold">Kemampuan</span>.
+                                Belum ada sebutan kemampuan — tambahkan dulu di tab <span class="font-bold">Kemampuan</span>.
                             </p>
                         </div>
 
@@ -560,20 +560,20 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <form @submit.prevent="simpanKemampuan" class="space-y-3">
                         <h4 class="text-xs font-bold text-base-content/60 uppercase tracking-wider"
-                            x-text="kemampuanForm.id ? 'Ubah Keterangan' : 'Tambah Level Baru (Level ' + (kemampuans.length + 1) + ')'"></h4>
+                            x-text="kemampuanForm.id ? 'Ubah Sebutan' : 'Tambah Kemampuan'"></h4>
                         <div>
-                            <label class="block text-xs font-semibold text-base-content/60">Keterangan</label>
+                            <label class="block text-xs font-semibold text-base-content/60">Sebutan</label>
                             <input type="text" x-model="kemampuanForm.keterangan" required
                                 placeholder="Contoh: Pemula, belum lancar membaca"
                                 class="mt-1 w-full rounded-lg border border-base-300 p-2 bg-base-100 text-base-content text-sm focus:ring-2 focus:ring-primary focus:outline-hidden">
                         </div>
                         <p class="text-xs text-base-content/60" x-show="!kemampuanForm.id">
-                            <i class="fas fa-circle-info"></i> Nomor level otomatis lanjut dari yang tertinggi — tidak
-                            bisa diloncat atau dipilih manual.
+                            <i class="fas fa-circle-info"></i> Tulis apa adanya, tidak ada nomor urut. Daftarnya
+                            diurutkan sesuai abjad.
                         </p>
                         <div class="flex gap-2 pt-2">
                             <button type="submit" class="btn btn-primary text-sm flex-1" :disabled="isLoading">
-                                <span x-text="kemampuanForm.id ? 'Simpan Perubahan' : 'Tambah Level'"></span>
+                                <span x-text="kemampuanForm.id ? 'Simpan Perubahan' : 'Tambah Kemampuan'"></span>
                             </button>
                             <button type="button" x-show="kemampuanForm.id" @click="resetKemampuanForm()"
                                 class="btn btn-neutral text-sm">Batal</button>
@@ -586,9 +586,8 @@
                                 <div
                                     class="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-base-300">
                                     <div class="min-w-0">
-                                        <p class="text-xs font-bold text-base-content truncate">
-                                            Level <span x-text="k.level"></span> — <span x-text="k.keterangan"></span>
-                                        </p>
+                                        <p class="text-xs font-bold text-base-content truncate"
+                                            x-text="k.keterangan"></p>
                                         <p class="text-[11px]"
                                             :class="k.jumlah_siswa === 0 ? 'text-base-content/60' : 'text-primary font-semibold'"
                                             x-text="k.jumlah_siswa + ' siswa memakai'">
@@ -600,15 +599,15 @@
                                                 class="fas fa-pen-to-square"></i></button>
                                         <button type="button" @click="hapusKemampuan(k)" :disabled="!bisaHapusKemampuan(k)"
                                             :class="bisaHapusKemampuan(k) ? '' : 'opacity-40 cursor-not-allowed'"
-                                            :title="bisaHapusKemampuan(k) ? '' : 'Hapus level tertinggi dulu, baru turun satu-satu'"
+                                            :title="bisaHapusKemampuan(k) ? '' : 'Masih dipakai siswa'"
                                             class="btn btn-sacred px-2.5 py-1 text-xs rounded-md"><i
                                                 class="fas fa-trash-can"></i></button>
                                     </div>
                                 </div>
                             </template>
                             <template x-if="kemampuans.length === 0">
-                                <p class="text-xs text-base-content/60 italic text-center py-6">Belum ada level kemampuan.
-                                </p>
+                                <p class="text-xs text-base-content/60 italic text-center py-6">Belum ada sebutan
+                                    kemampuan.</p>
                             </template>
                         </div>
                     </div>

@@ -56,9 +56,9 @@ class SiswaMassalImport implements ToCollection, WithHeadingRow
                     }
                 }
 
-                $level = $this->nilai($row['kemampuan'] ?? null);
-                if ($level !== null && is_numeric($level)) {
-                    $kemampuan = TingkatKemampuan::where('level', (int) $level)->first();
+                $sebutan = $this->nilai($row['kemampuan'] ?? null);
+                if ($sebutan !== null && trim((string) $sebutan) !== '') {
+                    $kemampuan = TingkatKemampuan::whereRaw('LOWER(TRIM(keterangan)) = ?', [mb_strtolower(trim((string) $sebutan))])->first();
                     if ($kemampuan) {
                         $data['tingkat_kemampuan_id'] = $kemampuan->id;
                     }

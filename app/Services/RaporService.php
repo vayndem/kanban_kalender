@@ -30,9 +30,7 @@ class RaporService
                 'nama' => $siswa->name,
                 'panggilan' => $siswa->panggilan,
                 'kelas' => $siswa->kelas,
-                'kemampuan' => $siswa->tingkatKemampuan
-                    ? 'Level '.$siswa->tingkatKemampuan->level.' — '.$siswa->tingkatKemampuan->keterangan
-                    : null,
+                'kemampuan' => $siswa->tingkatKemampuan?->keterangan,
             ],
             'periode' => [
                 'dari' => $dari,

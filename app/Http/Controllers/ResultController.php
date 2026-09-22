@@ -203,9 +203,7 @@ class ResultController extends Controller
                     'nama' => $siswa->name,
                     'panggilan' => $siswa->panggilan,
                     'kelas' => $siswa->kelas,
-                    'kemampuan' => $siswa->tingkatKemampuan
-                        ? 'Level '.$siswa->tingkatKemampuan->level
-                        : null,
+                    'kemampuan' => $siswa->tingkatKemampuan?->keterangan,
                     'total_pertemuan' => $milik->count(),
                     'hadir' => $hadir->count(),
                     'persen_kehadiran' => $milik->count() > 0

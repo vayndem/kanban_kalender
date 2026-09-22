@@ -90,8 +90,8 @@
             <x-filter-multi label="Paket" model="filterPaket" options="opsiPaket" noun="paket"
                 search-placeholder="Cari nama paket..." />
 
-            <x-filter-multi label="Kemampuan" model="filterKemampuan" options="opsiKemampuan" noun="level"
-                search-placeholder="Cari level..." />
+            <x-filter-multi label="Kemampuan" model="filterKemampuan" options="opsiKemampuan" noun="kemampuan"
+                search-placeholder="Cari kemampuan..." />
 
             <x-filter-multi label="Sesi" model="filterSesis" options="opsiSesi" noun="sesi"
                 search-placeholder="Cari sesi atau jam..." />

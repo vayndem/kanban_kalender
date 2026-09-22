@@ -391,7 +391,7 @@ class SiswaController extends Controller
         if ($kemampuanIds !== []) {
             $nama = TingkatKemampuan::whereIn('id', $kemampuanIds)
                 ->get()
-                ->mapWithKeys(fn ($item) => [$item->id => 'Level '.$item->level]);
+                ->mapWithKeys(fn ($item) => [$item->id => $item->keterangan]);
             $parts[] = 'Kemampuan: '.$this->namaAtauId($nama, $kemampuanIds);
         }
 

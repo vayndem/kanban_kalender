@@ -443,8 +443,7 @@ export const workshopHandler = ({
         this.kemampuanForm = { id: k.id, keterangan: k.keterangan };
     },
     bisaHapusKemampuan(k) {
-        const levelTertinggi = Math.max(...this.kemampuans.map(x => x.level));
-        return k.jumlah_siswa === 0 && k.level === levelTertinggi;
+        return k.jumlah_siswa === 0;
     },
     async simpanKemampuan() {
         this.isLoading = true;
@@ -456,20 +455,24 @@ export const workshopHandler = ({
 
             if (isEdit) {
                 const idx = this.kemampuans.findIndex(k => k.id === res.data.id);
-                if (idx !== -1) this.kemampuans[idx] = { ...this.kemampuans[idx], keterangan: res.data.keterangan };
+                if (idx !== -1) {
+                    this.kemampuans[idx] = { ...this.kemampuans[idx], keterangan: res.data.keterangan };
+                    this.kemampuans.sort((a, b) => a.keterangan.localeCompare(b.keterangan, 'id'));
+                }
             } else {
-                this.kemampuans.push({ id: res.data.id, level: res.data.level, keterangan: res.data.keterangan, jumlah_siswa: 0 });
+                this.kemampuans.push({ id: res.data.id, keterangan: res.data.keterangan, jumlah_siswa: 0 });
+                this.kemampuans.sort((a, b) => a.keterangan.localeCompare(b.keterangan, 'id'));
             }
             AppSwal.toast(res.message);
             this.resetKemampuanForm();
         } catch (e) {
-            AppSwal.error('Gagal menyimpan tingkat kemampuan.');
+            AppSwal.error('Gagal menyimpan kemampuan.');
         } finally {
             this.isLoading = false;
         }
     },
     async hapusKemampuan(k) {
-        const confirmation = await AppSwal.confirm('Hapus tingkat kemampuan?', `Level ${k.level} — "${k.keterangan}" akan dihapus permanen.`, 'Ya, hapus');
+        const confirmation = await AppSwal.confirm('Hapus kemampuan?', `"${k.keterangan}" akan dihapus permanen dari daftar.`, 'Ya, hapus');
         if (!confirmation.isConfirmed) return;
         this.isLoading = true;
         try {
@@ -481,7 +484,7 @@ export const workshopHandler = ({
             this.kemampuans = this.kemampuans.filter(x => x.id !== k.id);
             AppSwal.toast(res.message);
         } catch (e) {
-            AppSwal.error('Gagal menghapus tingkat kemampuan.');
+            AppSwal.error('Gagal menghapus kemampuan.');
         } finally {
             this.isLoading = false;
         }

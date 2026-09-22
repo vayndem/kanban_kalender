@@ -483,7 +483,7 @@ class DemoSeeder extends Seeder
 
         $dibuat = [];
         foreach ($level as $angka => $keterangan) {
-            $dibuat[$angka] = TingkatKemampuan::firstOrCreate(['level' => $angka], ['keterangan' => $keterangan]);
+            $dibuat[$angka] = TingkatKemampuan::firstOrCreate(['keterangan' => $keterangan]);
         }
 
         $urutan = 1;

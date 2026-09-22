@@ -93,24 +93,34 @@ class PaketDanImportSiswaTest extends TestCase
         $this->assertNull($siswa->paket_pembayaran_2);
     }
 
-    public function test_import_mengisi_kemampuan_dari_angka_level(): void
+    public function test_import_mengisi_kemampuan_dari_sebutannya(): void
     {
-        $level2 = TingkatKemampuan::create(['level' => 2, 'keterangan' => 'Menengah']);
-        TingkatKemampuan::create(['level' => 3, 'keterangan' => 'Mahir']);
+        $menengah = TingkatKemampuan::create(['keterangan' => 'Menengah']);
+        TingkatKemampuan::create(['keterangan' => 'Mahir']);
 
-        $this->impor([['nama_lengkap' => 'Ana', 'kemampuan' => '2']]);
+        $this->impor([['nama_lengkap' => 'Ana', 'kemampuan' => 'Menengah']]);
 
-        $this->assertSame($level2->id, Siswa::where('name', 'Ana')->value('tingkat_kemampuan_id'));
+        $this->assertSame($menengah->id, Siswa::where('name', 'Ana')->value('tingkat_kemampuan_id'));
     }
 
-    public function test_import_melewati_level_kemampuan_yang_belum_terdaftar(): void
+    public function test_import_kemampuan_tidak_peduli_besar_kecil_huruf_dan_spasi(): void
     {
-        TingkatKemampuan::create(['level' => 1, 'keterangan' => 'Dasar']);
+        $mahir = TingkatKemampuan::create(['keterangan' => 'Mahir']);
 
-        $hasil = $this->impor([['nama_lengkap' => 'Budi', 'kemampuan' => '9']]);
+        $this->impor([['nama_lengkap' => 'Ana', 'kemampuan' => '  mAhIr ']]);
 
-        $this->assertSame(1, $hasil->dibuat, 'Barisnya tetap masuk walau levelnya tidak dikenal.');
+        $this->assertSame($mahir->id, Siswa::where('name', 'Ana')->value('tingkat_kemampuan_id'));
+    }
+
+    public function test_import_melewati_sebutan_kemampuan_yang_belum_terdaftar(): void
+    {
+        TingkatKemampuan::create(['keterangan' => 'Dasar']);
+
+        $hasil = $this->impor([['nama_lengkap' => 'Budi', 'kemampuan' => 'Mahirr']]);
+
+        $this->assertSame(1, $hasil->dibuat, 'Barisnya tetap masuk walau sebutannya tidak dikenal.');
         $this->assertNull(Siswa::where('name', 'Budi')->value('tingkat_kemampuan_id'));
+        $this->assertSame(1, TingkatKemampuan::count(), 'Salah ketik tidak boleh menambah daftar.');
     }
 
     public function test_import_mengisi_paket_kedua_sampai_kelima(): void
@@ -136,7 +146,7 @@ class PaketDanImportSiswaTest extends TestCase
     public function test_kolom_kosong_tidak_menimpa_data_lama(): void
     {
         $paket = $this->paket('Paket A');
-        $level = TingkatKemampuan::create(['level' => 1, 'keterangan' => 'Dasar']);
+        $level = TingkatKemampuan::create(['keterangan' => 'Dasar']);
 
         Siswa::factory()->create([
             'name' => 'Dedi',

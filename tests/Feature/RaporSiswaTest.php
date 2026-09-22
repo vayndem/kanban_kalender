@@ -194,9 +194,9 @@ class RaporSiswaTest extends TestCase
         $this->assertSame('naik', $data['ringkasan']['tren']);
     }
 
-    public function test_rapor_shows_the_students_kemampuan_level(): void
+    public function test_rapor_shows_the_students_kemampuan_as_plain_text(): void
     {
-        $kemampuan = TingkatKemampuan::create(['level' => 2, 'keterangan' => 'Menengah']);
+        $kemampuan = TingkatKemampuan::create(['keterangan' => 'Menengah']);
         $siswa = Siswa::factory()->create(['tingkat_kemampuan_id' => $kemampuan->id]);
         $this->buatKelas('kode-1', $siswa);
 
@@ -205,7 +205,7 @@ class RaporSiswaTest extends TestCase
             ->assertOk()
             ->json('data');
 
-        $this->assertSame('Level 2 — Menengah', $data['siswa']['kemampuan']);
+        $this->assertSame('Menengah', $data['siswa']['kemampuan'], 'Tidak ada lagi awalan Level.');
     }
 
     public function test_rapor_pdf_downloads_successfully(): void

@@ -4,35 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\TingkatKemampuan;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class TingkatKemampuanController extends Controller
 {
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'keterangan' => 'required|string|max:255',
-        ], [
-            'keterangan.required' => 'Keterangan wajib diisi.',
-        ]);
+        $validated = $request->validate(
+            ['keterangan' => ['required', 'string', 'max:255', Rule::unique('tingkat_kemampuans', 'keterangan')]],
+            $this->pesan()
+        );
 
         try {
             $tingkat = TingkatKemampuan::create($validated);
 
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'success',
-                    'message' => "Level {$tingkat->level} berhasil ditambahkan.",
-                    'data' => $tingkat,
-                ]);
-            }
-
-            return redirect()->back()->with('success', "Level {$tingkat->level} berhasil ditambahkan.");
+            return $this->balas($request, "Kemampuan \"{$tingkat->keterangan}\" berhasil ditambahkan.", $tingkat);
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['status' => 'error', 'message' => 'Gagal menyimpan: '.$e->getMessage()], 500);
-            }
-
-            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan: '.$e->getMessage());
+            return $this->gagal($request, 'Gagal menyimpan: '.$e->getMessage());
         }
     }
 
@@ -40,30 +28,17 @@ class TingkatKemampuanController extends Controller
     {
         $tingkat = TingkatKemampuan::findOrFail($id);
 
-        $validated = $request->validate([
-            'keterangan' => 'required|string|max:255',
-        ], [
-            'keterangan.required' => 'Keterangan wajib diisi.',
-        ]);
+        $validated = $request->validate(
+            ['keterangan' => ['required', 'string', 'max:255', Rule::unique('tingkat_kemampuans', 'keterangan')->ignore($tingkat->id)]],
+            $this->pesan()
+        );
 
         try {
             $tingkat->update($validated);
 
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'success',
-                    'message' => "Level {$tingkat->level} berhasil diperbarui.",
-                    'data' => $tingkat,
-                ]);
-            }
-
-            return redirect()->back()->with('success', "Level {$tingkat->level} berhasil diperbarui.");
+            return $this->balas($request, "Kemampuan \"{$tingkat->keterangan}\" berhasil diperbarui.", $tingkat);
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['status' => 'error', 'message' => 'Gagal memperbarui: '.$e->getMessage()], 500);
-            }
-
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui: '.$e->getMessage());
+            return $this->gagal($request, 'Gagal memperbarui: '.$e->getMessage());
         }
     }
 
@@ -72,40 +47,54 @@ class TingkatKemampuanController extends Controller
         try {
             $tingkat = TingkatKemampuan::findOrFail($id);
 
-            $levelTertinggi = (int) TingkatKemampuan::max('level');
-            if ($tingkat->level !== $levelTertinggi) {
-                $msg = "Level {$tingkat->level} tidak bisa dihapus dulu: hapus level {$levelTertinggi} (paling tinggi) dulu, baru turun satu-satu.";
-
-                return $request->wantsJson()
-                    ? response()->json(['status' => 'error', 'message' => $msg], 422)
-                    : redirect()->back()->with('error', $msg);
-            }
-
             $jumlahSiswa = $tingkat->siswas()->count();
             if ($jumlahSiswa > 0) {
-                $msg = "Level {$tingkat->level} tidak bisa dihapus: masih dipakai {$jumlahSiswa} siswa. Ubah dulu kemampuan siswa tersebut di tab Siswa.";
+                $msg = "Kemampuan \"{$tingkat->keterangan}\" tidak bisa dihapus: masih dipakai {$jumlahSiswa} siswa. Ubah dulu kemampuan siswa tersebut di tab Siswa.";
 
                 return $request->wantsJson()
                     ? response()->json(['status' => 'error', 'message' => $msg], 422)
                     : redirect()->back()->with('error', $msg);
             }
 
+            $keterangan = $tingkat->keterangan;
             $tingkat->delete();
 
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'status' => 'success',
-                    'message' => "Level {$tingkat->level} berhasil dihapus.",
-                ]);
-            }
-
-            return redirect()->back()->with('success', "Level {$tingkat->level} berhasil dihapus.");
+            return $this->balas($request, "Kemampuan \"{$keterangan}\" berhasil dihapus.");
         } catch (\Exception $e) {
-            if ($request->wantsJson()) {
-                return response()->json(['status' => 'error', 'message' => 'Gagal menghapus: '.$e->getMessage()], 500);
-            }
-
-            return redirect()->back()->with('error', 'Gagal menghapus: '.$e->getMessage());
+            return $this->gagal($request, 'Gagal menghapus: '.$e->getMessage());
         }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function pesan(): array
+    {
+        return [
+            'keterangan.required' => 'Sebutan kemampuan wajib diisi.',
+            'keterangan.unique' => 'Sebutan kemampuan itu sudah ada di daftar.',
+        ];
+    }
+
+    private function balas(Request $request, string $pesan, ?TingkatKemampuan $tingkat = null)
+    {
+        if ($request->wantsJson()) {
+            return response()->json(array_filter([
+                'status' => 'success',
+                'message' => $pesan,
+                'data' => $tingkat,
+            ], fn ($nilai) => $nilai !== null));
+        }
+
+        return redirect()->back()->with('success', $pesan);
+    }
+
+    private function gagal(Request $request, string $pesan)
+    {
+        if ($request->wantsJson()) {
+            return response()->json(['status' => 'error', 'message' => $pesan], 500);
+        }
+
+        return redirect()->back()->withInput()->with('error', $pesan);
     }
 }

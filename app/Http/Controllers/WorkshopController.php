@@ -95,13 +95,9 @@ class WorkshopController extends Controller
 
     private function kemampuanDenganKonteks(Collection $siswas): Collection
     {
-        $semua = TingkatKemampuan::orderBy('level')->get(['id', 'level', 'keterangan']);
-        $levelTertinggi = $semua->max('level');
+        $semua = TingkatKemampuan::orderBy('keterangan')->get(['id', 'keterangan']);
 
-        return $this->entitasDenganKonteks($semua, $siswas, 'tingkat_kemampuan_id', 'jumlah_siswa')
-            ->map(fn (array $k) => array_merge($k, [
-                'bisa_dihapus' => $k['bisa_dihapus'] && $k['level'] === $levelTertinggi,
-            ]));
+        return $this->entitasDenganKonteks($semua, $siswas, 'tingkat_kemampuan_id', 'jumlah_siswa');
     }
 
     private function petaKetersediaan(Collection $jadwals): array

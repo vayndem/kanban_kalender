@@ -96,7 +96,7 @@ class DashboardController extends Controller
             $allSiswas = Siswa::with('tandas:id,siswa_id,keterangan,created_at')->orderBy('name')->get();
             $allArsips = Arsip::orderBy('name')->get();
             $pakets = Paket::query()->select(['id', 'nama_paket', 'harga', 'pertemuan'])->orderBy('nama_paket')->get();
-            $kemampuans = TingkatKemampuan::orderBy('level')->get(['id', 'level', 'keterangan']);
+            $kemampuans = TingkatKemampuan::orderBy('keterangan')->get(['id', 'keterangan']);
             $studentScheduleMeta = Jadwal::query()
                 ->select(['siswa_id', 'sesi_id', 'guru_id', 'ruang_id'])
                 ->get()

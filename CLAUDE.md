@@ -263,12 +263,21 @@ Each of these was a real reported bug; regression tests pin the fixed markup.
 
 `siswas` has `paket_pembayaran` plus `paket_pembayaran_2..5`, and the Data Siswa quota is the **sum of `pertemuan` across all five**. Three places used to read only the first slot and were fixed together: the Workshop form (reveals the next slot as you fill one, shows the running pertemuan and rupiah total), the Data Siswa package filter and student row, and `SiswaController::store()/update()` validation. Keep `SiswaController::KOLOM_PAKET` and `student-list.js`'s `PACKAGE_FIELDS` in step.
 
+### Kemampuan is a wording, not a level
+
+`tingkat_kemampuans` used to carry an auto-incrementing `level` column: new rows numbered themselves, deletion was only allowed from the highest number downwards, and every screen printed "Level 2 — Menengah". The owner corrected this in Sept 2026 — **kemampuan is just what the teacher calls the child's ability**, with no ordering implied. The `level` column is gone, `keterangan` is now `unique` and carries the whole meaning, and lists sort alphabetically.
+
+- It stays a **reference table with a foreign key**, exactly like Mapel or Ruang, rather than free text on `siswas`. That is what keeps the Data Siswa "Kemampuan" filter working and stops `Mahir`/`mahir`/`Mahirr` becoming three things.
+- **Any entry can be deleted in any order**; the only guard left is the usual "still used by N students" 422. The old highest-first rule was a consequence of the numbering and went with it.
+- The dropping migration must `dropUnique('tingkat_kemampuans_level_unique')` **before** `dropColumn('level')`. MySQL tolerates dropping the column directly; SQLite fails with *"1 error in index … after drop column"*, so the test suite catches it and production would not.
+- Its `down()` renumbers surviving rows by `id` before restoring the unique index, and `up()` merges rows whose `keterangan` matches case-insensitively (repointing `siswas` and `arsips` first) so the new unique index cannot fail on legacy data.
+
 ### Bulk student import
 
 "Download Kerangka" (`SiswaController::downloadImportTemplate` → `SiswaTemplateExport`) gives an `.xlsx` with `Nama Lengkap`, `Panggilan`, `Kelas`, `No. HP`, `Kemampuan`, and `Nama Paket` through `Nama Paket 5`. Upload (`SiswaController::import` → `SiswaMassalImport`) matches rows to existing students **by exact trimmed name** — match updates, no match creates.
 
 - A **blank cell never overwrites** an existing value, so staff can update one column safely.
-- `Kemampuan` holds the **level number** (`1`, `2`, …), resolved against `tingkat_kemampuans.level` — not the id, because the number is what staff know.
+- `Kemampuan` holds the **wording itself** (`Mahir`), matched case- and whitespace-insensitively against `tingkat_kemampuans.keterangan`. An unrecognised wording is skipped and **never auto-created**, so a typo in Excel cannot pollute the list.
 - Package names resolve by exact `Paket.nama_paket`. An unrecognized package or level is skipped without failing the row.
 - Unrelated to the legacy `SiswaImport` / `siswa:import` command, which **truncates** `pakets`/`siswas`/`jadwals`/`pembayarans` before importing a fixed legacy layout. Don't point anyone at it for routine entry, and don't merge the two.
 
@@ -343,6 +352,7 @@ Supporting suites:
 | `ModulAjarTest` | admin-sees-all vs guru-sees-own, create-yes/update-no split, `kode_kelas` surviving drag-move / edit-modal / stash round-trip, teaching + substitute + re-teach flow |
 | `RaporSiswaTest` | aggregation, date filtering, 4-score minimum before a trend, PDF download, guru denied |
 | `PusatBantuanTest` | every guide populated, no screen on the fallback, each route rendering its own |
+| `KemampuanTanpaLevelTest` | the `level` column being gone, adding by wording alone, duplicate wording rejected, deletion allowed in any order but still blocked while students use it, alphabetical ordering, and no screen still saying "Level" |
 | `KelasSepiDanLogKehadiranTest` | the under-3-students threshold and its boundary, the panel appearing and disappearing in Ringkasan, the attendance log keeping absences, a date range re-computing attendance percentage, an empty range staying empty rather than erroring |
 | `PenjagaanHapusBerantaiTest` | a taught or in-progress syllabus item refusing deletion while its grades and teaching credit survive, an invoice with recorded payments refusing deletion, and an unpaid one being archived into `koreksi_pembayaran_logs` before it goes |
 
