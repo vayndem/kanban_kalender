@@ -11,6 +11,7 @@ use App\Models\NilaiAspek;
 use App\Models\Pertemuan;
 use App\Models\RaporCetak;
 use App\Models\Siswa;
+use App\Models\TingkatKemampuan;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,6 +34,7 @@ class RaporOrangTuaTest extends TestCase
             'name' => 'Abdullah Abbas',
             'kelas' => '5',
             'no_hp' => '+628510217 5588',
+            'tingkat_kemampuan_id' => TingkatKemampuan::create(['keterangan' => 'Mahir'])->id,
         ]);
     }
 

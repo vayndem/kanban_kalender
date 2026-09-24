@@ -220,7 +220,7 @@
                                 Download kerangka, isi datanya, lalu upload lagi. Siswa dengan nama yang sudah ada akan diperbarui, yang belum ada akan ditambahkan baru.
                             </p>
                             <ul class="mb-2 space-y-1 text-[11px] text-base-content/60">
-                                <li><span class="font-bold text-base-content/80">Kemampuan</span> diisi angka levelnya saja, misal <span class="font-bold">1</span>. Level yang belum ada di tab Kemampuan akan dilewati.</li>
+                                <li><span class="font-bold text-base-content/80">Kemampuan</span> diisi sebutannya, misal <span class="font-bold">Mahir</span>. Sebutan yang belum ada di tab Kemampuan akan dilewati.</li>
                                 <li><span class="font-bold text-base-content/80">Nama Paket</span> sampai <span class="font-bold">Nama Paket 5</span> diisi persis seperti nama paket di tab Paket.</li>
                                 <li>Kolom yang dikosongkan tidak akan menimpa data lama siswa itu.</li>
                             </ul>

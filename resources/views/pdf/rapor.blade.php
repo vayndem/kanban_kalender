@@ -188,7 +188,7 @@
             <td>{{ $rapor['siswa']['kelas'] ?: '-' }}</td>
         </tr>
         <tr>
-            <td class="label">Level</td>
+            <td class="label">Kemampuan</td>
             <td class="pemisah">:</td>
             <td>{{ $rapor['siswa']['kemampuan'] ?: '-' }}</td>
         </tr>

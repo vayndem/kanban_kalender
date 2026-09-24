@@ -326,7 +326,14 @@ Serverless PHP via the community `vercel-php` runtime (`vercel.json`, `api/index
 
 ## Testing notes
 
-Tests run on **SQLite in-memory** (`phpunit.xml`), so they never touch local MariaDB or production TiDB — this is the safe way to verify migrations. `phpunit.xml` also raises `memory_limit` to 512M, because parsing generated PDFs in `KeamananEksporDanStashTest` blows past PHP's 128M default.
+Tests run on **SQLite in-memory** (`phpunit.xml`), so they never touch local MariaDB or production TiDB — this is the safe way to verify migrations.
+
+**SQLite cannot catch a column that no longer exists, and this cost a production outage (Sept 2026).** Dropping `tingkat_kemampuans.level` left two `->with('tingkatKemampuan:id,level,keterangan')` calls behind. The whole suite stayed green and `/admin/result` returned 500 on Vercel. The reason is a SQLite legacy misfeature: a **double-quoted identifier that matches no column is silently reinterpreted as a string literal**, and Laravel quotes every identifier, so `select "id", "level", ...` succeeds on SQLite and is rejected by MySQL/TiDB. A bare `level` would have been rejected by both — it is the quoting that hides it.
+
+- `SkemaKolomEagerLoadTest` is the guard: it scans `app/`, `resources/views/` and `database/seeders/` for every `->with|load|loadMissing('relasi:kolom,kolom')` and asserts each named column exists **somewhere** in the schema. It names the file and the column when it fails. It is deliberately a whole-schema check rather than a per-relation one, so it cannot catch a column that exists on a *different* table — that residual gap is accepted.
+- A second test in that file pins the SQLite quoting behaviour itself, so if SQLite ever starts rejecting these the guard can be simplified rather than silently kept for no reason.
+- **A constrained eager load only runs when at least one parent row has a non-null foreign key.** `RaporOrangTuaTest` never caught the same bug on its own path because its test student had no kemampuan, so Eloquent skipped the query entirely. That student now carries one on purpose — when a fixture exists to exercise a relation, give it the relation.
+ `phpunit.xml` also raises `memory_limit` to 512M, because parsing generated PDFs in `KeamananEksporDanStashTest` blows past PHP's 128M default.
 
 `tests/Feature/ScheduleAndPaymentTest.php` is the primary regression suite: atomic schedule creation, collision rejection, `+62` preservation, payment allocation, overpayment rejection, auto `Selesai sistem` detail on settlement, receipt rendering, anti-duplicate mass billing, batch locks, per-tab payload size. When changing payment logic re-verify remaining-balance math, discounts, "set lunas", "selesaikan seluruh status", struk rendering; when changing schedule logic re-verify collision validation, transactional store, card grouping, PDF export.
 
@@ -352,6 +359,7 @@ Supporting suites:
 | `ModulAjarTest` | admin-sees-all vs guru-sees-own, create-yes/update-no split, `kode_kelas` surviving drag-move / edit-modal / stash round-trip, teaching + substitute + re-teach flow |
 | `RaporSiswaTest` | aggregation, date filtering, 4-score minimum before a trend, PDF download, guru denied |
 | `PusatBantuanTest` | every guide populated, no screen on the fallback, each route rendering its own |
+| `SkemaKolomEagerLoadTest` | every column named in a constrained eager load still exists in the schema, plus a pin on SQLite's silent acceptance of quoted unknown identifiers |
 | `KemampuanTanpaLevelTest` | the `level` column being gone, adding by wording alone, duplicate wording rejected, deletion allowed in any order but still blocked while students use it, alphabetical ordering, and no screen still saying "Level" |
 | `KelasSepiDanLogKehadiranTest` | the under-3-students threshold and its boundary, the panel appearing and disappearing in Ringkasan, the attendance log keeping absences, a date range re-computing attendance percentage, an empty range staying empty rather than erroring |
 | `PenjagaanHapusBerantaiTest` | a taught or in-progress syllabus item refusing deletion while its grades and teaching credit survive, an invoice with recorded payments refusing deletion, and an unpaid one being archived into `koreksi_pembayaran_logs` before it goes |

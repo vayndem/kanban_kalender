@@ -92,6 +92,17 @@ class KemampuanTanpaLevelTest extends TestCase
         $this->assertSame(['Berkembang', 'Dasar', 'Mahir'], $urutan);
     }
 
+    public function test_halaman_result_terbuka_saat_anak_punya_kemampuan(): void
+    {
+        $kemampuan = TingkatKemampuan::create(['keterangan' => 'Mahir']);
+        Siswa::factory()->count(2)->create(['tingkat_kemampuan_id' => $kemampuan->id]);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('admin.result.index'))
+            ->assertOk()
+            ->assertSee('Mahir', false);
+    }
+
     public function test_layar_tidak_lagi_menyebut_kata_level(): void
     {
         TingkatKemampuan::create(['keterangan' => 'Mahir']);

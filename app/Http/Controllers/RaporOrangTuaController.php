@@ -47,7 +47,7 @@ class RaporOrangTuaController extends Controller
 
         $siswa = Siswa::query()
             ->whereRaw('LOWER(TRIM(name)) = ?', [Str::lower(trim($data['nama']))])
-            ->with('tingkatKemampuan:id,level,keterangan')
+            ->with('tingkatKemampuan:id,keterangan')
             ->first();
 
         $cocok = $siswa

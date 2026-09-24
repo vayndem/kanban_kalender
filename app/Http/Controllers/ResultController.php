@@ -187,7 +187,7 @@ class ResultController extends Controller
             ->groupBy('siswa_id');
 
         return Siswa::query()
-            ->with('tingkatKemampuan:id,level,keterangan')
+            ->with('tingkatKemampuan:id,keterangan')
             ->orderBy('name')
             ->get(['id', 'name', 'panggilan', 'kelas', 'tingkat_kemampuan_id'])
             ->map(function (Siswa $siswa) use ($absensis) {
