@@ -167,6 +167,7 @@
                     <label class="flex items-center gap-2">
                         <span class="shrink-0 text-xs font-bold uppercase tracking-wider text-base-content/60">Urutkan</span>
                         <select x-model="urutSiswa" class="select select-sm" data-native-select="true">
+                            <option value="terbaru">Murid terbaru</option>
                             <option value="nama">Nama</option>
                             <option value="nilai">Nilai tertinggi</option>
                             <option value="pertemuan">Pertemuan terbanyak</option>

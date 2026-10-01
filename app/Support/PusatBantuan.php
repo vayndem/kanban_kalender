@@ -274,6 +274,16 @@ class PusatBantuan
                         ],
                     ],
                     [
+                        'title' => 'Mengganti Password Guru',
+                        'items' => [
+                            'Tombol Password hanya muncul untuk guru yang sudah punya akun. Hanya admin yang bisa memakainya; guru tidak bisa mengganti password guru lain.',
+                            'Anda tidak perlu tahu password lamanya. Isi password baru dua kali, minimal 8 karakter.',
+                            'Begitu diganti, guru itu langsung keluar dari semua perangkat yang sedang login dan harus masuk lagi dengan password baru.',
+                            'Sistem tidak mengirim apa pun ke guru. Sampaikan sendiri password barunya, lalu minta dia menggantinya lewat menu Profil.',
+                            'Pakai ini kalau guru lupa password atau akunnya dicurigai dipakai orang lain. Untuk ganti password sendiri, admin maupun guru memakai menu Profil.',
+                        ],
+                    ],
+                    [
                         'title' => 'Hal yang Perlu Diketahui',
                         'items' => [
                             'Guru tanpa akun tetap bisa dijadwalkan dan tetap dihitung gajinya seperti biasa.',

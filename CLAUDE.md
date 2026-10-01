@@ -259,6 +259,23 @@ Each of these was a real reported bug; regression tests pin the fixed markup.
   - A Data Siswa row's "Detail & Catatan" links to `Workshop?edit_siswa={id}`, which pre-opens that edit form (`editSiswaId`).
 - **`AkunGuruController`** (`/admin/akun-guru`) is scoped *only* to teacher login accounts. Don't grow it back into a general reference-data page.
 
+### Student lists are newest-first, everywhere
+
+The owner's rule (Oct 2026): **the most recently registered student is always at the top**, on every screen that lists students. The ordering is `created_at DESC, id DESC` — the `id` tiebreaker matters because a bulk import or a seeded demo creates many students within the same second, and without it their order is undefined.
+
+- Server side: the three `DashboardController` tabs, `WorkshopController::index`, `ResultController::kartuSiswa`, `SiswaController::exportExcel` and `ArsipController::index` (newest *archived* first there).
+- Client side: `siswa.js` defaults to `sortField: 'created_at'` / `sortOrder: 'desc'`, and the Result page gained a "Murid terbaru" option that is now its default. Clicking a column header still re-sorts as before.
+- Any payload feeding a student list must therefore **carry `created_at`** — the three dashboard tabs use explicit `select([...])` and the Result cards are a hand-built array, so all four had to have the column added. `UrutanMuridTerbaruTest` pins each surface, deliberately naming its fixtures so alphabetical and chronological order disagree.
+
+### Only an admin can reset a teacher's password
+
+`AkunGuruController::ubahPasswordGuru` (`PUT /admin/akun-guru/guru/{id}/password`) sits behind `role:admin` like the rest of that page, so a guru cannot reach it for anyone — including themselves. Changing your *own* password stays in Profil for everyone.
+
+- The admin never needs the old password; that is the point, it is a reset for a teacher who forgot theirs. Validation is `min:8` plus `confirmed`.
+- **It really logs the teacher out.** Hashing a new password does not by itself invalidate an active session, so the method also rotates `remember_token` and deletes that user's rows from the `sessions` table. `putusSesiAktif()` no-ops unless `session.driver` is `database` and the table exists, so a driver change cannot break it.
+- A guru with no login account is refused with an explanation rather than silently doing nothing, and the button is only rendered for teachers who have an account.
+- Nothing is emailed or messaged — the admin tells the teacher directly. `PusatBantuan` says so, because otherwise staff will assume the system notified them.
+
 ### A student holds up to five packages
 
 `siswas` has `paket_pembayaran` plus `paket_pembayaran_2..5`, and the Data Siswa quota is the **sum of `pertemuan` across all five**. Three places used to read only the first slot and were fixed together: the Workshop form (reveals the next slot as you fill one, shows the running pertemuan and rupiah total), the Data Siswa package filter and student row, and `SiswaController::store()/update()` validation. Keep `SiswaController::KOLOM_PAKET` and `student-list.js`'s `PACKAGE_FIELDS` in step.
@@ -359,6 +376,8 @@ Supporting suites:
 | `ModulAjarTest` | admin-sees-all vs guru-sees-own, create-yes/update-no split, `kode_kelas` surviving drag-move / edit-modal / stash round-trip, teaching + substitute + re-teach flow |
 | `RaporSiswaTest` | aggregation, date filtering, 4-score minimum before a trend, PDF download, guru denied |
 | `PusatBantuanTest` | every guide populated, no screen on the fallback, each route rendering its own |
+| `GantiPasswordGuruTest` | admin resetting a teacher password without the old one, a guru refused for another guru, a guest refused, mismatch and short-password rejection leaving the old password working, a teacher with no account refused, and the active session row being deleted |
+| `UrutanMuridTerbaruTest` | newest-first ordering on the three dashboard tabs, Workshop, Result and Arsip, plus the `id` tiebreaker when two students share a `created_at` |
 | `SkemaKolomEagerLoadTest` | every column named in a constrained eager load still exists in the schema, plus a pin on SQLite's silent acceptance of quoted unknown identifiers |
 | `KemampuanTanpaLevelTest` | the `level` column being gone, adding by wording alone, duplicate wording rejected, deletion allowed in any order but still blocked while students use it, alphabetical ordering, and no screen still saying "Level" |
 | `KelasSepiDanLogKehadiranTest` | the under-3-students threshold and its boundary, the panel appearing and disappearing in Ringkasan, the attendance log keeping absences, a date range re-computing attendance percentage, an empty range staying empty rather than erroring |

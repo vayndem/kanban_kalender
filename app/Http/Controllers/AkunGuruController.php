@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -99,6 +101,51 @@ class AkunGuruController extends Controller
         }
 
         return $this->balas($request, 'success', "Email {$guru->name} diperbarui.");
+    }
+
+    public function ubahPasswordGuru(Request $request, $id)
+    {
+        $guru = Guru::with('user')->find($id);
+
+        if (! $guru) {
+            return $this->balas($request, 'error', 'Data guru tidak ditemukan.', 404);
+        }
+
+        if (! $guru->user) {
+            return $this->balas($request, 'error', "Guru {$guru->name} belum punya akun login, jadi belum ada password yang bisa diganti.", 422);
+        }
+
+        $validated = $request->validate([
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ], [
+            'password.required' => 'Password baru wajib diisi.',
+            'password.min' => 'Password baru minimal 8 karakter.',
+            'password.confirmed' => 'Ketikan ulang password belum sama.',
+        ]);
+
+        try {
+            DB::transaction(function () use ($guru, $validated) {
+                $guru->user->forceFill([
+                    'password' => Hash::make($validated['password']),
+                    'remember_token' => Str::random(60),
+                ])->save();
+
+                $this->putusSesiAktif($guru->user->id);
+            });
+        } catch (\Throwable $e) {
+            return $this->balas($request, 'error', 'Gagal mengganti password: '.$e->getMessage(), 500);
+        }
+
+        return $this->balas($request, 'success', "Password {$guru->name} berhasil diganti. Dia harus login ulang dengan password baru.");
+    }
+
+    private function putusSesiAktif(int $userId): void
+    {
+        if (config('session.driver') !== 'database' || ! Schema::hasTable(config('session.table', 'sessions'))) {
+            return;
+        }
+
+        DB::table(config('session.table', 'sessions'))->where('user_id', $userId)->delete();
     }
 
     private function gurusDenganKonteks()

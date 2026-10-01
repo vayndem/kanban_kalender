@@ -120,7 +120,14 @@
                                             class="btn btn-neutral px-3 py-2 text-xs rounded-md disabled:opacity-50">
                                             <i class="fas fa-envelope"></i> Email
                                         </button>
-                                        @if (!$g['punya_akun'])
+                                        @if ($g['punya_akun'])
+                                            <button
+                                                @click="gantiPassword({{ $g['id'] }}, @js($g['name']))"
+                                                :disabled="isLoading"
+                                                class="btn btn-sacred px-3 py-2 text-xs rounded-md disabled:opacity-50">
+                                                <i class="fas fa-key"></i> Password
+                                            </button>
+                                        @else
                                             <button
                                                 @click="buatAkun({{ $g['id'] }}, @js($g['name']), @js($g['email']))"
                                                 :disabled="isLoading"
@@ -176,7 +183,14 @@
                                 class="btn btn-neutral w-full py-2 text-xs rounded-md disabled:opacity-50">
                                 <i class="fas fa-envelope"></i> Email
                             </button>
-                            @if (!$g['punya_akun'])
+                            @if ($g['punya_akun'])
+                                <button
+                                    @click="gantiPassword({{ $g['id'] }}, @js($g['name']))"
+                                    :disabled="isLoading"
+                                    class="btn btn-sacred w-full py-2 text-xs rounded-md disabled:opacity-50">
+                                    <i class="fas fa-key"></i> Ganti Password
+                                </button>
+                            @else
                                 <button
                                     @click="buatAkun({{ $g['id'] }}, @js($g['name']), @js($g['email']))"
                                     :disabled="isLoading"

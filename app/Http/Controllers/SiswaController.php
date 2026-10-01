@@ -302,7 +302,7 @@ class SiswaController extends Controller
             'jadwals.ruang',
             'jadwals.hari',
             'jadwals.sesi',
-        ])->orderBy('name');
+        ])->orderByDesc('created_at')->orderByDesc('id');
 
         if ($request->filled('search')) {
             $search = $request->search;

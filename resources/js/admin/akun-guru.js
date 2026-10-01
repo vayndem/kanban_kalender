@@ -67,6 +67,63 @@ export const akunGuruHandler = ({ routes }) => ({
         }
     },
 
+    async gantiPassword(id, nama) {
+        const { value: hasil } = await Swal.fire({
+            title: `Password baru ${nama}`,
+            html: `
+                <p style="font-size:13px;text-align:left;margin-bottom:10px">
+                    Setelah diganti, ${nama} langsung keluar dari semua perangkat dan harus login ulang.
+                    Sampaikan password barunya langsung ke yang bersangkutan.
+                </p>
+                <input id="sandi-baru" type="password" class="swal2-input" placeholder="Password baru (min. 8 karakter)" autocomplete="new-password">
+                <input id="sandi-ulang" type="password" class="swal2-input" placeholder="Ketik ulang password baru" autocomplete="new-password">
+            `,
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: 'Ganti Password',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#b91c1c',
+            cancelButtonColor: '#4b5563',
+            background: isDarkMode() ? '#111827' : '#fff',
+            color: isDarkMode() ? '#fff' : '#000',
+            preConfirm: () => {
+                const baru = document.getElementById('sandi-baru').value;
+                const ulang = document.getElementById('sandi-ulang').value;
+
+                if (!baru || baru.length < 8) {
+                    Swal.showValidationMessage('Password baru minimal 8 karakter.');
+                    return false;
+                }
+                if (baru !== ulang) {
+                    Swal.showValidationMessage('Ketikan ulang password belum sama.');
+                    return false;
+                }
+
+                return { baru, ulang };
+            },
+        });
+
+        if (!hasil) return;
+
+        this.isLoading = true;
+        try {
+            const payload = await kirim(`${this.routes.buatAkunBase}/${id}/password`, 'PUT', {
+                password: hasil.baru,
+                password_confirmation: hasil.ulang,
+            });
+
+            if (payload.status === 'success') {
+                AppSwal.toast(payload.message);
+            } else {
+                AppSwal.error(payload.message || 'Gagal mengganti password.');
+            }
+        } catch (e) {
+            AppSwal.error('Gagal mengganti password guru.');
+        } finally {
+            this.isLoading = false;
+        }
+    },
+
     async ubahEmail(id, nama, email) {
         const { value: baru } = await Swal.fire({
             title: `Email ${nama}`,

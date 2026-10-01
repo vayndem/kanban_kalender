@@ -32,7 +32,7 @@ class WorkshopController extends Controller
             ])
             ->get();
 
-        $siswas = Siswa::orderBy('name')->get([
+        $siswas = Siswa::orderByDesc('created_at')->orderByDesc('id')->get([
             'id',
             'name',
             'panggilan',

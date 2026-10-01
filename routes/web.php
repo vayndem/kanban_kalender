@@ -62,6 +62,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/akun-guru', [AkunGuruController::class, 'index'])->name('admin.akunGuru.index');
     Route::post('/admin/akun-guru/guru/{id}/akun', [AkunGuruController::class, 'buatAkunGuru'])->name('admin.akunGuru.buatAkunGuru');
     Route::put('/admin/akun-guru/guru/{id}/email', [AkunGuruController::class, 'ubahEmailGuru'])->name('admin.akunGuru.ubahEmailGuru');
+    Route::put('/admin/akun-guru/guru/{id}/password', [AkunGuruController::class, 'ubahPasswordGuru'])->name('admin.akunGuru.ubahPasswordGuru');
 
     Route::get('/admin/workshop', [WorkshopController::class, 'index'])->name('admin.workshop.index');
 

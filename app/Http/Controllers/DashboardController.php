@@ -57,7 +57,7 @@ class DashboardController extends Controller
             $allGurus = Guru::query()->select(['id', 'name'])->orderBy('name')->get();
             $allMapels = MataPelajaran::query()->select(['id', 'name'])->orderBy('name')->get();
             $allRuangs = Ruang::query()->select(['id', 'name'])->orderBy('name')->get();
-            $allSiswas = Siswa::select(['id', 'name', 'panggilan', 'kelas', 'no_hp'])->with('tandas:id,siswa_id,keterangan,created_at')->orderBy('name')->get();
+            $allSiswas = Siswa::select(['id', 'name', 'panggilan', 'kelas', 'no_hp', 'created_at'])->with('tandas:id,siswa_id,keterangan,created_at')->orderByDesc('created_at')->orderByDesc('id')->get();
             $jadwalsWithRelations = Jadwal::select(['id', 'hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id', 'siswa_id'])
                 ->with(['siswa:id,name,panggilan,kelas', 'siswa.tandas:id,siswa_id,keterangan,created_at', 'mataPelajaran:id,name', 'guru:id,name', 'ruang:id,name', 'hari:id,name', 'sesi:id,name,start_time,end_time'])
                 ->get();
@@ -93,7 +93,7 @@ class DashboardController extends Controller
             $sesis = Sesi::query()->select(['id', 'name', 'start_time', 'end_time'])->orderBy('start_time')->get();
             $allGurus = Guru::query()->select(['id', 'name'])->orderBy('name')->get();
             $allRuangs = Ruang::query()->select(['id', 'name'])->orderBy('name')->get();
-            $allSiswas = Siswa::with('tandas:id,siswa_id,keterangan,created_at')->orderBy('name')->get();
+            $allSiswas = Siswa::with('tandas:id,siswa_id,keterangan,created_at')->orderByDesc('created_at')->orderByDesc('id')->get();
             $allArsips = Arsip::orderBy('name')->get();
             $pakets = Paket::query()->select(['id', 'nama_paket', 'harga', 'pertemuan'])->orderBy('nama_paket')->get();
             $kemampuans = TingkatKemampuan::orderBy('keterangan')->get(['id', 'keterangan']);
@@ -108,7 +108,7 @@ class DashboardController extends Controller
                     'ruang_ids' => $schedules->pluck('ruang_id')->unique()->values(),
                 ]);
         } elseif ($activeTab === 'pembayaran') {
-            $allSiswas = Siswa::select(['id', 'name', 'panggilan', 'kelas', 'no_hp', 'paket_pembayaran', 'paket_pembayaran_2', 'paket_pembayaran_3', 'paket_pembayaran_4', 'paket_pembayaran_5'])->orderBy('name')->get();
+            $allSiswas = Siswa::select(['id', 'name', 'panggilan', 'kelas', 'no_hp', 'paket_pembayaran', 'paket_pembayaran_2', 'paket_pembayaran_3', 'paket_pembayaran_4', 'paket_pembayaran_5', 'created_at'])->orderByDesc('created_at')->orderByDesc('id')->get();
             $pakets = Paket::query()->select(['id', 'nama_paket', 'harga', 'pertemuan'])->orderBy('nama_paket')->get();
             $diskons = Diskon::query()->select(['id', 'no_hp', 'diskon', 'keterangan'])->orderBy('id', 'desc')->get();
         } elseif ($activeTab === 'ringkasan') {

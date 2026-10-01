@@ -11,7 +11,7 @@ class ArsipController extends Controller
     public function index(Request $request)
     {
         if ($request->wantsJson()) {
-            return response()->json(Arsip::orderBy('name')->get());
+            return response()->json(Arsip::orderByDesc('created_at')->orderByDesc('id')->get());
         }
 
         return redirect()->route('dashboard', ['tab' => 'data_siswa']);

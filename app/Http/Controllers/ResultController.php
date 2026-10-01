@@ -188,8 +188,9 @@ class ResultController extends Controller
 
         return Siswa::query()
             ->with('tingkatKemampuan:id,keterangan')
-            ->orderBy('name')
-            ->get(['id', 'name', 'panggilan', 'kelas', 'tingkat_kemampuan_id'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->get(['id', 'name', 'panggilan', 'kelas', 'tingkat_kemampuan_id', 'created_at'])
             ->map(function (Siswa $siswa) use ($absensis) {
                 $milik = $absensis->get($siswa->id, collect());
                 $hadir = $milik->where('hadir', true);
@@ -204,6 +205,7 @@ class ResultController extends Controller
                     'panggilan' => $siswa->panggilan,
                     'kelas' => $siswa->kelas,
                     'kemampuan' => $siswa->tingkatKemampuan?->keterangan,
+                    'created_at' => $siswa->created_at?->toIso8601String(),
                     'total_pertemuan' => $milik->count(),
                     'hadir' => $hadir->count(),
                     'persen_kehadiran' => $milik->count() > 0

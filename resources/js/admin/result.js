@@ -10,7 +10,7 @@ export const resultHandler = ({ initialAspek, initialSiswa, routes }) => ({
     formTerbuka: false,
 
     cariSiswa: '',
-    urutSiswa: 'nama',
+    urutSiswa: 'terbaru',
     hanyaSudahDinilai: false,
 
     raporSiswa: null,
@@ -54,7 +54,10 @@ export const resultHandler = ({ initialAspek, initialSiswa, routes }) => ({
                 if (this.urutSiswa === 'pertemuan') {
                     return b.total_pertemuan - a.total_pertemuan;
                 }
-                return a.nama.localeCompare(b.nama);
+                if (this.urutSiswa === 'nama') {
+                    return a.nama.localeCompare(b.nama);
+                }
+                return String(b.created_at || '').localeCompare(String(a.created_at || '')) || b.id - a.id;
             });
     },
 
