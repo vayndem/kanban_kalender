@@ -7,6 +7,7 @@ use App\Models\Diskon;
 use App\Models\Guru;
 use App\Models\Hari;
 use App\Models\Jadwal;
+use App\Models\JejakPerubahan;
 use App\Models\MataPelajaran;
 use App\Models\Paket;
 use App\Models\Pembayaran;
@@ -14,6 +15,8 @@ use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
 use App\Models\TingkatKemampuan;
+use App\Services\KetersediaanGuruService;
+use App\Services\KuotaPertemuanService;
 use App\Services\PaymentBatchService;
 use App\Services\PayrollService;
 use App\Services\RingkasanService;
@@ -127,6 +130,9 @@ class DashboardController extends Controller
                 'finansial' => $this->ringkasanService->pengingatFinansial($this->paymentBatchService, $piutangBulan),
                 'kebersihan_data' => $this->ringkasanService->kebersihanData(3),
                 'kelas_pengganti' => $this->ringkasanService->kelasPengganti(),
+                'kuota_pertemuan' => app(KuotaPertemuanService::class)->ringkasan(),
+                'langgar_ketersediaan' => app(KetersediaanGuruService::class)->jadwalYangMelanggar(),
+                'jejak_terakhir' => JejakPerubahan::terbaru()->limit(15)->get(),
                 'bentrok_tersembunyi' => $this->ringkasanService->bentrokTersembunyi(),
                 'pengingat_wa' => $this->ringkasanService->pengingatJadwalWa(),
                 'gaji_berjalan' => $this->payrollService->ringkasan()->where('kehadiran_belum_dibayar', '>', 0)->values(),

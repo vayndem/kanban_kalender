@@ -3,16 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Exports\JadwalExport;
+use App\Models\Guru;
 use App\Models\Hari;
 use App\Models\Jadwal;
 use App\Models\JadwalTeksLog;
+use App\Models\JejakPerubahan;
+use App\Models\MataPelajaran;
+use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\StashPemulihanLog;
 use App\Models\Tanda;
 use App\Services\IrisanSesiService;
+use App\Services\KetersediaanGuruService;
+use App\Services\PencatatJejak;
 use App\Services\StashJadwalService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +31,57 @@ use RuntimeException;
 
 class JadwalController extends Controller
 {
+    public function __construct(
+        private readonly PencatatJejak $jejak,
+        private readonly KetersediaanGuruService $ketersediaan,
+    ) {}
+
+    private function tolakKalauGuruTidakTersedia(Request $request, int $guruId, int $hariId, int $sesiId, string $konteks): ?JsonResponse
+    {
+        $halangan = $this->ketersediaan->bentrok($guruId, $hariId, $sesiId);
+
+        if (! $halangan) {
+            return null;
+        }
+
+        $pesan = $this->ketersediaan->pesan($halangan, $sesiId);
+
+        if (! $request->boolean('paksa')) {
+            return response()->json([
+                'status' => 'error',
+                'butuh_paksa' => true,
+                'message' => $pesan,
+            ], 409);
+        }
+
+        $this->jejak->catat(
+            JejakPerubahan::ENTITAS_JADWAL,
+            JejakPerubahan::AKSI_DIPAKSA,
+            $konteks.' tetap disimpan meski melanggar ketersediaan guru. '.$pesan,
+            null,
+            [
+                'guru_id' => $guruId,
+                'hari_id' => $hariId,
+                'sesi_id' => $sesiId,
+                'tidak_tersedia' => $halangan->rentang,
+                'alasan' => $halangan->alasan,
+            ]
+        );
+
+        return null;
+    }
+
+    private function labelKelas(int $hariId, int $sesiId, int $mapelId, int $guruId, int $ruangId): string
+    {
+        return collect([
+            MataPelajaran::find($mapelId)?->name,
+            Hari::find($hariId)?->name,
+            Sesi::find($sesiId)?->name,
+            Ruang::find($ruangId)?->name,
+            Guru::find($guruId)?->name,
+        ])->filter()->implode(' · ');
+    }
+
     public function tampilKalender()
     {
         $haris = Hari::query()->select(['id', 'name'])->orderBy('id')->get();
@@ -89,6 +147,10 @@ class JadwalController extends Controller
                 return response()->json(['status' => 'warning', 'message' => 'Jadwal asal tidak ditemukan.']);
             }
 
+            if ($respon = $this->tolakKalauGuruTidakTersedia($request, $validated['guru_id'], $validated['new_hari_id'], $validated['new_sesi_id'], 'Pemindahan kelas')) {
+                return $respon;
+            }
+
             $this->ensureNoConflicts(
                 $validated['new_hari_id'],
                 $validated['new_sesi_id'],
@@ -106,6 +168,25 @@ class JadwalController extends Controller
             ]));
 
             if ($affectedRows > 0) {
+                $this->jejak->catat(
+                    JejakPerubahan::ENTITAS_JADWAL,
+                    JejakPerubahan::AKSI_DIUBAH,
+                    sprintf(
+                        'Kelas %s dipindah ke %s · %s (%d siswa ikut pindah).',
+                        $this->labelKelas($validated['old_hari_id'], $validated['old_sesi_id'], $validated['mapel_id'], $validated['guru_id'], $validated['ruang_id']),
+                        Hari::find($validated['new_hari_id'])?->name ?? '-',
+                        Sesi::find($validated['new_sesi_id'])?->name ?? '-',
+                        count($studentIds)
+                    ),
+                    null,
+                    [
+                        'dari' => ['hari_id' => $validated['old_hari_id'], 'sesi_id' => $validated['old_sesi_id']],
+                        'jadi' => ['hari_id' => $validated['new_hari_id'], 'sesi_id' => $validated['new_sesi_id']],
+                        'jumlah_siswa' => count($studentIds),
+                    ],
+                    (clone $source)->value('kode_kelas')
+                );
+
                 return response()->json(['status' => 'success', 'message' => 'Jadwal berhasil dipindahkan.']);
             } else {
                 return response()->json(['status' => 'warning', 'message' => 'Tidak ada jadwal yang dipindahkan.'], 200);
@@ -134,6 +215,10 @@ class JadwalController extends Controller
                 'deleted_tanda_ids' => 'nullable|array',
                 'deleted_tanda_ids.*' => 'integer',
             ]);
+
+            if ($respon = $this->tolakKalauGuruTidakTersedia($request, $validated['guru_id'], $validated['old_hari_id'], $validated['old_sesi_id'], 'Perubahan kelas')) {
+                return $respon;
+            }
 
             $this->ensureNoConflicts(
                 $validated['old_hari_id'],
@@ -222,6 +307,11 @@ class JadwalController extends Controller
 
             $jadwalDataUtama = Arr::only($validated, ['hari_id', 'sesi_id', 'mata_pelajaran_id', 'guru_id', 'ruang_id']);
             $jadwalDataUtama['kode_kelas'] = (string) Str::uuid();
+
+            if ($respon = $this->tolakKalauGuruTidakTersedia($request, $validated['guru_id'], $validated['hari_id'], $validated['sesi_id'], 'Kelas baru')) {
+                return $respon;
+            }
+
             $this->ensureNoConflicts(
                 $validated['hari_id'],
                 $validated['sesi_id'],
@@ -245,6 +335,19 @@ class JadwalController extends Controller
 
                 return count($rows);
             });
+
+            $this->jejak->catat(
+                JejakPerubahan::ENTITAS_JADWAL,
+                JejakPerubahan::AKSI_DIBUAT,
+                sprintf(
+                    'Kelas baru %s dibuat dengan %d siswa.',
+                    $this->labelKelas($validated['hari_id'], $validated['sesi_id'], $validated['mata_pelajaran_id'], $validated['guru_id'], $validated['ruang_id']),
+                    $createdCount
+                ),
+                null,
+                ['jumlah_siswa' => $createdCount],
+                $jadwalDataUtama['kode_kelas'] ?? null
+            );
 
             return response()->json([
                 'status' => 'success',

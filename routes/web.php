@@ -7,6 +7,7 @@ use App\Http\Controllers\DiskonController;
 use App\Http\Controllers\GuruController;
 use App\Http\Controllers\GuruPortalController;
 use App\Http\Controllers\JadwalController;
+use App\Http\Controllers\KetersediaanGuruController;
 use App\Http\Controllers\MapelController;
 use App\Http\Controllers\ModulAjarController;
 use App\Http\Controllers\PaketController;
@@ -126,6 +127,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/admin/paket', [PaketController::class, 'store'])->name('admin.paket.store');
     Route::put('/admin/paket/{id}', [PaketController::class, 'update'])->name('admin.paket.update');
     Route::delete('/admin/paket/{id}', [PaketController::class, 'destroy'])->name('admin.paket.destroy');
+
+    Route::post('/admin/ketersediaan-guru', [KetersediaanGuruController::class, 'store'])->name('admin.ketersediaanGuru.store');
+    Route::delete('/admin/ketersediaan-guru/{ketersediaan}', [KetersediaanGuruController::class, 'destroy'])->name('admin.ketersediaanGuru.destroy');
 
     Route::post('/admin/kemampuan', [TingkatKemampuanController::class, 'store'])->name('admin.kemampuan.store');
     Route::put('/admin/kemampuan/{id}', [TingkatKemampuanController::class, 'update'])->name('admin.kemampuan.update');

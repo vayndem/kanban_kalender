@@ -8,11 +8,13 @@ use App\Imports\SiswaMassalImport;
 use App\Models\Arsip;
 use App\Models\Guru;
 use App\Models\Jadwal;
+use App\Models\JejakPerubahan;
 use App\Models\Paket;
 use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
 use App\Models\TingkatKemampuan;
+use App\Services\PencatatJejak;
 use App\Support\NomorHp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,6 +24,21 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class SiswaController extends Controller
 {
+    public function __construct(private readonly PencatatJejak $jejak) {}
+
+    private const LABEL_JEJAK = [
+        'name' => 'Nama',
+        'panggilan' => 'Panggilan',
+        'kelas' => 'Kelas',
+        'no_hp' => 'No. HP',
+        'tingkat_kemampuan_id' => 'Kemampuan',
+        'paket_pembayaran' => 'Paket 1',
+        'paket_pembayaran_2' => 'Paket 2',
+        'paket_pembayaran_3' => 'Paket 3',
+        'paket_pembayaran_4' => 'Paket 4',
+        'paket_pembayaran_5' => 'Paket 5',
+    ];
+
     private const KOLOM_PAKET = [
         'paket_pembayaran',
         'paket_pembayaran_2',
@@ -90,6 +107,14 @@ class SiswaController extends Controller
         try {
             $siswa = Siswa::create($validated);
 
+            $this->jejak->catat(
+                JejakPerubahan::ENTITAS_SISWA,
+                JejakPerubahan::AKSI_DIBUAT,
+                "Siswa baru \"{$siswa->name}\" ditambahkan.",
+                $siswa->id,
+                ['kelas' => $siswa->kelas, 'no_hp' => $siswa->no_hp]
+            );
+
             if ($request->wantsJson()) {
                 return response()->json([
                     'status' => 'success',
@@ -131,7 +156,20 @@ class SiswaController extends Controller
         ]);
 
         try {
+            $sebelum = $siswa->only(array_keys($validated));
             $siswa->update($validated);
+
+            $perubahan = $this->jejak->bandingkan($sebelum, $siswa->only(array_keys($validated)), self::LABEL_JEJAK);
+
+            if ($perubahan !== []) {
+                $this->jejak->catat(
+                    JejakPerubahan::ENTITAS_SISWA,
+                    JejakPerubahan::AKSI_DIUBAH,
+                    "Siswa \"{$siswa->name}\" diubah — ".$this->jejak->ringkasPerubahan($perubahan),
+                    $siswa->id,
+                    $perubahan
+                );
+            }
 
             if ($request->wantsJson()) {
                 return response()->json([
