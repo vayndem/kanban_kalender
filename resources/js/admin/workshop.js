@@ -49,6 +49,8 @@ export const workshopHandler = ({
     initialSesis,
     initialPakets,
     initialKemampuans,
+    initialHaris,
+    initialHalangan,
     initialKetersediaan,
     initialSiswas,
     petaKelas,
@@ -82,6 +84,9 @@ export const workshopHandler = ({
     ruangForm: { id: null, name: '' },
     sesiForm: { id: null, name: '', start_time: '', end_time: '' },
     kemampuanForm: { id: null, keterangan: '' },
+    haris: initialHaris || [],
+    halangan: initialHalangan || [],
+    halanganForm: { guru_id: '', hari_id: '', jam_mulai: '', jam_selesai: '', alasan: '' },
     kunciPaket: KUNCI_PAKET,
     siswaForm: siswaFormKosong(),
 
@@ -431,6 +436,54 @@ export const workshopHandler = ({
             AppSwal.toast(res.message);
         } catch (e) {
             AppSwal.error('Gagal menghapus sesi.');
+        } finally {
+            this.isLoading = false;
+        }
+    },
+
+    isiSeharian() {
+        this.halanganForm.jam_mulai = '00:00';
+        this.halanganForm.jam_selesai = '23:59';
+    },
+
+    isiSetelah(jam) {
+        this.halanganForm.jam_mulai = jam;
+        this.halanganForm.jam_selesai = '23:59';
+    },
+
+    async simpanHalangan() {
+        this.isLoading = true;
+        try {
+            const res = await kirim(this.routes.halanganStore, 'POST', this.halanganForm);
+            if (res.status !== 'success') return AppSwal.error(res.message);
+
+            this.halangan = res.data;
+            this.halanganForm = { guru_id: '', hari_id: '', jam_mulai: '', jam_selesai: '', alasan: '' };
+            AppSwal.toast(res.message);
+        } catch (e) {
+            AppSwal.error('Gagal menyimpan penanda ketersediaan.');
+        } finally {
+            this.isLoading = false;
+        }
+    },
+
+    async hapusHalangan(h) {
+        const konfirmasi = await AppSwal.confirm(
+            'Hapus penanda?',
+            `${h.guru} akan dianggap bisa lagi pada ${h.hari} ${h.rentang}.`,
+            'Ya, hapus'
+        );
+        if (!konfirmasi.isConfirmed) return;
+
+        this.isLoading = true;
+        try {
+            const res = await kirim(`${this.routes.halanganBase}/${h.id}`, 'DELETE');
+            if (res.status !== 'success') return AppSwal.error(res.message);
+
+            this.halangan = res.data;
+            AppSwal.toast(res.message);
+        } catch (e) {
+            AppSwal.error('Gagal menghapus penanda ketersediaan.');
         } finally {
             this.isLoading = false;
         }

@@ -149,6 +149,35 @@ class PusatBantuan
                         ],
                     ],
                     [
+                        'title' => 'Kuota Paket vs Kehadiran',
+                        'items' => [
+                            'Membandingkan jumlah pertemuan yang dibayar orang tua bulan ini dengan jumlah pertemuan yang benar-benar dihadiri anaknya.',
+                            'Yang dihitung hanya pertemuan yang sudah selesai dinilai guru dan anaknya ditandai hadir. Tidak hadir tidak mengurangi kuota.',
+                            'Kuota dijumlahkan dari semua paket yang dimiliki anak itu, bukan hanya paket pertamanya.',
+                            'Wajar kalau awal bulan banyak yang Kurang — bulannya memang baru berjalan. Yang perlu diperhatikan adalah menjelang akhir bulan.',
+                            'Kurang berarti lembaga belum mengantarkan yang sudah dibayar, jadi carikan jadwal susulan. Lebih berarti anaknya diajar melebihi yang dibayar, jadi periksa apakah ada yang belum ditagih.',
+                        ],
+                    ],
+                    [
+                        'title' => 'Jadwal Melanggar Ketersediaan Guru',
+                        'items' => [
+                            'Muncul kalau ada kelas berjalan di jam yang gurunya sudah ditandai tidak bisa di Workshop > Ketersediaan Guru.',
+                            'Biasanya terjadi karena penandanya dibuat belakangan, setelah jadwalnya terlanjur tersusun — sistem tidak membongkar jadwal lama secara otomatis.',
+                            'Bisa juga karena admin sengaja memaksa menyimpan. Kalau begitu, peristiwanya ada di Jejak Perubahan beserta nama yang memaksa.',
+                            'Perbaikannya di tab Jadwal Pelajaran: pindahkan kelasnya, ganti gurunya, atau hapus penandanya kalau gurunya ternyata bisa.',
+                        ],
+                    ],
+                    [
+                        'title' => 'Jejak Perubahan',
+                        'items' => [
+                            'Mencatat otomatis siapa menambah, mengubah, atau menghapus data siswa dan jadwal, beserta waktunya.',
+                            'Untuk perubahan siswa, dicatat juga nilai sebelum dan sesudahnya — misalnya Kelas: 3 → 4.',
+                            'Satu kelas yang berisi banyak siswa dicatat sebagai satu peristiwa, bukan satu baris per anak.',
+                            'Catatan bertanda Dipaksa berarti admin menembus penolakan ketersediaan guru. Itu sengaja ditonjolkan.',
+                            'Jejak tidak bisa diubah atau dihapus dari layar mana pun. Kalau ada yang janggal, ini tempat pertama untuk memeriksanya.',
+                        ],
+                    ],
+                    [
                         'title' => 'Kelas Sepi',
                         'items' => [
                             'Panel ini menampilkan kelas yang muridnya kurang dari 3 orang. Kelas sebegitu biasanya rugi untuk tetap dijalankan.',
@@ -221,7 +250,7 @@ class PusatBantuan
 
             'admin.workshop.index' => [
                 'title' => 'Panduan Workshop',
-                'summary' => 'Satu-satunya tempat menambah dan mengubah data pokok: mata pelajaran, guru, ruang, sesi waktu, paket, kemampuan, dan siswa. Setiap form langsung menunjukkan data mirip yang sudah ada, supaya tidak perlu bolak-balik memeriksa halaman lain.',
+                'summary' => 'Satu-satunya tempat menambah dan mengubah data pokok: mata pelajaran, guru, ruang, sesi waktu, paket, kemampuan, ketersediaan guru, dan siswa. Setiap form langsung menunjukkan data mirip yang sudah ada, supaya tidak perlu bolak-balik memeriksa halaman lain.',
                 'sections' => [
                     [
                         'title' => 'Menambah dan Mengubah Siswa',
@@ -249,6 +278,16 @@ class PusatBantuan
                             'Peringatan kemiripan sifatnya informasi saja dan tidak menghalangi penyimpanan.',
                             'Data yang masih dipakai di jadwal tidak bisa dihapus. Pindahkan atau hapus dulu jadwal yang memakainya.',
                             'Menjadwalkan siswa ke kelas tetap dilakukan di tab Jadwal Pelajaran.',
+                        ],
+                    ],
+                    [
+                        'title' => 'Ketersediaan Guru',
+                        'items' => [
+                            'Tandai di sini kalau seorang guru tidak bisa mengajar pada hari dan jam tertentu, misalnya kuliah tiap Sabtu atau hanya bisa sampai jam 17.00.',
+                            'Tombol Seharian dan Setelah 17:00 hanya pengisi cepat; jamnya tetap bisa Anda ubah sendiri.',
+                            'Setelah ditandai, menyimpan jadwal di jam itu akan ditolak, dan Slot Kosong berhenti menawarkan guru tersebut pada jam itu.',
+                            'Kalau memang terpaksa, admin masih bisa memilih Tetap Simpan di kotak peringatannya. Pemaksaan itu tercatat di Jejak Perubahan beserta nama Anda.',
+                            'Menandai guru tidak membongkar jadwal yang sudah terlanjur ada. Jadwal lama yang bertabrakan akan muncul sebagai peringatan di Ringkasan.',
                         ],
                     ],
                     [

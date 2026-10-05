@@ -1,3 +1,4 @@
+import { tanyaPaksa } from '../core/paksa.js';
 import Sortable from 'sortablejs';
 
 import { csrfToken, salinTeksJadwal } from '../core/http.js';
@@ -184,10 +185,11 @@ export const jadwalHandler = (data) => ({
         }
     },
 
-    saveJadwal() {
+    saveJadwal(paksa = false) {
         const payload = {
             ...this.editingJadwal,
-            deleted_tanda_ids: this.deletedTandaIds
+            deleted_tanda_ids: this.deletedTandaIds,
+            paksa
         };
         fetch(this.routes.jadwal.updateKelas, {
                 method: 'POST',
@@ -210,7 +212,8 @@ export const jadwalHandler = (data) => ({
                     window.location.reload();
                 }
             })
-            .catch(error => {
+            .catch(async error => {
+                if (await tanyaPaksa(error)) return this.saveJadwal(true);
                 Swal.fire('Gagal!', error.message || 'Gagal menyimpan.', 'error');
             });
     },
@@ -232,7 +235,7 @@ export const jadwalHandler = (data) => ({
         this.refreshStudentSelections();
     },
 
-    saveNewJadwal() {
+    saveNewJadwal(paksa = false) {
         fetch(this.routes.jadwal.store, {
                 method: 'POST',
                 headers: {
@@ -240,7 +243,7 @@ export const jadwalHandler = (data) => ({
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': this.csrfToken
                 },
-                body: JSON.stringify(this.newJadwal)
+                body: JSON.stringify({ ...this.newJadwal, paksa })
             })
             .then(async r => {
                 const res = await r.json();
@@ -250,7 +253,8 @@ export const jadwalHandler = (data) => ({
             .then(data => {
                 if (data.status === 'success') window.location.reload();
             })
-            .catch(error => {
+            .catch(async error => {
+                if (await tanyaPaksa(error)) return this.saveNewJadwal(true);
                 Swal.fire('Gagal!', error.message || 'Gagal menyimpan.', 'error');
             });
     },

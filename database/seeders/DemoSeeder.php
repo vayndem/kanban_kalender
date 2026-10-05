@@ -11,6 +11,8 @@ use App\Models\Guru;
 use App\Models\Hari;
 use App\Models\Jadwal;
 use App\Models\JadwalTeksLog;
+use App\Models\JejakPerubahan;
+use App\Models\KetersediaanGuru;
 use App\Models\MataPelajaran;
 use App\Models\ModulAjar;
 use App\Models\ModulAjarAbsensi;
@@ -66,6 +68,8 @@ class DemoSeeder extends Seeder
         $this->celahGuruBerhalangan();
         $this->riwayatCetakRapor();
         $this->jejakOperasional();
+        $this->ketersediaanGuru();
+        $this->jejakPerubahan();
 
         $this->ringkasan();
     }
@@ -905,6 +909,89 @@ class DemoSeeder extends Seeder
         ModulAjarDetail::where('id', $detail->id)->update(['updated_at' => now()->subDays(3)]);
     }
 
+    private function ketersediaanGuru(): void
+    {
+        $sabtu = Hari::where('name', 'Sabtu')->first() ?? Hari::orderByDesc('id')->first();
+        $rina = Guru::where('name', 'Bu Rina')->first();
+        $anwar = Guru::where('name', 'Pak Anwar')->first();
+
+        if ($sabtu && $rina) {
+            KetersediaanGuru::firstOrCreate(
+                ['guru_id' => $rina->id, 'hari_id' => $sabtu->id, 'jam_mulai' => '00:00', 'jam_selesai' => '23:59'],
+                ['alasan' => 'kuliah akhir pekan']
+            );
+        }
+
+        $kelasAnwar = $anwar
+            ? Jadwal::where('guru_id', $anwar->id)->with('sesi:id,start_time,end_time')->first()
+            : null;
+
+        if ($kelasAnwar && $kelasAnwar->sesi) {
+            KetersediaanGuru::firstOrCreate(
+                [
+                    'guru_id' => $anwar->id,
+                    'hari_id' => $kelasAnwar->hari_id,
+                    'jam_mulai' => $kelasAnwar->sesi->start_time,
+                    'jam_selesai' => '23:59',
+                ],
+                ['alasan' => 'ditandai setelah jadwalnya terlanjur tersusun']
+            );
+        }
+    }
+
+    private function jejakPerubahan(): void
+    {
+        if (JejakPerubahan::count() > 0) {
+            return;
+        }
+
+        $admin = User::where('email', 'admin@example.com')->first();
+        $siswa = Siswa::orderByDesc('id')->first();
+        $kelas = Jadwal::with(['mataPelajaran:id,name', 'guru:id,name', 'hari:id,name'])->first();
+
+        $baris = [];
+
+        if ($siswa) {
+            $baris[] = [
+                'entitas' => JejakPerubahan::ENTITAS_SISWA,
+                'aksi' => JejakPerubahan::AKSI_DIBUAT,
+                'entitas_id' => $siswa->id,
+                'kode_kelas' => null,
+                'ringkasan' => "Siswa baru \"{$siswa->name}\" ditambahkan.",
+                'detail' => null,
+            ];
+            $baris[] = [
+                'entitas' => JejakPerubahan::ENTITAS_SISWA,
+                'aksi' => JejakPerubahan::AKSI_DIUBAH,
+                'entitas_id' => $siswa->id,
+                'kode_kelas' => null,
+                'ringkasan' => "Siswa \"{$siswa->name}\" diubah — Kelas: 3 → 4",
+                'detail' => json_encode(['Kelas' => ['dari' => '3', 'jadi' => '4']]),
+            ];
+        }
+
+        if ($kelas) {
+            $baris[] = [
+                'entitas' => JejakPerubahan::ENTITAS_JADWAL,
+                'aksi' => JejakPerubahan::AKSI_DIPAKSA,
+                'entitas_id' => null,
+                'kode_kelas' => $kelas->kode_kelas,
+                'ringkasan' => 'Kelas baru tetap disimpan meski melanggar ketersediaan guru. '
+                    .($kelas->guru?->name ?? 'Guru').' ditandai tidak tersedia pada hari itu (alasan: contoh pemaksaan).',
+                'detail' => null,
+            ];
+        }
+
+        foreach ($baris as $urutan => $isi) {
+            JejakPerubahan::create(array_merge($isi, [
+                'user_id' => $admin?->id,
+                'nama_pelaku' => $admin?->name,
+                'created_at' => now()->subDays(count($baris) - $urutan),
+                'updated_at' => now()->subDays(count($baris) - $urutan),
+            ]));
+        }
+    }
+
     private function riwayatCetakRapor(): void
     {
         $admin = User::whereHas('roles', fn ($q) => $q->where('name', 'admin'))->first();
@@ -1020,6 +1107,8 @@ class DemoSeeder extends Seeder
         $this->command?->line('  Materi diulang   : '.Pertemuan::selesai()->get()->groupBy('modul_ajar_detail_id')
             ->filter(fn ($p) => $p->count() > 1)->count().' materi diajar lebih dari sekali');
         $this->command?->line('  Rapor dicetak    : '.RaporCetak::count().' kali');
+        $this->command?->line('  Ketersediaan guru: '.KetersediaanGuru::count().' penanda tidak bisa');
+        $this->command?->line('  Jejak perubahan  : '.JejakPerubahan::count().' peristiwa tercatat');
         $this->command?->newLine();
         $this->command?->line('Login admin: admin@example.com / 12345678');
         $this->command?->line('Login guru : bu.rina@eling.test / guru12345');

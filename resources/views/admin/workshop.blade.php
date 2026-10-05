@@ -6,6 +6,8 @@
         initialSesis: @js($sesis),
         initialPakets: @js($pakets),
         initialKemampuans: @js($kemampuans),
+        initialHaris: @js($haris),
+        initialHalangan: @js($halanganGuru),
         initialKetersediaan: @js($ketersediaan),
         initialSiswas: @js($siswas),
         petaKelas: @js($petaKelas),
@@ -20,6 +22,8 @@
             sesiBase: @js(url('admin/sesi')),
             sesiStore: @js(route('admin.sesi.store')),
             kemampuanBase: @js(url('admin/kemampuan')),
+            halanganBase: @js(url('admin/ketersediaan-guru')),
+            halanganStore: @js(route('admin.ketersediaanGuru.store')),
             kemampuanStore: @js(route('admin.kemampuan.store')),
             siswaBase: @js(url('admin/siswa')),
             siswaStore: @js(route('admin.siswa.store')),
@@ -72,7 +76,7 @@
             </div>
 
             <div class="mb-6 flex flex-wrap gap-1.5 rounded-box border border-base-300 bg-base-200 p-1.5">
-                @foreach ([['key' => 'siswa', 'label' => 'Siswa', 'icon' => 'fa-user-graduate'], ['key' => 'guru', 'label' => 'Guru', 'icon' => 'fa-chalkboard-user'], ['key' => 'ruang', 'label' => 'Ruang', 'icon' => 'fa-door-open'], ['key' => 'sesi', 'label' => 'Sesi', 'icon' => 'fa-clock'], ['key' => 'mapel', 'label' => 'Mata Pelajaran', 'icon' => 'fa-book'], ['key' => 'paket', 'label' => 'Paket', 'icon' => 'fa-box'], ['key' => 'kemampuan', 'label' => 'Kemampuan', 'icon' => 'fa-star'], ['key' => 'ketersediaan', 'label' => 'Slot Kosong', 'icon' => 'fa-calendar-check']] as $tab)
+                @foreach ([['key' => 'siswa', 'label' => 'Siswa', 'icon' => 'fa-user-graduate'], ['key' => 'guru', 'label' => 'Guru', 'icon' => 'fa-chalkboard-user'], ['key' => 'ruang', 'label' => 'Ruang', 'icon' => 'fa-door-open'], ['key' => 'sesi', 'label' => 'Sesi', 'icon' => 'fa-clock'], ['key' => 'mapel', 'label' => 'Mata Pelajaran', 'icon' => 'fa-book'], ['key' => 'paket', 'label' => 'Paket', 'icon' => 'fa-box'], ['key' => 'kemampuan', 'label' => 'Kemampuan', 'icon' => 'fa-star'], ['key' => 'ketersediaan', 'label' => 'Slot Kosong', 'icon' => 'fa-calendar-check'], ['key' => 'halangan', 'label' => 'Ketersediaan Guru', 'icon' => 'fa-user-clock']] as $tab)
                     <button type="button" @click="activeSection = '{{ $tab['key'] }}'"
                         :aria-current="activeSection === '{{ $tab['key'] }}' ? 'true' : 'false'"
                         :class="activeSection === '{{ $tab['key'] }}' ? 'app-tab-active' : 'app-tab'"
@@ -553,6 +557,103 @@
                     @empty
                         <p class="text-xs text-base-content/60 italic text-center py-6 col-span-full">Belum ada paket.</p>
                     @endforelse
+                </div>
+            </div>
+
+            <div x-show="activeSection === 'halangan'" x-cloak>
+                <div class="grid grid-cols-1 gap-6 pb-16 lg:grid-cols-2 lg:pb-0">
+                    <form @submit.prevent="simpanHalangan" class="space-y-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-base-content/60">
+                            Tandai Guru Tidak Bisa
+                        </h4>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-base-content/60">Guru</label>
+                            <select x-model="halanganForm.guru_id" required class="select mt-1 w-full">
+                                <option value="">-- Pilih Guru --</option>
+                                <template x-for="g in gurus" :key="g.id">
+                                    <option :value="String(g.id)" x-text="g.name"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-base-content/60">Hari</label>
+                            <select x-model="halanganForm.hari_id" required class="select mt-1 w-full"
+                                data-native-select="true">
+                                <option value="">-- Pilih Hari --</option>
+                                <template x-for="h in haris" :key="h.id">
+                                    <option :value="String(h.id)" x-text="h.name"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-base-content/60">Dari jam</label>
+                                    <input type="time" x-model="halanganForm.jam_mulai" required class="app-input mt-1">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-base-content/60">Sampai jam</label>
+                                    <input type="time" x-model="halanganForm.jam_selesai" required
+                                        class="app-input mt-1">
+                                </div>
+                            </div>
+                            <div class="mt-1.5 flex flex-wrap gap-1.5">
+                                <button type="button" @click="isiSeharian()"
+                                    class="btn btn-neutral btn-sm text-xs">Seharian</button>
+                                <button type="button" @click="isiSetelah('17:00')"
+                                    class="btn btn-neutral btn-sm text-xs">Setelah 17:00</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-base-content/60">Alasan (boleh kosong)</label>
+                            <input type="text" x-model="halanganForm.alasan" maxlength="255"
+                                placeholder="Contoh: kuliah, kerja di tempat lain"
+                                class="app-input mt-1">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-full text-sm" :disabled="isLoading">
+                            <i class="fas fa-floppy-disk"></i> Simpan Penanda
+                        </button>
+
+                        <p class="text-xs leading-relaxed text-base-content/60">
+                            <i class="fas fa-circle-info"></i> Menyimpan jadwal di jam ini akan ditolak, tapi admin
+                            masih bisa memaksa kalau memang perlu — dan pemaksaannya tercatat di Jejak Perubahan.
+                        </p>
+                    </form>
+
+                    <div>
+                        <h4 class="mb-3 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-wider text-base-content/60">
+                            Penanda Tersimpan
+                            <span class="badge badge-neutral badge-sm" x-text="halangan.length"></span>
+                        </h4>
+                        <div class="max-h-[420px] space-y-1.5 overflow-y-auto pr-1">
+                            <template x-for="h in halangan" :key="h.id">
+                                <div class="flex items-center justify-between gap-2 rounded-lg border border-base-300 p-2.5">
+                                    <div class="min-w-0">
+                                        <p class="truncate text-xs font-bold text-base-content" x-text="h.guru"></p>
+                                        <p class="text-[11px] text-base-content/70">
+                                            <span x-text="h.hari"></span> &middot; <span x-text="h.rentang"></span>
+                                        </p>
+                                        <p class="text-[11px] text-base-content/60" x-show="h.alasan"
+                                            x-text="h.alasan"></p>
+                                    </div>
+                                    <button type="button" @click="hapusHalangan(h)" :disabled="isLoading"
+                                        class="btn btn-sacred shrink-0 rounded-md px-2.5 py-1 text-xs">
+                                        <i class="fas fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </template>
+                            <template x-if="halangan.length === 0">
+                                <p class="py-6 text-center text-xs italic text-base-content/60">
+                                    Belum ada penanda. Semua guru dianggap bisa kapan saja.
+                                </p>
+                            </template>
+                        </div>
+                    </div>
                 </div>
             </div>
 

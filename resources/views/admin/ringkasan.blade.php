@@ -7,6 +7,9 @@
     $finansial = $ringkasanData['finansial'];
     $kebersihan = $ringkasanData['kebersihan_data'];
     $kelasSepi = collect($kebersihan['kelas_sepi'] ?? []);
+    $kuota = $ringkasanData['kuota_pertemuan'] ?? null;
+    $langgar = collect($ringkasanData['langgar_ketersediaan'] ?? []);
+    $jejak = collect($ringkasanData['jejak_terakhir'] ?? []);
     $sepiMinimal = $kebersihan['kelas_sepi_minimal'] ?? 3;
     $bentrok = $ringkasanData['bentrok_tersembunyi'];
     $pengingatWa = $ringkasanData['pengingat_wa'];
@@ -29,6 +32,117 @@
 @endphp
 
 <div class="space-y-8">
+
+    @if ($langgar->isNotEmpty())
+        <div class="app-card overflow-hidden border-error/40">
+            <div class="flex items-start gap-3 bg-error/10 px-4 py-3">
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-field bg-error text-error-content shadow-xs">
+                    <i class="fas fa-user-clock"></i>
+                </span>
+                <div class="min-w-0">
+                    <h3 class="text-sm font-black text-error">Jadwal Melanggar Ketersediaan Guru ({{ $langgar->count() }})</h3>
+                    <p class="text-xs text-base-content/60">Kelas ini berjalan di jam yang gurunya sudah ditandai tidak
+                        bisa. Perbaiki di tab Jadwal Pelajaran: pindahkan kelasnya, ganti gurunya, atau hapus
+                        penandanya kalau gurunya ternyata bisa.</p>
+                </div>
+            </div>
+            <ul class="space-y-1.5 p-4">
+                @foreach ($langgar as $item)
+                    <li class="rounded-lg border border-error/30 bg-error/5 p-3 text-xs">
+                        <p class="font-bold text-base-content">{{ $item['mapel'] }} &middot; {{ $item['guru'] }}</p>
+                        <p class="text-base-content/70">{{ $item['hari'] }} &middot; {{ $item['sesi'] }}
+                            ({{ $item['jam'] }}) &middot; {{ $item['ruang'] }} &middot;
+                            {{ $item['jumlah_siswa'] }} siswa</p>
+                        <p class="mt-1 font-semibold text-error">
+                            Ditandai tidak bisa {{ $item['tidak_tersedia'] }}
+                        </p>
+                        @if ($item['alasan'])
+                            <p class="text-base-content/60">Alasan: {{ $item['alasan'] }}</p>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @if ($kuota)
+        <div class="app-card overflow-hidden border-info/40">
+            <div class="flex items-start gap-3 bg-info/10 px-4 py-3">
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-field bg-info text-info-content shadow-xs">
+                    <i class="fas fa-scale-balanced"></i>
+                </span>
+                <div class="min-w-0">
+                    <h3 class="text-sm font-black text-base-content">Kuota Paket vs Kehadiran &middot;
+                        {{ $kuota['periode_label'] }}</h3>
+                    <p class="text-xs text-base-content/60">Membandingkan jumlah pertemuan yang dibayar dengan yang
+                        benar-benar dihadiri anak bulan ini. Wajar banyak yang kurang kalau bulannya baru berjalan.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-px bg-base-300 sm:grid-cols-4">
+                <div class="bg-base-100 p-3 text-center">
+                    <div class="text-lg font-black text-base-content">{{ $kuota['total_kuota'] }}</div>
+                    <div class="text-[11px] text-base-content/60">Pertemuan dibayar</div>
+                </div>
+                <div class="bg-base-100 p-3 text-center">
+                    <div class="text-lg font-black text-base-content">{{ $kuota['total_hadir'] }}</div>
+                    <div class="text-[11px] text-base-content/60">Benar-benar hadir</div>
+                </div>
+                <div class="bg-base-100 p-3 text-center">
+                    <div class="text-lg font-black text-warning">{{ $kuota['kurang']->count() }}</div>
+                    <div class="text-[11px] text-base-content/60">Anak kurang</div>
+                </div>
+                <div class="bg-base-100 p-3 text-center">
+                    <div class="text-lg font-black text-success">{{ $kuota['lebih']->count() }}</div>
+                    <div class="text-[11px] text-base-content/60">Anak kelebihan</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-px bg-base-300 lg:grid-cols-2">
+                <div class="bg-base-100 p-4">
+                    <h4 class="mb-2 flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-wide text-base-content/70">
+                        <i class="fas fa-arrow-trend-down text-warning"></i>
+                        Kurang dari kuota
+                        <span class="badge badge-warning badge-sm">{{ $kuota['kurang']->count() }}</span>
+                    </h4>
+                    @forelse ($kuota['kurang']->take(8) as $item)
+                        <div class="mb-1.5 flex items-center justify-between gap-2 rounded-field bg-base-200/70 px-2.5 py-1.5 text-xs last:mb-0">
+                            <span class="min-w-0 flex-1 truncate font-bold text-base-content">{{ $item['nama'] }}</span>
+                            <span class="shrink-0 text-base-content/70">{{ $item['hadir'] }} / {{ $item['kuota'] }}</span>
+                            <span class="badge badge-warning badge-sm shrink-0">&minus;{{ abs($item['selisih']) }}</span>
+                        </div>
+                    @empty
+                        <p class="app-empty-text text-xs">Tidak ada yang tertinggal. Aman.</p>
+                    @endforelse
+                    @if ($kuota['kurang']->count() > 8)
+                        <p class="mt-1 text-[11px] text-base-content/60">dan {{ $kuota['kurang']->count() - 8 }} anak
+                            lainnya</p>
+                    @endif
+                </div>
+
+                <div class="bg-base-100 p-4">
+                    <h4 class="mb-2 flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-wide text-base-content/70">
+                        <i class="fas fa-arrow-trend-up text-success"></i>
+                        Lebih dari kuota
+                        <span class="badge badge-success badge-sm">{{ $kuota['lebih']->count() }}</span>
+                    </h4>
+                    @forelse ($kuota['lebih']->take(8) as $item)
+                        <div class="mb-1.5 flex items-center justify-between gap-2 rounded-field bg-base-200/70 px-2.5 py-1.5 text-xs last:mb-0">
+                            <span class="min-w-0 flex-1 truncate font-bold text-base-content">{{ $item['nama'] }}</span>
+                            <span class="shrink-0 text-base-content/70">{{ $item['hadir'] }} / {{ $item['kuota'] }}</span>
+                            <span class="badge badge-success badge-sm shrink-0">+{{ $item['selisih'] }}</span>
+                        </div>
+                    @empty
+                        <p class="app-empty-text text-xs">Tidak ada yang kelebihan.</p>
+                    @endforelse
+                    @if ($kuota['lebih']->count() > 8)
+                        <p class="mt-1 text-[11px] text-base-content/60">dan {{ $kuota['lebih']->count() - 8 }} anak
+                            lainnya</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
 
     @if ($slotTerbuka->isNotEmpty() || $diajarPengganti->isNotEmpty())
         <div class="app-card overflow-hidden border-warning/40">
@@ -389,6 +503,35 @@
             </x-list-panel>
         </div>
     </section>
+
+    @if ($jejak->isNotEmpty())
+        <div>
+            <h3 class="app-section-head">Jejak Perubahan Terakhir</h3>
+            <div class="app-card overflow-hidden">
+                <p class="border-b border-base-300 px-4 py-2 text-xs text-base-content/60">
+                    Siapa mengubah apa pada data siswa dan jadwal. Dicatat otomatis, tidak bisa diubah dari layar.
+                </p>
+                <ul class="max-h-80 space-y-1.5 overflow-y-auto p-4">
+                    @foreach ($jejak as $baris)
+                        <li class="rounded-lg border border-base-300 p-2.5 text-xs">
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <span
+                                    class="badge badge-sm font-bold {{ $baris->aksi === 'dihapus' || $baris->aksi === 'dipaksa' ? 'badge-error' : ($baris->aksi === 'dibuat' ? 'badge-success' : 'badge-info') }}">
+                                    {{ ucfirst($baris->aksi) }}
+                                </span>
+                                <span class="badge badge-ghost badge-sm">{{ ucfirst($baris->entitas) }}</span>
+                                <span class="text-base-content/60">
+                                    {{ $baris->nama_pelaku ?? 'Sistem' }} &middot;
+                                    {{ $baris->created_at?->locale('id')->translatedFormat('d M Y, H:i') }}
+                                </span>
+                            </div>
+                            <p class="mt-1 text-base-content/80">{{ $baris->ringkasan }}</p>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    @endif
 
     <section>
         <h3 class="app-section-head">Kebersihan Data</h3>

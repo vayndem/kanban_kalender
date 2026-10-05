@@ -42,7 +42,7 @@ Domains, all routed from `routes/web.php`:
 
 `DashboardController` (`/dashboard`) loads data **per active tab**, never all at once — a full-payload version triggered `FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE` on Vercel. Check response size and eager-loading blast radius on any change here, and likewise for `GET /admin/pembayaran/keluarga/{no_hp}/detail`, which exists to avoid shipping full invoice history up front.
 
-**Domain model:** `Siswa`, `Jadwal`, `Hari`, `Sesi`, `Guru`, `Ruang`, `MataPelajaran`, `Paket`, `Pembayaran`, `PembayaranDetail`, `Diskon`, `Tanda`, `Arsip`, `BatchPembayaranLog`, `TingkatKemampuan`, `ModulAjar`, `ModulAjarDetail`, `ModulAjarAbsensi`, `AbsensiGuru`, `Penggajian`, `JadwalTeksLog`, `StashPemulihanLog`, `AspekPenilaian`, `NilaiAspek`, `Pertemuan`, `RaporCetak`.
+**Domain model:** `Siswa`, `Jadwal`, `Hari`, `Sesi`, `Guru`, `Ruang`, `MataPelajaran`, `Paket`, `Pembayaran`, `PembayaranDetail`, `Diskon`, `Tanda`, `Arsip`, `BatchPembayaranLog`, `TingkatKemampuan`, `ModulAjar`, `ModulAjarDetail`, `ModulAjarAbsensi`, `AbsensiGuru`, `Penggajian`, `JadwalTeksLog`, `StashPemulihanLog`, `AspekPenilaian`, `NilaiAspek`, `Pertemuan`, `RaporCetak`, `JejakPerubahan`, `KetersediaanGuru`.
 
 - One class shows as a single card but is **many `jadwals` rows, one per student**. Collision checks and edits must cover every row, not a subset.
 - `Pembayaran` is the invoice header; `PembayaranDetail` is the **append-only** ledger. Status changes add a detail row, never overwrite totals.
@@ -50,7 +50,7 @@ Domains, all routed from `routes/web.php`:
 
 **Phone numbers.** Family and discount logic keys off `no_hp`. `App\Models\Concerns\MenormalisasiNoHp` (a `setNoHpAttribute` mutator over `App\Support\NomorHp::normalkan()`) is applied to `Siswa`, `Pembayaran`, `Arsip`, `Diskon`, so anything written through Eloquent is normalized to `+62...` on save. `SiswaController` validation only rejects values `normalkan()` cannot parse at all. `php artisan pembayaran:normalisasi-hp` remains for legacy rows and raw `DB::table()` writes that bypass Eloquent.
 
-**Services** hold the logic that would otherwise bloat controllers — check them first: `PaymentBatchService` (mass billing/settlement), `RingkasanService` (dashboard aggregation), `RaporService` (per-student progress), `PayrollService` (rates, payslips, close), `IrisanSesiService` (session overlap), `StashJadwalService` (stash restore), `StrukPembayaranService` (receipts).
+**Services** hold the logic that would otherwise bloat controllers — check them first: `PaymentBatchService` (mass billing/settlement), `RingkasanService` (dashboard aggregation), `RaporService` (per-student progress), `PayrollService` (rates, payslips, close), `IrisanSesiService` (session overlap), `StashJadwalService` (stash restore), `StrukPembayaranService` (receipts), `KetersediaanGuruService` (teacher availability), `KuotaPertemuanService` (paid quota vs attendance), `PencatatJejak` (audit trail).
 
 ## Money invariants — do not weaken
 
@@ -173,6 +173,31 @@ Two roles via `spatie/laravel-permission`: `admin`, `guru`.
 - Teaching credit is **one `absensi_gurus` row per finished meeting**, keyed by `pertemuan_id`. That is what makes "ajar ulang counts as +1" fall out naturally instead of needing a special case.
 - Grading is refused unless a meeting is currently running (`selesai_pada IS NULL`). That single guard is what stops a double-submitted grading from paying twice.
 - **Only an admin** can take over a meeting held by a substitute: pressing Mulai Ajar clears `guru_pengganti_id` and reassigns it rather than opening a second meeting. The owning guru gets a 409 — `mulaiPersiapan()` blocks every non-admin who is not the substitute, so a teacher cannot silently reclaim a class they handed off.
+
+### A teacher can be marked unavailable, and scheduling respects it
+
+`ketersediaan_gurus` holds `(guru_id, hari_id, jam_mulai, jam_selesai, alasan)`. It is a **clock-time range, not a session id**, because "hanya bisa sampai jam 17.00" and "tidak bisa Sabtu" are both time statements and sessions interleave. `KetersediaanGuruService::bentrok()` uses the **same strict overlap rule** as `IrisanSesiService` (`a.start < b.end && b.start < a.end`), so a marker ending exactly when a session starts is not a clash — consistent with the room/teacher collision rule.
+
+- **Reject, but allow an override** (owner's decision, Oct 2026). `JadwalController::tolakKalauGuruTidakTersedia()` returns **409 with `butuh_paksa: true`** on `store`, `updateKelas` and `updatePosisi`. The front end shows a "Tetap Simpan" dialog (`resources/js/core/paksa.js`) that retries with `paksa: true`. Forcing is never silent: it writes a `JejakPerubahan` row with `aksi = dipaksa` naming the admin. **Don't turn this into a plain block or a plain warning** — both options were considered and rejected.
+- `WorkshopController::petaKetersediaan()` (Slot Kosong) also drops unavailable teachers from `guru_kosong`, so the mistake is prevented before it is attempted.
+- Marking a teacher **does not rewrite existing schedules**. Classes that already sit in a now-blocked slot surface through `jadwalYangMelanggar()` in a Ringkasan panel — the same "report, don't silently mutate" shape as Bentrok Tersembunyi.
+
+### Who changed what is recorded in `jejak_perubahans`
+
+`App\Services\PencatatJejak` writes one row per meaningful change to **students and schedules**, carrying the actor, a human-readable `ringkasan`, and a before/after `detail` JSON.
+
+- **Recording is explicit, not via model events.** Schedule edits run through mass `delete()`/`insert()` on the query builder, which fires no Eloquent events at all, and a per-row trait would also log 30 rows for one class edit. The controllers therefore call `catat()` themselves, at the **class level** for jadwal (`kode_kelas` + a count) and per row for siswa.
+- `bandingkan()` + `ringkasPerubahan()` turn a column diff into `Kelas: 3 → 4` using the `SiswaController::LABEL_JEJAK` map. An update that changes nothing writes no row.
+- `PencatatJejak::jeda()` exists so bulk importers and seeders can stay quiet; the demo seeder writes its own illustrative rows instead.
+- Not everything is covered yet: archiving students and restoring a stash both use mass deletes and keep their own dedicated logs (`arsips`, `stash_pemulihan_logs`), so they are deliberately absent here rather than half-recorded.
+
+### Paid quota versus meetings actually attended
+
+`KuotaPertemuanService` answers the question the old "3 dari 2 Pertemuan" badge could not: the badge compares *scheduled weekly slots* to the package, while this compares **what was paid for against what the child actually attended**.
+
+- Quota is the sum of `pertemuan` across all five package slots. Attendance counts `modul_ajar_absensis` rows with `hadir = true` whose meeting is **finished** (`selesai_pada` set) and dated inside the month. An absence does not consume quota.
+- The period is a month (`YYYY-MM`), matching the `periode` anchor billing already uses.
+- Both directions matter: `kurang` is under-delivery the business owes, `lebih` is teaching that may never have been billed. The Ringkasan panel shows both, and says plainly that "kurang" is normal early in the month.
 
 ### The dashboard warns about classes that are too small
 
@@ -376,6 +401,8 @@ Supporting suites:
 | `ModulAjarTest` | admin-sees-all vs guru-sees-own, create-yes/update-no split, `kode_kelas` surviving drag-move / edit-modal / stash round-trip, teaching + substitute + re-teach flow |
 | `RaporSiswaTest` | aggregation, date filtering, 4-score minimum before a trend, PDF download, guru denied |
 | `PusatBantuanTest` | every guide populated, no screen on the fallback, each route rendering its own |
+| `KetersediaanGuruTest` | the overlap rule and its touching-at-the-edge boundary, another day being unaffected, a 409 with `butuh_paksa`, forcing saving the class *and* writing a `dipaksa` jejak row, Slot Kosong dropping the teacher, pre-existing schedules surfacing as violations, CRUD plus validation, and a guru refused |
+| `JejakDanKuotaTest` | creating/updating a student recording the actor and the before→after, a no-op update recording nothing, one class edit staying one row rather than one per student, quota under/over detection, absences not consuming quota, months not bleeding into each other, quota summing all five package slots, and both panels rendering |
 | `GantiPasswordGuruTest` | admin resetting a teacher password without the old one, a guru refused for another guru, a guest refused, mismatch and short-password rejection leaving the old password working, a teacher with no account refused, and the active session row being deleted |
 | `UrutanMuridTerbaruTest` | newest-first ordering on the three dashboard tabs, Workshop, Result and Arsip, plus the `id` tiebreaker when two students share a `created_at` |
 | `SkemaKolomEagerLoadTest` | every column named in a constrained eager load still exists in the schema, plus a pin on SQLite's silent acceptance of quoted unknown identifiers |

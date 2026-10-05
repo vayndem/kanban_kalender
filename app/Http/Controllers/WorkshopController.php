@@ -12,6 +12,7 @@ use App\Models\Sesi;
 use App\Models\Siswa;
 use App\Models\TingkatKemampuan;
 use App\Services\IrisanSesiService;
+use App\Services\KetersediaanGuruService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -55,6 +56,8 @@ class WorkshopController extends Controller
             'kemampuans' => $this->kemampuanDenganKonteks($siswas),
             'siswas' => $siswas,
             'ketersediaan' => $this->petaKetersediaan($jadwals),
+            'haris' => Hari::orderBy('id')->get(['id', 'name']),
+            'halanganGuru' => app(KetersediaanGuruService::class)->daftarPerGuru(),
             'petaKelas' => $this->petaKelas($jadwals),
             'ringkasan' => [
                 'guru' => Guru::count(),
@@ -110,6 +113,7 @@ class WorkshopController extends Controller
         $peta = [];
 
         $irisan = app(IrisanSesiService::class);
+        $ketersediaan = app(KetersediaanGuruService::class);
 
         foreach ($haris as $hari) {
             foreach ($sesis as $sesi) {
@@ -122,12 +126,20 @@ class WorkshopController extends Controller
                 $ruangTerpakai = $diWaktuIni->pluck('ruang_id')->unique();
                 $guruTerpakai = $diWaktuIni->pluck('guru_id')->unique();
 
+                $guruBerhalangan = $gurus
+                    ->filter(fn (Guru $g) => $ketersediaan->bentrok($g->id, $hari->id, $sesi->id) !== null)
+                    ->pluck('id');
+
                 $peta[] = [
                     'hari' => $hari->name,
                     'sesi' => $sesi->name.' - '.Carbon::parse($sesi->start_time)->format('H:i').'–'.Carbon::parse($sesi->end_time)->format('H:i'),
                     'kelas_berjalan' => $diSlot->unique(fn ($j) => "{$j->ruang_id}_{$j->guru_id}")->count(),
                     'ruang_kosong' => $ruangs->whereNotIn('id', $ruangTerpakai)->pluck('name')->values(),
-                    'guru_kosong' => $gurus->whereNotIn('id', $guruTerpakai)->pluck('name')->values(),
+                    'guru_kosong' => $gurus
+                        ->whereNotIn('id', $guruTerpakai)
+                        ->whereNotIn('id', $guruBerhalangan)
+                        ->pluck('name')
+                        ->values(),
                 ];
             }
         }
