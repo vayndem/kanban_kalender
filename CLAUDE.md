@@ -50,7 +50,7 @@ Domains, all routed from `routes/web.php`:
 
 **Phone numbers.** Family and discount logic keys off `no_hp`. `App\Models\Concerns\MenormalisasiNoHp` (a `setNoHpAttribute` mutator over `App\Support\NomorHp::normalkan()`) is applied to `Siswa`, `Pembayaran`, `Arsip`, `Diskon`, so anything written through Eloquent is normalized to `+62...` on save. `SiswaController` validation only rejects values `normalkan()` cannot parse at all. `php artisan pembayaran:normalisasi-hp` remains for legacy rows and raw `DB::table()` writes that bypass Eloquent.
 
-**Services** hold the logic that would otherwise bloat controllers — check them first: `PaymentBatchService` (mass billing/settlement), `RingkasanService` (dashboard aggregation), `RaporService` (per-student progress), `PayrollService` (rates, payslips, close), `IrisanSesiService` (session overlap), `StashJadwalService` (stash restore), `StrukPembayaranService` (receipts), `KetersediaanGuruService` (teacher availability), `KuotaPertemuanService` (paid quota vs attendance), `PencatatJejak` (audit trail).
+**Services** hold the logic that would otherwise bloat controllers — check them first: `PaymentBatchService` (mass billing/settlement), `RingkasanService` (dashboard aggregation), `RaporService` (per-student progress), `PayrollService` (rates, payslips, close), `IrisanSesiService` (session overlap), `StashJadwalService` (stash restore), `StrukPembayaranService` (receipts), `KetersediaanGuruService` (teacher availability), `KuotaPertemuanService` (paid quota vs attendance), `SlotKosongService` (free rooms and teachers), `PencatatJejak` (audit trail).
 
 ## Money invariants — do not weaken
 
@@ -173,6 +173,15 @@ Two roles via `spatie/laravel-permission`: `admin`, `guru`.
 - Teaching credit is **one `absensi_gurus` row per finished meeting**, keyed by `pertemuan_id`. That is what makes "ajar ulang counts as +1" fall out naturally instead of needing a special case.
 - Grading is refused unless a meeting is currently running (`selesai_pada IS NULL`). That single guard is what stops a double-submitted grading from paying twice.
 - **Only an admin** can take over a meeting held by a substitute: pressing Mulai Ajar clears `guru_pengganti_id` and reassigns it rather than opening a second meeting. The owning guru gets a 409 — `mulaiPersiapan()` blocks every non-admin who is not the substitute, so a teacher cannot silently reclaim a class they handed off.
+
+### Empty slots are computed once, shown in two places
+
+`SlotKosongService` is the single definition of "which room and which teacher are free". `WorkshopController::petaKetersediaan()` is now a one-line delegate to `peta()` (the whole week, the Slot Kosong tab), and the Ringkasan panel calls `hariIni()` (today only, richer). Before this there was one copy; a second copy in the dashboard would have been a third place that must remember the overlap rule.
+
+- Occupancy is counted through `IrisanSesiService`, so a room busy in an **overlapping** session is not offered — and teachers marked unavailable are dropped too, so the two features agree.
+- `hariIni()` resolves the day through `Hari::idHariIni()` (by name, never the ISO number) and returns `['ada' => false]` when no row matches, which the panel treats as "render nothing" rather than erroring.
+- **`status` is about whether a class can be added, not about whether one is running**: `penuh` when there is no free room **or** no free teacher, `kosong` when nothing starts in that session, else `longgar`. An earlier version keyed it only on free rooms, which let a session with rooms but no available teacher read as "bisa diisi".
+- `ruang_dipakai_sesi_lain` exists purely for the screen: a session can show "Kosong, bisa diisi" next to "1 dari 4 ruang" because the busy room belongs to an overlapping session. Without that flag the two numbers look contradictory, so the panel prints a one-line explanation.
 
 ### A teacher can be marked unavailable, and scheduling respects it
 
@@ -401,6 +410,7 @@ Supporting suites:
 | `ModulAjarTest` | admin-sees-all vs guru-sees-own, create-yes/update-no split, `kode_kelas` surviving drag-move / edit-modal / stash round-trip, teaching + substitute + re-teach flow |
 | `RaporSiswaTest` | aggregation, date filtering, 4-score minimum before a trend, PDF download, guru denied |
 | `PusatBantuanTest` | every guide populated, no screen on the fallback, each route rendering its own |
+| `SlotKosongHariIniTest` | today-only filtering, a used room leaving the free list, the overlap rule closing a room for a neighbouring session, status reacting to teachers as well as rooms, the explanation flag when occupancy comes from an overlapping session, a missing day not erroring, and Workshop still producing the same numbers through the shared service |
 | `KetersediaanGuruTest` | the overlap rule and its touching-at-the-edge boundary, another day being unaffected, a 409 with `butuh_paksa`, forcing saving the class *and* writing a `dipaksa` jejak row, Slot Kosong dropping the teacher, pre-existing schedules surfacing as violations, CRUD plus validation, and a guru refused |
 | `JejakDanKuotaTest` | creating/updating a student recording the actor and the before→after, a no-op update recording nothing, one class edit staying one row rather than one per student, quota under/over detection, absences not consuming quota, months not bleeding into each other, quota summing all five package slots, and both panels rendering |
 | `GantiPasswordGuruTest` | admin resetting a teacher password without the old one, a guru refused for another guru, a guest refused, mismatch and short-password rejection leaving the old password working, a teacher with no account refused, and the active session row being deleted |

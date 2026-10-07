@@ -149,6 +149,16 @@ class PusatBantuan
                         ],
                     ],
                     [
+                        'title' => 'Slot Kosong Hari Ini',
+                        'items' => [
+                            'Menampilkan ruang dan guru yang masih bisa dipakai hari ini, dipecah per sesi. Gunanya saat ada orang tua menanyakan kelas tambahan atau susulan mendadak.',
+                            'Hanya hari ini. Untuk melihat seluruh minggu, buka Workshop lalu tab Slot Kosong — angkanya dihitung dengan cara yang persis sama.',
+                            'Batang kecil di tiap sesi menunjukkan berapa ruang sudah terpakai. Hijau berarti sesi itu belum ada kelas sama sekali, biru masih longgar, merah berarti semua ruang penuh.',
+                            'Ruang yang dipakai sesi lain yang jamnya bertindih ikut dihitung terpakai, jadi angkanya tidak menyesatkan.',
+                            'Guru yang sedang mengajar di jam itu tidak akan muncul sebagai siap. Begitu juga guru yang Anda tandai tidak bisa di tab Ketersediaan Guru — jumlahnya tetap disebutkan supaya Anda tahu kenapa daftarnya pendek.',
+                        ],
+                    ],
+                    [
                         'title' => 'Kuota Paket vs Kehadiran',
                         'items' => [
                             'Membandingkan jumlah pertemuan yang dibayar orang tua bulan ini dengan jumlah pertemuan yang benar-benar dihadiri anaknya.',

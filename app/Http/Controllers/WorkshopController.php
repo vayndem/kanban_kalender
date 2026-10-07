@@ -11,9 +11,8 @@ use App\Models\Ruang;
 use App\Models\Sesi;
 use App\Models\Siswa;
 use App\Models\TingkatKemampuan;
-use App\Services\IrisanSesiService;
 use App\Services\KetersediaanGuruService;
-use Carbon\Carbon;
+use App\Services\SlotKosongService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
@@ -105,46 +104,7 @@ class WorkshopController extends Controller
 
     private function petaKetersediaan(Collection $jadwals): array
     {
-        $haris = Hari::orderBy('id')->get(['id', 'name']);
-        $sesis = Sesi::orderBy('start_time')->get(['id', 'name', 'start_time', 'end_time']);
-        $ruangs = Ruang::orderBy('name')->get(['id', 'name']);
-        $gurus = Guru::orderBy('name')->get(['id', 'name']);
-
-        $peta = [];
-
-        $irisan = app(IrisanSesiService::class);
-        $ketersediaan = app(KetersediaanGuruService::class);
-
-        foreach ($haris as $hari) {
-            foreach ($sesis as $sesi) {
-                $diHari = $jadwals->where('hari_id', $hari->id);
-                $diSlot = $diHari->where('sesi_id', $sesi->id);
-
-                $beririsan = $irisan->idBeririsan($sesi->id);
-                $diWaktuIni = $diHari->whereIn('sesi_id', $beririsan);
-
-                $ruangTerpakai = $diWaktuIni->pluck('ruang_id')->unique();
-                $guruTerpakai = $diWaktuIni->pluck('guru_id')->unique();
-
-                $guruBerhalangan = $gurus
-                    ->filter(fn (Guru $g) => $ketersediaan->bentrok($g->id, $hari->id, $sesi->id) !== null)
-                    ->pluck('id');
-
-                $peta[] = [
-                    'hari' => $hari->name,
-                    'sesi' => $sesi->name.' - '.Carbon::parse($sesi->start_time)->format('H:i').'–'.Carbon::parse($sesi->end_time)->format('H:i'),
-                    'kelas_berjalan' => $diSlot->unique(fn ($j) => "{$j->ruang_id}_{$j->guru_id}")->count(),
-                    'ruang_kosong' => $ruangs->whereNotIn('id', $ruangTerpakai)->pluck('name')->values(),
-                    'guru_kosong' => $gurus
-                        ->whereNotIn('id', $guruTerpakai)
-                        ->whereNotIn('id', $guruBerhalangan)
-                        ->pluck('name')
-                        ->values(),
-                ];
-            }
-        }
-
-        return $peta;
+        return app(SlotKosongService::class)->peta($jadwals);
     }
 
     private function petaKelas(Collection $jadwals): array

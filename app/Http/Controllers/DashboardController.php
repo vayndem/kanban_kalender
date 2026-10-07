@@ -20,6 +20,7 @@ use App\Services\KuotaPertemuanService;
 use App\Services\PaymentBatchService;
 use App\Services\PayrollService;
 use App\Services\RingkasanService;
+use App\Services\SlotKosongService;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -131,6 +132,7 @@ class DashboardController extends Controller
                 'kebersihan_data' => $this->ringkasanService->kebersihanData(3),
                 'kelas_pengganti' => $this->ringkasanService->kelasPengganti(),
                 'kuota_pertemuan' => app(KuotaPertemuanService::class)->ringkasan(),
+                'slot_kosong' => app(SlotKosongService::class)->hariIni(),
                 'langgar_ketersediaan' => app(KetersediaanGuruService::class)->jadwalYangMelanggar(),
                 'jejak_terakhir' => JejakPerubahan::terbaru()->limit(15)->get(),
                 'bentrok_tersembunyi' => $this->ringkasanService->bentrokTersembunyi(),

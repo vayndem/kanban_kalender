@@ -8,6 +8,12 @@
     $kebersihan = $ringkasanData['kebersihan_data'];
     $kelasSepi = collect($kebersihan['kelas_sepi'] ?? []);
     $kuota = $ringkasanData['kuota_pertemuan'] ?? null;
+    $slot = $ringkasanData['slot_kosong'] ?? null;
+    $warnaSlot = [
+        'kosong' => ['bar' => 'bg-success', 'teks' => 'text-success', 'label' => 'Kosong, bisa diisi'],
+        'longgar' => ['bar' => 'bg-info', 'teks' => 'text-info', 'label' => 'Masih bisa diisi'],
+        'penuh' => ['bar' => 'bg-error', 'teks' => 'text-error', 'label' => 'Tidak bisa diisi'],
+    ];
     $langgar = collect($ringkasanData['langgar_ketersediaan'] ?? []);
     $jejak = collect($ringkasanData['jejak_terakhir'] ?? []);
     $sepiMinimal = $kebersihan['kelas_sepi_minimal'] ?? 3;
@@ -32,6 +38,103 @@
 @endphp
 
 <div class="space-y-8">
+
+    @if ($slot && $slot['ada'])
+        <div class="app-card overflow-hidden border-primary/40">
+            <div class="flex flex-wrap items-start justify-between gap-3 bg-primary/10 px-4 py-3">
+                <div class="flex min-w-0 items-start gap-3">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-field bg-primary text-primary-content shadow-xs">
+                        <i class="fas fa-calendar-check"></i>
+                    </span>
+                    <div class="min-w-0">
+                        <h3 class="text-sm font-black text-base-content">Slot Kosong Hari Ini &middot; {{ $slot['hari'] }}</h3>
+                        <p class="text-xs text-base-content/60">Ruang dan guru yang masih bisa dipakai kalau ada
+                            permintaan kelas tambahan hari ini. Guru yang ditandai tidak bisa sudah dikeluarkan.</p>
+                    </div>
+                </div>
+                <div class="flex shrink-0 flex-wrap items-center gap-1.5">
+                    @if ($slot['sesi_kosong'] > 0)
+                        <span class="badge badge-success badge-sm font-bold">{{ $slot['sesi_kosong'] }} sesi belum
+                            terpakai</span>
+                    @endif
+                    @if ($slot['sesi_penuh'] > 0)
+                        <span class="badge badge-error badge-sm font-bold">{{ $slot['sesi_penuh'] }} sesi ruang
+                            penuh</span>
+                    @endif
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-px bg-base-300 sm:grid-cols-2 xl:grid-cols-3">
+                @foreach ($slot['sesi'] as $s)
+                    @php($w = $warnaSlot[$s['status']] ?? $warnaSlot['longgar'])
+                    <div class="bg-base-100 p-3">
+                        <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+                            <p class="text-sm font-black text-base-content">{{ $s['nama'] }}</p>
+                            <p class="text-xs font-bold text-base-content/70">{{ $s['jam'] }}</p>
+                        </div>
+
+                        <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px]">
+                            <span class="font-bold {{ $w['teks'] }}">{{ $w['label'] }}</span>
+                            <span class="text-base-content/60">{{ $s['kelas_berjalan'] }} kelas berjalan</span>
+                        </div>
+
+                        <div class="mt-2 flex items-center gap-2">
+                            <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-base-200">
+                                <div class="h-full rounded-full {{ $w['bar'] }}"
+                                    style="width: {{ $s['persen_ruang_terpakai'] }}%"></div>
+                            </div>
+                            <span class="shrink-0 text-[11px] font-bold text-base-content/70">
+                                {{ $s['ruang_terpakai'] }} dari {{ $slot['total_ruang'] }} ruang
+                            </span>
+                        </div>
+
+                        @if ($s['ruang_dipakai_sesi_lain'])
+                            <p class="mt-1 text-[11px] text-base-content/60">
+                                Ruang itu dipakai sesi lain yang jamnya bertindih.
+                            </p>
+                        @endif
+
+                        <div class="mt-2">
+                            <p class="mb-1 text-[10px] font-black uppercase tracking-wider text-base-content/60">
+                                Ruang kosong ({{ $s['ruang_kosong']->count() }})
+                            </p>
+                            @if ($s['ruang_kosong']->isEmpty())
+                                <p class="text-[11px] italic text-error">Semua ruang terpakai.</p>
+                            @else
+                                <div class="flex flex-wrap gap-1">
+                                    @foreach ($s['ruang_kosong'] as $nama)
+                                        <span class="app-chip">{{ $nama }}</span>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="mt-2">
+                            <p class="mb-1 text-[10px] font-black uppercase tracking-wider text-base-content/60">
+                                Guru siap ({{ $s['guru_kosong']->count() }})
+                            </p>
+                            @if ($s['guru_kosong']->isEmpty())
+                                <p class="text-[11px] italic text-error">Tidak ada guru yang bisa.</p>
+                            @else
+                                <div class="flex flex-wrap gap-1">
+                                    @foreach ($s['guru_kosong']->take(4) as $nama)
+                                        <span class="app-chip">{{ $nama }}</span>
+                                    @endforeach
+                                    @if ($s['guru_kosong']->count() > 4)
+                                        <span class="app-chip font-bold">+{{ $s['guru_kosong']->count() - 4 }} lagi</span>
+                                    @endif
+                                </div>
+                            @endif
+                            @if ($s['guru_berhalangan'] > 0)
+                                <p class="mt-1 text-[11px] text-warning">{{ $s['guru_berhalangan'] }} guru ditandai
+                                    tidak bisa di jam ini.</p>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     @if ($langgar->isNotEmpty())
         <div class="app-card overflow-hidden border-error/40">
